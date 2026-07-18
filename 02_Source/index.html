@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top Visa – Dịch vụ Visa trọn gói, tỷ lệ đậu cao</title>
+<meta name="description" content="Top Visa – dịch vụ làm visa Nhật Bản, Hàn Quốc, Đài Loan, Trung Quốc, Schengen, Mỹ, Úc trọn gói. Cam kết đậu visa mới thu phí dịch vụ, tư vấn miễn phí, xử lý nhanh, hỗ trợ 24/7.">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script>
+/* ============================================================
+   ⚙️ CẤU HÌNH — CHỈ CẦN SỬA KHU VỰC NÀY
+   Làm theo Bước 1 trong 07_Huong_dan_Deploy.md để lấy 2 giá trị Supabase.
+   ============================================================ */
+const SUPABASE_URL      = "";                    // ← dán Project URL, ví dụ: "https://xxxx.supabase.co"
+const SUPABASE_ANON_KEY = "";                    // ← dán anon public key (chuỗi eyJ...)
+const HOTLINE           = "0935887922";          // Số điện thoại / hotline
+const ZALO_PHONE        = "0935887922";          // Số Zalo
+const FACEBOOK_URL      = "https://www.facebook.com/share/1EVr8W3p2E/"; // Facebook công ty
+const COMPANY_NAME      = "Top Visa";
+const COMPANY_EMAIL     = "hien.gotravel@gmail.com";
+const COMPANY_ADDRESS   = "303 Âu Cơ, Liên Chiểu, Đà Nẵng";
+</script>
+<style>
+/* ==================== DESIGN SYSTEM (04_Design_System.md) ==================== */
+:root{
+  --color-primary:#1B6EF3; --color-primary-dark:#0F4FC2; --color-primary-light:#E8F1FE;
+  --color-accent:#FF7A29; --color-accent-dark:#E5661A;
+  --color-success:#16A34A; --color-error:#DC2626;
+  --color-text:#1E293B; --color-text-muted:#64748B;
+  --color-bg:#FFFFFF; --color-bg-alt:#F6F9FE; --color-dark:#0F1E3D; --color-border:#E2E8F0;
+  --sp-1:8px; --sp-2:16px; --sp-3:24px; --sp-4:32px; --sp-6:48px; --sp-10:80px;
+  --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-full:999px;
+  --shadow-sm:0 1px 3px rgba(15,30,61,.08);
+  --shadow-md:0 8px 24px rgba(15,30,61,.12);
+  --shadow-lg:0 16px 40px rgba(15,30,61,.16);
+  --font:'Be Vietnam Pro',system-ui,-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--color-text);background:var(--color-bg);font-size:16px;line-height:1.6}
+img{max-width:100%}
+.container{max-width:1140px;margin:0 auto;padding:0 var(--sp-3)}
+section{padding:var(--sp-10) 0}
+h2.section-title{font-size:32px;font-weight:800;text-align:center;margin-bottom:var(--sp-1)}
+p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;margin:0 auto var(--sp-6)}
+
+/* ==================== BUTTON ==================== */
+.btn{display:inline-block;padding:14px 28px;border-radius:var(--radius-md);font-weight:600;font-size:16px;
+  text-decoration:none;border:none;cursor:pointer;transition:.2s;font-family:var(--font);text-align:center}
+.btn-cta{background:var(--color-accent);color:#fff}
+.btn-cta:hover{background:var(--color-accent-dark);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.btn-primary{background:var(--color-primary);color:#fff}
+.btn-primary:hover{background:var(--color-primary-dark);transform:translateY(-2px)}
+.btn-outline{background:transparent;color:var(--color-primary);border:2px solid var(--color-primary)}
+.btn-outline:hover{background:var(--color-primary-light)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ==================== PROMO BAR ==================== */
+.promo-bar{background:linear-gradient(90deg,var(--color-accent-dark) 0%,var(--color-accent) 100%);color:#fff;
+  text-align:center;padding:10px 0;font-size:14px;font-weight:700}
+.promo-bar .container{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.promo-bar .promo-sub{font-weight:400;opacity:.92;font-size:13px}
+@media (max-width:767px){.promo-bar{font-size:12.5px;padding:8px 0}.promo-bar .promo-sub{display:block;width:100%}}
+
+/* ==================== NAVBAR ==================== */
+.navbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);
+  box-shadow:var(--shadow-sm);transition:.3s}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo{font-size:22px;font-weight:800;color:var(--color-primary);text-decoration:none;
+  display:inline-flex;align-items:center;gap:10px}
+.logo img{height:40px;width:40px}
+.logo span{color:var(--color-accent)}
+.nav-links{display:flex;gap:var(--sp-4);align-items:center;list-style:none}
+.nav-links a{text-decoration:none;color:var(--color-text);font-weight:600;font-size:15px;
+  position:relative;padding:6px 2px;transition:.2s}
+.nav-links a:not(.btn)::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:0;
+  background:var(--color-primary);transition:width .25s ease}
+.nav-links a:not(.btn):hover::after,.nav-links a:not(.btn).active::after{width:100%}
+.nav-links a:hover{color:var(--color-primary)}
+.nav-links a.active{color:var(--color-primary)}
+.nav-links a.btn-cta{box-shadow:0 0 0 0 rgba(255,122,41,.5);animation:cta-glow 2.5s infinite}
+@keyframes cta-glow{0%{box-shadow:0 0 0 0 rgba(255,122,41,.45)}70%{box-shadow:0 0 0 10px rgba(255,122,41,0)}100%{box-shadow:0 0 0 0 rgba(255,122,41,0)}}
+.hamburger{display:none;background:none;border:none;font-size:26px;cursor:pointer;color:var(--color-text)}
+
+/* ==================== HERO ==================== */
+.hero{background:linear-gradient(135deg,var(--color-primary-light) 0%,#fff 60%);padding:var(--sp-10) 0}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:var(--sp-6);align-items:center}
+.hero h1{font-size:40px;font-weight:800;line-height:1.25;margin-bottom:var(--sp-2)}
+.hero h1 em{color:var(--color-primary);font-style:normal}
+.hero p.lead{color:var(--color-text-muted);font-size:18px;margin-bottom:var(--sp-3)}
+.badges{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-3)}
+.badge{background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-full);
+  padding:8px 16px;font-size:14px;font-weight:600;box-shadow:var(--shadow-sm)}
+.badge b{color:var(--color-success)}
+.badge-accent{background:var(--color-accent);color:#fff;border-color:var(--color-accent)}
+.badge-accent b{color:#fff}
+
+/* ==================== USP HIGHLIGHT (Đậu mới thu phí) ==================== */
+.usp-highlight{display:flex;gap:14px;align-items:flex-start;background:#fff;border:2px solid var(--color-accent);
+  border-radius:var(--radius-lg);padding:var(--sp-2) var(--sp-3);margin:var(--sp-3) 0;box-shadow:var(--shadow-md)}
+.usp-highlight .usp-icon{font-size:32px;flex-shrink:0;line-height:1}
+.usp-highlight strong{display:block;color:var(--color-accent-dark);font-size:16px;margin-bottom:2px}
+.usp-highlight p{font-size:14px;color:var(--color-text);margin:0}
+.usp-banner{display:flex;align-items:center;gap:var(--sp-3);
+  background:linear-gradient(135deg,var(--color-accent) 0%,var(--color-accent-dark) 100%);
+  color:#fff;border-radius:var(--radius-lg);padding:var(--sp-3) var(--sp-4);margin-bottom:var(--sp-4);box-shadow:var(--shadow-lg)}
+.usp-banner .usp-banner-icon{font-size:48px;flex-shrink:0;line-height:1}
+.usp-banner h3{font-size:20px;font-weight:800;margin-bottom:4px}
+.usp-banner p{font-size:14px;opacity:.95;margin:0}
+@media (max-width:767px){.usp-banner{flex-direction:column;text-align:center}.usp-highlight{flex-direction:column;text-align:center;align-items:center}}
+.hero-visual{background:linear-gradient(160deg,var(--color-primary) 0%,var(--color-primary-dark) 100%);
+  border-radius:var(--radius-lg);padding:var(--sp-4);color:#fff;box-shadow:var(--shadow-lg);text-align:center}
+.hero-visual .plane{font-size:64px;display:block;margin-bottom:var(--sp-2)}
+.hero-visual .flags{font-size:30px;letter-spacing:6px;margin:var(--sp-2) 0}
+.hero-visual p{opacity:.9;font-size:15px}
+
+/* ==================== SERVICE CARDS ==================== */
+.grid-services{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3)}
+.card-service{background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-lg);
+  padding:var(--sp-3);text-align:center;box-shadow:var(--shadow-sm);transition:.2s;display:flex;flex-direction:column}
+.card-service:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.card-service .flag{font-size:44px;line-height:1}
+.card-service h3{font-size:20px;font-weight:700;margin:var(--sp-1) 0 4px}
+.card-service p{font-size:14px;color:var(--color-text-muted);flex:1}
+.card-service .price{color:var(--color-primary);font-weight:700;margin:var(--sp-1) 0 var(--sp-2)}
+.card-service .btn{padding:10px 0;font-size:14px;width:100%}
+
+/* ==================== BENEFITS ==================== */
+.bg-alt{background:var(--color-bg-alt)}
+.grid-benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
+.card-benefit{background:#fff;border-radius:var(--radius-lg);padding:var(--sp-3);box-shadow:var(--shadow-sm)}
+.card-benefit .icon{width:52px;height:52px;border-radius:var(--radius-md);background:var(--color-primary-light);
+  display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:var(--sp-2)}
+.card-benefit h3{font-size:18px;font-weight:700;margin-bottom:4px}
+.card-benefit p{font-size:14px;color:var(--color-text-muted)}
+
+/* ==================== PROCESS ==================== */
+.process{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3);counter-reset:step}
+.step{text-align:center;position:relative}
+.step .num{width:52px;height:52px;border-radius:50%;background:var(--color-primary);color:#fff;
+  font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-2)}
+.step h3{font-size:17px;font-weight:700;margin-bottom:4px}
+.step p{font-size:14px;color:var(--color-text-muted)}
+.step:not(:last-child)::after{content:"→";position:absolute;top:14px;right:-18px;color:var(--color-primary);font-size:22px}
+
+/* ==================== REVIEWS SLIDER ==================== */
+.reviews-slider{position:relative;max-width:700px;margin:0 auto}
+.reviews-viewport{overflow:hidden}
+.reviews-track{display:flex;transition:transform .45s cubic-bezier(.4,0,.2,1)}
+.review-slide{flex:0 0 100%;box-sizing:border-box;padding:0 4px}
+.card-review{background:#fff;border-radius:var(--radius-lg);padding:var(--sp-4);box-shadow:var(--shadow-sm);
+  border:1px solid var(--color-border);text-align:center}
+.stars{color:#F5A623;letter-spacing:3px;font-size:20px;margin-bottom:var(--sp-2)}
+.card-review p.quote{font-size:17px;line-height:1.6;margin-bottom:var(--sp-3);color:var(--color-text)}
+.reviewer{display:flex;align-items:center;justify-content:center;gap:12px}
+.avatar{width:46px;height:46px;border-radius:50%;background:var(--color-primary);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
+.reviewer-info{text-align:left}
+.reviewer .name{font-weight:700;font-size:15px}
+.reviewer .type{font-size:13px;color:var(--color-text-muted)}
+.review-source{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--color-text-muted);
+  margin-top:var(--sp-3);background:var(--color-bg-alt);padding:5px 12px;border-radius:var(--radius-full)}
+.slider-arrow{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;
+  background:#fff;border:1px solid var(--color-border);box-shadow:var(--shadow-sm);cursor:pointer;
+  font-size:20px;line-height:1;color:var(--color-primary);display:flex;align-items:center;justify-content:center;
+  z-index:5;transition:.2s}
+.slider-arrow:hover{background:var(--color-primary);color:#fff;box-shadow:var(--shadow-md)}
+.slider-prev{left:-8px}
+.slider-next{right:-8px}
+.slider-dots{display:flex;justify-content:center;gap:8px;margin-top:var(--sp-3)}
+.slider-dots button{width:9px;height:9px;border-radius:50%;border:none;background:var(--color-border);
+  cursor:pointer;padding:0;transition:.2s}
+.slider-dots button.active{background:var(--color-primary);width:22px;border-radius:999px}
+
+/* ==================== FAQ ==================== */
+.faq-list{max-width:760px;margin:0 auto}
+.faq-item{border:1px solid var(--color-border);border-radius:var(--radius-md);margin-bottom:var(--sp-2);
+  background:#fff;overflow:hidden}
+.faq-q{width:100%;text-align:left;padding:18px var(--sp-3);background:none;border:none;cursor:pointer;
+  font-family:var(--font);font-size:16px;font-weight:600;color:var(--color-text);
+  display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq-q .arrow{transition:.25s;color:var(--color-primary);flex-shrink:0}
+.faq-item.open .arrow{transform:rotate(180deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease;padding:0 var(--sp-3);
+  color:var(--color-text-muted);font-size:15px}
+.faq-item.open .faq-a{max-height:300px;padding-bottom:18px}
+
+/* ==================== FORM ==================== */
+.register{background:linear-gradient(135deg,var(--color-primary) 0%,var(--color-primary-dark) 100%);color:#fff}
+.register-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:var(--sp-6);align-items:center}
+.register h2{font-size:32px;font-weight:800;margin-bottom:var(--sp-2)}
+.register .info p{opacity:.9;margin-bottom:var(--sp-2)}
+.register .hotline-box{background:rgba(255,255,255,.12);border-radius:var(--radius-md);padding:var(--sp-2) var(--sp-3);
+  font-weight:700;font-size:18px;display:inline-block}
+.qr-box{background:#fff;border-radius:var(--radius-md);padding:12px;display:inline-block;
+  text-align:center;margin-top:var(--sp-3);box-shadow:var(--shadow-md)}
+.qr-box img{width:140px;height:140px;display:block;border-radius:8px}
+.qr-box .qr-label{color:var(--color-text);font-size:13px;font-weight:600;margin-top:6px}
+.form-card{background:#fff;border-radius:var(--radius-lg);padding:var(--sp-4);box-shadow:var(--shadow-lg);color:var(--color-text)}
+.field{margin-bottom:var(--sp-2)}
+.field label{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+.field label .req{color:var(--color-error)}
+.field input,.field select,.field textarea{width:100%;padding:12px 14px;border:1.5px solid var(--color-border);
+  border-radius:var(--radius-sm);font-family:var(--font);font-size:16px;transition:.2s;background:#fff;color:var(--color-text)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--color-primary);
+  box-shadow:0 0 0 3px var(--color-primary-light)}
+.field.error input,.field.error select{border-color:var(--color-error)}
+.err-msg{color:var(--color-error);font-size:13px;margin-top:4px;display:none}
+.field.error .err-msg{display:block}
+.form-success{text-align:center;padding:var(--sp-4) 0;display:none}
+.form-success .big{font-size:56px}
+.form-success h3{font-size:22px;margin:var(--sp-1) 0}
+.form-success p{color:var(--color-text-muted)}
+
+/* ==================== TOAST ==================== */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);z-index:300;
+  padding:14px 24px;border-radius:var(--radius-md);color:#fff;font-weight:600;box-shadow:var(--shadow-lg);
+  transition:transform .3s;max-width:90vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--color-success)}
+.toast.error{background:var(--color-error)}
+
+/* ==================== FOOTER ==================== */
+footer{background:var(--color-dark);color:#CBD5E1;padding:var(--sp-6) 0 var(--sp-3)}
+.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-4)}
+footer h4{color:#fff;font-size:16px;margin-bottom:var(--sp-2)}
+footer .logo{color:#fff;display:inline-block;margin-bottom:var(--sp-1)}
+footer ul{list-style:none}
+footer li{margin-bottom:8px;font-size:14px}
+footer a{color:#CBD5E1;text-decoration:none}
+footer a:hover{color:#fff}
+.copyright{border-top:1px solid rgba(255,255,255,.12);padding-top:var(--sp-2);text-align:center;font-size:13px;opacity:.7}
+
+/* ==================== FLOATING CONTACT ==================== */
+.float-contact{position:fixed;right:16px;bottom:20px;z-index:200;display:flex;flex-direction:column;
+  align-items:flex-end;gap:10px}
+.float-item{display:flex;align-items:center;gap:8px;text-decoration:none;
+  opacity:0;pointer-events:none;transform:translateY(8px);transition:.25s}
+.float-contact.open .float-item{opacity:1;pointer-events:auto;transform:translateY(0)}
+.float-label{background:#fff;border-radius:var(--radius-full);padding:6px 14px;font-size:13px;font-weight:600;
+  color:var(--color-text);box-shadow:var(--shadow-md)}
+.float-btn{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:24px;color:#fff;box-shadow:var(--shadow-md);border:none;cursor:pointer;flex-shrink:0}
+.float-call{background:var(--color-success)}
+.float-zalo{background:#0068FF;font-weight:800;font-size:13px;font-family:var(--font)}
+.float-msg{background:linear-gradient(45deg,#0099FF,#A033FF)}
+.float-main{background:var(--color-accent);width:58px;height:58px;font-size:26px;
+  animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,122,41,.5)}70%{box-shadow:0 0 0 14px rgba(255,122,41,0)}100%{box-shadow:0 0 0 0 rgba(255,122,41,0)}}
+
+/* ==================== TABLET (768–1023px) ==================== */
+@media (max-width:1023px){
+  .grid-services{grid-template-columns:repeat(3,1fr)}
+  .grid-benefits,.grid-reviews{grid-template-columns:repeat(2,1fr)}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .hero h1{font-size:34px}
+  .process{grid-template-columns:repeat(2,1fr);row-gap:var(--sp-4)}
+  .step:nth-child(2)::after{display:none}
+}
+/* ==================== MOBILE (<768px) ==================== */
+@media (max-width:767px){
+  section{padding:var(--sp-6) 0}
+  h2.section-title{font-size:24px}
+  .hamburger{display:block}
+  .nav-links{display:none;position:absolute;top:68px;left:0;right:0;background:#fff;
+    flex-direction:column;padding:var(--sp-3);gap:var(--sp-2);box-shadow:var(--shadow-md)}
+  .nav-links.show{display:flex}
+  .hero-grid,.register-grid{grid-template-columns:1fr}
+  .hero h1{font-size:28px}
+  .hero .btn{width:100%}
+  .grid-services{grid-template-columns:repeat(2,1fr);gap:var(--sp-2)}
+  .card-service{padding:var(--sp-2)}
+  .grid-benefits{grid-template-columns:1fr}
+  .process{grid-template-columns:1fr}
+  .step::after{display:none!important}
+  .footer-grid{grid-template-columns:1fr}
+  .register h2{font-size:24px}
+  .form-card{padding:var(--sp-3)}
+  .slider-arrow{width:34px;height:34px;font-size:17px}
+  .slider-prev{left:-4px}
+  .slider-next{right:-4px}
+  .card-review{padding:var(--sp-3)}
+  .card-review p.quote{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== PROMO BAR ==================== -->
+<div class="promo-bar">
+  <div class="container">
+    <span>🏆 <b>Cam kết đột phá:</b> Đậu Visa mới thu phí dịch vụ</span>
+    <span class="promo-sub">— Trượt visa, bạn không mất một đồng phí dịch vụ nào!</span>
+  </div>
+</div>
+
+<!-- ==================== NAVBAR ==================== -->
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="#banner" class="logo"><img src="assets/logo.png" alt="Logo Top Visa">Top <span>Visa</span></a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#dich-vu">🧳 Dịch vụ</a></li>
+      <li><a href="#loi-ich">⭐ Lợi ích</a></li>
+      <li><a href="#danh-gia">💬 Đánh giá</a></li>
+      <li><a href="#faq">❓ FAQ</a></li>
+      <li><a href="#dang-ky" class="btn btn-cta" style="padding:10px 20px">📝 Đăng ký tư vấn</a></li>
+    </ul>
+    <button class="hamburger" id="hamburger" aria-label="Mở menu">☰</button>
+  </div>
+</nav>
+
+<!-- ==================== HERO / BANNER ==================== -->
+<header class="hero" id="banner">
+  <div class="container hero-grid">
+    <div>
+      <h1>Dịch vụ Visa trọn gói —<br><em>Đậu cao, xử lý nhanh</em>, hỗ trợ tận tâm</h1>
+      <p class="lead">Chuyên visa Nhật Bản, Hàn Quốc, Đài Loan, Trung Quốc, Schengen, Mỹ, Úc. Tư vấn miễn phí, làm hồ sơ từ A đến Z, cam kết minh bạch chi phí — <b>đậu visa mới thu phí dịch vụ</b>.</p>
+      <a href="#dang-ky" class="btn btn-cta">✈ Đăng ký tư vấn miễn phí</a>
+      <div class="usp-highlight">
+        <span class="usp-icon">🛡️</span>
+        <div>
+          <strong>Cam kết đột phá — Đậu Visa Mới Thu Phí Dịch Vụ</strong>
+          <p>Hồ sơ trượt, bạn không mất một đồng phí dịch vụ nào. Điểm khác biệt Top Visa tự tin khẳng định — chưa dịch vụ visa nào tại Đà Nẵng dám cam kết như vậy.</p>
+        </div>
+      </div>
+      <div class="badges">
+        <div class="badge badge-accent"><b>✓</b> Đậu mới thu phí</div>
+        <div class="badge"><b>✓</b> 5000+ hồ sơ thành công</div> <!-- [THAY_THẾ] số liệu thật -->
+        <div class="badge"><b>✓</b> 98% tỷ lệ đậu visa</div>     <!-- [THAY_THẾ] số liệu thật -->
+        <div class="badge"><b>✓</b> Hỗ trợ 24/7</div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <span class="plane">🛂✈️</span>
+      <div class="flags">🇯🇵 🇰🇷 🇹🇼 🇨🇳 🇪🇺 🇺🇸 🇦🇺</div>
+      <p>Đồng hành cùng bạn trên mọi hành trình — du lịch, công tác, thăm thân</p>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== DỊCH VỤ ==================== -->
+<section id="dich-vu">
+  <div class="container">
+    <h2 class="section-title">Dịch vụ Visa các quốc gia</h2>
+    <p class="section-sub">Chọn quốc gia bạn muốn đến — chúng tôi lo phần còn lại</p>
+    <div class="grid-services">
+      <div class="card-service"><div class="flag">🇯🇵</div><h3>Visa Nhật Bản</h3><p>Du lịch, công tác, thăm thân, kỹ năng đặc định</p><div class="price">Từ 1.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Nhật Bản')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag">🇰🇷</div><h3>Visa Hàn Quốc</h3><p>Du lịch, công tác, visa 5 năm nhiều lần</p><div class="price">Từ 1.400.000đ</div><button class="btn btn-outline" onclick="pickCountry('Hàn Quốc')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag">🇹🇼</div><h3>Visa Đài Loan</h3><p>Du lịch, công tác, e-visa Quan Hồng</p><div class="price">Từ 1.200.000đ</div><button class="btn btn-outline" onclick="pickCountry('Đài Loan')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag">🇨🇳</div><h3>Visa Trung Quốc</h3><p>Du lịch, thương mại, nhiều lần nhập cảnh</p><div class="price">Từ 1.800.000đ</div><button class="btn btn-outline" onclick="pickCountry('Trung Quốc')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag">🇪🇺</div><h3>Visa Schengen</h3><p>26 nước châu Âu — Pháp, Đức, Ý, Hà Lan...</p><div class="price">Từ 4.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Schengen (châu Âu)')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag">🇺🇸</div><h3>Visa Mỹ</h3><p>Du lịch B1/B2, phỏng vấn, gia hạn</p><div class="price">Từ 5.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Mỹ')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag">🇦🇺</div><h3>Visa Úc</h3><p>Du lịch, thăm thân, công tác online</p><div class="price">Từ 4.000.000đ</div><button class="btn btn-outline" onclick="pickCountry('Úc')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag">🌏</div><h3>Quốc gia khác</h3><p>Canada, Anh, New Zealand, Dubai...</p><div class="price">Liên hệ báo giá</div><button class="btn btn-outline" onclick="pickCountry('Khác')">Tư vấn ngay</button></div>
+    </div>
+    <!-- Lưu ý: giá "Từ x đ" là placeholder — [THAY_THẾ] bằng bảng giá thật trước khi chạy quảng cáo -->
+  </div>
+</section>
+
+<!-- ==================== LỢI ÍCH ==================== -->
+<section id="loi-ich" class="bg-alt">
+  <div class="container">
+    <h2 class="section-title">Vì sao chọn chúng tôi?</h2>
+    <p class="section-sub">Hơn cả một dịch vụ — chúng tôi là người đồng hành</p>
+    <div class="usp-banner">
+      <div class="usp-banner-icon">🏆</div>
+      <div>
+        <h3>Cam kết chưa từng có: Đậu Visa Mới Thu Phí Dịch Vụ</h3>
+        <p>Không đậu — không mất phí dịch vụ. Bạn chỉ thanh toán phí dịch vụ khi hồ sơ chính thức được cấp visa. Đây là điểm khác biệt Top Visa tự tin khẳng định chưa dịch vụ visa nào trên thị trường dám cam kết.</p>
+      </div>
+    </div>
+    <div class="grid-benefits">
+      <div class="card-benefit"><div class="icon">⚡</div><h3>Xử lý nhanh chóng</h3><p>Quy trình tối ưu, hồ sơ hoàn thiện trong 1–3 ngày làm việc, có gói khẩn cho khách gấp.</p></div>
+      <div class="card-benefit"><div class="icon">🎯</div><h3>Tỷ lệ đậu cao</h3><p>Chuyên viên nhiều năm kinh nghiệm rà soát hồ sơ kỹ trước khi nộp, hạn chế tối đa rủi ro trượt.</p></div>
+      <div class="card-benefit"><div class="icon">💰</div><h3>Chi phí minh bạch</h3><p>Báo giá trọn gói ngay từ đầu, không phát sinh phí ẩn trong suốt quá trình.</p></div>
+      <div class="card-benefit"><div class="icon">🕐</div><h3>Hỗ trợ 24/7</h3><p>Tư vấn qua điện thoại, Zalo, Messenger mọi khung giờ, kể cả cuối tuần.</p></div>
+      <div class="card-benefit"><div class="icon">📋</div><h3>Trọn gói từ A–Z</h3><p>Từ tư vấn, dịch thuật, khai form, đặt lịch hẹn đến nhận kết quả — bạn không phải làm gì cả.</p></div>
+      <div class="card-benefit"><div class="icon">🔒</div><h3>Bảo mật thông tin</h3><p>Thông tin cá nhân và giấy tờ được bảo mật tuyệt đối, chỉ dùng cho mục đích xin visa.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== QUY TRÌNH ==================== -->
+<section id="quy-trinh">
+  <div class="container">
+    <h2 class="section-title">Quy trình đơn giản — chỉ 4 bước</h2>
+    <p class="section-sub">Bạn cung cấp thông tin, chúng tôi lo mọi thứ còn lại</p>
+    <div class="process">
+      <div class="step"><div class="num">1</div><h3>Tư vấn miễn phí</h3><p>Gọi điện hoặc để lại thông tin, chuyên viên tư vấn loại visa phù hợp</p></div>
+      <div class="step"><div class="num">2</div><h3>Chuẩn bị hồ sơ</h3><p>Hướng dẫn giấy tờ chi tiết, hỗ trợ dịch thuật và khai form</p></div>
+      <div class="step"><div class="num">3</div><h3>Nộp hồ sơ</h3><p>Đặt lịch và nộp hồ sơ tại đại sứ quán / trung tâm tiếp nhận</p></div>
+      <div class="step"><div class="num">4</div><h3>Nhận kết quả</h3><p>Theo dõi tiến trình và bàn giao visa tận tay</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ĐÁNH GIÁ ==================== -->
+<section id="danh-gia" class="bg-alt">
+  <div class="container">
+    <h2 class="section-title">Khách hàng nói gì về chúng tôi</h2>
+    <p class="section-sub">Trích đánh giá thật từ Facebook — bấm mũi tên hoặc chấm tròn để xem thêm</p>
+
+    <div class="reviews-slider" id="reviewsSlider">
+      <button class="slider-arrow slider-prev" id="reviewPrev" aria-label="Xem đánh giá trước">‹</button>
+      <div class="reviews-viewport">
+        <div class="reviews-track" id="reviewsTrack">
+
+          <div class="review-slide">
+            <div class="card-review">
+              <div class="stars">★★★★★</div>
+              <p class="quote">"Làm visa thủ tục nhanh gọn, dịch vụ nói chung rất tốt."</p>
+              <div class="reviewer">
+                <div class="avatar">K</div>
+                <div class="reviewer-info">
+                  <div class="name">Anh Võ Kiên</div>
+                  <div class="type">Khách hàng dịch vụ visa Nhật Bản</div>
+                </div>
+              </div>
+              <div class="review-source">📘 Đánh giá thật trên Facebook · 08/2025</div>
+            </div>
+          </div>
+
+          <div class="review-slide">
+            <div class="card-review">
+              <div class="stars">★★★★★</div>
+              <p class="quote">"Nhân viên hướng dẫn nhiệt tình, lịch sự, giải đáp mọi thắc mắc dù nhiều việc không thuộc chuyên môn. Visa ra nhanh như tia chớp — chắc chắn sẽ giới thiệu cho bạn bè!"</p>
+              <div class="reviewer">
+                <div class="avatar">P</div>
+                <div class="reviewer-info">
+                  <div class="name">Pon Tí Tởn</div>
+                  <div class="type">Khách hàng dịch vụ visa Nhật Bản</div>
+                </div>
+              </div>
+              <div class="review-source">📘 Đánh giá thật trên Facebook · 06/2022</div>
+            </div>
+          </div>
+
+          <!-- Thêm đánh giá mới: copy nguyên khối <div class="review-slide">...</div> ở trên,
+               sửa nội dung (sao, câu nói, tên, loại khách, nguồn), dán thêm vào đây.
+               Không cần sửa JS — slider tự nhận thêm slide mới. -->
+
+        </div>
+      </div>
+      <button class="slider-arrow slider-next" id="reviewNext" aria-label="Xem đánh giá tiếp theo">›</button>
+    </div>
+    <div class="slider-dots" id="reviewDots"></div>
+  </div>
+</section>
+
+<!-- ==================== FAQ ==================== -->
+<section id="faq">
+  <div class="container">
+    <h2 class="section-title">Câu hỏi thường gặp</h2>
+    <p class="section-sub">Giải đáp nhanh những thắc mắc phổ biến nhất</p>
+    <div class="faq-list">
+      <div class="faq-item"><button class="faq-q">Thời gian xin visa mất bao lâu?<span class="arrow">▼</span></button><div class="faq-a">Tùy quốc gia: Đài Loan 5–7 ngày, Nhật/Hàn 7–10 ngày làm việc, Trung Quốc 4–7 ngày, Schengen 15–20 ngày, Mỹ tùy lịch phỏng vấn. Chúng tôi sẽ báo thời gian cụ thể khi tư vấn.</div></div>
+      <div class="faq-item"><button class="faq-q">Trượt visa có mất phí dịch vụ không?<span class="arrow">▼</span></button><div class="faq-a">Không. Top Visa CHỈ thu phí dịch vụ khi hồ sơ đậu visa — nếu trượt, bạn không phải trả phí dịch vụ. Riêng phí lãnh sự (nộp trực tiếp cho Đại sứ quán/Trung tâm tiếp nhận hồ sơ) theo quy định chung của từng nước và không hoàn lại. Mọi điều khoản được ghi rõ bằng văn bản trước khi bạn quyết định.</div></div>
+      <div class="faq-item"><button class="faq-q">Tôi cần chuẩn bị những giấy tờ gì?<span class="arrow">▼</span></button><div class="faq-a">Cơ bản gồm: hộ chiếu còn hạn 6 tháng, ảnh thẻ, giấy tờ chứng minh công việc và tài chính. Danh sách chi tiết khác nhau theo từng nước — chuyên viên sẽ gửi checklist đầy đủ khi tư vấn.</div></div>
+      <div class="faq-item"><button class="faq-q">Hồ sơ tài chính yếu có xin được visa không?<span class="arrow">▼</span></button><div class="faq-a">Vẫn có phương án. Chuyên viên sẽ đánh giá hồ sơ thực tế và tư vấn cách bổ sung, chọn loại visa và quốc gia phù hợp để tăng khả năng đậu, không khai gian thông tin.</div></div>
+      <div class="faq-item"><button class="faq-q">Tôi ở tỉnh xa, có làm được không?<span class="arrow">▼</span></button><div class="faq-a">Được. Toàn bộ tư vấn và nhận giấy tờ thực hiện online/chuyển phát nhanh. Chỉ visa Mỹ và một số trường hợp Schengen cần có mặt để phỏng vấn/lăn tay — chúng tôi sẽ đặt lịch giúp bạn.</div></div>
+      <div class="faq-item"><button class="faq-q">Chi phí dịch vụ gồm những gì?<span class="arrow">▼</span></button><div class="faq-a">Báo giá trọn gói gồm: phí lãnh sự + phí dịch vụ (tư vấn, dịch thuật, khai form, đặt lịch). Không phát sinh thêm. Bạn nhận báo giá chi tiết bằng văn bản trước khi quyết định.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FORM ĐĂNG KÝ ==================== -->
+<section id="dang-ky" class="register">
+  <div class="container register-grid">
+    <div class="info">
+      <h2>Đăng ký tư vấn miễn phí</h2>
+      <p>Để lại thông tin, chuyên viên sẽ gọi lại tư vấn trong vòng <b>24 giờ</b> (thường trong 30 phút giờ hành chính).</p>
+      <p>Hoặc gọi ngay hotline:</p>
+      <div class="hotline-box">📞 <span class="js-hotline">0935 887 922</span></div>
+      <div class="qr-box">
+        <img src="assets/qr-zalo.png" alt="QR Zalo Top Visa" loading="lazy">
+        <div class="qr-label">Quét mã QR để chat Zalo</div>
+      </div>
+    </div>
+    <div class="form-card">
+      <form id="leadForm" novalidate>
+        <div class="field" id="f-name">
+          <label>Họ và tên <span class="req">*</span></label>
+          <input type="text" id="name" placeholder="Nguyễn Văn A" autocomplete="name">
+          <div class="err-msg">Vui lòng nhập họ tên (ít nhất 2 ký tự)</div>
+        </div>
+        <div class="field" id="f-phone">
+          <label>Số điện thoại <span class="req">*</span></label>
+          <input type="tel" id="phone" placeholder="0912 345 678" autocomplete="tel">
+          <div class="err-msg">Số điện thoại không hợp lệ (VD: 0912345678)</div>
+        </div>
+        <div class="field" id="f-country">
+          <label>Quốc gia muốn xin Visa</label>
+          <select id="country">
+            <option value="">-- Chọn quốc gia --</option>
+            <option>Nhật Bản</option><option>Hàn Quốc</option><option>Đài Loan</option>
+            <option>Trung Quốc</option><option>Schengen (châu Âu)</option><option>Mỹ</option>
+            <option>Úc</option><option>Canada</option><option>Anh</option><option>Khác</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Ghi chú</label>
+          <textarea id="note" rows="3" placeholder="VD: Cần visa gấp trong 2 tuần, đi cùng gia đình 4 người..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-cta" id="submitBtn" style="width:100%">Gửi đăng ký →</button>
+        <p style="font-size:12px;color:var(--color-text-muted);margin-top:10px;text-align:center">🔒 Thông tin của bạn được bảo mật tuyệt đối</p>
+      </form>
+      <div class="form-success" id="formSuccess">
+        <div class="big">🎉</div>
+        <h3>Đăng ký thành công!</h3>
+        <p>Cảm ơn bạn. Chuyên viên sẽ liên hệ trong vòng 24 giờ.<br>Cần gấp? Gọi ngay <b class="js-hotline">0935 887 922</b></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer id="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="#banner" class="logo"><img src="assets/logo.png" alt="Logo Top Visa">Top <span>Visa</span></a>
+        <p style="font-size:14px">Dịch vụ visa trọn gói uy tín tại Đà Nẵng — nhanh chóng, minh bạch, tận tâm.</p>
+      </div>
+      <div>
+        <h4>Dịch vụ</h4>
+        <ul>
+          <li><a href="#dich-vu">Visa Nhật Bản</a></li>
+          <li><a href="#dich-vu">Visa Hàn Quốc</a></li>
+          <li><a href="#dich-vu">Visa Schengen</a></li>
+          <li><a href="#dich-vu">Visa Mỹ – Úc</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Liên hệ</h4>
+        <ul>
+          <li>📍 303 Âu Cơ, Liên Chiểu, Đà Nẵng</li>
+          <li>📞 <a class="js-tel-link" href="tel:0935887922"><span class="js-hotline">0935 887 922</span></a></li>
+          <li>✉️ <a href="mailto:hien.gotravel@gmail.com">hien.gotravel@gmail.com</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Kết nối</h4>
+        <ul>
+          <li><a href="https://www.facebook.com/share/1EVr8W3p2E/" class="js-fb-link" target="_blank" rel="noopener">Facebook công ty</a></li>
+          <li><a href="https://www.facebook.com/share/1ei5XS6zJE/" target="_blank" rel="noopener">Facebook tư vấn viên</a></li>
+          <li><a href="https://zalo.me/0935887922" class="js-zalo-link" target="_blank" rel="noopener">Zalo: 0935 887 922</a></li>
+        </ul>
+        <img src="assets/qr-zalo.png" alt="QR Zalo" loading="lazy" style="width:110px;border-radius:8px;margin-top:8px;background:#fff;padding:6px">
+      </div>
+    </div>
+    <div class="copyright">© 2026 <span class="js-company">Top Visa</span>. GPKD số [THAY_THẾ] do Sở KH&ĐT cấp. <!-- [THAY_THẾ] thông tin pháp lý --></div>
+  </div>
+</footer>
+
+<!-- ==================== NÚT LIÊN HỆ NỔI ==================== -->
+<div class="float-contact" id="floatContact">
+  <a class="float-item js-tel-link" href="tel:0935887922"><span class="float-label">Gọi điện</span><span class="float-btn float-call">📞</span></a>
+  <a class="float-item js-zalo-link" href="https://zalo.me/0935887922" target="_blank" rel="noopener"><span class="float-label">Chat Zalo</span><span class="float-btn float-zalo">Zalo</span></a>
+  <a class="float-item js-fb-link" href="https://www.facebook.com/share/1EVr8W3p2E/" target="_blank" rel="noopener"><span class="float-label">Facebook</span><span class="float-btn float-msg">💬</span></a>
+  <button class="float-btn float-main" id="floatToggle" aria-label="Liên hệ nhanh">💬</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================== ÁP DỤNG CẤU HÌNH LIÊN HỆ ==================== */
+(function(){
+  const fmt = HOTLINE.replace(/(\d{4})(\d{3})(\d{3})/,'$1 $2 $3');
+  document.querySelectorAll('.js-hotline').forEach(e=>e.textContent=fmt);
+  document.querySelectorAll('.js-tel-link').forEach(e=>e.href='tel:'+HOTLINE);
+  document.querySelectorAll('.js-zalo-link').forEach(e=>e.href='https://zalo.me/'+ZALO_PHONE);
+  document.querySelectorAll('.js-fb-link').forEach(e=>e.href=FACEBOOK_URL);
+  document.querySelectorAll('.js-company').forEach(e=>e.textContent=COMPANY_NAME);
+})();
+
+/* ==================== MENU MOBILE ==================== */
+const navLinks = document.getElementById('navLinks');
+document.getElementById('hamburger').addEventListener('click',()=>navLinks.classList.toggle('show'));
+navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('show')));
+
+/* ==================== SCROLLSPY MENU (highlight mục đang xem) ==================== */
+(function(){
+  const navAnchors = [...navLinks.querySelectorAll('a[href^="#"]')];
+  const sections = navAnchors.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  if(!sections.length) return;
+  const spy = new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        navAnchors.forEach(a=>a.classList.toggle('active', a.getAttribute('href')==='#'+entry.target.id));
+      }
+    });
+  },{rootMargin:'-40% 0px -55% 0px'});
+  sections.forEach(s=>spy.observe(s));
+})();
+
+/* ==================== SLIDER ĐÁNH GIÁ (Khách hàng nói gì) ==================== */
+(function(){
+  const track = document.getElementById('reviewsTrack');
+  if(!track) return;
+  const slides = Array.from(track.children);
+  if(!slides.length) return;
+  const dotsWrap = document.getElementById('reviewDots');
+  const prevBtn  = document.getElementById('reviewPrev');
+  const nextBtn  = document.getElementById('reviewNext');
+  const slider   = document.getElementById('reviewsSlider');
+  let index = 0, timer = null;
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.setAttribute('aria-label', 'Xem đánh giá số ' + (i + 1));
+    dot.addEventListener('click', () => goTo(i));
+    dotsWrap.appendChild(dot);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function update(){
+    track.style.transform = 'translateX(-' + (index * 100) + '%)';
+    dots.forEach((d, i) => d.classList.toggle('active', i === index));
+  }
+  function goTo(i){
+    index = (i + slides.length) % slides.length;
+    update();
+    restartAutoplay();
+  }
+  function restartAutoplay(){
+    clearInterval(timer);
+    if(slides.length > 1) timer = setInterval(() => goTo(index + 1), 6000);
+  }
+
+  if(slides.length > 1){
+    prevBtn.addEventListener('click', () => goTo(index - 1));
+    nextBtn.addEventListener('click', () => goTo(index + 1));
+
+    // Vuốt trái/phải trên điện thoại
+    let startX = null;
+    track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true});
+    track.addEventListener('touchend', e => {
+      if(startX === null) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      if(Math.abs(dx) > 40) goTo(dx < 0 ? index + 1 : index - 1);
+      startX = null;
+    }, {passive:true});
+
+    // Rê chuột vào thì tạm dừng tự động chuyển slide
+    slider.addEventListener('mouseenter', () => clearInterval(timer));
+    slider.addEventListener('mouseleave', restartAutoplay);
+  } else {
+    // Chỉ 1 đánh giá: ẩn nút mũi tên và chấm tròn, không cần tự động chuyển
+    prevBtn.style.display = 'none';
+    nextBtn.style.display = 'none';
+    dotsWrap.style.display = 'none';
+  }
+
+  update();
+  restartAutoplay();
+})();
+
+/* ==================== FAQ ACCORDION ==================== */
+document.querySelectorAll('.faq-q').forEach(btn=>{
+  btn.addEventListener('click',()=>btn.parentElement.classList.toggle('open'));
+});
+
+/* ==================== NÚT NỔI ==================== */
+document.getElementById('floatToggle').addEventListener('click',()=>{
+  document.getElementById('floatContact').classList.toggle('open');
+});
+
+/* ==================== CHỌN QUỐC GIA TỪ CARD ==================== */
+function pickCountry(name){
+  const sel = document.getElementById('country');
+  [...sel.options].forEach(o=>{ if(o.text===name) sel.value=o.value||o.text; });
+  document.getElementById('dang-ky').scrollIntoView({behavior:'smooth'});
+}
+
+/* ==================== TOAST ==================== */
+function showToast(msg,type){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show '+type;
+  setTimeout(()=>t.classList.remove('show'),5000);
+}
+
+/* ==================== VALIDATE & GỬI FORM ==================== */
+function normalizePhone(raw){
+  let p = raw.replace(/[\s.\-()]/g,'');
+  if(p.startsWith('+84')) p = '0'+p.slice(3);
+  else if(p.startsWith('84') && p.length===11) p = '0'+p.slice(2);
+  return p;
+}
+function isValidPhone(p){ return /^0(3|5|7|8|9)\d{8}$/.test(p); }
+
+let lastSubmit = 0; // chống spam: 60 giây
+document.getElementById('leadForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const fName=document.getElementById('f-name'), fPhone=document.getElementById('f-phone');
+  fName.classList.remove('error'); fPhone.classList.remove('error');
+
+  const name = document.getElementById('name').value.trim();
+  const phone = normalizePhone(document.getElementById('phone').value);
+  const country = document.getElementById('country').value || 'Chưa chọn';
+  const note = document.getElementById('note').value.trim();
+
+  let ok = true;
+  if(name.length<2){ fName.classList.add('error'); ok=false; }
+  if(!isValidPhone(phone)){ fPhone.classList.add('error'); ok=false; }
+  if(!ok) return;
+
+  if(Date.now()-lastSubmit < 60000){
+    showToast('Bạn vừa gửi đăng ký. Vui lòng chờ 1 phút trước khi gửi lại.','error'); return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Đang gửi...';
+
+  try{
+    if(!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('CHUA_CAU_HINH');
+    const res = await fetch(SUPABASE_URL+'/rest/v1/leads',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey':SUPABASE_ANON_KEY,
+        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+        'Prefer':'return=minimal'
+      },
+      body: JSON.stringify({ name, phone, country, note })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    lastSubmit = Date.now();
+    document.getElementById('leadForm').style.display='none';
+    document.getElementById('formSuccess').style.display='block';
+    showToast('🎉 Đăng ký thành công! Chúng tôi sẽ liên hệ sớm.','success');
+  }catch(err){
+    const hotlineFmt = HOTLINE.replace(/(\d{4})(\d{3})(\d{3})/,'$1 $2 $3');
+    showToast('Không gửi được lúc này. Vui lòng gọi '+hotlineFmt+' hoặc chat Zalo để được hỗ trợ ngay!','error');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Gửi đăng ký →';
+  }
+});
+</script>
+</body>
+</html>

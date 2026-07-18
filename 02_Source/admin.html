@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trang quản trị – Top Visa</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script>
+/* ============================================================
+   ⚙️ CẤU HÌNH — dán CÙNG 2 giá trị như trong index.html
+   ============================================================ */
+const SUPABASE_URL      = "";   // ← dán Project URL
+const SUPABASE_ANON_KEY = "";   // ← dán anon public key
+</script>
+<style>
+:root{
+  --p:#1B6EF3; --pd:#0F4FC2; --pl:#E8F1FE; --acc:#FF7A29;
+  --ok:#16A34A; --err:#DC2626; --warn:#D97706;
+  --tx:#1E293B; --mut:#64748B; --bg:#F6F9FE; --bd:#E2E8F0; --dark:#0F1E3D;
+  --r:12px; --sh:0 8px 24px rgba(15,30,61,.12);
+  --font:'Be Vietnam Pro',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:15px;line-height:1.5}
+.hidden{display:none!important}
+.btn{padding:10px 18px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font);
+  font-weight:600;font-size:14px;transition:.15s}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--pd)}
+.btn-g{background:#fff;color:var(--tx);border:1px solid var(--bd)}.btn-g:hover{background:var(--pl)}
+.btn-d{background:#FEE2E2;color:var(--err)}.btn-d:hover{background:#FECACA}
+.btn-ok{background:var(--ok);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{padding:10px 12px;border:1.5px solid var(--bd);border-radius:8px;
+  font-family:var(--font);font-size:15px;background:#fff;color:var(--tx);width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--p)}
+label{font-weight:600;font-size:13px;display:block;margin:12px 0 5px}
+
+/* login */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.login-card{background:#fff;border-radius:16px;box-shadow:var(--sh);padding:36px;width:100%;max-width:400px}
+.login-card h1{font-size:22px;margin-bottom:4px}
+.login-card p{color:var(--mut);font-size:14px;margin-bottom:12px}
+.login-err{background:#FEE2E2;color:var(--err);padding:10px 14px;border-radius:8px;font-size:14px;margin-top:12px}
+
+/* app */
+header.bar{background:var(--dark);color:#fff;padding:0 20px;display:flex;align-items:center;
+  justify-content:space-between;height:58px;position:sticky;top:0;z-index:50}
+.bar .brand{font-weight:800}.bar .brand span{color:var(--acc)}
+.bar .who{font-size:13px;opacity:.8;margin-right:12px}
+.tabs{display:flex;gap:6px;background:#fff;padding:10px 20px;border-bottom:1px solid var(--bd);
+  position:sticky;top:58px;z-index:40;overflow-x:auto}
+.tab{padding:9px 18px;border-radius:999px;border:none;background:none;font-family:var(--font);
+  font-weight:600;font-size:14px;cursor:pointer;color:var(--mut);white-space:nowrap}
+.tab.active{background:var(--pl);color:var(--p)}
+main{padding:20px;max-width:1200px;margin:0 auto}
+.panel-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.panel-head h2{font-size:19px}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filters input,.filters select{width:auto;font-size:14px;padding:8px 10px}
+
+/* table */
+.tbl-wrap{background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(15,30,61,.08);overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th{background:var(--dark);color:#fff;text-align:left;padding:11px 12px;font-size:13px;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--bd);font-size:14px;vertical-align:top}
+tr:hover td{background:var(--pl)}
+.pill{padding:3px 12px;border-radius:999px;font-size:12px;font-weight:700;display:inline-block}
+.pill-new{background:var(--pl);color:var(--p)}
+.pill-called{background:#FEF3C7;color:var(--warn)}
+.pill-won{background:#DCFCE7;color:var(--ok)}
+.pill-lost{background:#F1F5F9;color:var(--mut)}
+td select{width:auto;font-size:13px;padding:5px 8px}
+.empty{text-align:center;color:var(--mut);padding:40px}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(15,30,61,.5);z-index:100;display:flex;
+  align-items:center;justify-content:center;padding:16px}
+.modal{background:#fff;border-radius:16px;box-shadow:var(--sh);width:100%;max-width:600px;
+  max-height:90vh;overflow-y:auto;padding:28px}
+.modal h3{font-size:18px;margin-bottom:8px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(150%);z-index:300;
+  padding:13px 22px;border-radius:10px;color:#fff;font-weight:600;box-shadow:var(--sh);transition:.3s;font-size:14px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--ok)}.toast.err{background:var(--err)}
+
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{background:#fff;border-radius:var(--r);padding:14px 18px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
+.stat .n{font-size:24px;font-weight:800;color:var(--p)}
+.stat .l{font-size:13px;color:var(--mut)}
+@media(max-width:700px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- ============ MÀN HÌNH ĐĂNG NHẬP ============ -->
+<div class="login-wrap" id="loginView">
+  <div class="login-card">
+    <h1>🔒 Trang quản trị</h1>
+    <p>Đăng nhập bằng tài khoản admin đã tạo trong Supabase</p>
+    <form id="loginForm">
+      <label>Email</label>
+      <input type="email" id="email" required autocomplete="username">
+      <label>Mật khẩu</label>
+      <input type="password" id="password" required autocomplete="current-password">
+      <div class="login-err hidden" id="loginErr"></div>
+      <button type="submit" class="btn btn-p" style="width:100%;margin-top:16px" id="loginBtn">Đăng nhập</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ ỨNG DỤNG ============ -->
+<div id="appView" class="hidden">
+  <header class="bar">
+    <div class="brand" style="display:flex;align-items:center;gap:10px"><img src="assets/logo.png" alt="" style="height:32px;width:32px">Top <span>Visa</span> Admin</div>
+    <div style="display:flex;align-items:center">
+      <span class="who" id="whoami"></span>
+      <button class="btn btn-g" onclick="logout()">Đăng xuất</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="leads" onclick="switchTab('leads')">📋 Khách đăng ký</button>
+    <button class="tab" data-tab="posts" onclick="switchTab('posts')">📝 Bài viết</button>
+    <button class="tab" data-tab="cats" onclick="switchTab('cats')">🗂 Danh mục</button>
+  </nav>
+
+  <main>
+    <!-- ===== TAB LEADS ===== -->
+    <section id="tab-leads">
+      <div class="stat-row" id="statRow"></div>
+      <div class="panel-head">
+        <h2>Danh sách khách đăng ký</h2>
+        <div class="filters">
+          <select id="fStatus" onchange="renderLeads()">
+            <option value="">Tất cả trạng thái</option>
+            <option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option>
+          </select>
+          <select id="fCountry" onchange="renderLeads()"><option value="">Tất cả quốc gia</option></select>
+          <input type="search" id="fSearch" placeholder="Tìm tên / SĐT..." oninput="renderLeads()" style="width:170px">
+          <button class="btn btn-ok" onclick="exportCSV()">⬇ Xuất CSV</button>
+          <button class="btn btn-g" onclick="loadLeads()">↻ Tải lại</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Thời gian</th><th>Họ tên</th><th>SĐT</th><th>Quốc gia</th><th>Ghi chú</th><th>Trạng thái</th></tr></thead>
+          <tbody id="leadsBody"></tbody>
+        </table>
+        <div class="empty hidden" id="leadsEmpty">Chưa có khách đăng ký nào</div>
+      </div>
+    </section>
+
+    <!-- ===== TAB POSTS ===== -->
+    <section id="tab-posts" class="hidden">
+      <div class="panel-head">
+        <h2>Bài viết</h2>
+        <button class="btn btn-p" onclick="openPostModal()">+ Thêm bài viết</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Tiêu đề</th><th>Danh mục</th><th>Ngày tạo</th><th>Hiển thị</th><th>Thao tác</th></tr></thead>
+          <tbody id="postsBody"></tbody>
+        </table>
+        <div class="empty hidden" id="postsEmpty">Chưa có bài viết nào</div>
+      </div>
+    </section>
+
+    <!-- ===== TAB CATEGORIES ===== -->
+    <section id="tab-cats" class="hidden">
+      <div class="panel-head">
+        <h2>Danh mục bài viết</h2>
+        <div class="filters">
+          <input type="text" id="newCatName" placeholder="Tên danh mục mới" style="width:200px">
+          <button class="btn btn-p" onclick="addCategory()">+ Thêm</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table style="min-width:400px">
+          <thead><tr><th>#</th><th>Tên danh mục</th><th>Thao tác</th></tr></thead>
+          <tbody id="catsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ MODAL BÀI VIẾT ============ -->
+<div class="overlay hidden" id="postOverlay">
+  <div class="modal">
+    <h3 id="postModalTitle">Thêm bài viết</h3>
+    <input type="hidden" id="postId">
+    <label>Tiêu đề *</label>
+    <input type="text" id="postTitle">
+    <label>Danh mục</label>
+    <select id="postCat"></select>
+    <label>Link ảnh đại diện (URL)</label>
+    <input type="url" id="postImage" placeholder="https://... (tải ảnh lên postimages.org để lấy link miễn phí)">
+    <label>Nội dung</label>
+    <textarea id="postContent" rows="8" placeholder="Nội dung bài viết..."></textarea>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:14px">
+      <input type="checkbox" id="postPublished" checked style="width:auto"> Hiển thị công khai
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-g" onclick="closePostModal()">Hủy</button>
+      <button class="btn btn-p" id="postSaveBtn" onclick="savePost()">Lưu bài viết</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================== TIỆN ÍCH CHUNG ==================== */
+let TOKEN = null, LEADS = [], POSTS = [], CATS = [];
+const $ = id => document.getElementById(id);
+const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg,type='ok'){ const t=$('toast'); t.textContent=msg; t.className='toast show '+type;
+  setTimeout(()=>t.classList.remove('show'),4000); }
+function fmtTime(iso){ const d=new Date(iso);
+  return d.toLocaleDateString('vi-VN')+' '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}); }
+
+async function api(path, opts={}){
+  const res = await fetch(SUPABASE_URL+'/rest/v1/'+path, {
+    ...opts,
+    headers:{
+      'Content-Type':'application/json',
+      'apikey':SUPABASE_ANON_KEY,
+      'Authorization':'Bearer '+(TOKEN||SUPABASE_ANON_KEY),
+      'Prefer': opts.prefer || 'return=representation',
+      ...(opts.headers||{})
+    }
+  });
+  if(res.status===401){ toast('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại','err'); logout(); throw new Error('401'); }
+  if(!res.ok) throw new Error('HTTP '+res.status+': '+await res.text());
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
+/* ==================== ĐĂNG NHẬP ==================== */
+$('loginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  if(!SUPABASE_URL||!SUPABASE_ANON_KEY){
+    $('loginErr').textContent='Chưa cấu hình SUPABASE_URL / ANON_KEY ở đầu file admin.html (xem 07_Huong_dan_Deploy.md, Bước 1).';
+    $('loginErr').classList.remove('hidden'); return;
+  }
+  const btn=$('loginBtn'); btn.disabled=true; btn.textContent='Đang đăng nhập...';
+  $('loginErr').classList.add('hidden');
+  try{
+    const res = await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+      body:JSON.stringify({email:$('email').value.trim(),password:$('password').value})
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error_description||data.msg||'Sai email hoặc mật khẩu');
+    TOKEN = data.access_token;
+    $('whoami').textContent = data.user?.email||'';
+    $('loginView').classList.add('hidden');
+    $('appView').classList.remove('hidden');
+    await Promise.all([loadLeads(), loadCats()]);
+    loadPosts();
+  }catch(err){
+    $('loginErr').textContent = err.message==='Failed to fetch'
+      ? 'Không kết nối được Supabase. Kiểm tra mạng hoặc URL cấu hình.' : err.message;
+    $('loginErr').classList.remove('hidden');
+  }finally{ btn.disabled=false; btn.textContent='Đăng nhập'; }
+});
+function logout(){ TOKEN=null; $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden');
+  $('password').value=''; }
+
+/* ==================== TAB ==================== */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  ['leads','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
+}
+
+/* ==================== LEADS ==================== */
+async function loadLeads(){
+  try{
+    LEADS = await api('leads?select=*&order=created_at.desc') || [];
+    // nạp bộ lọc quốc gia
+    const sel=$('fCountry'), cur=sel.value;
+    sel.innerHTML='<option value="">Tất cả quốc gia</option>'+
+      [...new Set(LEADS.map(l=>l.country).filter(Boolean))].map(c=>`<option>${esc(c)}</option>`).join('');
+    sel.value=cur;
+    renderLeads();
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải danh sách: '+e.message,'err'); }
+}
+function pillClass(s){ return {'Mới':'pill-new','Đã gọi':'pill-called','Chốt':'pill-won','Hủy':'pill-lost'}[s]||'pill-new'; }
+function renderLeads(){
+  const st=$('fStatus').value, ct=$('fCountry').value, q=$('fSearch').value.toLowerCase().trim();
+  const rows = LEADS.filter(l=>
+    (!st||l.status===st) && (!ct||l.country===ct) &&
+    (!q||(l.name||'').toLowerCase().includes(q)||(l.phone||'').includes(q))
+  );
+  // thống kê
+  const cnt = s => LEADS.filter(l=>l.status===s).length;
+  $('statRow').innerHTML = `
+    <div class="stat"><div class="n">${LEADS.length}</div><div class="l">Tổng lead</div></div>
+    <div class="stat"><div class="n">${cnt('Mới')}</div><div class="l">Chưa gọi</div></div>
+    <div class="stat"><div class="n">${cnt('Đã gọi')}</div><div class="l">Đã gọi</div></div>
+    <div class="stat"><div class="n">${cnt('Chốt')}</div><div class="l">Đã chốt</div></div>`;
+  $('leadsEmpty').classList.toggle('hidden', rows.length>0);
+  $('leadsBody').innerHTML = rows.map((l,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${fmtTime(l.created_at)}</td>
+      <td><b>${esc(l.name)}</b></td>
+      <td><a href="tel:${esc(l.phone)}">${esc(l.phone)}</a></td>
+      <td>${esc(l.country||'–')}</td>
+      <td style="max-width:220px">${esc(l.note||'–')}</td>
+      <td>
+        <span class="pill ${pillClass(l.status)}">${esc(l.status)}</span><br>
+        <select onchange="updateLeadStatus(${l.id},this.value)" style="margin-top:5px">
+          ${['Mới','Đã gọi','Chốt','Hủy'].map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+    </tr>`).join('');
+}
+async function updateLeadStatus(id,status){
+  try{
+    await api('leads?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status}),prefer:'return=minimal'});
+    const l=LEADS.find(x=>x.id===id); if(l) l.status=status;
+    renderLeads(); toast('Đã cập nhật trạng thái');
+  }catch(e){ toast('Lỗi cập nhật: '+e.message,'err'); }
+}
+function exportCSV(){
+  if(!LEADS.length){ toast('Chưa có dữ liệu để xuất','err'); return; }
+  const head=['ID','Thời gian','Họ tên','SĐT','Quốc gia','Ghi chú','Trạng thái'];
+  const csvCell = v => '"'+(v??'').toString().replace(/"/g,'""')+'"';
+  const lines=[head.join(',')].concat(LEADS.map(l=>
+    [l.id,fmtTime(l.created_at),l.name,l.phone,l.country,l.note,l.status].map(csvCell).join(',')));
+  // BOM UTF-8 để Excel mở đúng tiếng Việt
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='leads_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Đã xuất '+LEADS.length+' lead ra CSV');
+}
+
+/* ==================== CATEGORIES ==================== */
+async function loadCats(){
+  try{
+    CATS = await api('categories?select=*&order=name') || [];
+    $('catsBody').innerHTML = CATS.map((c,i)=>`
+      <tr><td>${i+1}</td><td>${esc(c.name)}</td>
+      <td><button class="btn btn-d" onclick="delCategory(${c.id})">Xóa</button></td></tr>`).join('');
+    $('postCat').innerHTML = '<option value="">-- Không chọn --</option>'+
+      CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải danh mục: '+e.message,'err'); }
+}
+async function addCategory(){
+  const name=$('newCatName').value.trim();
+  if(!name){ toast('Nhập tên danh mục','err'); return; }
+  try{
+    await api('categories',{method:'POST',body:JSON.stringify({name})});
+    $('newCatName').value=''; loadCats(); toast('Đã thêm danh mục');
+  }catch(e){ toast(e.message.includes('duplicate')?'Danh mục đã tồn tại':'Lỗi: '+e.message,'err'); }
+}
+async function delCategory(id){
+  if(!confirm('Xóa danh mục này? Bài viết thuộc danh mục sẽ chuyển thành "Không chọn".')) return;
+  try{ await api('categories?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadCats(); loadPosts(); toast('Đã xóa danh mục');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+}
+
+/* ==================== POSTS ==================== */
+async function loadPosts(){
+  try{
+    POSTS = await api('posts?select=*,categories(name)&order=created_at.desc') || [];
+    $('postsEmpty').classList.toggle('hidden', POSTS.length>0);
+    $('postsBody').innerHTML = POSTS.map((p,i)=>`
+      <tr>
+        <td>${i+1}</td>
+        <td><b>${esc(p.title)}</b></td>
+        <td>${esc(p.categories?.name||'–')}</td>
+        <td>${fmtTime(p.created_at)}</td>
+        <td>${p.published?'✅ Công khai':'🚫 Ẩn'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-g" onclick="openPostModal(${p.id})">Sửa</button>
+          <button class="btn btn-d" onclick="delPost(${p.id})">Xóa</button>
+        </td>
+      </tr>`).join('');
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải bài viết: '+e.message,'err'); }
+}
+function openPostModal(id){
+  const p = id ? POSTS.find(x=>x.id===id) : null;
+  $('postModalTitle').textContent = p ? 'Sửa bài viết' : 'Thêm bài viết';
+  $('postId').value = p?.id||'';
+  $('postTitle').value = p?.title||'';
+  $('postCat').value = p?.category_id||'';
+  $('postImage').value = p?.image_url||'';
+  $('postContent').value = p?.content||'';
+  $('postPublished').checked = p ? p.published : true;
+  $('postOverlay').classList.remove('hidden');
+}
+function closePostModal(){ $('postOverlay').classList.add('hidden'); }
+async function savePost(){
+  const title=$('postTitle').value.trim();
+  if(!title){ toast('Nhập tiêu đề bài viết','err'); return; }
+  const body={
+    title,
+    category_id: $('postCat').value||null,
+    image_url: $('postImage').value.trim()||null,
+    content: $('postContent').value,
+    published: $('postPublished').checked
+  };
+  const id=$('postId').value;
+  const btn=$('postSaveBtn'); btn.disabled=true;
+  try{
+    if(id) await api('posts?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
+    else await api('posts',{method:'POST',body:JSON.stringify(body)});
+    closePostModal(); loadPosts(); toast(id?'Đã cập nhật bài viết':'Đã thêm bài viết');
+  }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
+  finally{ btn.disabled=false; }
+}
+async function delPost(id){
+  if(!confirm('Xóa bài viết này? Không thể hoàn tác.')) return;
+  try{ await api('posts?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadPosts(); toast('Đã xóa bài viết');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+}
+</script>
+</body>
+</html>
