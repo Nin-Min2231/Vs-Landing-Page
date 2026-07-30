@@ -179,16 +179,20 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 /* ==================== TIN TỨC ==================== */
 .grid-posts{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
 .card-post{background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;
-  box-shadow:var(--shadow-sm);transition:.2s;display:flex;flex-direction:column;cursor:pointer}
-.card-post:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
-.card-post .thumb{width:100%;height:160px;object-fit:cover;display:block}
+  box-shadow:var(--shadow-sm);transition:.25s;display:flex;flex-direction:column;cursor:pointer}
+.card-post:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg);border-color:var(--color-primary-light)}
+.card-post .thumb{width:100%;height:160px;object-fit:cover;display:block;transition:transform .35s ease}
+.card-post:hover .thumb{transform:scale(1.06)}
 .card-post .thumb-placeholder{width:100%;height:160px;display:flex;align-items:center;justify-content:center;
-  font-size:40px;background:linear-gradient(135deg,var(--color-primary-light),var(--color-bg-alt))}
+  font-size:40px;background:linear-gradient(135deg,var(--color-primary-light),var(--color-bg-alt));transition:transform .35s ease}
+.card-post:hover .thumb-placeholder{transform:scale(1.06)}
 .card-post .body{padding:var(--sp-2) var(--sp-3);flex:1;display:flex;flex-direction:column}
 .card-post .cat{color:var(--color-primary);font-weight:700;font-size:12px;text-transform:uppercase;margin-bottom:6px}
 .card-post h3{font-size:17px;font-weight:700;margin-bottom:6px;line-height:1.35}
 .card-post .excerpt{font-size:14px;color:var(--color-text-muted);flex:1;margin-bottom:8px}
 .card-post .meta{font-size:12px;color:var(--color-text-muted);display:flex;justify-content:space-between;align-items:center}
+.card-post .post-readmore{color:var(--color-primary);font-weight:700;text-decoration:underline;transition:.2s}
+.card-post:hover .post-readmore{color:var(--color-primary-dark)}
 @media (max-width:1023px){.grid-posts{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:767px){.grid-posts{grid-template-columns:1fr}}
 
@@ -196,15 +200,24 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
   align-items:center;justify-content:center;padding:16px}
 .post-overlay.show{display:flex}
 .post-modal{background:#fff;border-radius:var(--radius-lg);max-width:640px;width:100%;max-height:88vh;
-  overflow-y:auto;box-shadow:var(--shadow-lg);position:relative}
-.post-modal img{width:100%;max-height:280px;object-fit:cover;display:block}
-.post-modal .body{padding:var(--sp-3) var(--sp-4) var(--sp-4)}
-.post-modal .close{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;
-  background:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:var(--shadow-md)}
-.post-modal .cat{color:var(--color-primary);font-weight:700;font-size:13px;text-transform:uppercase;margin-bottom:6px}
-.post-modal h3{font-size:22px;font-weight:800;margin-bottom:6px}
-.post-modal .meta{font-size:13px;color:var(--color-text-muted);margin-bottom:16px}
-.post-modal .content{white-space:pre-wrap;font-size:15px;line-height:1.7;color:var(--color-text)}
+  box-shadow:var(--shadow-lg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+.post-modal-header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 20px;border-bottom:1px solid var(--color-border)}
+.post-modal-header .cat{color:var(--color-primary);font-weight:800;font-size:13px;text-transform:uppercase}
+.post-modal .close{width:34px;height:34px;border-radius:50%;background:var(--color-bg-alt);border:none;
+  font-size:17px;cursor:pointer;flex-shrink:0;transition:.25s;display:flex;align-items:center;justify-content:center;color:var(--color-text)}
+.post-modal .close:hover{background:var(--color-error);color:#fff;transform:rotate(90deg)}
+.post-modal-scroll{overflow-y:auto;flex:1}
+.post-modal-scroll img{width:100%;max-height:280px;object-fit:cover;display:block}
+.post-modal-scroll .body{padding:var(--sp-3) var(--sp-4)}
+.post-modal-scroll h3{font-size:22px;font-weight:800;margin-bottom:6px}
+.post-modal-scroll .meta{font-size:13px;color:var(--color-text-muted);margin-bottom:16px}
+.post-modal-scroll .content{white-space:pre-wrap;font-size:15px;line-height:1.7;color:var(--color-text)}
+.post-modal-cta{flex-shrink:0;padding:14px 20px;border-top:1px solid var(--color-border);
+  background:var(--color-bg-alt);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.post-modal-cta .hotline{font-weight:800;color:var(--color-primary);font-size:16px;text-decoration:none}
+.post-modal-cta .hotline:hover{color:var(--color-primary-dark)}
+@media (max-width:480px){.post-modal-cta{flex-direction:column;align-items:stretch;text-align:center}}
 
 /* ==================== FAQ ==================== */
 .faq-list{max-width:760px;margin:0 auto}
@@ -607,8 +620,15 @@ footer a:hover{color:#fff}
 <!-- ==================== CHI TIẾT BÀI VIẾT (POPUP) ==================== -->
 <div class="post-overlay" id="postOverlay">
   <div class="post-modal">
-    <button class="close" onclick="closePostDetail()" aria-label="Đóng">✕</button>
-    <div id="postDetailBody"></div>
+    <div class="post-modal-header">
+      <span class="cat" id="postDetailCat"></span>
+      <button class="close" onclick="closePostDetail()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="post-modal-scroll" id="postDetailBody"></div>
+    <div class="post-modal-cta">
+      <a href="tel:0935887922" class="hotline js-tel-link">📞 <span class="js-hotline">0935 887 922</span></a>
+      <a href="#dang-ky" class="btn btn-cta" onclick="closePostDetail()">📝 Đăng ký tư vấn</a>
+    </div>
   </div>
 </div>
 
@@ -730,7 +750,7 @@ navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLink
           ${p.categories?.name ? `<div class="cat">${esc(p.categories.name)}</div>` : ''}
           <h3>${esc(p.title)}</h3>
           <div class="excerpt">${esc(excerpt)}${(p.content||'').length>110?'...':''}</div>
-          <div class="meta"><span>${new Date(p.created_at).toLocaleDateString('vi-VN')}</span><span>Đọc tiếp →</span></div>
+          <div class="meta"><span>${new Date(p.created_at).toLocaleDateString('vi-VN')}</span><span class="post-readmore">Đọc tiếp →</span></div>
         </div>
       </div>`;
     }).join('');
@@ -740,17 +760,22 @@ navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLink
 function openPostDetail(i){
   const p = window.__POSTS__[i];
   const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  document.getElementById('postDetailCat').textContent = p.categories?.name || 'Bài viết';
   document.getElementById('postDetailBody').innerHTML = `
     ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.title)}">` : ''}
     <div class="body">
-      ${p.categories?.name ? `<div class="cat">${esc(p.categories.name)}</div>` : ''}
       <h3>${esc(p.title)}</h3>
       <div class="meta">${new Date(p.created_at).toLocaleDateString('vi-VN')}</div>
       <div class="content">${esc(p.content||'')}</div>
     </div>`;
+  document.getElementById('postDetailBody').scrollTop = 0;
   document.getElementById('postOverlay').classList.add('show');
 }
 function closePostDetail(){ document.getElementById('postOverlay').classList.remove('show'); }
+document.getElementById('postOverlay').addEventListener('click', e=>{
+  if(e.target.id==='postOverlay') closePostDetail();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePostDetail(); });
 
 /* ==================== FAQ ACCORDION ==================== */
 document.querySelectorAll('.faq-q').forEach(btn=>{
