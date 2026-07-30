@@ -239,8 +239,9 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 .register .info p{opacity:.9;margin-bottom:var(--sp-2)}
 .register .hotline-box{background:rgba(255,255,255,.12);border-radius:var(--radius-md);padding:var(--sp-2) var(--sp-3);
   font-weight:700;font-size:18px;display:inline-block}
+.contact-row{display:flex;align-items:center;justify-content:center;gap:var(--sp-3);flex-wrap:wrap;margin-top:var(--sp-3)}
 .qr-box{background:#fff;border-radius:var(--radius-md);padding:12px;display:inline-block;
-  text-align:center;margin-top:var(--sp-3);box-shadow:var(--shadow-md)}
+  text-align:center;box-shadow:var(--shadow-md)}
 .qr-box img{width:140px;height:140px;display:block;border-radius:8px}
 .qr-box .qr-label{color:var(--color-text);font-size:13px;font-weight:600;margin-top:6px}
 .form-card{background:#fff;border-radius:var(--radius-lg);padding:var(--sp-4);box-shadow:var(--shadow-lg);color:var(--color-text)}
@@ -271,7 +272,7 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 footer{background:var(--color-dark);color:#CBD5E1;padding:var(--sp-6) 0 var(--sp-3)}
 .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-4)}
 footer h4{color:#fff;font-size:16px;margin-bottom:var(--sp-2)}
-footer .logo{color:#fff;display:inline-block;margin-bottom:var(--sp-1)}
+footer .logo{color:#fff;display:inline-flex;align-items:center;margin-bottom:var(--sp-1)}
 footer ul{list-style:none}
 footer li{margin-bottom:8px;font-size:14px}
 footer a{color:#CBD5E1;text-decoration:none}
@@ -288,6 +289,12 @@ footer a:hover{color:#fff}
   color:var(--color-text);box-shadow:var(--shadow-md)}
 .float-btn{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-size:24px;color:#fff;box-shadow:var(--shadow-md);border:none;cursor:pointer;flex-shrink:0}
+
+.scroll-top-btn{position:fixed;left:16px;bottom:20px;z-index:200;width:46px;height:46px;border-radius:50%;
+  background:var(--color-primary);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:var(--shadow-md);
+  opacity:0;pointer-events:none;transform:translateY(10px);transition:.25s;display:flex;align-items:center;justify-content:center}
+.scroll-top-btn.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+.scroll-top-btn:hover{background:var(--color-primary-dark);transform:translateY(-3px)}
 .float-call{background:var(--color-success)}
 .float-zalo{background:#0068FF;font-weight:800;font-size:13px;font-family:var(--font)}
 .float-msg{background:linear-gradient(45deg,#0099FF,#A033FF)}
@@ -527,10 +534,12 @@ footer a:hover{color:#fff}
       <h2>Đăng ký tư vấn miễn phí</h2>
       <p>Để lại thông tin, chuyên viên sẽ gọi lại tư vấn trong vòng <b>24 giờ</b> (thường trong 30 phút giờ hành chính).</p>
       <p>Hoặc gọi ngay hotline:</p>
-      <div class="hotline-box">📞 <span class="js-hotline">0935 887 922</span></div>
-      <div class="qr-box">
-        <img src="assets/qr-zalo.png" alt="QR Zalo Top Visa" loading="lazy">
-        <div class="qr-label">Quét mã QR để chat Zalo</div>
+      <div class="contact-row">
+        <div class="hotline-box">📞 <span class="js-hotline">0935 887 922</span></div>
+        <div class="qr-box">
+          <img src="assets/qr-zalo.png" alt="QR Zalo Top Visa" loading="lazy">
+          <div class="qr-label">Quét mã QR để chat Zalo</div>
+        </div>
       </div>
     </div>
     <div class="form-card">
@@ -616,6 +625,9 @@ footer a:hover{color:#fff}
   <a class="float-item js-fb-link" href="https://www.facebook.com/share/1EVr8W3p2E/" target="_blank" rel="noopener"><span class="float-label">Facebook</span><span class="float-btn float-msg">💬</span></a>
   <button class="float-btn float-main" id="floatToggle" aria-label="Liên hệ nhanh">💬</button>
 </div>
+
+<!-- ==================== NÚT LÊN ĐẦU TRANG ==================== -->
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Lên đầu trang" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆</button>
 
 <!-- ==================== CHI TIẾT BÀI VIẾT (POPUP) ==================== -->
 <div class="post-overlay" id="postOverlay">
@@ -783,8 +795,21 @@ document.querySelectorAll('.faq-q').forEach(btn=>{
 });
 
 /* ==================== NÚT NỔI ==================== */
-document.getElementById('floatToggle').addEventListener('click',()=>{
-  document.getElementById('floatContact').classList.toggle('open');
+const floatContact = document.getElementById('floatContact');
+document.getElementById('floatToggle').addEventListener('click', e=>{
+  e.stopPropagation();
+  floatContact.classList.toggle('open');
+});
+document.addEventListener('click', e=>{
+  if(floatContact.classList.contains('open') && !floatContact.contains(e.target)){
+    floatContact.classList.remove('open');
+  }
+});
+
+/* ==================== NÚT LÊN ĐẦU TRANG ==================== */
+const scrollTopBtn = document.getElementById('scrollTopBtn');
+window.addEventListener('scroll', ()=>{
+  scrollTopBtn.classList.toggle('show', window.scrollY > 600);
 });
 
 /* ==================== CHỌN QUỐC GIA TỪ CARD ==================== */

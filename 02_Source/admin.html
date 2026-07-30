@@ -107,6 +107,9 @@ td select{width:auto;font-size:13px;padding:5px 8px}
       <input type="email" id="email" required autocomplete="username">
       <label>Mật khẩu</label>
       <input type="password" id="password" required autocomplete="current-password">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-weight:600">
+        <input type="checkbox" id="rememberMe" style="width:auto" checked> Ghi nhớ đăng nhập trên thiết bị này
+      </label>
       <div class="login-err hidden" id="loginErr"></div>
       <button type="submit" class="btn btn-p" style="width:100%;margin-top:16px" id="loginBtn">Đăng nhập</button>
     </form>
@@ -217,6 +220,7 @@ td select{width:auto;font-size:13px;padding:5px 8px}
 <script>
 /* ==================== TIỆN ÍCH CHUNG ==================== */
 let TOKEN = null, LEADS = [], POSTS = [], CATS = [];
+const REMEMBER_KEY = 'tv_admin_refresh_token';
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(msg,type='ok'){ const t=$('toast'); t.textContent=msg; t.className='toast show '+type;
@@ -259,6 +263,8 @@ $('loginForm').addEventListener('submit', async e=>{
     const data = await res.json();
     if(!res.ok) throw new Error(data.error_description||data.msg||'Sai email hoặc mật khẩu');
     TOKEN = data.access_token;
+    if($('rememberMe').checked && data.refresh_token) localStorage.setItem(REMEMBER_KEY, data.refresh_token);
+    else localStorage.removeItem(REMEMBER_KEY);
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
@@ -270,8 +276,34 @@ $('loginForm').addEventListener('submit', async e=>{
     $('loginErr').classList.remove('hidden');
   }finally{ btn.disabled=false; btn.textContent='Đăng nhập'; }
 });
-function logout(){ TOKEN=null; $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden');
+function logout(){ TOKEN=null; localStorage.removeItem(REMEMBER_KEY);
+  $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden');
   $('password').value=''; }
+
+/* ==================== TỰ ĐĂNG NHẬP LẠI (nếu đã "Ghi nhớ đăng nhập") ==================== */
+async function trySilentLogin(){
+  const rt = localStorage.getItem(REMEMBER_KEY);
+  if(!rt || !SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  try{
+    const res = await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+      body:JSON.stringify({refresh_token: rt})
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error('refresh_failed');
+    TOKEN = data.access_token;
+    if(data.refresh_token) localStorage.setItem(REMEMBER_KEY, data.refresh_token);
+    $('whoami').textContent = data.user?.email||'';
+    $('loginView').classList.add('hidden');
+    $('appView').classList.remove('hidden');
+    await Promise.all([loadLeads(), loadCats()]);
+    loadPosts();
+  }catch(e){
+    localStorage.removeItem(REMEMBER_KEY);
+  }
+}
+trySilentLogin();
 
 /* ==================== TAB ==================== */
 function switchTab(name){
