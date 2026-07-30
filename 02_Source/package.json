@@ -1,0 +1,7 @@
+{
+  "name": "vs-landing-page",
+  "private": true,
+  "devDependencies": {
+    "wrangler": "latest"
+  }
+}
