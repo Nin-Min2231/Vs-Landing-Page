@@ -176,6 +176,36 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
   cursor:pointer;padding:0;transition:.2s}
 .slider-dots button.active{background:var(--color-primary);width:22px;border-radius:999px}
 
+/* ==================== TIN TỨC ==================== */
+.grid-posts{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
+.card-post{background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;
+  box-shadow:var(--shadow-sm);transition:.2s;display:flex;flex-direction:column;cursor:pointer}
+.card-post:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.card-post .thumb{width:100%;height:160px;object-fit:cover;display:block}
+.card-post .thumb-placeholder{width:100%;height:160px;display:flex;align-items:center;justify-content:center;
+  font-size:40px;background:linear-gradient(135deg,var(--color-primary-light),var(--color-bg-alt))}
+.card-post .body{padding:var(--sp-2) var(--sp-3);flex:1;display:flex;flex-direction:column}
+.card-post .cat{color:var(--color-primary);font-weight:700;font-size:12px;text-transform:uppercase;margin-bottom:6px}
+.card-post h3{font-size:17px;font-weight:700;margin-bottom:6px;line-height:1.35}
+.card-post .excerpt{font-size:14px;color:var(--color-text-muted);flex:1;margin-bottom:8px}
+.card-post .meta{font-size:12px;color:var(--color-text-muted);display:flex;justify-content:space-between;align-items:center}
+@media (max-width:1023px){.grid-posts{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:767px){.grid-posts{grid-template-columns:1fr}}
+
+.post-overlay{position:fixed;inset:0;background:rgba(15,30,61,.6);z-index:400;display:none;
+  align-items:center;justify-content:center;padding:16px}
+.post-overlay.show{display:flex}
+.post-modal{background:#fff;border-radius:var(--radius-lg);max-width:640px;width:100%;max-height:88vh;
+  overflow-y:auto;box-shadow:var(--shadow-lg);position:relative}
+.post-modal img{width:100%;max-height:280px;object-fit:cover;display:block}
+.post-modal .body{padding:var(--sp-3) var(--sp-4) var(--sp-4)}
+.post-modal .close{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;
+  background:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:var(--shadow-md)}
+.post-modal .cat{color:var(--color-primary);font-weight:700;font-size:13px;text-transform:uppercase;margin-bottom:6px}
+.post-modal h3{font-size:22px;font-weight:800;margin-bottom:6px}
+.post-modal .meta{font-size:13px;color:var(--color-text-muted);margin-bottom:16px}
+.post-modal .content{white-space:pre-wrap;font-size:15px;line-height:1.7;color:var(--color-text)}
+
 /* ==================== FAQ ==================== */
 .faq-list{max-width:760px;margin:0 auto}
 .faq-item{border:1px solid var(--color-border);border-radius:var(--radius-md);margin-bottom:var(--sp-2);
@@ -306,6 +336,7 @@ footer a:hover{color:#fff}
       <li><a href="#dich-vu">🧳 Dịch vụ</a></li>
       <li><a href="#loi-ich">⭐ Lợi ích</a></li>
       <li><a href="#danh-gia">💬 Đánh giá</a></li>
+      <li><a href="#tin-tuc">📰 Tin tức</a></li>
       <li><a href="#faq">❓ FAQ</a></li>
       <li><a href="#dang-ky" class="btn btn-cta" style="padding:10px 20px">📝 Đăng ký tư vấn</a></li>
     </ul>
@@ -451,6 +482,15 @@ footer a:hover{color:#fff}
   </div>
 </section>
 
+<!-- ==================== TIN TỨC ==================== -->
+<section id="tin-tuc" style="display:none">
+  <div class="container">
+    <h2 class="section-title">Tin tức & Kinh nghiệm xin Visa</h2>
+    <p class="section-sub">Cập nhật thông tin mới nhất từ Top Visa</p>
+    <div class="grid-posts" id="postsGrid"></div>
+  </div>
+</section>
+
 <!-- ==================== FAQ ==================== -->
 <section id="faq">
   <div class="container">
@@ -564,6 +604,14 @@ footer a:hover{color:#fff}
   <button class="float-btn float-main" id="floatToggle" aria-label="Liên hệ nhanh">💬</button>
 </div>
 
+<!-- ==================== CHI TIẾT BÀI VIẾT (POPUP) ==================== -->
+<div class="post-overlay" id="postOverlay">
+  <div class="post-modal">
+    <button class="close" onclick="closePostDetail()" aria-label="Đóng">✕</button>
+    <div id="postDetailBody"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -659,6 +707,50 @@ navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLink
   update();
   restartAutoplay();
 })();
+
+/* ==================== TIN TỨC (BÀI VIẾT TỪ ADMIN) ==================== */
+(async function(){
+  if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  try{
+    const res = await fetch(SUPABASE_URL+'/rest/v1/posts?select=*,categories(name)&published=eq.true&order=created_at.desc&limit=9',{
+      headers:{ 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY }
+    });
+    if(!res.ok) return;
+    const posts = await res.json();
+    if(!posts.length) return;
+    window.__POSTS__ = posts;
+    document.getElementById('postsGrid').innerHTML = posts.map((p,i)=>{
+      const excerpt = (p.content||'').slice(0,110);
+      return `
+      <div class="card-post" onclick="openPostDetail(${i})">
+        ${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy">`
+                       : `<div class="thumb-placeholder">📰</div>`}
+        <div class="body">
+          ${p.categories?.name ? `<div class="cat">${esc(p.categories.name)}</div>` : ''}
+          <h3>${esc(p.title)}</h3>
+          <div class="excerpt">${esc(excerpt)}${(p.content||'').length>110?'...':''}</div>
+          <div class="meta"><span>${new Date(p.created_at).toLocaleDateString('vi-VN')}</span><span>Đọc tiếp →</span></div>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('tin-tuc').style.display='';
+  }catch(e){ /* im lặng bỏ qua nếu không tải được, không ảnh hưởng phần còn lại của trang */ }
+})();
+function openPostDetail(i){
+  const p = window.__POSTS__[i];
+  const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  document.getElementById('postDetailBody').innerHTML = `
+    ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.title)}">` : ''}
+    <div class="body">
+      ${p.categories?.name ? `<div class="cat">${esc(p.categories.name)}</div>` : ''}
+      <h3>${esc(p.title)}</h3>
+      <div class="meta">${new Date(p.created_at).toLocaleDateString('vi-VN')}</div>
+      <div class="content">${esc(p.content||'')}</div>
+    </div>`;
+  document.getElementById('postOverlay').classList.add('show');
+}
+function closePostDetail(){ document.getElementById('postOverlay').classList.remove('show'); }
 
 /* ==================== FAQ ACCORDION ==================== */
 document.querySelectorAll('.faq-q').forEach(btn=>{
