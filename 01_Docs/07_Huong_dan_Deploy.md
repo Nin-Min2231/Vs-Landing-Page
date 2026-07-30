@@ -23,12 +23,13 @@ Nên đăng ký cả 3 bằng CÙNG MỘT email công việc, lưu mật khẩu 
 3. Chờ ~2 phút để project khởi tạo.
 4. Menu trái → **SQL Editor** → **New query** → mở file `02_Source/supabase_setup.sql` bằng Notepad, copy TOÀN BỘ nội dung, dán vào → bấm **Run**. Thấy "Success" là xong (đã tạo bảng leads, posts, categories + luật bảo mật).
 5. Tạo tài khoản admin: menu trái → **Authentication** → **Users** → **Add user** → **Create new user** → nhập email + mật khẩu của bạn → Create. (Đây là tài khoản đăng nhập trang admin.)
-6. Lấy 2 thông số kết nối: menu trái → **Project Settings** → **API**:
-   - **Project URL** (dạng `https://xxxx.supabase.co`)
-   - **anon public key** (chuỗi dài bắt đầu bằng `eyJ...`)
+6. Lấy 2 thông số kết nối: menu trái → **Project Settings** → **API Keys**:
+   - Dashboard bản mới sẽ mở sẵn tab **"Publishable and secret API keys"** — lấy **Publishable key** (chuỗi bắt đầu bằng `sb_publishable_...`). Đây là bản thay thế mới của "anon public key" cũ, **an toàn để đặt công khai** trên web.
+     - Nếu project đã tạo từ lâu, dashboard có thể hiện tab **"Legacy anon, service_role API keys"** thay vào đó — khi đó lấy key nhãn **anon public** (chuỗi dài bắt đầu bằng `eyJ...`), công dụng tương đương.
+   - **Project URL** (dạng `https://xxxx.supabase.co`) — xem tại menu trái → **Integrations** → **Data API** (mục "Project URL"/"REST API URL"). Ghi chú: `xxxx` chính là **Project ID** hiển thị ở trang **Project Settings → General**.
 7. Mở `index.html` và `admin.html` bằng Notepad → tìm dòng đầu file có chữ `SUPABASE_URL` và `SUPABASE_ANON_KEY` → dán 2 giá trị vừa lấy vào giữa 2 dấu nháy → Save.
 
-> ⚠️ Quan trọng: Chỉ dùng **anon public key**. KHÔNG BAO GIỜ đặt `service_role key` vào file HTML.
+> ⚠️ Quan trọng: Chỉ dùng **Publishable key** (hoặc **anon public key** nếu dùng tab Legacy). KHÔNG BAO GIỜ đặt **Secret key** (`sb_secret_...`) hay **service_role key** vào file HTML — đây là "chìa khóa admin" toàn quyền, lộ ra là mất an toàn dữ liệu.
 
 ## Bước 2. Test toàn bộ hệ thống — dùng thẳng Supabase Cloud, KHÔNG cần Docker/local
 
@@ -69,6 +70,20 @@ Website là trang tĩnh → KHÔNG cần "build". Test theo trình tự:
 5. Mở link trên điện thoại kiểm tra lại lần nữa.
 
 **Cách nâng cao — qua GitHub (khuyên dùng khi đã quen):** đẩy file lên GitHub repo → Cloudflare Pages kết nối repo → mỗi lần file thay đổi tự deploy. Lợi ích: có lịch sử phiên bản, quay lui được khi lỗi.
+
+Project này đã có sẵn trên GitHub tại `https://github.com/Nin-Min2231/Vs-Landing-Page`. Các bước nối với Cloudflare Pages:
+
+1. **dash.cloudflare.com** → menu trái **Workers & Pages** → **Create** → tab **Pages** → **Connect to Git**.
+2. **Connect GitHub** → chọn **"Only select repositories"** → tick repo `Vs-Landing-Page` → **Install & Authorize**.
+3. Chọn repo `Vs-Landing-Page` → **Begin setup**.
+4. Ở **Build settings**, điền:
+   - **Framework preset:** `None`
+   - **Build command:** để trống
+   - **Build output directory:** để trống (hoặc `/`)
+   - **Root directory (advanced):** `02_Source` ⚠️ **BẮT BUỘC** — vì code thật nằm trong thư mục con này, không phải gốc repo. Bỏ qua bước này sẽ bị lỗi 404 không tìm thấy `index.html`.
+5. **Save and Deploy** → chờ 30–60 giây → nhận link `https://<tên-project>.pages.dev`.
+
+Từ đó, mỗi lần đẩy code mới lên nhánh `main` trên GitHub, Cloudflare tự động deploy lại — không cần thao tác gì thêm. Xem lịch sử/quay lui tại tab **Deployments** của project.
 
 ## Bước 4. Mua domain & trỏ DNS (tùy chọn nhưng nên làm)
 
