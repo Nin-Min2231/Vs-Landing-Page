@@ -7,6 +7,7 @@
 <meta name="robots" content="noindex,nofollow">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 /* ============================================================
    ⚙️ CẤU HÌNH — dán CÙNG 2 giá trị như trong index.html
@@ -93,6 +94,55 @@ td select{width:auto;font-size:13px;padding:5px 8px}
 .stat .n{font-size:24px;font-weight:800;color:var(--p)}
 .stat .l{font-size:13px;color:var(--mut)}
 @media(max-width:700px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== Phase 2 ===== */
+.modal-lg{max-width:920px}
+.modal-2col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:760px){.modal-2col{grid-template-columns:1fr}}
+.modal-2col h4{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+.field-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
+
+.subpanel{margin-top:20px;padding-top:16px;border-top:1.5px dashed var(--bd)}
+.subpanel h4{font-size:14px;margin-bottom:10px}
+.subrow-add{display:grid;grid-template-columns:2fr 1fr 1.4fr 1fr auto;gap:6px;margin-top:10px;align-items:end}
+@media(max-width:760px){.subrow-add{grid-template-columns:1fr 1fr}}
+.hint{color:var(--mut);font-size:13px;padding:10px 0}
+
+.pill-hs-dxl{background:var(--pl);color:var(--p)}
+.pill-hs-dn{background:#FEF3C7;color:var(--warn)}
+.pill-hs-ckq{background:#FFE8D5;color:var(--acc)}
+.pill-hs-dau{background:#DCFCE7;color:var(--ok)}
+.pill-hs-rot{background:#FEE2E2;color:var(--err)}
+.pill-hs-huy{background:#F1F5F9;color:var(--mut)}
+
+.pill-xl-dxl{background:var(--pl);color:var(--p)}
+.pill-xl-ht{background:#DCFCE7;color:var(--ok)}
+.pill-xl-td{background:#FEF3C7;color:var(--warn)}
+.pill-xl-huy{background:#F1F5F9;color:var(--mut)}
+
+.pill-dt-on{background:#DCFCE7;color:var(--ok)}
+.pill-dt-off{background:#F1F5F9;color:var(--mut)}
+
+tr.danger td{background:#FEE2E2}
+
+.cat-block{background:#fff;border-radius:var(--r);padding:16px 18px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
+.cat-block h3{font-size:16px;margin-bottom:10px}
+.cat-add-row{display:flex;gap:8px;margin-bottom:12px}
+.cat-add-row input{flex:1}
+.cat-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd);font-size:14px;gap:8px}
+.cat-item:last-child{border-bottom:none}
+.cat-item.inactive{opacity:.5}
+.cat-item-actions{display:flex;gap:6px;flex-shrink:0}
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.cat-grid{grid-template-columns:1fr}}
+
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+@media(max-width:900px){.chart-row{grid-template-columns:1fr}}
+.chart-card{background:#fff;border-radius:var(--r);padding:16px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
+.chart-card h3{font-size:15px;margin-bottom:10px}
+.dash-tables{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
+@media(max-width:900px){.dash-tables{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -127,14 +177,131 @@ td select{width:auto;font-size:13px;padding:5px 8px}
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-tab="leads" onclick="switchTab('leads')">📋 Khách đăng ký</button>
+    <button class="tab active" data-tab="dash" onclick="switchTab('dash')">📊 Dashboard</button>
+    <button class="tab" data-tab="tuvan" onclick="switchTab('tuvan')">📞 Tư vấn</button>
+    <button class="tab" data-tab="hoso" onclick="switchTab('hoso')">🗃 Hồ sơ</button>
+    <button class="tab" data-tab="doitac" onclick="switchTab('doitac')">🤝 Đại lý ủy thác</button>
+    <button class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ Cài đặt chung</button>
+    <button class="tab" data-tab="leads" onclick="switchTab('leads')">📋 Khách đăng ký</button>
     <button class="tab" data-tab="posts" onclick="switchTab('posts')">📝 Bài viết</button>
     <button class="tab" data-tab="cats" onclick="switchTab('cats')">🗂 Danh mục</button>
   </nav>
 
   <main>
+    <!-- ===== TAB DASHBOARD ===== -->
+    <section id="tab-dash">
+      <div class="panel-head">
+        <h2>Dashboard</h2>
+        <button class="btn btn-g" onclick="loadDashboard()">↻ Tải lại</button>
+      </div>
+      <div class="stat-row" id="dashStatRow"></div>
+      <div class="chart-row">
+        <div class="chart-card"><h3>Doanh thu &amp; Lợi nhuận theo tháng</h3><canvas id="chartDoanhThu" height="180"></canvas></div>
+        <div class="chart-card"><h3>Số lượng hồ sơ theo tháng</h3><canvas id="chartSoLuong" height="180"></canvas></div>
+      </div>
+      <div class="dash-tables">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Khách hàng</th><th>Nội dung</th><th>Hạn chốt</th></tr></thead>
+            <tbody id="dashXlpsBody"></tbody>
+          </table>
+          <div class="empty hidden" id="dashXlpsEmpty">Không có việc phát sinh nào cần chú ý</div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Khách hàng</th><th>SĐT</th><th>Ngày nhắc lại</th></tr></thead>
+            <tbody id="dashNhacLaiBody"></tbody>
+          </table>
+          <div class="empty hidden" id="dashNhacLaiEmpty">Không có khách nào cần nhắc lại</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TAB TƯ VẤN ===== -->
+    <section id="tab-tuvan" class="hidden">
+      <div class="panel-head">
+        <h2>Tư vấn khách hàng</h2>
+        <div class="filters">
+          <select id="fTvStatus" onchange="renderTuVan()">
+            <option value="">Tất cả trạng thái</option>
+            <option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option>
+          </select>
+          <input type="search" id="fTvSearch" placeholder="Tìm tên / SĐT..." oninput="renderTuVan()" style="width:170px">
+          <button class="btn btn-p" onclick="openTvModal()">+ Thêm tư vấn</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Ngày</th><th>Tên</th><th>SĐT</th><th>Nước đến</th><th>Mục đích</th><th>Trạng thái</th><th>Nhắc lại</th><th>Thao tác</th></tr></thead>
+          <tbody id="tvBody"></tbody>
+        </table>
+        <div class="empty hidden" id="tvEmpty">Chưa có dữ liệu tư vấn</div>
+      </div>
+    </section>
+
+    <!-- ===== TAB HỒ SƠ ===== -->
+    <section id="tab-hoso" class="hidden">
+      <div class="panel-head">
+        <h2>Quản lý hồ sơ</h2>
+        <div class="filters">
+          <select id="fHsStatus" onchange="renderHoSo()">
+            <option value="">Tất cả trạng thái</option>
+            <option>Đang xử lý</option><option>Đã nộp</option><option>Chờ kết quả</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
+          </select>
+          <select id="fHsNuoc" onchange="renderHoSo()"><option value="">Tất cả nước đến</option></select>
+          <select id="fHsDoiTac" onchange="renderHoSo()"><option value="">Tất cả đại lý</option></select>
+          <input type="search" id="fHsSearch" placeholder="Tìm tên khách..." oninput="renderHoSo()" style="width:150px">
+          <button class="btn btn-p" onclick="openHoSoModal()">+ Thêm hồ sơ</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Ngày</th><th>Tên khách</th><th>Nước đến</th><th>Mục đích</th><th>Đại lý ủy thác</th><th>Trạng thái</th><th>Lợi nhuận</th><th>Ngày trả KQ</th><th>Thao tác</th></tr></thead>
+          <tbody id="hsBody"></tbody>
+        </table>
+        <div class="empty hidden" id="hsEmpty">Chưa có hồ sơ nào</div>
+      </div>
+    </section>
+
+    <!-- ===== TAB ĐẠI LÝ ỦY THÁC ===== -->
+    <section id="tab-doitac" class="hidden">
+      <div class="panel-head">
+        <h2>Đại lý ủy thác</h2>
+        <button class="btn btn-p" onclick="openDoiTacModal()">+ Thêm đại lý</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Tên công ty</th><th>Người đại diện</th><th>SĐT liên hệ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+          <tbody id="dtBody"></tbody>
+        </table>
+        <div class="empty hidden" id="dtEmpty">Chưa có đại lý nào</div>
+      </div>
+    </section>
+
+    <!-- ===== TAB CÀI ĐẶT CHUNG ===== -->
+    <section id="tab-settings" class="hidden">
+      <div class="panel-head"><h2>Cài đặt chung</h2></div>
+      <div class="cat-grid">
+        <div class="cat-block">
+          <h3>🌍 Nước đến</h3>
+          <div class="cat-add-row"><input type="text" id="newNuoc" placeholder="Tên nước mới"><button class="btn btn-p" onclick="addDanhMuc('nuoc')">+ Thêm</button></div>
+          <div id="listNuoc"></div>
+        </div>
+        <div class="cat-block">
+          <h3>🎯 Mục đích</h3>
+          <div class="cat-add-row"><input type="text" id="newMucDich" placeholder="Mục đích mới"><button class="btn btn-p" onclick="addDanhMuc('mucdich')">+ Thêm</button></div>
+          <div id="listMucDich"></div>
+        </div>
+        <div class="cat-block">
+          <h3>👤 Trưởng nhóm</h3>
+          <div class="cat-add-row"><input type="text" id="newTruongNhom" placeholder="Tên trưởng nhóm mới"><button class="btn btn-p" onclick="addDanhMuc('truongnhom')">+ Thêm</button></div>
+          <div id="listTruongNhom"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== TAB LEADS ===== -->
-    <section id="tab-leads">
+    <section id="tab-leads" class="hidden">
       <div class="stat-row" id="statRow"></div>
       <div class="panel-head">
         <h2>Danh sách khách đăng ký</h2>
@@ -215,11 +382,163 @@ td select{width:auto;font-size:13px;padding:5px 8px}
   </div>
 </div>
 
+<!-- ============ MODAL TƯ VẤN ============ -->
+<div class="overlay hidden" id="tvOverlay">
+  <div class="modal">
+    <h3 id="tvModalTitle">Thêm tư vấn</h3>
+    <input type="hidden" id="tvId">
+    <div class="field-2">
+      <div><label>Họ tên *</label><input type="text" id="tvName"></div>
+      <div><label>Số điện thoại *</label><input type="tel" id="tvPhone"></div>
+    </div>
+    <div class="field-2">
+      <div><label>Email</label><input type="email" id="tvEmail"></div>
+      <div><label>Link Facebook</label><input type="url" id="tvFb"></div>
+    </div>
+    <div class="field-2">
+      <div><label>Nước đến *</label><select id="tvCountry"></select></div>
+      <div><label>Mục đích *</label><select id="tvMucDich"></select></div>
+    </div>
+    <label>Nội dung tư vấn</label>
+    <textarea id="tvNote" rows="3"></textarea>
+    <div class="field-2">
+      <div><label>Trạng thái tư vấn</label>
+        <select id="tvStatus"><option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option></select>
+      </div>
+      <div><label>Ngày nhắc lại</label><input type="date" id="tvNgayNhacLai"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-g" onclick="closeTvModal()">Hủy</button>
+      <button class="btn btn-p" id="tvSaveBtn" onclick="saveTuVan()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL HỒ SƠ ============ -->
+<div class="overlay hidden" id="hoOverlay">
+  <div class="modal modal-lg">
+    <h3 id="hoModalTitle">Thêm hồ sơ</h3>
+    <input type="hidden" id="hoId">
+    <input type="hidden" id="hoNguonTuVan">
+    <div class="modal-2col">
+      <div>
+        <h4>Thông tin khách</h4>
+        <label>Ngày *</label><input type="date" id="hoNgay">
+        <label>Trưởng nhóm</label><select id="hoTruongNhom"></select>
+        <label>Tên khách hàng *</label><input type="text" id="hoTenKhach">
+        <label>Số ĐT khách</label><input type="tel" id="hoSdtKhach">
+        <label>Địa chỉ</label><input type="text" id="hoDiaChi">
+        <label>Nước đến *</label><select id="hoNuoc"></select>
+        <label>Mục đích *</label><select id="hoMucDich"></select>
+        <label>Đại lý ủy thác *</label><select id="hoDoiTac"></select>
+      </div>
+      <div>
+        <h4>Thu chi &amp; tiến độ</h4>
+        <label>Thu — Lệ phí</label><input type="number" id="hoThuLePhi" value="0" oninput="updateHoSoTotals()">
+        <label>Thu — In ảnh</label><input type="number" id="hoThuInAnh" value="0" oninput="updateHoSoTotals()">
+        <label>Thu — Hỗ trợ khác</label><input type="number" id="hoThuHoTro" value="0" oninput="updateHoSoTotals()">
+        <label>Chi — Lệ phí lãnh sự</label><input type="number" id="hoChiLanhSu" value="0" oninput="updateHoSoTotals()">
+        <label>Chi — Đại lý/CTV</label><input type="number" id="hoChiDoiTacCtv" value="0" oninput="updateHoSoTotals()">
+        <label>Chi — Thư đi</label><input type="number" id="hoChiThuDi" value="0" oninput="updateHoSoTotals()">
+        <label>Chi — Thư về</label><input type="number" id="hoChiThuVe" value="0" oninput="updateHoSoTotals()">
+        <label>Chi — Phí khác</label><input type="number" id="hoChiPhiKhac" value="0" oninput="updateHoSoTotals()">
+        <div class="field-2">
+          <div><label>Tổng thu</label><input type="text" id="hoTongThu" readonly></div>
+          <div><label>Tổng chi</label><input type="text" id="hoTongChi" readonly></div>
+        </div>
+        <label>Lợi nhuận</label><input type="text" id="hoLoiNhuan" readonly>
+        <div class="field-2">
+          <div><label>Ngày nộp</label><input type="date" id="hoNgayNop"></div>
+          <div><label>Ngày trả KQ</label><input type="date" id="hoNgayTraKq"></div>
+        </div>
+        <label>Trạng thái</label>
+        <select id="hoTrangThai">
+          <option>Đang xử lý</option><option>Đã nộp</option><option>Chờ kết quả</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
+        </select>
+        <label>Note</label><textarea id="hoNote" rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="subpanel">
+      <h4>Xử lý phát sinh</h4>
+      <div id="hoXlpsHint" class="hint hidden">Lưu hồ sơ trước để thêm dòng xử lý phát sinh.</div>
+      <div id="hoXlpsBox">
+        <div class="tbl-wrap" style="margin-bottom:10px">
+          <table style="min-width:560px">
+            <thead><tr><th>Nội dung</th><th>Hạn chốt</th><th>Ghi chú</th><th>Trạng thái</th><th></th></tr></thead>
+            <tbody id="hoXlpsBody"></tbody>
+          </table>
+        </div>
+        <div class="subrow-add">
+          <input type="text" id="xlpsNoiDung" placeholder="Nội dung">
+          <input type="date" id="xlpsHanChot">
+          <input type="text" id="xlpsGhiChu" placeholder="Ghi chú">
+          <select id="xlpsTrangThai"><option>Đang xử lý</option><option>Hủy</option><option>Tạm dừng</option><option>Hoàn thành</option></select>
+          <button class="btn btn-p" onclick="addXlps()">+ Thêm</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-g" onclick="closeHoSoModal()">Đóng</button>
+      <button class="btn btn-p" id="hoSaveBtn" onclick="saveHoSo()">Lưu hồ sơ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL ĐẠI LÝ ỦY THÁC ============ -->
+<div class="overlay hidden" id="dtOverlay">
+  <div class="modal">
+    <h3 id="dtModalTitle">Thêm đại lý ủy thác</h3>
+    <input type="hidden" id="dtId">
+    <label>Tên công ty *</label><input type="text" id="dtTenCongTy">
+    <label>Tên người đại diện</label><input type="text" id="dtTenDaiDien">
+    <label>SĐT liên hệ</label><input type="tel" id="dtSdt">
+    <label>Địa chỉ</label><input type="text" id="dtDiaChi">
+    <label>Trạng thái hợp tác</label>
+    <select id="dtTrangThai"><option>Đang hợp tác</option><option>Ngừng hợp tác</option></select>
+    <label>Ghi chú</label><textarea id="dtGhiChu" rows="2"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-g" onclick="closeDoiTacModal()">Hủy</button>
+      <button class="btn btn-p" id="dtSaveBtn" onclick="saveDoiTac()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL BẢNG PHÍ ĐẠI LÝ ============ -->
+<div class="overlay hidden" id="dtFeeOverlay">
+  <div class="modal">
+    <h3>Bảng phí — <span id="dtFeeCompanyName"></span></h3>
+    <input type="hidden" id="dtFeeDoiTacId">
+    <div class="tbl-wrap" style="margin-bottom:12px">
+      <table>
+        <thead><tr><th>Nơi nộp</th><th>Diện visa</th><th>Mức phí</th><th>Áp dụng từ</th><th>Ghi chú</th></tr></thead>
+        <tbody id="dtFeeBody"></tbody>
+      </table>
+      <div class="empty hidden" id="dtFeeEmpty">Chưa có mức phí nào</div>
+    </div>
+    <h4 style="font-size:13px;color:var(--mut);margin-bottom:4px;text-transform:uppercase">Thêm mức phí mới</h4>
+    <div class="subrow-add">
+      <input type="text" id="feeNoiNop" placeholder="Nơi nộp">
+      <input type="text" id="feeDienVisa" placeholder="Diện visa">
+      <input type="number" id="feeMuc" placeholder="Mức phí">
+      <input type="date" id="feeNgayApDung">
+      <button class="btn btn-p" onclick="addDoiTacPhi()">+ Thêm</button>
+    </div>
+    <input type="text" id="feeGhiChu" placeholder="Ghi chú (tuỳ chọn)" style="margin-top:8px">
+    <div class="modal-actions">
+      <button class="btn btn-g" onclick="closeDoiTacFeeModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 /* ==================== TIỆN ÍCH CHUNG ==================== */
 let TOKEN = null, LEADS = [], POSTS = [], CATS = [];
+let DOI_TAC = [], DANH_MUC_NUOC = [], DANH_MUC_MUC_DICH = [], DANH_MUC_TRUONG_NHOM = [], HO_SO = [];
+let CUR_HOSO_XLPS = [], CUR_FEE_DOITAC = null, CHART_DT = null, CHART_SL = null;
 const REMEMBER_KEY = 'tv_admin_refresh_token';
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -227,6 +546,8 @@ function toast(msg,type='ok'){ const t=$('toast'); t.textContent=msg; t.classNam
   setTimeout(()=>t.classList.remove('show'),4000); }
 function fmtTime(iso){ const d=new Date(iso);
   return d.toLocaleDateString('vi-VN')+' '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}); }
+function fmtDate(d){ return d ? new Date(d).toLocaleDateString('vi-VN') : '–'; }
+function fmtVND(n){ return Number(n||0).toLocaleString('vi-VN')+' đ'; }
 
 async function api(path, opts={}){
   const res = await fetch(SUPABASE_URL+'/rest/v1/'+path, {
@@ -268,8 +589,9 @@ $('loginForm').addEventListener('submit', async e=>{
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    await Promise.all([loadLeads(), loadCats()]);
+    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo()]);
     loadPosts();
+    loadDashboard();
   }catch(err){
     $('loginErr').textContent = err.message==='Failed to fetch'
       ? 'Không kết nối được Supabase. Kiểm tra mạng hoặc URL cấu hình.' : err.message;
@@ -297,8 +619,9 @@ async function trySilentLogin(){
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    await Promise.all([loadLeads(), loadCats()]);
+    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo()]);
     loadPosts();
+    loadDashboard();
   }catch(e){
     localStorage.removeItem(REMEMBER_KEY);
   }
@@ -308,10 +631,11 @@ trySilentLogin();
 /* ==================== TAB ==================== */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
-  ['leads','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
+  ['dash','tuvan','hoso','doitac','settings','leads','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
+  if(name==='dash') loadDashboard();
 }
 
-/* ==================== LEADS ==================== */
+/* ==================== LEADS (Khách đăng ký — tab gốc Phase 1, giữ nguyên) ==================== */
 async function loadLeads(){
   try{
     LEADS = await api('leads?select=*&order=created_at.desc') || [];
@@ -321,6 +645,7 @@ async function loadLeads(){
       [...new Set(LEADS.map(l=>l.country).filter(Boolean))].map(c=>`<option>${esc(c)}</option>`).join('');
     sel.value=cur;
     renderLeads();
+    renderTuVan();
   }catch(e){ if(e.message!=='401') toast('Lỗi tải danh sách: '+e.message,'err'); }
 }
 function pillClass(s){ return {'Mới':'pill-new','Đã gọi':'pill-called','Chốt':'pill-won','Hủy':'pill-lost'}[s]||'pill-new'; }
@@ -358,7 +683,7 @@ async function updateLeadStatus(id,status){
   try{
     await api('leads?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status}),prefer:'return=minimal'});
     const l=LEADS.find(x=>x.id===id); if(l) l.status=status;
-    renderLeads(); toast('Đã cập nhật trạng thái');
+    renderLeads(); renderTuVan(); toast('Đã cập nhật trạng thái');
   }catch(e){ toast('Lỗi cập nhật: '+e.message,'err'); }
 }
 function exportCSV(){
@@ -376,7 +701,7 @@ function exportCSV(){
   toast('Đã xuất '+LEADS.length+' lead ra CSV');
 }
 
-/* ==================== CATEGORIES ==================== */
+/* ==================== CATEGORIES (Danh mục bài viết — giữ nguyên) ==================== */
 async function loadCats(){
   try{
     CATS = await api('categories?select=*&order=name') || [];
@@ -402,7 +727,7 @@ async function delCategory(id){
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 
-/* ==================== POSTS ==================== */
+/* ==================== POSTS (Bài viết — giữ nguyên) ==================== */
 async function loadPosts(){
   try{
     POSTS = await api('posts?select=*,categories(name)&order=created_at.desc') || [];
@@ -457,6 +782,468 @@ async function delPost(id){
   try{ await api('posts?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadPosts(); toast('Đã xóa bài viết');
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+}
+
+/* ==================== PHASE 2: DANH MỤC DÙNG CHUNG (Nước / Mục đích / Trưởng nhóm) ==================== */
+function danhMucTable(type){ return {nuoc:'danh_muc_nuoc',mucdich:'danh_muc_muc_dich',truongnhom:'danh_muc_truong_nhom'}[type]; }
+function danhMucArr(type){ return {nuoc:DANH_MUC_NUOC,mucdich:DANH_MUC_MUC_DICH,truongnhom:DANH_MUC_TRUONG_NHOM}[type]; }
+async function loadDanhMuc(){
+  try{
+    [DANH_MUC_NUOC, DANH_MUC_MUC_DICH, DANH_MUC_TRUONG_NHOM] = await Promise.all([
+      api('danh_muc_nuoc?select=*&order=ten'),
+      api('danh_muc_muc_dich?select=*&order=ten'),
+      api('danh_muc_truong_nhom?select=*&order=ten')
+    ]);
+    fillDanhMucSelects();
+    renderSettings();
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải danh mục Phase 2: '+e.message,'err'); }
+}
+function optsFromDanhMuc(arr){
+  return '<option value="">-- Chọn --</option>'+arr.map(x=>`<option value="${x.id}">${esc(x.ten)}${x.active?'':' (đã ẩn)'}</option>`).join('');
+}
+function optsFromDanhMucText(arr){
+  return '<option value="">-- Chọn --</option>'+arr.map(x=>`<option value="${esc(x.ten)}">${esc(x.ten)}${x.active?'':' (đã ẩn)'}</option>`).join('');
+}
+function fillDanhMucSelects(){
+  $('hoNuoc').innerHTML = optsFromDanhMuc(DANH_MUC_NUOC);
+  $('hoMucDich').innerHTML = optsFromDanhMuc(DANH_MUC_MUC_DICH);
+  $('hoTruongNhom').innerHTML = '<option value="">-- Không chọn --</option>'+
+    DANH_MUC_TRUONG_NHOM.map(x=>`<option value="${x.id}">${esc(x.ten)}${x.active?'':' (đã ẩn)'}</option>`).join('');
+  $('tvCountry').innerHTML = optsFromDanhMucText(DANH_MUC_NUOC);
+  $('tvMucDich').innerHTML = optsFromDanhMucText(DANH_MUC_MUC_DICH);
+  const curFN=$('fHsNuoc').value;
+  $('fHsNuoc').innerHTML='<option value="">Tất cả nước đến</option>'+DANH_MUC_NUOC.map(x=>`<option value="${x.id}">${esc(x.ten)}</option>`).join('');
+  $('fHsNuoc').value=curFN;
+}
+function renderSettings(){
+  const blocks=[['listNuoc','nuoc'],['listMucDich','mucdich'],['listTruongNhom','truongnhom']];
+  blocks.forEach(([elId,type])=>{
+    const arr=danhMucArr(type);
+    $(elId).innerHTML = arr.length ? arr.map(x=>`
+      <div class="cat-item ${x.active?'':'inactive'}">
+        <span>${esc(x.ten)}${x.active?'':' (đã ẩn)'}</span>
+        <div class="cat-item-actions">
+          <button class="btn btn-g" onclick="renameDanhMuc('${type}',${x.id})">Sửa</button>
+          <button class="btn btn-g" onclick="toggleDanhMuc('${type}',${x.id},${!x.active})">${x.active?'Ẩn':'Hiện'}</button>
+        </div>
+      </div>`).join('') : '<div class="hint">Chưa có mục nào</div>';
+  });
+}
+async function addDanhMuc(type){
+  const inputId={nuoc:'newNuoc',mucdich:'newMucDich',truongnhom:'newTruongNhom'}[type];
+  const ten=$(inputId).value.trim();
+  if(!ten){ toast('Nhập tên','err'); return; }
+  try{
+    await api(danhMucTable(type),{method:'POST',body:JSON.stringify({ten})});
+    $(inputId).value=''; loadDanhMuc(); toast('Đã thêm');
+  }catch(e){ toast(e.message.includes('duplicate')?'Mục này đã tồn tại':'Lỗi: '+e.message,'err'); }
+}
+async function toggleDanhMuc(type,id,active){
+  try{
+    await api(danhMucTable(type)+'?id=eq.'+id,{method:'PATCH',body:JSON.stringify({active}),prefer:'return=minimal'});
+    loadDanhMuc(); toast(active?'Đã hiện lại':'Đã ẩn');
+  }catch(e){ toast('Lỗi: '+e.message,'err'); }
+}
+async function renameDanhMuc(type,id){
+  const cur = danhMucArr(type).find(x=>x.id===id);
+  if(!cur) return;
+  const ten = prompt('Sửa tên:', cur.ten);
+  if(!ten || !ten.trim() || ten.trim()===cur.ten) return;
+  try{
+    await api(danhMucTable(type)+'?id=eq.'+id,{method:'PATCH',body:JSON.stringify({ten:ten.trim()}),prefer:'return=minimal'});
+    loadDanhMuc(); toast('Đã cập nhật');
+  }catch(e){ toast('Lỗi: '+e.message,'err'); }
+}
+
+/* ==================== PHASE 2: ĐẠI LÝ ỦY THÁC ==================== */
+function doiTacLabel(d){ return `${d.ten_dai_dien||d.ten_cong_ty} (${d.ten_cong_ty})`; }
+function doiTacCellLabel(d){ return d ? `${esc(d.ten_dai_dien||d.ten_cong_ty)} (${esc(d.ten_cong_ty)})` : '–'; }
+async function loadDoiTac(){
+  try{
+    DOI_TAC = await api('doi_tac?select=*&order=ten_cong_ty') || [];
+    fillDoiTacSelects();
+    renderDoiTac();
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải đại lý ủy thác: '+e.message,'err'); }
+}
+function fillDoiTacSelects(){
+  $('hoDoiTac').innerHTML = '<option value="">-- Chọn đại lý --</option>'+DOI_TAC.map(d=>
+    `<option value="${d.id}">${esc(doiTacLabel(d))}${d.trang_thai==='Ngừng hợp tác'?' – Ngừng hợp tác':''}</option>`).join('');
+  const curFD=$('fHsDoiTac').value;
+  $('fHsDoiTac').innerHTML = '<option value="">Tất cả đại lý</option>'+DOI_TAC.map(d=>`<option value="${d.id}">${esc(doiTacLabel(d))}</option>`).join('');
+  $('fHsDoiTac').value=curFD;
+}
+function renderDoiTac(){
+  $('dtEmpty').classList.toggle('hidden', DOI_TAC.length>0);
+  $('dtBody').innerHTML = DOI_TAC.map((d,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td><b>${esc(d.ten_cong_ty)}</b></td>
+      <td>${esc(d.ten_dai_dien||'–')}</td>
+      <td>${d.sdt_lien_he?`<a href="tel:${esc(d.sdt_lien_he)}">${esc(d.sdt_lien_he)}</a>`:'–'}</td>
+      <td><span class="pill ${d.trang_thai==='Đang hợp tác'?'pill-dt-on':'pill-dt-off'}">${esc(d.trang_thai)}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-g" onclick="openDoiTacModal(${d.id})">Sửa</button>
+        <button class="btn btn-g" onclick="openDoiTacFeeModal(${d.id})">Bảng phí</button>
+        <button class="btn btn-d" onclick="delDoiTac(${d.id})">Xóa</button>
+      </td>
+    </tr>`).join('');
+}
+function openDoiTacModal(id){
+  const d = id ? DOI_TAC.find(x=>x.id===id) : null;
+  $('dtModalTitle').textContent = d ? 'Sửa đại lý ủy thác' : 'Thêm đại lý ủy thác';
+  $('dtId').value = d?.id||'';
+  $('dtTenCongTy').value = d?.ten_cong_ty||'';
+  $('dtTenDaiDien').value = d?.ten_dai_dien||'';
+  $('dtSdt').value = d?.sdt_lien_he||'';
+  $('dtDiaChi').value = d?.dia_chi||'';
+  $('dtTrangThai').value = d?.trang_thai||'Đang hợp tác';
+  $('dtGhiChu').value = d?.ghi_chu||'';
+  $('dtOverlay').classList.remove('hidden');
+}
+function closeDoiTacModal(){ $('dtOverlay').classList.add('hidden'); }
+async function saveDoiTac(){
+  const ten_cong_ty=$('dtTenCongTy').value.trim();
+  if(!ten_cong_ty){ toast('Nhập tên công ty','err'); return; }
+  const body={
+    ten_cong_ty,
+    ten_dai_dien: $('dtTenDaiDien').value.trim()||null,
+    sdt_lien_he: $('dtSdt').value.trim()||null,
+    dia_chi: $('dtDiaChi').value.trim()||null,
+    trang_thai: $('dtTrangThai').value,
+    ghi_chu: $('dtGhiChu').value.trim()||null
+  };
+  const id=$('dtId').value;
+  const btn=$('dtSaveBtn'); btn.disabled=true;
+  try{
+    if(id) await api('doi_tac?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
+    else await api('doi_tac',{method:'POST',body:JSON.stringify(body)});
+    closeDoiTacModal(); loadDoiTac(); toast(id?'Đã cập nhật đại lý':'Đã thêm đại lý');
+  }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
+  finally{ btn.disabled=false; }
+}
+async function delDoiTac(id){
+  if(!confirm('Xóa đại lý ủy thác này? Không thể hoàn tác.')) return;
+  try{
+    await api('doi_tac?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadDoiTac(); toast('Đã xóa đại lý ủy thác');
+  }catch(e){
+    const msg=e.message.toLowerCase();
+    if(msg.includes('foreign key')||msg.includes('violates')||msg.includes('23503'))
+      toast('Không thể xóa: đại lý này đang có hồ sơ tham chiếu. Hãy dùng "Ngừng hợp tác" thay vì xóa.','err');
+    else toast('Lỗi xóa: '+e.message,'err');
+  }
+}
+async function openDoiTacFeeModal(id){
+  const d = DOI_TAC.find(x=>x.id===id);
+  if(!d) return;
+  CUR_FEE_DOITAC=id;
+  $('dtFeeCompanyName').textContent = doiTacLabel(d);
+  $('dtFeeDoiTacId').value=id;
+  $('feeNoiNop').value=''; $('feeDienVisa').value=''; $('feeMuc').value=''; $('feeGhiChu').value='';
+  $('feeNgayApDung').value = new Date().toISOString().slice(0,10);
+  $('dtFeeOverlay').classList.remove('hidden');
+  await loadDoiTacPhi(id);
+}
+function closeDoiTacFeeModal(){ $('dtFeeOverlay').classList.add('hidden'); CUR_FEE_DOITAC=null; }
+async function loadDoiTacPhi(id){
+  try{
+    const rows = await api('doi_tac_phi?doi_tac_id=eq.'+id+'&select=*&order=ngay_ap_dung_tu.desc') || [];
+    $('dtFeeEmpty').classList.toggle('hidden', rows.length>0);
+    $('dtFeeBody').innerHTML = rows.map(f=>`
+      <tr><td>${esc(f.noi_nop||'–')}</td><td>${esc(f.dien_visa||'–')}</td>
+      <td>${f.muc_phi!=null?fmtVND(f.muc_phi):'–'}</td>
+      <td>${fmtDate(f.ngay_ap_dung_tu)}</td>
+      <td>${esc(f.ghi_chu||'–')}</td></tr>`).join('');
+  }catch(e){ toast('Lỗi tải bảng phí: '+e.message,'err'); }
+}
+async function addDoiTacPhi(){
+  if(!CUR_FEE_DOITAC) return;
+  const body={
+    doi_tac_id: CUR_FEE_DOITAC,
+    noi_nop: $('feeNoiNop').value.trim()||null,
+    dien_visa: $('feeDienVisa').value.trim()||null,
+    muc_phi: $('feeMuc').value?Number($('feeMuc').value):null,
+    ngay_ap_dung_tu: $('feeNgayApDung').value||new Date().toISOString().slice(0,10),
+    ghi_chu: $('feeGhiChu').value.trim()||null
+  };
+  try{
+    await api('doi_tac_phi',{method:'POST',body:JSON.stringify(body)});
+    $('feeNoiNop').value=''; $('feeDienVisa').value=''; $('feeMuc').value=''; $('feeGhiChu').value='';
+    loadDoiTacPhi(CUR_FEE_DOITAC); toast('Đã thêm mức phí mới');
+  }catch(e){ toast('Lỗi thêm phí: '+e.message,'err'); }
+}
+
+/* ==================== PHASE 2: TƯ VẤN (mở rộng bảng leads) ==================== */
+function renderTuVan(){
+  const st=$('fTvStatus').value, q=$('fTvSearch').value.toLowerCase().trim();
+  const rows = LEADS.filter(l=>(!st||l.status===st)&&(!q||(l.name||'').toLowerCase().includes(q)||(l.phone||'').includes(q)));
+  $('tvEmpty').classList.toggle('hidden', rows.length>0);
+  $('tvBody').innerHTML = rows.map((l,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${fmtTime(l.created_at)}</td>
+      <td><b>${esc(l.name)}</b></td>
+      <td>${l.phone?`<a href="tel:${esc(l.phone)}">${esc(l.phone)}</a>`:'–'}</td>
+      <td>${esc(l.country||'–')}</td>
+      <td>${esc(l.muc_dich||'–')}</td>
+      <td><span class="pill ${pillClass(l.status)}">${esc(l.status)}</span></td>
+      <td>${fmtDate(l.ngay_nhac_lai)}</td>
+      <td><button class="btn btn-g" onclick="openTvModal(${l.id})">Sửa</button></td>
+    </tr>`).join('');
+}
+function openTvModal(id){
+  const l = id ? LEADS.find(x=>x.id===id) : null;
+  $('tvModalTitle').textContent = l ? 'Sửa tư vấn' : 'Thêm tư vấn';
+  $('tvId').value = l?.id||'';
+  $('tvName').value = l?.name||'';
+  $('tvPhone').value = l?.phone||'';
+  $('tvEmail').value = l?.email||'';
+  $('tvFb').value = l?.link_fb||'';
+  $('tvCountry').value = l?.country||'';
+  $('tvMucDich').value = l?.muc_dich||'';
+  $('tvNote').value = l?.note||'';
+  $('tvStatus').value = l?.status||'Mới';
+  $('tvNgayNhacLai').value = l?.ngay_nhac_lai||'';
+  $('tvOverlay').classList.remove('hidden');
+}
+function closeTvModal(){ $('tvOverlay').classList.add('hidden'); }
+async function saveTuVan(){
+  const name=$('tvName').value.trim(), phone=$('tvPhone').value.trim();
+  const country=$('tvCountry').value, muc_dich=$('tvMucDich').value;
+  if(!name){ toast('Nhập họ tên','err'); return; }
+  if(!phone){ toast('Nhập số điện thoại','err'); return; }
+  if(!country){ toast('Vui lòng chọn Nước đến','err'); return; }
+  if(!muc_dich){ toast('Vui lòng chọn Mục đích','err'); return; }
+  const body={
+    name, phone, email:$('tvEmail').value.trim()||null, link_fb:$('tvFb').value.trim()||null,
+    country, muc_dich, note:$('tvNote').value.trim()||null, status:$('tvStatus').value,
+    ngay_nhac_lai: $('tvNgayNhacLai').value||null
+  };
+  const id=$('tvId').value;
+  const btn=$('tvSaveBtn'); btn.disabled=true;
+  try{
+    let saved;
+    if(id) saved = await api('leads?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body)});
+    else saved = await api('leads',{method:'POST',body:JSON.stringify(body)});
+    const savedRow = Array.isArray(saved)?saved[0]:saved;
+    closeTvModal();
+    await loadLeads();
+    toast(id?'Đã cập nhật tư vấn':'Đã thêm tư vấn');
+    if(body.status==='Chốt' && savedRow){
+      if(confirm('Hồ sơ này đã chốt, Chị Hiền muốn thêm thông tin này vào hồ sơ xử lý không?')){
+        const nuoc = DANH_MUC_NUOC.find(n=>n.ten===savedRow.country);
+        const md = DANH_MUC_MUC_DICH.find(m=>m.ten===savedRow.muc_dich);
+        switchTab('hoso');
+        openHoSoModal(null, {
+          ten_khach: savedRow.name, sdt_khach: savedRow.phone,
+          nuoc_id: nuoc?.id||'', muc_dich_id: md?.id||'',
+          note: savedRow.note, nguon_tu_van_id: savedRow.id
+        });
+      }
+    }
+  }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
+  finally{ btn.disabled=false; }
+}
+
+/* ==================== PHASE 2: HỒ SƠ ==================== */
+async function loadHoSo(){
+  try{
+    HO_SO = await api('ho_so?select=*,danh_muc_nuoc(ten),danh_muc_muc_dich(ten),danh_muc_truong_nhom(ten),doi_tac(ten_cong_ty,ten_dai_dien)&order=created_at.desc') || [];
+    renderHoSo();
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải hồ sơ: '+e.message,'err'); }
+}
+function hsPillClass(s){
+  return {'Đang xử lý':'pill-hs-dxl','Đã nộp':'pill-hs-dn','Chờ kết quả':'pill-hs-ckq','Đậu':'pill-hs-dau','Rớt':'pill-hs-rot','Hủy':'pill-hs-huy'}[s]||'pill-hs-dxl';
+}
+function renderHoSo(){
+  const st=$('fHsStatus').value, nuocId=$('fHsNuoc').value, dtId=$('fHsDoiTac').value, q=$('fHsSearch').value.toLowerCase().trim();
+  const rows = HO_SO.filter(h=>
+    (!st||h.trang_thai===st) &&
+    (!nuocId||String(h.nuoc_id)===nuocId) &&
+    (!dtId||String(h.doi_tac_id)===dtId) &&
+    (!q||(h.ten_khach||'').toLowerCase().includes(q))
+  );
+  $('hsEmpty').classList.toggle('hidden', rows.length>0);
+  $('hsBody').innerHTML = rows.map((h,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${fmtDate(h.ngay)}</td>
+      <td><b>${esc(h.ten_khach)}</b></td>
+      <td>${esc(h.danh_muc_nuoc?.ten||'–')}</td>
+      <td>${esc(h.danh_muc_muc_dich?.ten||'–')}</td>
+      <td>${doiTacCellLabel(h.doi_tac)}</td>
+      <td><span class="pill ${hsPillClass(h.trang_thai)}">${esc(h.trang_thai)}</span></td>
+      <td>${fmtVND(h.loi_nhuan)}</td>
+      <td>${fmtDate(h.ngay_tra_kq)}</td>
+      <td><button class="btn btn-g" onclick="openHoSoModal(${h.id})">Sửa</button></td>
+    </tr>`).join('');
+}
+function openHoSoModal(id, prefill){
+  const h = id ? HO_SO.find(x=>x.id===id) : null;
+  $('hoModalTitle').textContent = h ? 'Sửa hồ sơ' : 'Thêm hồ sơ';
+  $('hoId').value = h?.id||'';
+  $('hoNguonTuVan').value = h?.nguon_tu_van_id || prefill?.nguon_tu_van_id || '';
+  $('hoNgay').value = h?.ngay || new Date().toISOString().slice(0,10);
+  $('hoTruongNhom').value = h?.truong_nhom_id||'';
+  $('hoTenKhach').value = h ? h.ten_khach : (prefill?.ten_khach||'');
+  $('hoSdtKhach').value = h ? (h.sdt_khach||'') : (prefill?.sdt_khach||'');
+  $('hoDiaChi').value = h?.dia_chi||'';
+  $('hoNuoc').value = h ? (h.nuoc_id||'') : (prefill?.nuoc_id||'');
+  $('hoMucDich').value = h ? (h.muc_dich_id||'') : (prefill?.muc_dich_id||'');
+  $('hoDoiTac').value = h?.doi_tac_id||'';
+  $('hoThuLePhi').value = h?.thu_le_phi||0;
+  $('hoThuInAnh').value = h?.thu_in_anh||0;
+  $('hoThuHoTro').value = h?.thu_ho_tro_khac||0;
+  $('hoChiLanhSu').value = h?.chi_le_phi_lanh_su||0;
+  $('hoChiDoiTacCtv').value = h?.chi_doi_tac_ctv||0;
+  $('hoChiThuDi').value = h?.chi_thu_di||0;
+  $('hoChiThuVe').value = h?.chi_thu_ve||0;
+  $('hoChiPhiKhac').value = h?.chi_phi_khac||0;
+  $('hoNgayNop').value = h?.ngay_nop||'';
+  $('hoNgayTraKq').value = h?.ngay_tra_kq||'';
+  $('hoTrangThai').value = h?.trang_thai||'Đang xử lý';
+  $('hoNote').value = h ? (h.note||'') : (prefill?.note||'');
+  updateHoSoTotals();
+  $('hoXlpsHint').classList.toggle('hidden', !!h);
+  $('hoXlpsBox').classList.toggle('hidden', !h);
+  if(h) loadXlps(h.id); else { CUR_HOSO_XLPS=[]; renderXlps(); }
+  $('hoOverlay').classList.remove('hidden');
+}
+function closeHoSoModal(){ $('hoOverlay').classList.add('hidden'); }
+function updateHoSoTotals(){
+  const n=id=>Number($(id).value)||0;
+  const thu = n('hoThuLePhi')+n('hoThuInAnh')+n('hoThuHoTro');
+  const chi = n('hoChiLanhSu')+n('hoChiDoiTacCtv')+n('hoChiThuDi')+n('hoChiThuVe')+n('hoChiPhiKhac');
+  $('hoTongThu').value = fmtVND(thu);
+  $('hoTongChi').value = fmtVND(chi);
+  $('hoLoiNhuan').value = fmtVND(thu-chi);
+}
+async function saveHoSo(){
+  const ten_khach=$('hoTenKhach').value.trim();
+  const nuoc_id=$('hoNuoc').value, muc_dich_id=$('hoMucDich').value, doi_tac_id=$('hoDoiTac').value;
+  if(!ten_khach){ toast('Nhập tên khách hàng','err'); return; }
+  if(!nuoc_id){ toast('Vui lòng chọn Nước đến','err'); return; }
+  if(!muc_dich_id){ toast('Vui lòng chọn Mục đích','err'); return; }
+  if(!doi_tac_id){ toast('Vui lòng chọn Đại lý ủy thác','err'); return; }
+  const body={
+    ngay: $('hoNgay').value || new Date().toISOString().slice(0,10),
+    truong_nhom_id: $('hoTruongNhom').value||null,
+    ten_khach, sdt_khach: $('hoSdtKhach').value.trim()||null, dia_chi: $('hoDiaChi').value.trim()||null,
+    nuoc_id: Number(nuoc_id), muc_dich_id: Number(muc_dich_id), doi_tac_id: Number(doi_tac_id),
+    thu_le_phi: Number($('hoThuLePhi').value)||0, thu_in_anh: Number($('hoThuInAnh').value)||0,
+    thu_ho_tro_khac: Number($('hoThuHoTro').value)||0,
+    chi_le_phi_lanh_su: Number($('hoChiLanhSu').value)||0, chi_doi_tac_ctv: Number($('hoChiDoiTacCtv').value)||0,
+    chi_thu_di: Number($('hoChiThuDi').value)||0, chi_thu_ve: Number($('hoChiThuVe').value)||0,
+    chi_phi_khac: Number($('hoChiPhiKhac').value)||0,
+    ngay_nop: $('hoNgayNop').value||null, ngay_tra_kq: $('hoNgayTraKq').value||null,
+    trang_thai: $('hoTrangThai').value, note: $('hoNote').value.trim()||null,
+    nguon_tu_van_id: $('hoNguonTuVan').value||null
+  };
+  const id=$('hoId').value;
+  const btn=$('hoSaveBtn'); btn.disabled=true;
+  try{
+    if(id) await api('ho_so?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
+    else await api('ho_so',{method:'POST',body:JSON.stringify(body)});
+    closeHoSoModal(); loadHoSo(); toast(id?'Đã cập nhật hồ sơ':'Đã thêm hồ sơ');
+  }catch(e){ toast('Lỗi lưu hồ sơ: '+e.message,'err'); }
+  finally{ btn.disabled=false; }
+}
+
+/* ==== Xử lý phát sinh (bảng con của Hồ sơ) ==== */
+function xlPillClass(s){ return {'Đang xử lý':'pill-xl-dxl','Hủy':'pill-xl-huy','Tạm dừng':'pill-xl-td','Hoàn thành':'pill-xl-ht'}[s]||'pill-xl-dxl'; }
+async function loadXlps(hoSoId){
+  try{
+    CUR_HOSO_XLPS = await api('ho_so_xu_ly_phat_sinh?ho_so_id=eq.'+hoSoId+'&select=*&order=han_chot') || [];
+    renderXlps();
+  }catch(e){ toast('Lỗi tải xử lý phát sinh: '+e.message,'err'); }
+}
+function renderXlps(){
+  $('hoXlpsBody').innerHTML = CUR_HOSO_XLPS.length ? CUR_HOSO_XLPS.map(x=>`
+    <tr>
+      <td>${esc(x.noi_dung)}</td>
+      <td>${fmtDate(x.han_chot)}</td>
+      <td>${esc(x.ghi_chu||'–')}</td>
+      <td><select onchange="updateXlpsStatus(${x.id},this.value)">
+        ${['Đang xử lý','Hủy','Tạm dừng','Hoàn thành'].map(s=>`<option ${s===x.trang_thai?'selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td><button class="btn btn-d" onclick="delXlps(${x.id})">Xóa</button></td>
+    </tr>`).join('') : '<tr><td colspan="5" class="empty">Chưa có dòng nào</td></tr>';
+}
+async function addXlps(){
+  const hoId = $('hoId').value;
+  if(!hoId){ toast('Lưu hồ sơ trước khi thêm dòng xử lý phát sinh','err'); return; }
+  const noi_dung=$('xlpsNoiDung').value.trim(), han_chot=$('xlpsHanChot').value;
+  if(!noi_dung || !han_chot){ toast('Nhập Nội dung và Hạn chốt','err'); return; }
+  try{
+    await api('ho_so_xu_ly_phat_sinh',{method:'POST',body:JSON.stringify({
+      ho_so_id:Number(hoId), noi_dung, han_chot, ghi_chu:$('xlpsGhiChu').value.trim()||null, trang_thai:$('xlpsTrangThai').value
+    })});
+    $('xlpsNoiDung').value=''; $('xlpsHanChot').value=''; $('xlpsGhiChu').value=''; $('xlpsTrangThai').value='Đang xử lý';
+    loadXlps(hoId); toast('Đã thêm dòng xử lý phát sinh');
+  }catch(e){ toast('Lỗi thêm: '+e.message,'err'); }
+}
+async function updateXlpsStatus(id,trang_thai){
+  try{
+    await api('ho_so_xu_ly_phat_sinh?id=eq.'+id,{method:'PATCH',body:JSON.stringify({trang_thai}),prefer:'return=minimal'});
+    const x=CUR_HOSO_XLPS.find(r=>r.id===id); if(x) x.trang_thai=trang_thai;
+    toast('Đã cập nhật trạng thái');
+  }catch(e){ toast('Lỗi: '+e.message,'err'); }
+}
+async function delXlps(id){
+  if(!confirm('Xóa dòng xử lý phát sinh này?')) return;
+  try{
+    await api('ho_so_xu_ly_phat_sinh?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadXlps($('hoId').value); toast('Đã xóa');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+}
+
+/* ==================== PHASE 2: DASHBOARD ==================== */
+async function loadDashboard(){
+  try{
+    const [byMonth, dangXuLyArr, nhacLai, xlps7] = await Promise.all([
+      api('v_dashboard_theo_thang?select=*&order=thang'),
+      api('v_ho_so_dang_xu_ly?select=*'),
+      api('v_tu_van_can_nhac_lai?select=*&order=ngay_nhac_lai'),
+      api('v_xu_ly_phat_sinh_7_ngay?select=*&order=han_chot')
+    ]);
+    renderDashboard(byMonth||[], (dangXuLyArr&&dangXuLyArr[0])||{so_luong:0}, nhacLai||[], xlps7||[]);
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải Dashboard: '+e.message,'err'); }
+}
+function renderDashboard(byMonth, dangXuLy, nhacLai, xlps7){
+  const now = new Date();
+  const curKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const curRow = byMonth.find(r=>r.thang && r.thang.slice(0,7)===curKey);
+  $('dashStatRow').innerHTML = `
+    <div class="stat"><div class="n">${fmtVND(curRow?.doanh_thu)}</div><div class="l">Doanh thu tháng này</div></div>
+    <div class="stat"><div class="n">${fmtVND(curRow?.loi_nhuan)}</div><div class="l">Lợi nhuận tháng này</div></div>
+    <div class="stat"><div class="n">${dangXuLy.so_luong||0}</div><div class="l">Hồ sơ đang xử lý</div></div>
+    <div class="stat"><div class="n">${nhacLai.length}</div><div class="l">Cần nhắc lại (7 ngày)</div></div>`;
+
+  const labels = byMonth.map(r=>{ const d=new Date(r.thang); return (d.getMonth()+1)+'/'+d.getFullYear(); });
+  if(window.Chart){
+    if(CHART_DT) CHART_DT.destroy();
+    CHART_DT = new Chart($('chartDoanhThu'), { type:'bar', data:{ labels, datasets:[
+      {type:'bar', label:'Doanh thu', data:byMonth.map(r=>Number(r.doanh_thu||0)), backgroundColor:'#1B6EF3'},
+      {type:'line', label:'Lợi nhuận', data:byMonth.map(r=>Number(r.loi_nhuan||0)), borderColor:'#FF7A29', backgroundColor:'#FF7A29', tension:.3}
+    ]}, options:{responsive:true, plugins:{legend:{position:'bottom'}}} });
+
+    if(CHART_SL) CHART_SL.destroy();
+    CHART_SL = new Chart($('chartSoLuong'), { type:'bar', data:{ labels, datasets:[
+      {label:'Số lượng hồ sơ', data:byMonth.map(r=>Number(r.so_luong_ho_so||0)), backgroundColor:'#0F4FC2'}
+    ]}, options:{responsive:true, plugins:{legend:{display:false}}} });
+  }
+
+  $('dashXlpsEmpty').classList.toggle('hidden', xlps7.length>0);
+  $('dashXlpsBody').innerHTML = xlps7.map(x=>`
+    <tr class="${x.qua_han||x.den_han?'danger':''}">
+      <td>${esc(x.ten_khach)}</td><td>${esc(x.noi_dung)}</td>
+      <td>${fmtDate(x.han_chot)}${x.qua_han?' (quá hạn)':x.den_han?' (hôm nay)':''}</td>
+    </tr>`).join('');
+
+  $('dashNhacLaiEmpty').classList.toggle('hidden', nhacLai.length>0);
+  $('dashNhacLaiBody').innerHTML = nhacLai.map(n=>`
+    <tr><td>${esc(n.ten_khach)}</td><td>${n.sdt_khach?`<a href="tel:${esc(n.sdt_khach)}">${esc(n.sdt_khach)}</a>`:'–'}</td>
+    <td>${fmtDate(n.ngay_nhac_lai)}</td></tr>`).join('');
 }
 </script>
 </body>

@@ -51,6 +51,13 @@ Tìm chữ `[THAY_THẾ]` trong `index.html` (Ctrl+F) và thay bằng thông tin
 
 Trang đang chạy thật tại `https://topvisa.nguyennc1357.workers.dev` (Supabase đã kết nối thật, form/admin hoạt động). Chi tiết đầy đủ về hạ tầng, quyết định kỹ thuật, và việc cần làm tiếp theo: xem `01_Docs/08_Ban_giao_Claude_Code.md`.
 
+## Phase 2 — Quản lý khách hàng / Admin CRM (2026-07-31)
+
+Đã code xong 5 tab mới trong `admin.html` (Dashboard, Tư vấn, Hồ sơ, Đại lý ủy thác, Cài đặt chung) — xem chi tiết `04_Phase 2/Phase2_Ban_giao_Claude_Code.md`.
+
+- [ ] **Cần chạy `04_Phase 2/supabase_setup_phase2.sql` trong Supabase SQL Editor trước khi dùng** (tạo bảng mới, mở rộng bảng `leads`) — Claude Code không tự chạy được bước này.
+- [ ] Test theo checklist mục 8 trong file bàn giao trên sau khi migration chạy xong.
+
 ## Muốn sửa nội dung?
 
 Gửi file cho Claude kèm yêu cầu, ví dụ: "Đổi giá visa Nhật thành 1.800.000đ", "Thêm quốc gia Singapore", "Đổi màu chủ đạo sang xanh lá" — sau đó deploy lại theo Bước 5 trong hướng dẫn.
