@@ -2,7 +2,7 @@
 
 > Dùng khi tiếp tục phát triển dự án bằng Claude Code. Đọc file này SAU `CLAUDE.md` (ở thư mục gốc) — CLAUDE.md là quy tắc/triết lý chung, file này là **tình trạng thực tế + lịch sử quyết định kỹ thuật** tính đến thời điểm cập nhật.
 >
-> Cập nhật lần cuối: **2026-07-30**, sau 1 phiên làm việc lớn (xem mục 2). Nếu ngày này đã cũ hơn 2-3 tuần so với hiện tại, coi các mục "còn thiếu"/"bước tiếp theo" là điểm khởi đầu để hỏi lại người dùng, không phải sự thật tuyệt đối.
+> Cập nhật lần cuối: **2026-07-31** (thêm mục 9 — cầu nối sang Phase 2). Nội dung mục 1-8 được viết ngày 2026-07-30, sau 1 phiên làm việc lớn (xem mục 2). Nếu ngày này đã cũ hơn 2-3 tuần so với hiện tại, coi các mục "còn thiếu"/"bước tiếp theo" là điểm khởi đầu để hỏi lại người dùng, không phải sự thật tuyệt đối.
 
 ## 1. Tình trạng hiện tại (đã lên Internet thật, không còn là bản nháp)
 
@@ -119,4 +119,25 @@ Spec gốc (mục 3, `BLOG-01` → `BLOG-06`) đề xuất 1 **trang riêng** `b
 3. **Quyết định về domain riêng**: hiện dùng `*.workers.dev` miễn phí — nếu mua domain, làm theo `07_Huong_dan_Deploy.md` Bước 4 (lưu ý: bước này viết cho Cloudflare Pages, cần kiểm tra lại thao tác "Custom domains" có tương đương bên Workers hay không, vì giao diện đã đổi — xác minh bằng ảnh chụp thật trước khi hướng dẫn).
 4. **Quyết định về Blog đầy đủ**: hỏi người dùng có cần trang `blog.html` riêng (SEO/chia sẻ link từng bài) theo đúng spec `09_Noi_dung_Dang_bai.md`, hay giữ nguyên bản rút gọn hiện tại là đủ.
 5. **Đăng thêm nội dung**: 3 bài viết mẫu đã soạn sẵn ở `09_Noi_dung_Dang_bai.md` mục 2, có thể dán trực tiếp vào tab "Bài viết" trong `admin.html`.
-6. **Cập nhật CLAUDE.md**: mục 2 (trạng thái) và mục 8 (placeholder) trong `CLAUDE.md` ở thư mục gốc hiện **đã lỗi thời** so với thực tế (vẫn ghi "chưa chạy Supabase", "3 review mẫu" chưa sửa) — nên đồng bộ lại cho khớp file này.
+6. ~~**Cập nhật CLAUDE.md**~~ — ✅ Đã làm (2026-07-31): mục 2 và mục 8 trong `CLAUDE.md` đã đồng bộ lại khớp thực tế.
+
+## 9. Phase 2 — Quản lý khách hàng (Admin CRM) — ĐÃ SẴN SÀNG TRIỂN KHAI
+
+> Thêm ngày 2026-07-31. Người dùng đã tự chuẩn bị **toàn bộ đặc tả Phase 2** (đã qua vòng PM confirm, không còn câu hỏi mở) trong thư mục `04_Phase 2/` — **không phải Claude Code viết**, chỉ mới rà soát/kiểm tra tính nhất quán với thực tế Phase 1 ở đây.
+
+**Đọc theo thứ tự:** `CLAUDE.md` → mục 1-8 ở trên (thực tế Phase 1) → **`04_Phase 2/Phase2_Ban_giao_Claude_Code.md`** (bàn giao Phase 2, đọc file này là đủ để bắt đầu code, không cần mở lại toàn bộ `Phase2_Dac_ta.xlsx`).
+
+**Tóm tắt Phase 2:** thêm 5 tab mới vào `admin.html` hiện có (Dashboard, Hồ sơ, Tư vấn, Đại lý ủy thác, Cài đặt chung) để quản lý khách hàng/CRM nội bộ — hoàn toàn tách biệt với phần Blog/Tin tức và landing page công khai.
+
+**Đã kiểm tra tính nhất quán với thực tế Phase 1 (không phát hiện xung đột):**
+- Phase 2 **không đụng** `index.html`, không đụng bảng `posts`/`categories` (Blog/Tin tức) → không ảnh hưởng những gì vừa làm ở mục 1-8.
+- `04_Phase 2/supabase_setup_phase2.sql` chỉ **thêm cột mới** (`email`, `link_fb`, `muc_dich`, `ngay_nhac_lai`) vào bảng `leads` có sẵn (không đổi kiểu, không thêm ràng buộc `NOT NULL`) → form đăng ký công khai trên `index.html` (chỉ gửi `name/phone/country/note`) **vẫn insert được bình thường**, đã xác nhận logic không xung đột.
+- Toàn bộ bảng mới của Phase 2 (`doi_tac`, `ho_so`, `danh_muc_*`...) đặt RLS chỉ cho `authenticated` (admin), không mở cho `anon` — nhất quán với mức độ bảo mật đã áp dụng ở Phase 1.
+- Migration chạy trên **cùng 1 project Supabase đang chạy thật** (`https://vvnjxvcdnzttcdufjjgo.supabase.co`, xem mục 3) — không cần tạo project mới, không cần đổi `SUPABASE_URL`/`SUPABASE_ANON_KEY` trong `index.html`/`admin.html`.
+- Đã sửa lại comment đầu/cuối file `supabase_setup_phase2.sql` (trước đó còn ghi "bản nháp, chưa chạy, chờ PM confirm" — mâu thuẫn với việc `Phase2_Ban_giao_Claude_Code.md` đã xác nhận mọi thứ chốt xong) cho khớp trạng thái thật: **đã confirm, sẵn sàng chạy**.
+
+**Lưu ý khi bắt đầu code Phase 2:**
+- Trong bảng `leads` hiện có 1 dòng dữ liệu TEST do Claude Code tạo lúc kiểm tra kết nối Supabase ("TEST - Claude Code kiem tra ket noi", SĐT `0900000000`, ngày 2026-07-30) — nên xóa dòng này trong Table Editor trước khi demo Dashboard Phase 2, tránh lẫn vào số liệu thống kê.
+- Bài viết Tin tức thật đầu tiên ("🎌 Lễ Obon 2026...") đã đăng qua `admin.html` — không liên quan Phase 2 nhưng cùng nằm trong `admin.html`, khi thêm 5 tab mới nhớ giữ nguyên 3 tab cũ (Khách đăng ký, Bài viết, Danh mục).
+- File `04_Phase 2/` hiện **chưa từng được đẩy lên GitHub** cho tới bản cập nhật này — đã `git add` + push cùng lúc với mục 9 này.
+- ⚠️ **Riêng file `04_Phase 2/Quan Ly Khach Hang.xlsx` KHÔNG được đẩy lên Git** — chứa dữ liệu khách hàng thật (tên, SĐT, địa chỉ, thu/chi từ 2019) và repo GitHub đang **public**. Đã thêm vào `.gitignore`. File này chỉ tồn tại trên máy local, dùng để agent tham khảo ngữ cảnh nghiệp vụ khi code Phase 2 — KHÔNG bao giờ `git add -f` file này hay bất kỳ file nào có dữ liệu khách hàng thật tương tự trong tương lai.
