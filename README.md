@@ -45,7 +45,7 @@ Tìm chữ `[THAY_THẾ]` trong `index.html` (Ctrl+F) và thay bằng thông tin
 - [ ] Bảng giá từng quốc gia
 - [ ] Số liệu "5000+ hồ sơ / 98% đậu" → số thật (tránh vi phạm quảng cáo)
 - [x] Review khách hàng thật — cập nhật 2026-07-30 (2 review thật lấy từ Facebook công ty)
-- [ ] Số GPKD ở footer (chưa có trong `Information.md`, cần bổ sung khi có)
+- [x] Số GPKD ở footer — đã bỏ dòng này theo yêu cầu (2026-07-31), footer chỉ còn "© 2026 Top Visa."
 
 ## Đã đưa lên Internet (2026-07-30)
 
