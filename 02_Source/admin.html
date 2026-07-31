@@ -84,6 +84,24 @@ tr:hover td{background:var(--pl)}
 td select{width:auto;font-size:13px;padding:5px 8px}
 .empty{text-align:center;color:var(--mut);padding:40px}
 
+/* bảng → thẻ (card) trên điện thoại, thay vì cuộn ngang */
+@media(max-width:700px){
+  .tbl-wrap{background:transparent;box-shadow:none;overflow-x:visible}
+  table{min-width:0!important;width:100%}
+  thead{display:none}
+  tbody{display:block}
+  tr{display:block;background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(15,30,61,.08);
+    border:1px solid var(--bd);margin-bottom:12px;padding:12px 14px}
+  tr:hover td{background:none}
+  td{display:block;border:none;padding:6px 0;border-bottom:1px dashed var(--bd);font-size:14px}
+  td:last-child{border-bottom:none;padding-bottom:0}
+  td:first-child{padding-top:0}
+  td[data-label="#"]{display:none}
+  td::before{content:attr(data-label);display:block;font-size:11px;font-weight:700;
+    color:var(--mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
+  td:not([data-label])::before{content:none}
+}
+
 /* modal */
 .overlay{position:fixed;inset:0;background:rgba(15,30,61,.5);z-index:100;display:flex;
   align-items:center;justify-content:center;padding:16px}
@@ -563,6 +581,18 @@ function fmtTime(iso){ const d=new Date(iso);
   return d.toLocaleDateString('vi-VN')+' '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(d){ return d ? new Date(d).toLocaleDateString('vi-VN') : '–'; }
 function fmtVND(n){ return Number(n||0).toLocaleString('vi-VN')+' đ'; }
+function applyRowLabels(tbodyId){
+  const tbody = $(tbodyId);
+  const table = tbody.closest('table');
+  const ths = table ? [...table.querySelectorAll('thead th')] : [];
+  if(!ths.length) return;
+  [...tbody.rows].forEach(tr=>{
+    [...tr.cells].forEach((td,i)=>{
+      const label = ths[i] ? ths[i].textContent.trim() : '';
+      if(td.colSpan===1 && label) td.dataset.label = label;
+    });
+  });
+}
 
 async function api(path, opts={}){
   const res = await fetch(SUPABASE_URL+'/rest/v1/'+path, {
@@ -693,6 +723,7 @@ function renderLeads(){
         </select>
       </td>
     </tr>`).join('');
+  applyRowLabels('leadsBody');
 }
 async function updateLeadStatus(id,status){
   try{
@@ -723,6 +754,7 @@ async function loadCats(){
     $('catsBody').innerHTML = CATS.map((c,i)=>`
       <tr><td>${i+1}</td><td>${esc(c.name)}</td>
       <td><button class="btn btn-d" onclick="delCategory(${c.id})">Xóa</button></td></tr>`).join('');
+    applyRowLabels('catsBody');
     $('postCat').innerHTML = '<option value="">-- Không chọn --</option>'+
       CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   }catch(e){ if(e.message!=='401') toast('Lỗi tải danh mục: '+e.message,'err'); }
@@ -759,6 +791,7 @@ async function loadPosts(){
           <button class="btn btn-d" onclick="delPost(${p.id})">Xóa</button>
         </td>
       </tr>`).join('');
+    applyRowLabels('postsBody');
   }catch(e){ if(e.message!=='401') toast('Lỗi tải bài viết: '+e.message,'err'); }
 }
 function openPostModal(id){
@@ -902,6 +935,7 @@ function renderDoiTac(){
         <button class="btn btn-d" onclick="delDoiTac(${d.id})">Xóa</button>
       </td>
     </tr>`).join('');
+  applyRowLabels('dtBody');
 }
 function openDoiTacModal(id){
   const d = id ? DOI_TAC.find(x=>x.id===id) : null;
@@ -969,6 +1003,7 @@ async function loadDoiTacPhi(id){
       <td>${f.muc_phi!=null?fmtVND(f.muc_phi):'–'}</td>
       <td>${fmtDate(f.ngay_ap_dung_tu)}</td>
       <td>${esc(f.ghi_chu||'–')}</td></tr>`).join('');
+    applyRowLabels('dtFeeBody');
   }catch(e){ toast('Lỗi tải bảng phí: '+e.message,'err'); }
 }
 async function addDoiTacPhi(){
@@ -1005,6 +1040,7 @@ function renderTuVan(){
       <td>${fmtDate(l.ngay_nhac_lai)}</td>
       <td><button class="btn btn-g" onclick="openTvModal(${l.id})">Sửa</button></td>
     </tr>`).join('');
+  applyRowLabels('tvBody');
 }
 function openTvModal(id){
   const l = id ? LEADS.find(x=>x.id===id) : null;
@@ -1092,6 +1128,7 @@ function renderHoSo(){
       <td>${fmtDate(h.ngay_tra_kq)}</td>
       <td><button class="btn btn-g" onclick="openHoSoModal(${h.id})">Sửa</button></td>
     </tr>`).join('');
+  applyRowLabels('hsBody');
 }
 function openHoSoModal(id, prefill){
   const h = id ? HO_SO.find(x=>x.id===id) : null;
@@ -1183,6 +1220,7 @@ function renderXlps(){
       </select></td>
       <td><button class="btn btn-d" onclick="delXlps(${x.id})">Xóa</button></td>
     </tr>`).join('') : '<tr><td colspan="5" class="empty">Chưa có dòng nào</td></tr>';
+  applyRowLabels('hoXlpsBody');
 }
 async function addXlps(){
   const hoId = $('hoId').value;
@@ -1254,11 +1292,13 @@ function renderDashboard(byMonth, dangXuLy, nhacLai, xlps7){
       <td>${esc(x.ten_khach)}</td><td>${esc(x.noi_dung)}</td>
       <td>${fmtDate(x.han_chot)}${x.qua_han?' (quá hạn)':x.den_han?' (hôm nay)':''}</td>
     </tr>`).join('');
+  applyRowLabels('dashXlpsBody');
 
   $('dashNhacLaiEmpty').classList.toggle('hidden', nhacLai.length>0);
   $('dashNhacLaiBody').innerHTML = nhacLai.map(n=>`
     <tr><td>${esc(n.ten_khach)}</td><td>${n.sdt_khach?`<a href="tel:${esc(n.sdt_khach)}">${esc(n.sdt_khach)}</a>`:'–'}</td>
     <td>${fmtDate(n.ngay_nhac_lai)}</td></tr>`).join('');
+  applyRowLabels('dashNhacLaiBody');
 }
 </script>
 </body>
