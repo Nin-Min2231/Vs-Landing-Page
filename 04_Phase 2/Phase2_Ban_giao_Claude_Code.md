@@ -128,3 +128,15 @@ Khi nhân viên lưu 1 dòng Tư vấn với **Trạng thái tư vấn = "Chốt
 - [ ] Xoá 1 Hồ sơ có thành viên nhóm (chỉ đổi Trạng thái = Hủy theo mục 3, không xoá thật) → dữ liệu thành viên vẫn giữ nguyên, không mất.
 - [ ] Landing page (`index.html`) vẫn hoạt động bình thường, form gửi lead vẫn thành công (không bị ảnh hưởng bởi cột mới thêm vào `leads`).
 - [ ] Không còn `[THAY_THẾ]` hay dữ liệu giả nào bị lộ ra ngoài giao diện public.
+
+## 9. Cập nhật (2026-08) — Sửa dialog Hồ sơ theo thiết kế Figma
+
+Theo yêu cầu bổ sung của PM, đã sửa `admin.html` (chưa chạm `index.html`):
+
+- **Bố cục dialog "Đăng ký hồ sơ mới"**: viết lại theo file thiết kế `01_Design/Dialog_Tao_moi_ho_so.png` + Figma (node `296:2220`) — header (tiêu đề + nút X) và footer (nút Đóng lại/Lưu hồ sơ) cố định, phần dữ liệu ở giữa cuộn riêng. Các nhóm field có khung nền xanh nhạt + vạch xanh bên trái, giống Figma.
+- **Đổi tên "Trưởng nhóm" → "Đối tác"** trên toàn bộ giao diện (label ở dialog Hồ sơ + tên khối ở tab Cài đặt chung). Tên bảng/cột kỹ thuật GIỮ NGUYÊN `danh_muc_truong_nhom`/`truong_nhom_id` (không đổi FK) — lưu ý: field này **khác** "Đại lý ủy thác" (`doi_tac`), dù tên khá giống nhau, PM đã xác nhận chấp nhận điều này.
+- **Phần Chi**: bỏ field "Thư đi" khỏi giao diện (cột `chi_thu_di` trong CSDL vẫn giữ để không mất dữ liệu hồ sơ cũ, chỉ không cho nhập mới nữa); đổi tên "Thư về" → **"Phí ship"** (vẫn là cột `chi_thu_ve`, không đổi tên cột).
+- **Phần Thu**: thêm field mới **"Khách tip"** (cột `thu_khach_tip`, KHÔNG nhân theo Số lượng, giống các khoản Thu khác) — đã cập nhật `supabase_setup_phase2.sql` mục C.1 (thêm cột + sửa lại `tong_thu`/`loi_nhuan`).
+- **"Số lượng hồ sơ"**: cho phép nhân viên sửa tay (trước đây chỉ đọc). Tuy nhiên mỗi khi thêm/xoá 1 dòng trong "Thành viên nhóm", hệ thống vẫn tự tính lại theo đúng số thành viên và **đè lên** số đã sửa tay trước đó (PM xác nhận chọn phương án này) — trigger CSDL `fn_cap_nhat_so_luong_ho_so` không đổi.
+- **Các ô tiền** (Thu/Chi) đổi sang canh phải + tự hiện dấu "." phân cách nghìn khi nhập (hàm `onMoneyInput`/`formatMoney`/`unformatMoney` trong `admin.html`).
+- Đã chạy thử trực tiếp trên trình duyệt (mở form tạo mới, gõ số tiền, đổi Số lượng, đổi Trạng thái) để xác nhận tính đúng — **chưa test lại với dữ liệu Supabase thật** (sửa/xoá thành viên nhóm, lưu hồ sơ thật) vì phiên làm việc không có tài khoản đăng nhập.

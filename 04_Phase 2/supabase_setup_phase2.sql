@@ -89,6 +89,9 @@ create table if not exists public.ho_so (
   id                    bigint generated always as identity primary key,
   created_at            timestamptz not null default now(),
   ngay                  date not null default current_date,
+  -- (2026-08) Nhãn hiển thị trên UI đổi từ "Trưởng nhóm" → "Đối tác" theo yêu cầu mới nhất —
+  -- tên bảng/cột kỹ thuật GIỮ NGUYÊN danh_muc_truong_nhom / truong_nhom_id để không phải sửa FK,
+  -- giống cách xử lý doi_tac/doi_tac_id → "Đại lý ủy thác" ở mục B.
   truong_nhom_id        bigint references public.danh_muc_truong_nhom(id) on delete set null,
   ten_khach             text not null,   -- khách chính / người đại diện nhóm
   sdt_khach             text,
@@ -109,19 +112,22 @@ create table if not exists public.ho_so (
   thu_le_phi            numeric not null default 0,
   thu_in_anh            numeric not null default 0,
   thu_ho_tro_khac       numeric not null default 0,
+  thu_khach_tip         numeric not null default 0,  -- ĐỀ XUẤT MỚI (2026-08): khách tự thưởng thêm cho nhân viên
   -- CHI — "Phí lãnh sự" và "Đại lý/CTV" là ĐƠN GIÁ/NGƯỜI, nhân với so_luong khi tính Tổng chi.
   -- 3 khoản chi còn lại (thư đi/thư về/phí khác) KHÔNG nhân, giữ nguyên như 1 khoản chung cho cả hồ sơ.
   chi_le_phi_lanh_su    numeric not null default 0,  -- đơn giá/người
   chi_doi_tac_ctv       numeric not null default 0,  -- đơn giá/người
+  -- chi_thu_di: KHÔNG còn hiển thị/nhập trên UI (2026-08, gộp vào "Phí ship" = cột chi_thu_ve) —
+  -- GIỮ LẠI cột + vẫn cộng vào tong_chi để không mất/lệch lợi nhuận của hồ sơ cũ đã có dữ liệu.
   chi_thu_di            numeric not null default 0,
-  chi_thu_ve            numeric not null default 0,
+  chi_thu_ve            numeric not null default 0,  -- hiển thị trên UI là "Phí ship" (2026-08)
   chi_phi_khac          numeric not null default 0,  -- dịch thuật, in ảnh, trích hoa hồng...
   -- TỰ TÍNH — không cần nhập tay
-  tong_thu   numeric generated always as (thu_le_phi + thu_in_anh + thu_ho_tro_khac) stored,
+  tong_thu   numeric generated always as (thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip) stored,
   tong_chi   numeric generated always as
     ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac) stored,
   loi_nhuan  numeric generated always as
-    ((thu_le_phi + thu_in_anh + thu_ho_tro_khac)
+    ((thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip)
      - ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac)) stored,
   -- TIẾN ĐỘ
   ngay_nop        date,
@@ -141,18 +147,22 @@ create table if not exists public.ho_so (
 -- ============================================================
 
 alter table public.ho_so add column if not exists so_luong integer not null default 1;
+alter table public.ho_so add column if not exists thu_khach_tip numeric not null default 0;
 
--- loi_nhuan được view v_dashboard_theo_thang tham chiếu (sum(loi_nhuan)) → phải xoá view
+-- tong_thu/loi_nhuan được view v_dashboard_theo_thang tham chiếu (sum(...)) → phải xoá view
 -- trước khi đổi cột, mục F bên dưới sẽ tạo lại view này nên không mất dữ liệu/định nghĩa.
 drop view if exists public.v_dashboard_theo_thang;
 
+alter table public.ho_so drop column if exists tong_thu;
 alter table public.ho_so drop column if exists tong_chi;
 alter table public.ho_so drop column if exists loi_nhuan;
 
+alter table public.ho_so add column tong_thu numeric generated always as
+  (thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip) stored;
 alter table public.ho_so add column tong_chi numeric generated always as
   ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac) stored;
 alter table public.ho_so add column loi_nhuan numeric generated always as
-  ((thu_le_phi + thu_in_anh + thu_ho_tro_khac)
+  ((thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip)
    - ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac)) stored;
 
 -- ============================================================

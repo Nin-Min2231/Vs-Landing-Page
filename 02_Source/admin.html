@@ -155,6 +155,45 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .pill-hs-rot{background:#FEE2E2;color:var(--err)}
 .pill-hs-huy{background:#F1F5F9;color:var(--mut)}
 
+/* ===== Dialog "Đăng ký hồ sơ mới" — theo thiết kế Figma (màu/kích thước lấy đúng token) ===== */
+.modal.modal-hoso{display:flex;flex-direction:column;padding:0;max-height:92vh}
+.modal-hoso-head{display:flex;align-items:center;justify-content:space-between;
+  padding:18px 24px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.modal-hoso-head h3{color:#0752A3;font-size:18px;flex:1;text-align:center;margin:0}
+.modal-hoso-head .modal-x{background:none;border:none;font-size:22px;cursor:pointer;
+  color:#050F2B;line-height:1;padding:2px 6px;flex-shrink:0}
+.modal-hoso-body{flex:1;overflow-y:auto;padding:18px 24px}
+.modal.modal-hoso .modal-actions.modal-hoso-foot{flex-shrink:0;padding:14px 24px;
+  border-top:1px solid var(--bd);margin:0}
+@media(max-width:480px){
+  .modal-hoso-head{padding:14px 16px}
+  .modal-hoso-body{padding:14px 16px}
+  .modal.modal-hoso .modal-actions.modal-hoso-foot{padding:12px 16px}
+}
+
+.hs-section{background:#CCE3F0;border:1px solid #D5D9E0;border-radius:8px;
+  padding:14px 16px;margin-bottom:16px}
+.hs-section:last-child{margin-bottom:0}
+.hs-section-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;
+  color:#111418;margin-bottom:12px}
+.hs-section-title::before{content:'';width:4px;height:16px;background:#1E5AE8;flex-shrink:0}
+.hs-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 14px;margin-bottom:10px}
+.hs-row:last-child{margin-bottom:0}
+.hs-field label{font-size:13px;font-weight:600;color:#3F454D;margin:0 0 5px}
+.hs-field select,.hs-field input,.hs-field textarea{border:1.5px solid rgba(0,64,133,.5)}
+.hs-field-wide{grid-column:span 2}
+.req-badge{background:#D64550;color:#fff;font-size:10px;font-weight:600;padding:2px 8px;
+  border-radius:4px;margin-left:6px;vertical-align:middle;white-space:nowrap}
+.money-input{text-align:right}
+.money-readonly{background:#E6F8EB!important;color:#111418!important;text-align:right;
+  font-weight:700;font-size:15px}
+.status-select.st-dxl{background:#FFF2E0}
+.status-select.st-dn{background:#FEF3C7}
+.status-select.st-ckq{background:#FFE8D5}
+.status-select.st-dau{background:#DCFCE7}
+.status-select.st-rot{background:#FEE2E2}
+.status-select.st-huy{background:#F1F5F9}
+
 .pill-xl-dxl{background:var(--pl);color:var(--p)}
 .pill-xl-ht{background:#DCFCE7;color:var(--ok)}
 .pill-xl-td{background:#FEF3C7;color:var(--warn)}
@@ -346,8 +385,8 @@ tr.danger td{background:#FEE2E2}
           <div id="listMucDich" class="cat-list"></div>
         </div>
         <div class="cat-block c-truongnhom">
-          <h3>👤 Trưởng nhóm</h3>
-          <div class="cat-add-row"><input type="text" id="newTruongNhom" placeholder="Tên trưởng nhóm mới"><button class="btn btn-p" onclick="addDanhMuc('truongnhom')">+ Thêm</button></div>
+          <h3>👤 Đối tác</h3>
+          <div class="cat-add-row"><input type="text" id="newTruongNhom" placeholder="Tên đối tác mới"><button class="btn btn-p" onclick="addDanhMuc('truongnhom')">+ Thêm</button></div>
           <div id="listTruongNhom" class="cat-list"></div>
         </div>
       </div>
@@ -469,91 +508,118 @@ tr.danger td{background:#FEE2E2}
 
 <!-- ============ MODAL HỒ SƠ ============ -->
 <div class="overlay hidden" id="hoOverlay">
-  <div class="modal modal-lg">
-    <h3 id="hoModalTitle">Thêm hồ sơ</h3>
-    <input type="hidden" id="hoId">
-    <input type="hidden" id="hoNguonTuVan">
-    <div class="modal-2col">
-      <div>
-        <h4>Thông tin khách</h4>
-        <label>Ngày *</label><input type="date" id="hoNgay">
-        <label>Trưởng nhóm</label><select id="hoTruongNhom"></select>
-        <label>Tên khách hàng *</label><input type="text" id="hoTenKhach">
-        <label>Số ĐT khách</label><input type="tel" id="hoSdtKhach">
-        <label>Địa chỉ</label><input type="text" id="hoDiaChi">
-        <label>Nước đến *</label><select id="hoNuoc"></select>
-        <label>Mục đích *</label><select id="hoMucDich"></select>
-        <label>Đại lý ủy thác *</label><select id="hoDoiTac"></select>
-        <label>Số lượng</label><input type="text" id="hoSoLuong" readonly>
+  <div class="modal modal-xl modal-hoso">
+    <div class="modal-hoso-head">
+      <h3 id="hoModalTitle">Đăng ký hồ sơ mới</h3>
+      <button type="button" class="modal-x" onclick="closeHoSoModal()" aria-label="Đóng">✕</button>
+    </div>
+
+    <div class="modal-hoso-body">
+      <input type="hidden" id="hoId">
+      <input type="hidden" id="hoNguonTuVan">
+      <input type="hidden" id="hoChiThuDiLegacy" value="0">
+
+      <div class="hs-section">
+        <div class="hs-section-title">Thông tin khách</div>
+        <div class="hs-row">
+          <div class="hs-field"><label>Ngày tạo <span class="req-badge">Bắt buộc</span></label><input type="date" id="hoNgay"></div>
+          <div class="hs-field"><label>Tên khách hàng <span class="req-badge">Bắt buộc</span></label><input type="text" id="hoTenKhach"></div>
+          <div class="hs-field"><label>Đối tác</label><select id="hoTruongNhom"></select></div>
+          <div class="hs-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach"></div>
+          <div class="hs-field"><label>Số lượng hồ sơ</label><input type="text" inputmode="numeric" id="hoSoLuong" oninput="updateHoSoTotals()"></div>
+        </div>
+        <div class="hs-row">
+          <div class="hs-field"><label>Nước đến <span class="req-badge">Bắt buộc</span></label><select id="hoNuoc"></select></div>
+          <div class="hs-field"><label>Mục đích <span class="req-badge">Bắt buộc</span></label><select id="hoMucDich"></select></div>
+          <div class="hs-field hs-field-wide"><label>Địa chỉ</label><input type="text" id="hoDiaChi"></div>
+        </div>
       </div>
-      <div>
-        <h4>Thu chi &amp; tiến độ</h4>
-        <label>Thu — Lệ phí</label><input type="number" id="hoThuLePhi" value="0" oninput="updateHoSoTotals()">
-        <label>Thu — In ảnh</label><input type="number" id="hoThuInAnh" value="0" oninput="updateHoSoTotals()">
-        <label>Thu — Hỗ trợ khác</label><input type="number" id="hoThuHoTro" value="0" oninput="updateHoSoTotals()">
-        <label>Chi — Lệ phí lãnh sự (đơn giá/người)</label><input type="number" id="hoChiLanhSu" value="0" oninput="updateHoSoTotals()">
-        <label>Chi — Đại lý/CTV (đơn giá/người)</label><input type="number" id="hoChiDoiTacCtv" value="0" oninput="updateHoSoTotals()">
-        <label>Chi — Thư đi</label><input type="number" id="hoChiThuDi" value="0" oninput="updateHoSoTotals()">
-        <label>Chi — Thư về</label><input type="number" id="hoChiThuVe" value="0" oninput="updateHoSoTotals()">
-        <label>Chi — Phí khác</label><input type="number" id="hoChiPhiKhac" value="0" oninput="updateHoSoTotals()">
-        <div class="field-2">
-          <div><label>Tổng thu</label><input type="text" id="hoTongThu" readonly></div>
-          <div><label>Tổng chi</label><input type="text" id="hoTongChi" readonly></div>
+
+      <div class="hs-section">
+        <div class="hs-section-title">Thông tin nộp hồ sơ</div>
+        <div class="hs-row">
+          <div class="hs-field"><label>Đại lý ủy thác <span class="req-badge">Bắt buộc</span></label><select id="hoDoiTac"></select></div>
+          <div class="hs-field"><label>Ngày nộp hồ sơ</label><input type="date" id="hoNgayNop"></div>
+          <div class="hs-field"><label>Ngày trả KQ</label><input type="date" id="hoNgayTraKq"></div>
+          <div class="hs-field"><label>Trạng thái hồ sơ</label>
+            <select id="hoTrangThai" class="status-select" onchange="updateHoSoStatusColor()">
+              <option>Đang xử lý</option><option>Đã nộp</option><option>Chờ kết quả</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
+            </select>
+          </div>
         </div>
-        <label>Lợi nhuận</label><input type="text" id="hoLoiNhuan" readonly>
-        <div class="field-2">
-          <div><label>Ngày nộp</label><input type="date" id="hoNgayNop"></div>
-          <div><label>Ngày trả KQ</label><input type="date" id="hoNgayTraKq"></div>
+      </div>
+
+      <div class="hs-section">
+        <div class="hs-row">
+          <div class="hs-field"><label>Tổng thu</label><input type="text" id="hoTongThu" readonly class="money-readonly"></div>
+          <div class="hs-field"><label>Tổng chi</label><input type="text" id="hoTongChi" readonly class="money-readonly"></div>
+          <div class="hs-field"><label>Lợi nhuận</label><input type="text" id="hoLoiNhuan" readonly class="money-readonly"></div>
         </div>
-        <label>Trạng thái</label>
-        <select id="hoTrangThai">
-          <option>Đang xử lý</option><option>Đã nộp</option><option>Chờ kết quả</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
-        </select>
-        <label>Note</label><textarea id="hoNote" rows="2"></textarea>
+
+        <div class="hs-section-title">Thông tin thu</div>
+        <div class="hs-row">
+          <div class="hs-field"><label>Lệ phí người nộp</label><input type="text" inputmode="numeric" class="money-input" id="hoThuLePhi" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="hs-field"><label>In ảnh</label><input type="text" inputmode="numeric" class="money-input" id="hoThuInAnh" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="hs-field"><label>Hỗ trợ khác</label><input type="text" inputmode="numeric" class="money-input" id="hoThuHoTro" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="hs-field"><label>Khách tip</label><input type="text" inputmode="numeric" class="money-input" id="hoThuKhachTip" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+        </div>
+
+        <div class="hs-section-title">Thông tin chi</div>
+        <div class="hs-row">
+          <div class="hs-field"><label>Lệ phí lãnh sự (đơn giá/người)</label><input type="text" inputmode="numeric" class="money-input" id="hoChiLanhSu" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="hs-field"><label>Đại lý/CTV (đơn giá/người)</label><input type="text" inputmode="numeric" class="money-input" id="hoChiDoiTacCtv" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="hs-field"><label>Phí ship</label><input type="text" inputmode="numeric" class="money-input" id="hoChiThuVe" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="hs-field"><label>Phí khác</label><input type="text" inputmode="numeric" class="money-input" id="hoChiPhiKhac" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+        </div>
+      </div>
+
+      <div class="hs-section">
+        <div class="hs-section-title">Thành viên nhóm</div>
+        <div id="hoTvienHint" class="hint hidden">Lưu hồ sơ trước để thêm thành viên nhóm.</div>
+        <div id="hoTvienBox">
+          <div class="tbl-wrap" style="margin-bottom:10px">
+            <table style="min-width:400px">
+              <thead><tr><th>Tên khách</th><th>SĐT</th><th>Ghi chú</th><th class="th-center">Thao tác</th></tr></thead>
+              <tbody id="hoTvienBody"></tbody>
+            </table>
+          </div>
+          <div class="subrow-add">
+            <input type="text" id="tvienTenKhach" placeholder="Tên khách">
+            <input type="tel" id="tvienSdtKhach" placeholder="SĐT">
+            <input type="text" id="tvienGhiChu" placeholder="Ghi chú">
+            <button class="btn btn-p" onclick="addThanhVien()">+ Thêm</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hs-section">
+        <div class="hs-section-title">Xử lý phát sinh</div>
+        <div id="hoXlpsHint" class="hint hidden">Lưu hồ sơ trước để thêm dòng xử lý phát sinh.</div>
+        <div id="hoXlpsBox">
+          <div class="tbl-wrap" style="margin-bottom:10px">
+            <table style="min-width:560px">
+              <thead><tr><th>Nội dung</th><th>Hạn chốt</th><th>Ghi chú</th><th>Trạng thái</th><th class="th-center">Thao tác</th></tr></thead>
+              <tbody id="hoXlpsBody"></tbody>
+            </table>
+          </div>
+          <div class="subrow-add">
+            <input type="text" id="xlpsNoiDung" placeholder="Nội dung">
+            <input type="date" id="xlpsHanChot">
+            <input type="text" id="xlpsGhiChu" placeholder="Ghi chú">
+            <select id="xlpsTrangThai"><option>Đang xử lý</option><option>Hủy</option><option>Tạm dừng</option><option>Hoàn thành</option></select>
+            <button class="btn btn-p" onclick="addXlps()">+ Thêm</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hs-section">
+        <div class="hs-section-title">Ghi chú</div>
+        <textarea id="hoNote" rows="3" style="width:100%"></textarea>
       </div>
     </div>
 
-    <div class="subpanel">
-      <h4>Thành viên nhóm</h4>
-      <div id="hoTvienHint" class="hint hidden">Lưu hồ sơ trước để thêm thành viên nhóm.</div>
-      <div id="hoTvienBox">
-        <div class="tbl-wrap" style="margin-bottom:10px">
-          <table style="min-width:400px">
-            <thead><tr><th>Tên khách</th><th>SĐT</th><th>Ghi chú</th><th></th></tr></thead>
-            <tbody id="hoTvienBody"></tbody>
-          </table>
-        </div>
-        <div class="subrow-add">
-          <input type="text" id="tvienTenKhach" placeholder="Tên khách">
-          <input type="tel" id="tvienSdtKhach" placeholder="SĐT">
-          <input type="text" id="tvienGhiChu" placeholder="Ghi chú">
-          <button class="btn btn-p" onclick="addThanhVien()">+ Thêm</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="subpanel">
-      <h4>Xử lý phát sinh</h4>
-      <div id="hoXlpsHint" class="hint hidden">Lưu hồ sơ trước để thêm dòng xử lý phát sinh.</div>
-      <div id="hoXlpsBox">
-        <div class="tbl-wrap" style="margin-bottom:10px">
-          <table style="min-width:560px">
-            <thead><tr><th>Nội dung</th><th>Hạn chốt</th><th>Ghi chú</th><th>Trạng thái</th><th></th></tr></thead>
-            <tbody id="hoXlpsBody"></tbody>
-          </table>
-        </div>
-        <div class="subrow-add">
-          <input type="text" id="xlpsNoiDung" placeholder="Nội dung">
-          <input type="date" id="xlpsHanChot">
-          <input type="text" id="xlpsGhiChu" placeholder="Ghi chú">
-          <select id="xlpsTrangThai"><option>Đang xử lý</option><option>Hủy</option><option>Tạm dừng</option><option>Hoàn thành</option></select>
-          <button class="btn btn-p" onclick="addXlps()">+ Thêm</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn btn-g" onclick="closeHoSoModal()">Đóng</button>
+    <div class="modal-actions modal-hoso-foot">
+      <button class="btn btn-g" onclick="closeHoSoModal()">Đóng lại</button>
       <button class="btn btn-p" id="hoSaveBtn" onclick="saveHoSo()">Lưu hồ sơ</button>
     </div>
   </div>
@@ -1197,9 +1263,24 @@ function renderHoSo(){
     </tr>`).join('');
   applyRowLabels('hsBody');
 }
+/* ==== tiền: hiển thị có dấu "." phân cách nghìn khi nhập, canh phải (theo thiết kế Figma) ==== */
+function unformatMoney(str){ return Number((str||'').toString().replace(/[^\d]/g,''))||0; }
+function formatMoney(n){ return n ? Number(n).toLocaleString('vi-VN') : ''; }
+function onMoneyInput(el){
+  const digits = el.value.replace(/[^\d]/g,'');
+  el.value = digits ? Number(digits).toLocaleString('vi-VN') : '';
+  updateHoSoTotals();
+}
+function hsStatusSelectClass(s){
+  return {'Đang xử lý':'st-dxl','Đã nộp':'st-dn','Chờ kết quả':'st-ckq','Đậu':'st-dau','Rớt':'st-rot','Hủy':'st-huy'}[s]||'st-dxl';
+}
+function updateHoSoStatusColor(){
+  const sel=$('hoTrangThai');
+  sel.className = 'status-select '+hsStatusSelectClass(sel.value);
+}
 function openHoSoModal(id, prefill){
   const h = id ? HO_SO.find(x=>x.id===id) : null;
-  $('hoModalTitle').textContent = h ? 'Sửa hồ sơ' : 'Thêm hồ sơ';
+  $('hoModalTitle').textContent = h ? 'Sửa hồ sơ' : 'Đăng ký hồ sơ mới';
   $('hoId').value = h?.id||'';
   $('hoNguonTuVan').value = h?.nguon_tu_van_id || prefill?.nguon_tu_van_id || '';
   $('hoNgay').value = h?.ngay || new Date().toISOString().slice(0,10);
@@ -1211,17 +1292,21 @@ function openHoSoModal(id, prefill){
   $('hoMucDich').value = h ? (h.muc_dich_id||'') : (prefill?.muc_dich_id||'');
   $('hoDoiTac').value = h?.doi_tac_id||'';
   $('hoSoLuong').value = h?.so_luong||1;
-  $('hoThuLePhi').value = h?.thu_le_phi||0;
-  $('hoThuInAnh').value = h?.thu_in_anh||0;
-  $('hoThuHoTro').value = h?.thu_ho_tro_khac||0;
-  $('hoChiLanhSu').value = h?.chi_le_phi_lanh_su||0;
-  $('hoChiDoiTacCtv').value = h?.chi_doi_tac_ctv||0;
-  $('hoChiThuDi').value = h?.chi_thu_di||0;
-  $('hoChiThuVe').value = h?.chi_thu_ve||0;
-  $('hoChiPhiKhac').value = h?.chi_phi_khac||0;
+  $('hoThuLePhi').value = formatMoney(h?.thu_le_phi);
+  $('hoThuInAnh').value = formatMoney(h?.thu_in_anh);
+  $('hoThuHoTro').value = formatMoney(h?.thu_ho_tro_khac);
+  $('hoThuKhachTip').value = formatMoney(h?.thu_khach_tip);
+  $('hoChiLanhSu').value = formatMoney(h?.chi_le_phi_lanh_su);
+  $('hoChiDoiTacCtv').value = formatMoney(h?.chi_doi_tac_ctv);
+  $('hoChiThuVe').value = formatMoney(h?.chi_thu_ve);
+  $('hoChiPhiKhac').value = formatMoney(h?.chi_phi_khac);
+  // "Thư đi" không còn hiển thị trên UI (đã gộp vào "Phí ship") — giữ số cũ của hồ sơ này
+  // (nếu có, từ trước khi đổi giao diện) để Tổng chi/Lợi nhuận vẫn đúng, không hiện cho sửa.
+  $('hoChiThuDiLegacy').value = h?.chi_thu_di||0;
   $('hoNgayNop').value = h?.ngay_nop||'';
   $('hoNgayTraKq').value = h?.ngay_tra_kq||'';
   $('hoTrangThai').value = h?.trang_thai||'Đang xử lý';
+  updateHoSoStatusColor();
   $('hoNote').value = h ? (h.note||'') : (prefill?.note||'');
   updateHoSoTotals();
   $('hoXlpsHint').classList.toggle('hidden', !!h);
@@ -1234,10 +1319,13 @@ function openHoSoModal(id, prefill){
 }
 function closeHoSoModal(){ $('hoOverlay').classList.add('hidden'); }
 function updateHoSoTotals(){
-  const n=id=>Number($(id).value)||0;
-  const soLuong = Number($('hoSoLuong').value)||1;
-  const thu = n('hoThuLePhi')+n('hoThuInAnh')+n('hoThuHoTro');
-  const chi = (n('hoChiLanhSu')+n('hoChiDoiTacCtv'))*soLuong + n('hoChiThuDi')+n('hoChiThuVe')+n('hoChiPhiKhac');
+  const m=id=>unformatMoney($(id).value);
+  let soLuong = parseInt($('hoSoLuong').value,10)||1;
+  if(soLuong<1) soLuong=1;
+  $('hoSoLuong').value = soLuong;
+  const chiThuDiLegacy = Number($('hoChiThuDiLegacy').value)||0;
+  const thu = m('hoThuLePhi')+m('hoThuInAnh')+m('hoThuHoTro')+m('hoThuKhachTip');
+  const chi = (m('hoChiLanhSu')+m('hoChiDoiTacCtv'))*soLuong + chiThuDiLegacy + m('hoChiThuVe')+m('hoChiPhiKhac');
   $('hoTongThu').value = fmtVND(thu);
   $('hoTongChi').value = fmtVND(chi);
   $('hoLoiNhuan').value = fmtVND(thu-chi);
@@ -1249,16 +1337,19 @@ async function saveHoSo(){
   if(!nuoc_id){ toast('Vui lòng chọn Nước đến','err'); return; }
   if(!muc_dich_id){ toast('Vui lòng chọn Mục đích','err'); return; }
   if(!doi_tac_id){ toast('Vui lòng chọn Đại lý ủy thác','err'); return; }
+  let soLuong = parseInt($('hoSoLuong').value,10)||1;
+  if(soLuong<1) soLuong=1;
   const body={
     ngay: $('hoNgay').value || new Date().toISOString().slice(0,10),
     truong_nhom_id: $('hoTruongNhom').value||null,
     ten_khach, sdt_khach: $('hoSdtKhach').value.trim()||null, dia_chi: $('hoDiaChi').value.trim()||null,
     nuoc_id: Number(nuoc_id), muc_dich_id: Number(muc_dich_id), doi_tac_id: Number(doi_tac_id),
-    thu_le_phi: Number($('hoThuLePhi').value)||0, thu_in_anh: Number($('hoThuInAnh').value)||0,
-    thu_ho_tro_khac: Number($('hoThuHoTro').value)||0,
-    chi_le_phi_lanh_su: Number($('hoChiLanhSu').value)||0, chi_doi_tac_ctv: Number($('hoChiDoiTacCtv').value)||0,
-    chi_thu_di: Number($('hoChiThuDi').value)||0, chi_thu_ve: Number($('hoChiThuVe').value)||0,
-    chi_phi_khac: Number($('hoChiPhiKhac').value)||0,
+    so_luong: soLuong,
+    thu_le_phi: unformatMoney($('hoThuLePhi').value), thu_in_anh: unformatMoney($('hoThuInAnh').value),
+    thu_ho_tro_khac: unformatMoney($('hoThuHoTro').value), thu_khach_tip: unformatMoney($('hoThuKhachTip').value),
+    chi_le_phi_lanh_su: unformatMoney($('hoChiLanhSu').value), chi_doi_tac_ctv: unformatMoney($('hoChiDoiTacCtv').value),
+    chi_thu_ve: unformatMoney($('hoChiThuVe').value),
+    chi_phi_khac: unformatMoney($('hoChiPhiKhac').value),
     ngay_nop: $('hoNgayNop').value||null, ngay_tra_kq: $('hoNgayTraKq').value||null,
     trang_thai: $('hoTrangThai').value, note: $('hoNote').value.trim()||null,
     nguon_tu_van_id: $('hoNguonTuVan').value||null
