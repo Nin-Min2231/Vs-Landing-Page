@@ -50,7 +50,7 @@ Hệ 8px — mọi khoảng cách là bội số của 8:
 | `--sp-4` | 32px | Gap giữa các khối |
 | `--sp-6` | 48px | Padding section (mobile) |
 | `--sp-10` | 80px | Padding section (desktop) |
-| Container | max-width 1140px, căn giữa, padding ngang 16–24px |
+| Container | `.container` | max-width 1200px, căn giữa, padding ngang 16–24px (tăng từ 1140px lên 1200px 2026-07-31 — theo chuẩn container hiện đại của Tailwind/Bootstrap 5, vẫn giữ độ rộng vừa phải để không phá dòng chữ dài trên màn hình lớn) |
 
 ## 4. Border Radius & Shadow
 
