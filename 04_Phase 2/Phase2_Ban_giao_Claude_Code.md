@@ -35,6 +35,7 @@ không đụng `index.html`, không đụng bảng `posts`/`categories` của Bl
 - **Danh mục Trưởng nhóm: "Ms. Quỳnh Vi/ Hoanh/ Phuc Trang" là 1 người** (nhiều tên gọi), KHÔNG phải 3 người — SQL seed data đã gộp lại thành 1 dòng duy nhất.
 - **Màn Tư vấn: "Nước đến" và "Mục đích" tách thành 2 field riêng, dạng dropdown chọn từ danh mục, bắt buộc** (PM xác nhận, đổi từ 1 field chữ tự do gộp chung ban đầu). Lưu ý: đây là ràng buộc **bắt buộc ở UI (JS validate trong admin.html)**, KHÔNG phải `NOT NULL` ở CSDL — vì cột `country`/`muc_dich` trong bảng `leads` còn được form đăng ký công khai trên `index.html` ghi vào, không được đặt NOT NULL kẻo gãy form đó.
 - **Tính năng mới: "Chốt tư vấn → tạo Hồ sơ"** — xem chi tiết mục 5.1 bên dưới.
+- **Tính năng mới: Hồ sơ nhóm nhiều khách + Số lượng nhân chi phí** (PM yêu cầu bổ sung) — xem chi tiết mục 4.1 bên dưới. Tóm tắt: 1 hồ sơ có thể có nhiều khách đi cùng (bảng con `ho_so_thanh_vien`), "Số lượng" tự động = 1 + số thành viên (trigger, KHÔNG nhập tay), và "Chi — Phí lãnh sự" + "Chi — Đại lý/CTV" là ĐƠN GIÁ/NGƯỜI, được nhân với Số lượng khi tính Tổng chi. Phần Thu và 3 khoản Chi còn lại (Thư đi/Thư về/Phí khác) KHÔNG nhân — xem câu hỏi rủi ro ở mục 6.
 
 ### 3.1 Tổng hợp quyền Thêm/Sửa/Xóa theo từng màn hình
 
@@ -59,15 +60,24 @@ không đụng `index.html`, không đụng bảng `posts`/`categories` của Bl
 | Nước đến | `nuoc_id` | Có | chọn từ danh mục |
 | Mục đích | `muc_dich_id` | Có | chọn từ danh mục |
 | **Đại lý ủy thác** | `doi_tac_id` | **Có** | hiển thị "Tên người đảm nhiệm (Công ty)" |
-| Thu: Lệ phí / In ảnh / Hỗ trợ khác | `thu_le_phi`, `thu_in_anh`, `thu_ho_tro_khac` | Không | |
-| Chi: Lãnh sự / Đại lý-CTV / Thư đi / Thư về / Phí khác | `chi_le_phi_lanh_su`, `chi_doi_tac_ctv`, `chi_thu_di`, `chi_thu_ve`, `chi_phi_khac` | Không | |
-| Tổng thu / Tổng chi / Lợi nhuận | `tong_thu`, `tong_chi`, `loi_nhuan` | Tự động | generated column, KHÔNG ghi từ JS |
+| Số lượng | `so_luong` | Tự động | = 1 + số dòng trong bảng con Thành viên nhóm — cập nhật bằng trigger, readonly trên UI, xem mục 4.1 |
+| Thu: Lệ phí / In ảnh / Hỗ trợ khác | `thu_le_phi`, `thu_in_anh`, `thu_ho_tro_khac` | Không | KHÔNG nhân theo Số lượng |
+| Chi: Lãnh sự / Đại lý-CTV | `chi_le_phi_lanh_su`, `chi_doi_tac_ctv` | Không | **Đơn giá/người** — nhân với `so_luong` khi tính Tổng chi, xem mục 4.1 |
+| Chi: Thư đi / Thư về / Phí khác | `chi_thu_di`, `chi_thu_ve`, `chi_phi_khac` | Không | KHÔNG nhân theo Số lượng, tính chung cho cả hồ sơ |
+| Tổng thu / Tổng chi / Lợi nhuận | `tong_thu`, `tong_chi`, `loi_nhuan` | Tự động | generated column, KHÔNG ghi từ JS — Tổng chi đã gồm phép nhân Số lượng |
 | Ngày nộp / Ngày trả KQ | `ngay_nop`, `ngay_tra_kq` | Không | |
 | Trạng thái | `trang_thai` | Có | Đang xử lý/Đã nộp/Chờ kết quả/Đậu/Rớt/Hủy |
 | Note | `note` | Không | có thể ghi mã diện visa chi tiết (F1-5, C3-1...) |
-| Nguồn từ Tư vấn | `nguon_tu_van_id` | Không | FK → `leads.id`, chỉ có giá trị nếu hồ sơ được tạo từ luồng "Chốt tư vấn" ở mục 5.1 — ĐỀ XUẤT THÊM, xem câu hỏi mục 6 |
+| Nguồn từ Tư vấn | `nguon_tu_van_id` | Không | FK → `leads.id`, chỉ có giá trị nếu hồ sơ được tạo từ luồng "Chốt tư vấn" ở mục 5.1 — ĐỀ XUẤT THÊM |
 
 Bảng con `ho_so_xu_ly_phat_sinh` (1-nhiều theo `ho_so_id`): Nội dung, Hạn chốt, Ghi chú, **Trạng thái: Đang xử lý / Hủy / Tạm dừng / Hoàn thành** (PM tự chốt 4 giá trị này). "Quá hạn" trên Dashboard chỉ tính dòng đang ở "Đang xử lý".
+
+### 4.1 Tính năng mới: Hồ sơ nhóm nhiều khách + Số lượng nhân chi phí (PM yêu cầu bổ sung)
+
+- **Bảng con mới `ho_so_thanh_vien`** (1-nhiều theo `ho_so_id`): Tên, SĐT, Ghi chú — dùng cho các khách ĐI CÙNG khách chính (khách chính vẫn là `ten_khach`/`sdt_khach` sẵn có trên `ho_so`, không đổi). Modal Hồ sơ thêm 1 bảng con nữa (giống cách làm với "Xử lý phát sinh") để thêm/sửa/xoá từng thành viên.
+- **`so_luong` tự động** = 1 (khách chính) + COUNT(`ho_so_thanh_vien` của hồ sơ đó) — duy trì bằng **trigger CSDL** (`fn_cap_nhat_so_luong_ho_so` trong `supabase_setup_phase2.sql`), KHÔNG để nhân viên nhập tay, tránh lệch số nếu quên cập nhật. UI hiển thị readonly, tự refresh mỗi khi thêm/xoá 1 dòng thành viên.
+- **Nhân chi phí theo Số lượng**: PM yêu cầu "Chi — Phí lãnh sự" và "Chi — Đại lý/CTV" tính lên theo số lượng người. Claude hiểu đây là 2 field **đơn giá/người** — nhân viên vẫn nhập 1 số duy nhất (giá cho 1 người), hệ thống tự nhân với `so_luong` khi tính Tổng chi (đã sửa `generated column` trong SQL). Cần đổi **label hiển thị trên UI** thành "Chi — Phí lãnh sự (đơn giá/người)" và "Chi — Đại lý/CTV (đơn giá/người)" để nhân viên không hiểu nhầm là tổng.
+- **3 khoản Chi còn lại (Thư đi/Thư về/Phí khác) và toàn bộ 3 khoản Thu KHÔNG nhân** — giữ nguyên như 1 khoản chung cho cả hồ sơ, không phụ thuộc số người. Đây là điều PM chỉ định rõ (chỉ 2 khoản Chi nêu trên), Claude KHÔNG tự suy rộng ra các field khác.
 
 ## 5. Field chính — Tư vấn (mở rộng bảng `leads` có sẵn, KHÔNG tạo bảng mới)
 
@@ -89,7 +99,7 @@ Khi nhân viên lưu 1 dòng Tư vấn với **Trạng thái tư vấn = "Chốt
 
 ## 6. Câu hỏi CÒN MỞ — cần xác nhận khi code
 
-Không còn câu hỏi mở nào chặn việc code — toàn bộ đã được PM xác nhận ở mục 3 và 5.1.
+1. **[Ưu tiên Trung bình] Thu không tăng theo Số lượng, chỉ 2 khoản Chi tăng** — với hồ sơ nhóm 2-3 người: Chi phí lãnh sự + Chi đại lý/CTV nhân theo số người, nhưng Thu — Lệ phí (và In ảnh, Hỗ trợ khác) vẫn giữ nguyên 1 mức không đổi. Kết quả: Lợi nhuận/hồ sơ nhóm có thể giảm mạnh, thậm chí âm, so với hồ sơ 1 người, nếu nhân viên quên tăng Lệ phí thu tương ứng khi nhận hồ sơ nhóm. Claude KHÔNG tự ý thêm multiplier cho Thu vì PM không yêu cầu — chỉ nêu ra để PM biết trước khi dùng thật, không chặn việc code (đây là hành vi tính toán đúng theo yêu cầu, không phải lỗi kỹ thuật).
 
 ## 7. Nguồn tham khảo đầy đủ
 
@@ -113,5 +123,8 @@ Không còn câu hỏi mở nào chặn việc code — toàn bộ đã được
 - [ ] Thêm 1 dòng "Xử lý phát sinh" với Hạn chốt = hôm qua (quá hạn) + Trạng thái = "Tạm dừng" → KHÔNG xuất hiện cảnh báo ở Dashboard (chỉ "Đang xử lý" mới tính quá hạn).
 - [ ] Đổi Trạng thái tư vấn sang "Chốt" và Lưu → hiện popup xác nhận đúng nội dung; bấm "Đồng ý" → sang tab Hồ sơ với form tạo mới đã pre-fill đúng Tên/SĐT/Nước đến/Mục đích/Note; bấm "Không cần" → chỉ lưu, ở lại Tư vấn.
 - [ ] Danh mục Trưởng nhóm chỉ có 1 dòng "Ms. Quỳnh Vi / Hoanh / Phuc Trang" (không phải 3 dòng riêng).
+- [ ] Thêm 2 thành viên nhóm vào 1 hồ sơ → `so_luong` tự động thành 3 (không cần nhập tay); xoá 1 thành viên → `so_luong` tự giảm về 2.
+- [ ] Hồ sơ có `so_luong = 3`, Chi phí lãnh sự nhập 1.000.000 → Tổng chi phải cộng đúng 3.000.000 cho khoản này (không phải 1.000.000).
+- [ ] Xoá 1 Hồ sơ có thành viên nhóm (chỉ đổi Trạng thái = Hủy theo mục 3, không xoá thật) → dữ liệu thành viên vẫn giữ nguyên, không mất.
 - [ ] Landing page (`index.html`) vẫn hoạt động bình thường, form gửi lead vẫn thành công (không bị ảnh hưởng bởi cột mới thêm vào `leads`).
 - [ ] Không còn `[THAY_THẾ]` hay dữ liệu giả nào bị lộ ra ngoài giao diện public.

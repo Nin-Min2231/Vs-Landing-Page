@@ -1,6 +1,6 @@
 -- ============================================================
 -- SUPABASE SETUP – Phase 2: Quản lý khách hàng (Admin CRM)
--- ✅ ĐÃ PM CONFIRM toàn bộ field (xem Phase2_Ban_giao_Claude_Code.md mục 3, 5.1).
+-- ✅ ĐÃ PM CONFIRM toàn bộ field (xem Phase2_Ban_giao_Claude_Code.md mục 3, 4.1, 5.1).
 --    Chạy trong SQL Editor của project Supabase Phase 1 đang dùng
 --    (https://vvnjxvcdnzttcdufjjgo.supabase.co) — chạy lại không lỗi
 --    (idempotent), không ảnh hưởng bảng leads/posts/categories cũ.
@@ -90,7 +90,7 @@ create table if not exists public.ho_so (
   created_at            timestamptz not null default now(),
   ngay                  date not null default current_date,
   truong_nhom_id        bigint references public.danh_muc_truong_nhom(id) on delete set null,
-  ten_khach             text not null,
+  ten_khach             text not null,   -- khách chính / người đại diện nhóm
   sdt_khach             text,
   dia_chi               text,
   nuoc_id               bigint references public.danh_muc_nuoc(id) on delete set null,
@@ -99,21 +99,30 @@ create table if not exists public.ho_so (
   -- là được để trống cho "khách lẻ"). "on delete restrict" để không cho xoá 1 đại lý nếu đang
   -- có hồ sơ tham chiếu tới (tránh hồ sơ cũ bị mất thông tin đại lý ủy thác).
   doi_tac_id            bigint not null references public.doi_tac(id) on delete restrict,
-  -- THU
+  -- SỐ LƯỢNG — ĐỀ XUẤT MỚI (theo yêu cầu bổ sung của PM): tổng số người trong hồ sơ
+  -- (= 1 khách chính + số dòng trong bảng con ho_so_thanh_vien bên dưới). KHÔNG nhập tay —
+  -- tự động cập nhật bằng trigger mỗi khi thêm/sửa/xoá thành viên (xem C.2 bên dưới), để
+  -- tránh lệch số nếu nhân viên quên cập nhật thủ công.
+  so_luong              integer not null default 1,
+  -- THU (KHÔNG nhân theo Số lượng — PM chỉ yêu cầu nhân 2 khoản Chi bên dưới, xem rà soát
+  -- ở Phase2_Dac_ta.xlsx sheet 6 về rủi ro nếu Thu không tăng theo số người mà Chi có tăng)
   thu_le_phi            numeric not null default 0,
   thu_in_anh            numeric not null default 0,
   thu_ho_tro_khac       numeric not null default 0,
-  -- CHI
-  chi_le_phi_lanh_su    numeric not null default 0,
-  chi_doi_tac_ctv       numeric not null default 0,
+  -- CHI — "Phí lãnh sự" và "Đại lý/CTV" là ĐƠN GIÁ/NGƯỜI, nhân với so_luong khi tính Tổng chi.
+  -- 3 khoản chi còn lại (thư đi/thư về/phí khác) KHÔNG nhân, giữ nguyên như 1 khoản chung cho cả hồ sơ.
+  chi_le_phi_lanh_su    numeric not null default 0,  -- đơn giá/người
+  chi_doi_tac_ctv       numeric not null default 0,  -- đơn giá/người
   chi_thu_di            numeric not null default 0,
   chi_thu_ve            numeric not null default 0,
   chi_phi_khac          numeric not null default 0,  -- dịch thuật, in ảnh, trích hoa hồng...
   -- TỰ TÍNH — không cần nhập tay
   tong_thu   numeric generated always as (thu_le_phi + thu_in_anh + thu_ho_tro_khac) stored,
-  tong_chi   numeric generated always as (chi_le_phi_lanh_su + chi_doi_tac_ctv + chi_thu_di + chi_thu_ve + chi_phi_khac) stored,
+  tong_chi   numeric generated always as
+    ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac) stored,
   loi_nhuan  numeric generated always as
-    ((thu_le_phi + thu_in_anh + thu_ho_tro_khac) - (chi_le_phi_lanh_su + chi_doi_tac_ctv + chi_thu_di + chi_thu_ve + chi_phi_khac)) stored,
+    ((thu_le_phi + thu_in_anh + thu_ho_tro_khac)
+     - ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac)) stored,
   -- TIẾN ĐỘ
   ngay_nop        date,
   ngay_tra_kq     date,
@@ -122,6 +131,65 @@ create table if not exists public.ho_so (
   --  cho bảng leads/Tư vấn, không áp dụng cho Hồ sơ. Xem mục D bên dưới.)
   note            text
 );
+
+-- ============================================================
+-- C.1 NÂNG CẤP BẢNG ho_so ĐÃ CÓ SẴN (project này đã chạy bản migration Phase 2 cũ trước đây,
+--     nên "create table if not exists" ở trên KHÔNG áp dụng thay đổi lên bảng đã tồn tại —
+--     phải ALTER thủ công để thêm so_luong + đổi công thức tong_chi/loi_nhuan).
+--     An toàn chạy lại nhiều lần: nếu bảng vừa được tạo mới ở trên (project chưa từng chạy
+--     Phase 2), các lệnh dưới đây chỉ tái tạo lại đúng cấu trúc đã có, không gây lỗi.
+-- ============================================================
+
+alter table public.ho_so add column if not exists so_luong integer not null default 1;
+
+-- loi_nhuan được view v_dashboard_theo_thang tham chiếu (sum(loi_nhuan)) → phải xoá view
+-- trước khi đổi cột, mục F bên dưới sẽ tạo lại view này nên không mất dữ liệu/định nghĩa.
+drop view if exists public.v_dashboard_theo_thang;
+
+alter table public.ho_so drop column if exists tong_chi;
+alter table public.ho_so drop column if exists loi_nhuan;
+
+alter table public.ho_so add column tong_chi numeric generated always as
+  ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac) stored;
+alter table public.ho_so add column loi_nhuan numeric generated always as
+  ((thu_le_phi + thu_in_anh + thu_ho_tro_khac)
+   - ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac)) stored;
+
+-- ============================================================
+-- C.1b BẢNG CON "THÀNH VIÊN NHÓM" — theo yêu cầu bổ sung của PM: 1 hồ sơ có thể đi
+--       theo nhóm nhiều khách hàng. ten_khach/sdt_khach ở bảng ho_so là khách CHÍNH,
+--       bảng này chứa các thành viên ĐI CÙNG (không tính khách chính).
+-- ============================================================
+
+create table if not exists public.ho_so_thanh_vien (
+  id          bigint generated always as identity primary key,
+  created_at  timestamptz not null default now(),
+  ho_so_id    bigint not null references public.ho_so(id) on delete cascade,
+  ten_khach   text not null,
+  sdt_khach   text,
+  ghi_chu     text
+);
+
+-- Trigger giữ ho_so.so_luong luôn đúng = 1 (khách chính) + số thành viên đi cùng
+create or replace function public.fn_cap_nhat_so_luong_ho_so()
+returns trigger
+language plpgsql
+as $$
+declare
+  target_ho_so_id bigint;
+begin
+  target_ho_so_id := coalesce(new.ho_so_id, old.ho_so_id);
+  update public.ho_so
+    set so_luong = 1 + (select count(*) from public.ho_so_thanh_vien where ho_so_id = target_ho_so_id)
+    where id = target_ho_so_id;
+  return null;
+end;
+$$;
+
+drop trigger if exists trg_cap_nhat_so_luong_ho_so on public.ho_so_thanh_vien;
+create trigger trg_cap_nhat_so_luong_ho_so
+  after insert or update or delete on public.ho_so_thanh_vien
+  for each row execute function public.fn_cap_nhat_so_luong_ho_so();
 
 -- ============================================================
 -- C.2 BẢNG CON "XỬ LÝ PHÁT SINH" — theo yêu cầu bổ sung của PM (mục 4, Phase2_Dac_ta.xlsx)
@@ -176,6 +244,7 @@ alter table public.danh_muc_truong_nhom enable row level security;
 alter table public.doi_tac              enable row level security;
 alter table public.doi_tac_phi          enable row level security;
 alter table public.ho_so                enable row level security;
+alter table public.ho_so_thanh_vien     enable row level security;
 alter table public.ho_so_xu_ly_phat_sinh enable row level security;
 
 drop policy if exists "auth_all_danh_muc_nuoc" on public.danh_muc_nuoc;
@@ -195,6 +264,9 @@ create policy "auth_all_doi_tac_phi" on public.doi_tac_phi for all to authentica
 
 drop policy if exists "auth_all_ho_so" on public.ho_so;
 create policy "auth_all_ho_so" on public.ho_so for all to authenticated using (true) with check (true);
+
+drop policy if exists "auth_all_ho_so_thanh_vien" on public.ho_so_thanh_vien;
+create policy "auth_all_ho_so_thanh_vien" on public.ho_so_thanh_vien for all to authenticated using (true) with check (true);
 
 drop policy if exists "auth_all_ho_so_xu_ly_phat_sinh" on public.ho_so_xu_ly_phat_sinh;
 create policy "auth_all_ho_so_xu_ly_phat_sinh" on public.ho_so_xu_ly_phat_sinh for all to authenticated using (true) with check (true);

@@ -484,14 +484,15 @@ tr.danger td{background:#FEE2E2}
         <label>Nước đến *</label><select id="hoNuoc"></select>
         <label>Mục đích *</label><select id="hoMucDich"></select>
         <label>Đại lý ủy thác *</label><select id="hoDoiTac"></select>
+        <label>Số lượng</label><input type="text" id="hoSoLuong" readonly>
       </div>
       <div>
         <h4>Thu chi &amp; tiến độ</h4>
         <label>Thu — Lệ phí</label><input type="number" id="hoThuLePhi" value="0" oninput="updateHoSoTotals()">
         <label>Thu — In ảnh</label><input type="number" id="hoThuInAnh" value="0" oninput="updateHoSoTotals()">
         <label>Thu — Hỗ trợ khác</label><input type="number" id="hoThuHoTro" value="0" oninput="updateHoSoTotals()">
-        <label>Chi — Lệ phí lãnh sự</label><input type="number" id="hoChiLanhSu" value="0" oninput="updateHoSoTotals()">
-        <label>Chi — Đại lý/CTV</label><input type="number" id="hoChiDoiTacCtv" value="0" oninput="updateHoSoTotals()">
+        <label>Chi — Lệ phí lãnh sự (đơn giá/người)</label><input type="number" id="hoChiLanhSu" value="0" oninput="updateHoSoTotals()">
+        <label>Chi — Đại lý/CTV (đơn giá/người)</label><input type="number" id="hoChiDoiTacCtv" value="0" oninput="updateHoSoTotals()">
         <label>Chi — Thư đi</label><input type="number" id="hoChiThuDi" value="0" oninput="updateHoSoTotals()">
         <label>Chi — Thư về</label><input type="number" id="hoChiThuVe" value="0" oninput="updateHoSoTotals()">
         <label>Chi — Phí khác</label><input type="number" id="hoChiPhiKhac" value="0" oninput="updateHoSoTotals()">
@@ -509,6 +510,25 @@ tr.danger td{background:#FEE2E2}
           <option>Đang xử lý</option><option>Đã nộp</option><option>Chờ kết quả</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
         </select>
         <label>Note</label><textarea id="hoNote" rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="subpanel">
+      <h4>Thành viên nhóm</h4>
+      <div id="hoTvienHint" class="hint hidden">Lưu hồ sơ trước để thêm thành viên nhóm.</div>
+      <div id="hoTvienBox">
+        <div class="tbl-wrap" style="margin-bottom:10px">
+          <table style="min-width:400px">
+            <thead><tr><th>Tên khách</th><th>SĐT</th><th>Ghi chú</th><th></th></tr></thead>
+            <tbody id="hoTvienBody"></tbody>
+          </table>
+        </div>
+        <div class="subrow-add">
+          <input type="text" id="tvienTenKhach" placeholder="Tên khách">
+          <input type="tel" id="tvienSdtKhach" placeholder="SĐT">
+          <input type="text" id="tvienGhiChu" placeholder="Ghi chú">
+          <button class="btn btn-p" onclick="addThanhVien()">+ Thêm</button>
+        </div>
       </div>
     </div>
 
@@ -606,7 +626,7 @@ tr.danger td{background:#FEE2E2}
 /* ==================== TIỆN ÍCH CHUNG ==================== */
 let TOKEN = null, LEADS = [], POSTS = [], CATS = [];
 let DOI_TAC = [], DANH_MUC_NUOC = [], DANH_MUC_MUC_DICH = [], DANH_MUC_TRUONG_NHOM = [], HO_SO = [];
-let CUR_HOSO_XLPS = [], CUR_FEE_DOITAC = null, CHART_DT = null, CHART_SL = null;
+let CUR_HOSO_XLPS = [], CUR_HOSO_THANHVIEN = [], CUR_FEE_DOITAC = null, CHART_DT = null, CHART_SL = null;
 const REMEMBER_KEY = 'tv_admin_refresh_token';
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1190,6 +1210,7 @@ function openHoSoModal(id, prefill){
   $('hoNuoc').value = h ? (h.nuoc_id||'') : (prefill?.nuoc_id||'');
   $('hoMucDich').value = h ? (h.muc_dich_id||'') : (prefill?.muc_dich_id||'');
   $('hoDoiTac').value = h?.doi_tac_id||'';
+  $('hoSoLuong').value = h?.so_luong||1;
   $('hoThuLePhi').value = h?.thu_le_phi||0;
   $('hoThuInAnh').value = h?.thu_in_anh||0;
   $('hoThuHoTro').value = h?.thu_ho_tro_khac||0;
@@ -1206,13 +1227,17 @@ function openHoSoModal(id, prefill){
   $('hoXlpsHint').classList.toggle('hidden', !!h);
   $('hoXlpsBox').classList.toggle('hidden', !h);
   if(h) loadXlps(h.id); else { CUR_HOSO_XLPS=[]; renderXlps(); }
+  $('hoTvienHint').classList.toggle('hidden', !!h);
+  $('hoTvienBox').classList.toggle('hidden', !h);
+  if(h) loadThanhVien(h.id); else { CUR_HOSO_THANHVIEN=[]; renderThanhVien(); }
   $('hoOverlay').classList.remove('hidden');
 }
 function closeHoSoModal(){ $('hoOverlay').classList.add('hidden'); }
 function updateHoSoTotals(){
   const n=id=>Number($(id).value)||0;
+  const soLuong = Number($('hoSoLuong').value)||1;
   const thu = n('hoThuLePhi')+n('hoThuInAnh')+n('hoThuHoTro');
-  const chi = n('hoChiLanhSu')+n('hoChiDoiTacCtv')+n('hoChiThuDi')+n('hoChiThuVe')+n('hoChiPhiKhac');
+  const chi = (n('hoChiLanhSu')+n('hoChiDoiTacCtv'))*soLuong + n('hoChiThuDi')+n('hoChiThuVe')+n('hoChiPhiKhac');
   $('hoTongThu').value = fmtVND(thu);
   $('hoTongChi').value = fmtVND(chi);
   $('hoLoiNhuan').value = fmtVND(thu-chi);
@@ -1294,6 +1319,59 @@ async function delXlps(id){
   try{
     await api('ho_so_xu_ly_phat_sinh?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadXlps($('hoId').value); toast('Đã xóa');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+}
+
+/* ==== Thành viên nhóm (bảng con của Hồ sơ) — Số lượng tự tính bằng trigger CSDL ==== */
+async function loadThanhVien(hoSoId){
+  try{
+    CUR_HOSO_THANHVIEN = await api('ho_so_thanh_vien?ho_so_id=eq.'+hoSoId+'&select=*&order=id') || [];
+    renderThanhVien();
+  }catch(e){ toast('Lỗi tải thành viên nhóm: '+e.message,'err'); }
+}
+function renderThanhVien(){
+  $('hoTvienBody').innerHTML = CUR_HOSO_THANHVIEN.length ? CUR_HOSO_THANHVIEN.map(t=>`
+    <tr>
+      <td>${esc(t.ten_khach)}</td>
+      <td>${t.sdt_khach?`<a href="tel:${esc(t.sdt_khach)}">${esc(t.sdt_khach)}</a>`:'–'}</td>
+      <td>${esc(t.ghi_chu||'–')}</td>
+      <td><button class="btn btn-d" onclick="delThanhVien(${t.id})">Xóa</button></td>
+    </tr>`).join('') : '<tr><td colspan="4" class="empty">Chưa có thành viên nào</td></tr>';
+  applyRowLabels('hoTvienBody');
+}
+async function refreshSoLuong(hoSoId){
+  try{
+    const rows = await api('ho_so?id=eq.'+hoSoId+'&select=so_luong');
+    const soLuong = rows?.[0]?.so_luong || 1;
+    $('hoSoLuong').value = soLuong;
+    const h = HO_SO.find(x=>x.id===Number(hoSoId)); if(h) h.so_luong = soLuong;
+    updateHoSoTotals();
+  }catch(e){ /* khong chan thao tac chinh neu lam moi lai khong duoc */ }
+}
+async function addThanhVien(){
+  const hoId = $('hoId').value;
+  if(!hoId){ toast('Lưu hồ sơ trước khi thêm thành viên nhóm','err'); return; }
+  const ten_khach=$('tvienTenKhach').value.trim();
+  if(!ten_khach){ toast('Nhập tên khách','err'); return; }
+  try{
+    await api('ho_so_thanh_vien',{method:'POST',body:JSON.stringify({
+      ho_so_id:Number(hoId), ten_khach,
+      sdt_khach:$('tvienSdtKhach').value.trim()||null, ghi_chu:$('tvienGhiChu').value.trim()||null
+    })});
+    $('tvienTenKhach').value=''; $('tvienSdtKhach').value=''; $('tvienGhiChu').value='';
+    await loadThanhVien(hoId);
+    await refreshSoLuong(hoId);
+    toast('Đã thêm thành viên nhóm');
+  }catch(e){ toast('Lỗi thêm: '+e.message,'err'); }
+}
+async function delThanhVien(id){
+  if(!confirm('Xóa thành viên này khỏi nhóm?')) return;
+  const hoId = $('hoId').value;
+  try{
+    await api('ho_so_thanh_vien?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    await loadThanhVien(hoId);
+    await refreshSoLuong(hoId);
+    toast('Đã xóa thành viên');
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 

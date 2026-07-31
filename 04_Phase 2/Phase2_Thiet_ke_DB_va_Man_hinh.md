@@ -59,28 +59,37 @@ erDiagram
         bigint id PK
         date ngay
         bigint truong_nhom_id FK "tuỳ chọn — tên NGƯỜI"
-        text ten_khach
+        text ten_khach "khách CHÍNH / người đại diện nhóm"
         text sdt_khach
         text dia_chi
         bigint nuoc_id FK
         bigint muc_dich_id FK
         bigint doi_tac_id FK "BẮT BUỘC — PM xác nhận"
+        integer so_luong "mới — tự động = 1 + số thành viên nhóm"
         numeric thu_le_phi
         numeric thu_in_anh
         numeric thu_ho_tro_khac
-        numeric chi_le_phi_lanh_su
-        numeric chi_doi_tac_ctv
+        numeric chi_le_phi_lanh_su "đơn giá/người — nhân so_luong"
+        numeric chi_doi_tac_ctv "đơn giá/người — nhân so_luong"
         numeric chi_thu_di
         numeric chi_thu_ve
         numeric chi_phi_khac
-        numeric tong_thu "tự tính"
-        numeric tong_chi "tự tính"
+        numeric tong_thu "tự tính, KHÔNG nhân so_luong"
+        numeric tong_chi "tự tính, có nhân so_luong"
         numeric loi_nhuan "tự tính"
         date ngay_nop
         date ngay_tra_kq
         text trang_thai "mới"
         text note
         bigint nguon_tu_van_id FK "tuỳ chọn — liên kết tới Tư vấn nếu tạo từ đó"
+    }
+
+    HO_SO_THANH_VIEN {
+        bigint id PK
+        bigint ho_so_id FK
+        text ten_khach "thành viên đi cùng, mới"
+        text sdt_khach
+        text ghi_chu
     }
 
     HO_SO_XU_LY_PHAT_SINH {
@@ -98,6 +107,7 @@ erDiagram
     DANH_MUC_MUC_DICH ||--o{ HO_SO : ""
     DANH_MUC_TRUONG_NHOM ||--o{ HO_SO : "tuỳ chọn"
     HO_SO ||--o{ HO_SO_XU_LY_PHAT_SINH : "nhiều dòng công việc"
+    HO_SO ||--o{ HO_SO_THANH_VIEN : "đi theo nhóm (tuỳ chọn)"
     LEADS ||--o{ HO_SO : "chốt tư vấn → tạo hồ sơ (tuỳ chọn)"
 ```
 
@@ -106,6 +116,7 @@ erDiagram
 - `DOI_TAC` = tên bảng kỹ thuật, tên hiển thị trên giao diện là **"Đại lý ủy thác"** (PM xác nhận đổi tên) — mỗi hồ sơ giờ BẮT BUỘC phải chọn 1 đại lý, không còn tuỳ chọn để trống cho khách lẻ.
 - `HO_SO_XU_LY_PHAT_SINH` là bảng mới theo yêu cầu bổ sung của PM: mỗi hồ sơ có thể có nhiều dòng công việc phát sinh cần theo dõi hạn chốt. Trạng thái có 4 giá trị PM tự chốt: Đang xử lý/Hủy/Tạm dừng/Hoàn thành — "quá hạn" trên Dashboard chỉ tính khi đang ở "Đang xử lý".
 - `nguon_tu_van_id` trên `HO_SO`: cột đề xuất thêm (cần PM xác nhận) để biết 1 hồ sơ được tạo ra từ dòng Tư vấn nào — phục vụ tính năng "chốt Tư vấn → tạo Hồ sơ" mô tả ở mục 2 bên dưới.
+- `HO_SO_THANH_VIEN` là bảng mới theo yêu cầu bổ sung của PM: 1 hồ sơ có thể đi theo nhóm nhiều khách hàng. `ten_khach`/`sdt_khach` trên `HO_SO` là khách CHÍNH, bảng này lưu các thành viên ĐI CÙNG (không tính khách chính). `so_luong` trên `HO_SO` tự động = 1 + số dòng ở bảng này (cập nhật bằng trigger, không nhập tay) — dùng để nhân "Chi — Phí lãnh sự" và "Chi — Đại lý/CTV" khi tính Tổng chi. **Lưu ý rủi ro:** phần Thu (Lệ phí, In ảnh, Hỗ trợ khác) KHÔNG tự nhân theo `so_luong` — nếu hồ sơ nhóm 2-3 người mà Thu không tăng trong khi Chi tăng gấp đôi/ba, lợi nhuận mỗi hồ sơ nhóm sẽ giảm mạnh so với hồ sơ 1 người. Cần PM xác nhận đây có đúng ý muốn không trước khi code (xem rà soát ở `Phase2_Dac_ta.xlsx` sheet 6).
 
 ## 2. Mô tả màn hình (để dựng wireframe trong FigJam)
 
@@ -117,8 +128,9 @@ erDiagram
 ### Quản lý hồ sơ
 - Bộ lọc trên: theo Trạng thái, Nước đến, Đại lý ủy thác, khoảng ngày nộp.
 - Bảng danh sách theo mẫu `.tbl-wrap`/`table` có sẵn — cột: Ngày, Tên khách, Nước đến, Mục đích, Đại lý ủy thác, Trạng thái (pill màu như mẫu `.pill`), Lợi nhuận, Ngày trả KQ.
-- Modal thêm/sửa (theo mẫu `.overlay`/`.modal` có sẵn): chia 2 cột — cột trái "Thông tin khách" (Ngày, Trưởng nhóm, Tên/SĐT/Địa chỉ khách, Nước đến, Mục đích, Đại lý ủy thác — bắt buộc chọn), cột phải "Thu chi & tiến độ" (các ô Thu/Chi, Tổng thu/Tổng chi/Lợi nhuận hiển thị readonly tự tính, Ngày nộp/Trả KQ, Trạng thái, Note).
-- Bên dưới modal: bảng con "Xử lý phát sinh" — thêm/sửa/xoá từng dòng (Nội dung, Hạn chốt, Ghi chú, Trạng thái: Đang xử lý/Hủy/Tạm dừng/Hoàn thành), không cần lưu form chính để thêm dòng mới.
+- Modal thêm/sửa (theo mẫu `.overlay`/`.modal` có sẵn): chia 2 cột — cột trái "Thông tin khách" (Ngày, Trưởng nhóm, Tên/SĐT/Địa chỉ khách CHÍNH, Nước đến, Mục đích, Đại lý ủy thác — bắt buộc chọn, **Số lượng hiển thị readonly** = 1 + số thành viên nhóm), cột phải "Thu chi & tiến độ" (các ô Thu/Chi — 2 ô "Phí lãnh sự"/"Đại lý-CTV" ghi rõ nhãn "(đơn giá/người)", Tổng thu/Tổng chi/Lợi nhuận hiển thị readonly tự tính, Ngày nộp/Trả KQ, Trạng thái, Note).
+- Bên dưới modal: bảng con "Thành viên nhóm" — thêm/sửa/xoá từng dòng (Tên, SĐT, Ghi chú) cho các khách đi cùng khách chính; mỗi lần thêm/xoá 1 dòng, ô "Số lượng" và Tổng chi/Lợi nhuận tự cập nhật lại ngay (không cần lưu form chính).
+- Bên dưới nữa: bảng con "Xử lý phát sinh" — thêm/sửa/xoá từng dòng (Nội dung, Hạn chốt, Ghi chú, Trạng thái: Đang xử lý/Hủy/Tạm dừng/Hoàn thành), không cần lưu form chính để thêm dòng mới.
 
 ### Tư vấn
 - Bảng danh sách (dùng lại toàn bộ style bảng của Hồ sơ) — cột: Ngày, Tên, SĐT, Nước đến (dropdown), Mục đích (dropdown), Trạng thái (pill), Ngày nhắc lại.
