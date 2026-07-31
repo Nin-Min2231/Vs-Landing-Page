@@ -92,9 +92,9 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 .hero h1{font-size:40px;font-weight:800;line-height:1.25;margin-bottom:var(--sp-2)}
 .hero h1 em{color:var(--color-primary);font-style:normal}
 .hero p.lead{color:var(--color-text-muted);font-size:18px;margin-bottom:var(--sp-3)}
-.badges{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-3)}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:var(--sp-3)}
 .badge{background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-full);
-  padding:8px 16px;font-size:14px;font-weight:600;box-shadow:var(--shadow-sm)}
+  padding:7px 13px;font-size:13px;font-weight:600;box-shadow:var(--shadow-sm);white-space:nowrap}
 .badge b{color:var(--color-success)}
 .badge-accent{background:var(--color-accent);color:#fff;border-color:var(--color-accent)}
 .badge-accent b{color:#fff}
@@ -115,7 +115,8 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 .hero-visual{background:linear-gradient(160deg,var(--color-primary) 0%,var(--color-primary-dark) 100%);
   border-radius:var(--radius-lg);padding:var(--sp-4);color:#fff;box-shadow:var(--shadow-lg);text-align:center}
 .hero-visual .plane{font-size:64px;display:block;margin-bottom:var(--sp-2)}
-.hero-visual .flags{font-size:30px;letter-spacing:6px;margin:var(--sp-2) 0}
+.hero-visual .flags{display:flex;justify-content:center;align-items:center;gap:8px;margin:var(--sp-2) 0;flex-wrap:wrap}
+.flag-ico{width:32px;height:22px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.25);flex-shrink:0}
 .hero-visual p{opacity:.9;font-size:15px}
 
 /* ==================== SERVICE CARDS ==================== */
@@ -237,11 +238,11 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 .register-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:var(--sp-6);align-items:center}
 .register h2{font-size:32px;font-weight:800;margin-bottom:var(--sp-2)}
 .register .info p{opacity:.9;margin-bottom:var(--sp-2)}
-.register .hotline-box{background:rgba(255,255,255,.12);border-radius:var(--radius-md);padding:var(--sp-2) var(--sp-3);
-  font-weight:700;font-size:18px;display:inline-block}
+.register .hotline-box{background:var(--color-accent);color:#fff;border-radius:var(--radius-md);padding:var(--sp-2) var(--sp-3);
+  font-weight:700;font-size:18px;display:inline-block;box-shadow:var(--shadow-md)}
 .contact-row{display:flex;align-items:center;justify-content:center;gap:var(--sp-3);flex-wrap:wrap;margin-top:var(--sp-3)}
-.qr-box{background:#fff;border-radius:var(--radius-md);padding:12px;display:inline-block;
-  text-align:center;box-shadow:var(--shadow-md)}
+.qr-box{background:#fff;border-radius:var(--radius-md);padding:12px;display:inline-flex;flex-direction:column;align-items:center;
+  box-shadow:var(--shadow-md)}
 .qr-box img{width:140px;height:140px;display:block;border-radius:8px}
 .qr-box .qr-label{color:var(--color-text);font-size:13px;font-weight:600;margin-top:6px}
 .form-card{background:#fff;border-radius:var(--radius-lg);padding:var(--sp-4);box-shadow:var(--shadow-lg);color:var(--color-text)}
@@ -387,7 +388,15 @@ footer a:hover{color:#fff}
     </div>
     <div class="hero-visual">
       <span class="plane">🛂✈️</span>
-      <div class="flags">🇯🇵 🇰🇷 🇹🇼 🇨🇳 🇪🇺 🇺🇸 🇦🇺</div>
+      <div class="flags">
+        <svg class="flag-ico" viewBox="0 0 30 20" aria-label="Nhật Bản"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#BC002D"/></svg>
+        <svg class="flag-ico" viewBox="0 0 30 20" aria-label="Hàn Quốc"><rect width="30" height="20" fill="#fff"/><path d="M15 4a6 6 0 1 1 0 12 3 3 0 0 1 0-6 3 3 0 0 0 0-6z" fill="#CD2E3A"/><path d="M15 4a6 6 0 1 0 0 12 3 3 0 0 0 0-6 3 3 0 0 1 0-6z" fill="#0047A0"/></svg>
+        <svg class="flag-ico" viewBox="0 0 30 20" aria-label="Đài Loan"><rect width="30" height="20" fill="#FE0000"/><rect width="15" height="10" fill="#000095"/><circle cx="7.5" cy="5" r="3" fill="#fff"/></svg>
+        <svg class="flag-ico" viewBox="0 0 30 20" aria-label="Trung Quốc"><rect width="30" height="20" fill="#EE1C25"/><polygon points="6,3 6.9,5.4 9.5,5.4 7.4,6.9 8.2,9.4 6,7.9 3.8,9.4 4.6,6.9 2.5,5.4 5.1,5.4" fill="#FFDE00"/></svg>
+        <svg class="flag-ico" viewBox="0 0 30 20" aria-label="Schengen (Châu Âu)"><rect width="30" height="20" fill="#003399"/><g fill="#FFCC00"><circle cx="15" cy="4.5" r="0.9"/><circle cx="18.9" cy="6.1" r="0.9"/><circle cx="20.5" cy="10" r="0.9"/><circle cx="18.9" cy="13.9" r="0.9"/><circle cx="15" cy="15.5" r="0.9"/><circle cx="11.1" cy="13.9" r="0.9"/><circle cx="9.5" cy="10" r="0.9"/><circle cx="11.1" cy="6.1" r="0.9"/></g></svg>
+        <svg class="flag-ico" viewBox="0 0 30 20" aria-label="Mỹ"><rect width="30" height="20" fill="#fff"/><g fill="#B22234"><rect y="0" width="30" height="1.54"/><rect y="3.08" width="30" height="1.54"/><rect y="6.15" width="30" height="1.54"/><rect y="9.23" width="30" height="1.54"/><rect y="12.31" width="30" height="1.54"/><rect y="15.38" width="30" height="1.54"/><rect y="18.46" width="30" height="1.54"/></g><rect width="13" height="11" fill="#3C3B6E"/></svg>
+        <svg class="flag-ico" viewBox="0 0 30 20" aria-label="Úc"><rect width="30" height="20" fill="#00247D"/><path d="M0,0 L15,10 M15,0 L0,10" stroke="#fff" stroke-width="1.6"/><path d="M0,0 L15,10 M15,0 L0,10" stroke="#CF142B" stroke-width="0.7"/><path d="M7.5,0 V10 M0,5 H15" stroke="#fff" stroke-width="2.2"/><path d="M7.5,0 V10 M0,5 H15" stroke="#CF142B" stroke-width="1"/><g fill="#fff"><circle cx="23" cy="15.5" r="1.3"/><circle cx="25.5" cy="6" r="0.9"/><circle cx="20.5" cy="6.5" r="0.9"/><circle cx="19.5" cy="12" r="0.9"/><circle cx="26" cy="12.5" r="0.9"/></g></svg>
+      </div>
       <p>Đồng hành cùng bạn trên mọi hành trình — du lịch, công tác, thăm thân</p>
     </div>
   </div>
