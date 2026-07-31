@@ -28,10 +28,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:15px
 .hidden{display:none!important}
 .btn{padding:10px 18px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font);
   font-weight:600;font-size:14px;transition:.15s}
-.btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--pd)}
-.btn-g{background:#fff;color:var(--tx);border:1px solid var(--bd)}.btn-g:hover{background:var(--pl)}
-.btn-d{background:#FEE2E2;color:var(--err)}.btn-d:hover{background:#FECACA}
-.btn-ok{background:var(--ok);color:#fff}
+/* Hệ màu button: xanh dương = hành động chính, xám = phụ/trung tính,
+   đỏ = xóa/nguy hiểm, xanh lá = xác nhận/xuất dữ liệu — mỗi loại có border riêng để hài hòa */
+.btn-p{background:var(--p);color:#fff;border:1px solid var(--pd)}.btn-p:hover{background:var(--pd)}
+.btn-g{background:#fff;color:var(--tx);border:1px solid var(--bd)}.btn-g:hover{background:var(--pl);border-color:var(--p)}
+.btn-d{background:#FEE2E2;color:var(--err);border:1px solid #FCA5A5}.btn-d:hover{background:#FECACA}
+.btn-ok{background:var(--ok);color:#fff;border:1px solid #15803D}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 input,select,textarea{padding:10px 12px;border:1.5px solid var(--bd);border-radius:8px;
   font-family:var(--font);font-size:15px;background:#fff;color:var(--tx);width:100%}
@@ -67,14 +69,14 @@ main{padding:20px 32px;max-width:1600px;margin:0 auto}
 @media(max-width:700px){main{padding:20px}}
 .panel-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
 .panel-head h2{font-size:19px}
-.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filters{display:flex;gap:20px;flex-wrap:wrap}
 .filters input,.filters select{width:auto;font-size:14px;padding:8px 10px}
 
 /* table */
 .tbl-wrap{background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(15,30,61,.08);overflow-x:auto}
 table{width:100%;border-collapse:collapse;min-width:720px}
 th{background:var(--dark);color:#fff;text-align:left;padding:11px 12px;font-size:13px;white-space:nowrap}
-td{padding:10px 12px;border-bottom:1px solid var(--bd);font-size:14px;vertical-align:top}
+td{padding:10px 12px;border-bottom:1px solid var(--bd);font-size:14px;vertical-align:middle}
 tr:hover td{background:var(--pl)}
 .pill{padding:3px 12px;border-radius:999px;font-size:12px;font-weight:700;display:inline-block}
 .pill-new{background:var(--pl);color:var(--p)}
@@ -108,7 +110,7 @@ td select{width:auto;font-size:13px;padding:5px 8px}
 .modal{background:#fff;border-radius:16px;box-shadow:var(--sh);width:100%;max-width:600px;
   max-height:90vh;overflow-y:auto;padding:28px}
 .modal h3{font-size:18px;margin-bottom:8px}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.modal-actions{display:flex;gap:40px;justify-content:center;margin-top:20px}
 @media(max-width:480px){
   .overlay{padding:8px}
   .modal{padding:18px}
@@ -128,6 +130,7 @@ td select{width:auto;font-size:13px;padding:5px 8px}
 
 /* ===== Phase 2 ===== */
 .modal-lg{max-width:920px}
+.modal-xl{max-width:1200px}
 .modal-2col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
 @media(max-width:760px){.modal-2col{grid-template-columns:1fr}}
 .modal-2col h4{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
@@ -159,10 +162,17 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 
 tr.danger td{background:#FEE2E2}
 
-.cat-block{background:#fff;border-radius:var(--r);padding:16px 18px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
+.cat-block{background:#fff;border-radius:var(--r);border-top:4px solid var(--bd);padding:16px 18px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
 .cat-block h3{font-size:16px;margin-bottom:10px}
+.cat-block.c-nuoc{border-top-color:var(--p)}
+.cat-block.c-nuoc h3{color:var(--pd)}
+.cat-block.c-mucdich{border-top-color:var(--acc)}
+.cat-block.c-mucdich h3{color:var(--acc)}
+.cat-block.c-truongnhom{border-top-color:var(--ok)}
+.cat-block.c-truongnhom h3{color:var(--ok)}
 .cat-add-row{display:flex;gap:8px;margin-bottom:12px}
 .cat-add-row input{flex:1}
+.cat-list{max-height:320px;overflow-y:auto;padding-right:4px}
 .cat-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd);font-size:14px;gap:8px}
 .cat-item:last-child{border-bottom:none}
 .cat-item.inactive{opacity:.5}
@@ -174,6 +184,7 @@ tr.danger td{background:#FEE2E2}
 @media(max-width:900px){.chart-row{grid-template-columns:1fr}}
 .chart-card{background:#fff;border-radius:var(--r);padding:16px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
 .chart-card h3{font-size:15px;margin-bottom:10px}
+.dash-table-title{font-size:15px;margin-bottom:10px}
 .dash-tables{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
 @media(max-width:900px){.dash-tables{grid-template-columns:1fr}}
 </style>
@@ -213,10 +224,10 @@ tr.danger td{background:#FEE2E2}
     <button class="tab active" data-tab="dash" onclick="switchTab('dash')">📊 Dashboard</button>
     <button class="tab" data-tab="tuvan" onclick="switchTab('tuvan')">📞 Tư vấn</button>
     <button class="tab" data-tab="hoso" onclick="switchTab('hoso')">🗃 Hồ sơ</button>
-    <button class="tab" data-tab="doitac" onclick="switchTab('doitac')">🤝 Đại lý ủy thác</button>
-    <button class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ Cài đặt chung</button>
     <button class="tab" data-tab="leads" onclick="switchTab('leads')">📋 Khách đăng ký</button>
     <button class="tab" data-tab="posts" onclick="switchTab('posts')">📝 Bài viết</button>
+    <button class="tab" data-tab="doitac" onclick="switchTab('doitac')">🤝 Đại lý ủy thác</button>
+    <button class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ Cài đặt chung</button>
     <button class="tab" data-tab="cats" onclick="switchTab('cats')">🗂 Danh mục</button>
   </nav>
 
@@ -233,19 +244,25 @@ tr.danger td{background:#FEE2E2}
         <div class="chart-card"><h3>Số lượng hồ sơ theo tháng</h3><canvas id="chartSoLuong" height="180"></canvas></div>
       </div>
       <div class="dash-tables">
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>Khách hàng</th><th>Nội dung</th><th>Hạn chốt</th></tr></thead>
-            <tbody id="dashXlpsBody"></tbody>
-          </table>
-          <div class="empty hidden" id="dashXlpsEmpty">Không có việc phát sinh nào cần chú ý</div>
+        <div>
+          <h3 class="dash-table-title">⚠️ Xử lý phát sinh cần chú ý</h3>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Khách hàng</th><th>Nội dung</th><th>Hạn chốt</th></tr></thead>
+              <tbody id="dashXlpsBody"></tbody>
+            </table>
+            <div class="empty hidden" id="dashXlpsEmpty">Không có việc phát sinh nào cần chú ý</div>
+          </div>
         </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>Khách hàng</th><th>SĐT</th><th>Ngày nhắc lại</th></tr></thead>
-            <tbody id="dashNhacLaiBody"></tbody>
-          </table>
-          <div class="empty hidden" id="dashNhacLaiEmpty">Không có khách nào cần nhắc lại</div>
+        <div>
+          <h3 class="dash-table-title">📅 Khách tư vấn cần nhắc lại</h3>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Khách hàng</th><th>SĐT</th><th>Ngày nhắc lại</th></tr></thead>
+              <tbody id="dashNhacLaiBody"></tbody>
+            </table>
+            <div class="empty hidden" id="dashNhacLaiEmpty">Không có khách nào cần nhắc lại</div>
+          </div>
         </div>
       </div>
     </section>
@@ -315,20 +332,20 @@ tr.danger td{background:#FEE2E2}
     <section id="tab-settings" class="hidden">
       <div class="panel-head"><h2>Cài đặt chung</h2></div>
       <div class="cat-grid">
-        <div class="cat-block">
+        <div class="cat-block c-nuoc">
           <h3>🌍 Nước đến</h3>
           <div class="cat-add-row"><input type="text" id="newNuoc" placeholder="Tên nước mới"><button class="btn btn-p" onclick="addDanhMuc('nuoc')">+ Thêm</button></div>
-          <div id="listNuoc"></div>
+          <div id="listNuoc" class="cat-list"></div>
         </div>
-        <div class="cat-block">
+        <div class="cat-block c-mucdich">
           <h3>🎯 Mục đích</h3>
           <div class="cat-add-row"><input type="text" id="newMucDich" placeholder="Mục đích mới"><button class="btn btn-p" onclick="addDanhMuc('mucdich')">+ Thêm</button></div>
-          <div id="listMucDich"></div>
+          <div id="listMucDich" class="cat-list"></div>
         </div>
-        <div class="cat-block">
+        <div class="cat-block c-truongnhom">
           <h3>👤 Trưởng nhóm</h3>
           <div class="cat-add-row"><input type="text" id="newTruongNhom" placeholder="Tên trưởng nhóm mới"><button class="btn btn-p" onclick="addDanhMuc('truongnhom')">+ Thêm</button></div>
-          <div id="listTruongNhom"></div>
+          <div id="listTruongNhom" class="cat-list"></div>
         </div>
       </div>
     </section>
@@ -540,7 +557,7 @@ tr.danger td{background:#FEE2E2}
 
 <!-- ============ MODAL BẢNG PHÍ ĐẠI LÝ ============ -->
 <div class="overlay hidden" id="dtFeeOverlay">
-  <div class="modal">
+  <div class="modal modal-xl">
     <h3>Bảng phí — <span id="dtFeeCompanyName"></span></h3>
     <input type="hidden" id="dtFeeDoiTacId">
     <div class="tbl-wrap" style="margin-bottom:12px">
@@ -561,6 +578,21 @@ tr.danger td{background:#FEE2E2}
     <input type="text" id="feeGhiChu" placeholder="Ghi chú (tuỳ chọn)" style="margin-top:8px">
     <div class="modal-actions">
       <button class="btn btn-g" onclick="closeDoiTacFeeModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL SỬA TÊN DANH MỤC ============ -->
+<div class="overlay hidden" id="renameOverlay">
+  <div class="modal" style="max-width:400px">
+    <h3>Sửa tên</h3>
+    <input type="hidden" id="renameType">
+    <input type="hidden" id="renameId">
+    <label>Tên</label>
+    <input type="text" id="renameValue">
+    <div class="modal-actions">
+      <button class="btn btn-g" onclick="closeRenameModal()">Hủy</button>
+      <button class="btn btn-p" onclick="saveRename()">Lưu</button>
     </div>
   </div>
 </div>
@@ -717,10 +749,12 @@ function renderLeads(){
       <td>${esc(l.country||'–')}</td>
       <td style="max-width:220px">${esc(l.note||'–')}</td>
       <td>
-        <span class="pill ${pillClass(l.status)}">${esc(l.status)}</span><br>
-        <select onchange="updateLeadStatus(${l.id},this.value)" style="margin-top:5px">
-          ${['Mới','Đã gọi','Chốt','Hủy'].map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('')}
-        </select>
+        <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="pill ${pillClass(l.status)}">${esc(l.status)}</span>
+          <select onchange="updateLeadStatus(${l.id},this.value)" style="width:auto">
+            ${['Mới','Đã gọi','Chốt','Hủy'].map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </span>
       </td>
     </tr>`).join('');
   applyRowLabels('leadsBody');
@@ -871,7 +905,7 @@ function renderSettings(){
       <div class="cat-item ${x.active?'':'inactive'}">
         <span>${esc(x.ten)}${x.active?'':' (đã ẩn)'}</span>
         <div class="cat-item-actions">
-          <button class="btn btn-g" onclick="renameDanhMuc('${type}',${x.id})">Sửa</button>
+          <button class="btn btn-g" onclick="openRenameModal('${type}',${x.id})">Sửa</button>
           <button class="btn btn-g" onclick="toggleDanhMuc('${type}',${x.id},${!x.active})">${x.active?'Ẩn':'Hiện'}</button>
         </div>
       </div>`).join('') : '<div class="hint">Chưa có mục nào</div>';
@@ -892,14 +926,24 @@ async function toggleDanhMuc(type,id,active){
     loadDanhMuc(); toast(active?'Đã hiện lại':'Đã ẩn');
   }catch(e){ toast('Lỗi: '+e.message,'err'); }
 }
-async function renameDanhMuc(type,id){
+function openRenameModal(type,id){
   const cur = danhMucArr(type).find(x=>x.id===id);
   if(!cur) return;
-  const ten = prompt('Sửa tên:', cur.ten);
-  if(!ten || !ten.trim() || ten.trim()===cur.ten) return;
+  $('renameType').value = type;
+  $('renameId').value = id;
+  $('renameValue').value = cur.ten;
+  $('renameOverlay').classList.remove('hidden');
+}
+function closeRenameModal(){ $('renameOverlay').classList.add('hidden'); }
+async function saveRename(){
+  const type = $('renameType').value, id = Number($('renameId').value);
+  const ten = $('renameValue').value.trim();
+  if(!ten){ toast('Nhập tên','err'); return; }
+  const cur = danhMucArr(type).find(x=>x.id===id);
+  if(cur && ten===cur.ten){ closeRenameModal(); return; }
   try{
-    await api(danhMucTable(type)+'?id=eq.'+id,{method:'PATCH',body:JSON.stringify({ten:ten.trim()}),prefer:'return=minimal'});
-    loadDanhMuc(); toast('Đã cập nhật');
+    await api(danhMucTable(type)+'?id=eq.'+id,{method:'PATCH',body:JSON.stringify({ten}),prefer:'return=minimal'});
+    closeRenameModal(); loadDanhMuc(); toast('Đã cập nhật');
   }catch(e){ toast('Lỗi: '+e.message,'err'); }
 }
 
