@@ -85,6 +85,9 @@ tr:hover td{background:var(--pl)}
 .pill-lost{background:#F1F5F9;color:var(--mut)}
 td select{width:auto;font-size:13px;padding:5px 8px}
 .empty{text-align:center;color:var(--mut);padding:40px}
+/* nhóm nút "Thao tác" dùng chung cho mọi bảng */
+.th-center{text-align:center}
+.td-actions{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
 
 /* bảng → thẻ (card) trên điện thoại, thay vì cuộn ngang */
 @media(max-width:700px){
@@ -176,7 +179,7 @@ tr.danger td{background:#FEE2E2}
 .cat-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd);font-size:14px;gap:8px}
 .cat-item:last-child{border-bottom:none}
 .cat-item.inactive{opacity:.5}
-.cat-item-actions{display:flex;gap:6px;flex-shrink:0}
+.cat-item-actions{display:flex;gap:20px;flex-shrink:0}
 .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 @media(max-width:900px){.cat-grid{grid-template-columns:1fr}}
 
@@ -282,7 +285,7 @@ tr.danger td{background:#FEE2E2}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Ngày</th><th>Tên</th><th>SĐT</th><th>Nước đến</th><th>Mục đích</th><th>Trạng thái</th><th>Nhắc lại</th><th>Thao tác</th></tr></thead>
+          <thead><tr><th>#</th><th>Ngày</th><th>Tên</th><th>SĐT</th><th>Nước đến</th><th>Mục đích</th><th>Trạng thái</th><th>Nhắc lại</th><th class="th-center">Thao tác</th></tr></thead>
           <tbody id="tvBody"></tbody>
         </table>
         <div class="empty hidden" id="tvEmpty">Chưa có dữ liệu tư vấn</div>
@@ -306,7 +309,7 @@ tr.danger td{background:#FEE2E2}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Ngày</th><th>Tên khách</th><th>Nước đến</th><th>Mục đích</th><th>Đại lý ủy thác</th><th>Trạng thái</th><th>Lợi nhuận</th><th>Ngày trả KQ</th><th>Thao tác</th></tr></thead>
+          <thead><tr><th>#</th><th>Ngày</th><th>Tên khách</th><th>Nước đến</th><th>Mục đích</th><th>Đại lý ủy thác</th><th>Trạng thái</th><th>Lợi nhuận</th><th>Ngày trả KQ</th><th class="th-center">Thao tác</th></tr></thead>
           <tbody id="hsBody"></tbody>
         </table>
         <div class="empty hidden" id="hsEmpty">Chưa có hồ sơ nào</div>
@@ -321,7 +324,7 @@ tr.danger td{background:#FEE2E2}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Tên công ty</th><th>Người đại diện</th><th>SĐT liên hệ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+          <thead><tr><th>#</th><th>Tên công ty</th><th>Người đại diện</th><th>SĐT liên hệ</th><th>Trạng thái</th><th class="th-center">Thao tác</th></tr></thead>
           <tbody id="dtBody"></tbody>
         </table>
         <div class="empty hidden" id="dtEmpty">Chưa có đại lý nào</div>
@@ -383,7 +386,7 @@ tr.danger td{background:#FEE2E2}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Tiêu đề</th><th>Danh mục</th><th>Ngày tạo</th><th>Hiển thị</th><th>Thao tác</th></tr></thead>
+          <thead><tr><th>#</th><th>Tiêu đề</th><th>Danh mục</th><th>Ngày tạo</th><th>Hiển thị</th><th class="th-center">Thao tác</th></tr></thead>
           <tbody id="postsBody"></tbody>
         </table>
         <div class="empty hidden" id="postsEmpty">Chưa có bài viết nào</div>
@@ -401,7 +404,7 @@ tr.danger td{background:#FEE2E2}
       </div>
       <div class="tbl-wrap">
         <table style="min-width:400px">
-          <thead><tr><th>#</th><th>Tên danh mục</th><th>Thao tác</th></tr></thead>
+          <thead><tr><th>#</th><th>Tên danh mục</th><th class="th-center">Thao tác</th></tr></thead>
           <tbody id="catsBody"></tbody>
         </table>
       </div>
@@ -787,7 +790,7 @@ async function loadCats(){
     CATS = await api('categories?select=*&order=name') || [];
     $('catsBody').innerHTML = CATS.map((c,i)=>`
       <tr><td>${i+1}</td><td>${esc(c.name)}</td>
-      <td><button class="btn btn-d" onclick="delCategory(${c.id})">Xóa</button></td></tr>`).join('');
+      <td class="td-actions"><button class="btn btn-d" onclick="delCategory(${c.id})">Xóa</button></td></tr>`).join('');
     applyRowLabels('catsBody');
     $('postCat').innerHTML = '<option value="">-- Không chọn --</option>'+
       CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
@@ -820,7 +823,7 @@ async function loadPosts(){
         <td>${esc(p.categories?.name||'–')}</td>
         <td>${fmtTime(p.created_at)}</td>
         <td>${p.published?'✅ Công khai':'🚫 Ẩn'}</td>
-        <td style="white-space:nowrap">
+        <td class="td-actions">
           <button class="btn btn-g" onclick="openPostModal(${p.id})">Sửa</button>
           <button class="btn btn-d" onclick="delPost(${p.id})">Xóa</button>
         </td>
@@ -973,7 +976,7 @@ function renderDoiTac(){
       <td>${esc(d.ten_dai_dien||'–')}</td>
       <td>${d.sdt_lien_he?`<a href="tel:${esc(d.sdt_lien_he)}">${esc(d.sdt_lien_he)}</a>`:'–'}</td>
       <td><span class="pill ${d.trang_thai==='Đang hợp tác'?'pill-dt-on':'pill-dt-off'}">${esc(d.trang_thai)}</span></td>
-      <td style="white-space:nowrap">
+      <td class="td-actions">
         <button class="btn btn-g" onclick="openDoiTacModal(${d.id})">Sửa</button>
         <button class="btn btn-g" onclick="openDoiTacFeeModal(${d.id})">Bảng phí</button>
         <button class="btn btn-d" onclick="delDoiTac(${d.id})">Xóa</button>
@@ -1082,7 +1085,7 @@ function renderTuVan(){
       <td>${esc(l.muc_dich||'–')}</td>
       <td><span class="pill ${pillClass(l.status)}">${esc(l.status)}</span></td>
       <td>${fmtDate(l.ngay_nhac_lai)}</td>
-      <td><button class="btn btn-g" onclick="openTvModal(${l.id})">Sửa</button></td>
+      <td class="td-actions"><button class="btn btn-g" onclick="openTvModal(${l.id})">Sửa</button></td>
     </tr>`).join('');
   applyRowLabels('tvBody');
 }
@@ -1170,7 +1173,7 @@ function renderHoSo(){
       <td><span class="pill ${hsPillClass(h.trang_thai)}">${esc(h.trang_thai)}</span></td>
       <td>${fmtVND(h.loi_nhuan)}</td>
       <td>${fmtDate(h.ngay_tra_kq)}</td>
-      <td><button class="btn btn-g" onclick="openHoSoModal(${h.id})">Sửa</button></td>
+      <td class="td-actions"><button class="btn btn-g" onclick="openHoSoModal(${h.id})">Sửa</button></td>
     </tr>`).join('');
   applyRowLabels('hsBody');
 }
