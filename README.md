@@ -44,8 +44,12 @@ Tìm chữ `[THAY_THẾ]` trong `index.html` (Ctrl+F) và thay bằng thông tin
 - [x] Hotline/Zalo 0935 887 922, link Facebook (công ty + tư vấn viên), QR Zalo, địa chỉ 303 Âu Cơ Liên Chiểu Đà Nẵng, email hien.gotravel@gmail.com — cập nhật 2026-07-18
 - [ ] Bảng giá từng quốc gia
 - [ ] Số liệu "5000+ hồ sơ / 98% đậu" → số thật (tránh vi phạm quảng cáo)
-- [ ] Review khách hàng thật
+- [x] Review khách hàng thật — cập nhật 2026-07-30 (2 review thật lấy từ Facebook công ty)
 - [ ] Số GPKD ở footer (chưa có trong `Information.md`, cần bổ sung khi có)
+
+## Đã đưa lên Internet (2026-07-30)
+
+Trang đang chạy thật tại `https://topvisa.nguyennc1357.workers.dev` (Supabase đã kết nối thật, form/admin hoạt động). Chi tiết đầy đủ về hạ tầng, quyết định kỹ thuật, và việc cần làm tiếp theo: xem `01_Docs/08_Ban_giao_Claude_Code.md`.
 
 ## Muốn sửa nội dung?
 

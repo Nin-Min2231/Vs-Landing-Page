@@ -8,18 +8,18 @@ Landing page dịch vụ **Visa đa quốc gia** cho công ty **Top Visa** (Đà
 
 Toàn bộ tài liệu thiết kế (yêu cầu, sitemap, wireframe, design system, kế hoạch, test case, hướng dẫn deploy) nằm ở `01_Docs/` — đọc `01_Docs/Visa-Landing-Page_Tai_lieu.xlsx` (1 file Excel gộp cả 7 tài liệu, có màu sắc dễ đọc) hoặc từng file `.md` tương ứng nếu cần xem sơ đồ Mermaid/wireframe ASCII chi tiết.
 
-## 2. Trạng thái hiện tại (2026-07-18)
+## 2. Trạng thái hiện tại (2026-07-30)
 
 | Phase | Trạng thái |
 |---|---|
 | 1. Phân tích yêu cầu | ✅ Xong |
 | 2. Thiết kế (sitemap/wireframe/design system) | ✅ Xong |
-| 3. Front-end (`index.html`) | ✅ Xong, đã gắn thông tin thật (logo, hotline, Zalo, Facebook, địa chỉ) |
-| 4. Back-end (`admin.html` + `supabase_setup.sql`) | ✅ Code xong, **CHƯA chạy** — `SUPABASE_URL`/`SUPABASE_ANON_KEY` còn để trống |
-| 5. Kiểm thử | ⬜ Chưa làm — 14 test case có sẵn ở `01_Docs/05_Ke_hoach_du_an.md` |
-| 6. Deploy | ⬜ Chưa deploy lên Internet |
+| 3. Front-end (`index.html`) | ✅ Xong, đã gắn thông tin thật (logo, hotline, Zalo, Facebook, địa chỉ) + USP + slider đánh giá thật + section Tin tức |
+| 4. Back-end (Supabase) | ✅ **Đã chạy thật** — `SUPABASE_URL`/`SUPABASE_ANON_KEY` đã điền giá trị thật trong cả 2 file HTML |
+| 5. Kiểm thử | 🟡 Một phần — đã test thủ công, **chưa chạy đủ** 14 test case ở `01_Docs/05_Ke_hoach_du_an.md` |
+| 6. Deploy | ✅ **Đã lên Internet** — qua Cloudflare Workers (không phải Cloudflare Pages), tại `https://topvisa.nguyennc1357.workers.dev` |
 
-Chi tiết checklist đầy đủ: `01_Docs/05_Ke_hoach_du_an.md` hoặc sheet `05_Kế hoạch` trong file Excel.
+Chi tiết đầy đủ + lịch sử quyết định kỹ thuật của lần deploy này: `01_Docs/08_Ban_giao_Claude_Code.md` ⭐ (đọc trước khi động vào deploy/Supabase). Checklist test case: `01_Docs/05_Ke_hoach_du_an.md` hoặc sheet `05_Kế hoạch` trong file Excel.
 
 ## 3. Tech stack (đã chọn, lý do xem `01_Docs/06_Cong_nghe_de_xuat.md`)
 
@@ -107,11 +107,11 @@ Tìm bằng cách grep `[THAY_THẾ]` trong `02_Source/index.html`:
 
 | Vị trí | Placeholder | Cần gì |
 |---|---|---|
-| Badge hero | "5000+ hồ sơ", "98% đậu" | Số liệu thật — bịa số ở đây có thể vi phạm chính sách quảng cáo |
-| Section dịch vụ | Giá "Từ x đ" mỗi quốc gia | Bảng giá thật |
-| Section đánh giá | 3 review mẫu | Review khách hàng thật |
-| Footer | Số GPKD | Chưa có trong `Information.md`, hỏi người dùng khi cần |
-| Cả 2 file | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Người dùng tự tạo project Supabase theo `07_Huong_dan_Deploy.md`, hoặc agent có thể hỗ trợ nếu được cấp quyền/API key |
+| Badge hero | "5000+ hồ sơ", "98% đậu" | ⬜ Vẫn thiếu — số liệu thật, bịa số ở đây có thể vi phạm chính sách quảng cáo |
+| Section dịch vụ | Giá "Từ x đ" mỗi quốc gia | ⬜ Vẫn thiếu — bảng giá thật |
+| Section đánh giá | ~~3 review mẫu~~ | ✅ Đã xong — đã thay bằng 2 review thật lấy từ Facebook công ty (xem `01_Docs/09_Noi_dung_Dang_bai.md`) |
+| Footer | Số GPKD | ⬜ Vẫn thiếu, chưa có trong `Information.md`, hỏi người dùng khi cần |
+| Cả 2 file | ~~`SUPABASE_URL`, `SUPABASE_ANON_KEY`~~ | ✅ Đã điền giá trị thật (2026-07-30) — chi tiết ở `01_Docs/08_Ban_giao_Claude_Code.md` |
 
 **Không tự ý bịa số liệu, review, hay giá — đây là dữ liệu ảnh hưởng pháp lý/quảng cáo.** Nếu thiếu, hỏi lại người dùng.
 
