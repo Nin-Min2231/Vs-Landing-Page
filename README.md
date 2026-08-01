@@ -58,6 +58,17 @@ Trang đang chạy thật tại `https://topvisa.nguyennc1357.workers.dev` (Supa
 - [ ] **Cần chạy `04_Phase 2/supabase_setup_phase2.sql` trong Supabase SQL Editor trước khi dùng** (tạo bảng mới, mở rộng bảng `leads`) — Claude Code không tự chạy được bước này.
 - [ ] Test theo checklist mục 8 trong file bàn giao trên sau khi migration chạy xong.
 
+## Phase 3 — Tài chính (2026-08-01)
+
+Đã thêm tab "💰 Tài chính" vào `admin.html`: Lợi nhuận/Khoản thu/Khoản chi theo khoảng thời gian
+(Khoản thu tự động từ Hồ sơ đã đậu, Khoản chi nhập tay) — xem chi tiết
+`06_Phase 3_Tai_Chinh/Phase3_TaiChinh_Ban_giao_Claude_Code.md`. Đã đẩy lên `main` và deploy thật.
+
+- [x] Chạy `06_Phase 3_Tai_Chinh/supabase_setup_phase3.sql` trong Supabase SQL Editor (bảng `khoan_chi`).
+- [ ] Test theo checklist mục 8 trong file bàn giao trên với dữ liệu thật (đã tự kiểm tra được phần
+      không cần đăng nhập: giao diện, định dạng tiền, 4 nút lọc nhanh, RLS chặn `anon` đọc/ghi
+      `khoan_chi` — còn phần cần đăng nhập admin thật thì người dùng tự test).
+
 ## Muốn sửa nội dung?
 
 Gửi file cho Claude kèm yêu cầu, ví dụ: "Đổi giá visa Nhật thành 1.800.000đ", "Thêm quốc gia Singapore", "Đổi màu chủ đạo sang xanh lá" — sau đó deploy lại theo Bước 5 trong hướng dẫn.
