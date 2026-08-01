@@ -82,6 +82,24 @@ data, `robots.txt`, `sitemap.xml`) — chi tiết đầy đủ ở `CLAUDE.md` m
       mục". Nên làm thêm Google Business Profile cho SEO địa phương Đà Nẵng. Xem hướng dẫn từng
       bước ở `CLAUDE.md` mục 12.
 
+## Phase 4 — Thông tin khách hàng & nâng cấp Hồ sơ/Tư vấn (2026-08-01)
+
+Đã thêm tab mới "👥 Thông tin khách hàng" (quản lý khách đã từng làm hồ sơ, autocomplete khi tạo
+Hồ sơ) + danh mục "Đối tác giới thiệu" trong Cài đặt chung + nâng cấp lớn dialog "Đăng ký hồ sơ
+mới" (autocomplete Tên khách hàng, field Email, icon lịch cho mọi field ngày, gộp Thư đi/Thư về
+thành Phí ship) + nâng cấp list Hồ sơ (thêm cột SĐT/Ngày nộp, tô đỏ Ngày trả KQ, bộ lọc khoảng
+ngày + nút Reset) + Tư vấn (SĐT không bắt buộc, đổi "Đã gọi" → "Đang tư vấn") — xem chi tiết
+`07_Phase 4_Thong_Tin_Khach_Hang/Phase4_BanGiao_Claude_Code.md`.
+
+- [x] Đã chạy `07_Phase 4_Thong_Tin_Khach_Hang/supabase_setup_phase4.sql` trong Supabase SQL Editor
+      (có xóa cột `chi_thu_di`/`chi_thu_ve` trên bảng `ho_so` đang có dữ liệu thật — người dùng xác
+      nhận đã chạy thành công).
+- [ ] Test theo checklist mục 11 trong file bàn giao trên với dữ liệu thật (đã tự kiểm tra được phần
+      không cần đăng nhập qua DOM: autocomplete, mặc định Nước đến=Nhật Bản, lọc Đại lý ủy thác chỉ
+      hiện Đang hợp tác, tô đỏ Ngày trả KQ đúng 3 trường hợp, tính lại Tổng chi với Phí ship, Reset
+      bộ lọc, RLS chặn `anon` trên `khach_hang`/`danh_muc_doi_tac` — còn phần cần đăng nhập admin
+      thật thì người dùng tự test, đặc biệt đối chiếu số liệu trước/sau migration theo mục 0).
+
 ## Muốn sửa nội dung?
 
 Gửi file cho Claude kèm yêu cầu, ví dụ: "Đổi giá visa Nhật thành 1.800.000đ", "Thêm quốc gia Singapore", "Đổi màu chủ đạo sang xanh lá" — sau đó deploy lại theo Bước 5 trong hướng dẫn.

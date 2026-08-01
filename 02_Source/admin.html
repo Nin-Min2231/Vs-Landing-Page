@@ -137,7 +137,7 @@ td select{width:auto;font-size:13px;padding:5px 8px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(150%);z-index:300;
   padding:13px 22px;border-radius:10px;color:#fff;font-weight:600;box-shadow:var(--sh);transition:.3s;font-size:14px}
 .toast.show{transform:translateX(-50%) translateY(0)}
-.toast.ok{background:var(--ok)}.toast.err{background:var(--err)}
+.toast.ok{background:var(--ok)}.toast.err{background:var(--err)}.toast.warn{background:var(--warn)}
 
 .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .stat{background:#fff;border-radius:var(--r);padding:14px 18px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
@@ -215,6 +215,18 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .stt-doitac{width:var(--w-doitac,140px)}
 .pill.stt-tuvan,.pill.stt-hoso,.pill.stt-xlps,.pill.stt-doitac{text-align:center}
 
+/* ===== Phase 4: field tự điền từ autocomplete Tên khách hàng — đổi nền để nhân viên biết
+   đây là dữ liệu lấy từ khách hàng có sẵn (Dialog_Tao_moi_ho_so.png) ===== */
+.autofilled{background:#DDE1E6!important}
+/* ===== Phase 4: gợi ý autocomplete Tên khách hàng (dialog Hồ sơ) ===== */
+.ac-wrap{position:relative}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--bd);
+  border-radius:8px;box-shadow:var(--sh);max-height:220px;overflow-y:auto;z-index:60;margin-top:4px}
+.ac-item{padding:8px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--bd)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover{background:var(--pl)}
+.ac-item .ac-sub{font-size:12px;color:var(--mut)}
+
 /* ===== Popup Confirm / Thông báo — dùng chung mọi màn hình (theo thiết kế
    Popup_Confirm.png / Popup_thong_bao.png). Nội dung đổ vào lúc gọi showConfirmPopup()/
    showNotifyPopup(), xem cuối script. ===== */
@@ -256,6 +268,8 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .cat-block.c-mucdich h3{color:var(--acc)}
 .cat-block.c-truongnhom{border-top-color:var(--ok)}
 .cat-block.c-truongnhom h3{color:var(--ok)}
+.cat-block.c-doitacdm{border-top-color:#7C3AED}
+.cat-block.c-doitacdm h3{color:#7C3AED}
 .cat-add-row{display:flex;gap:8px;margin-bottom:12px}
 .cat-add-row input{flex:1}
 .cat-list{max-height:320px;overflow-y:auto;padding-right:4px}
@@ -263,8 +277,8 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .cat-item:last-child{border-bottom:none}
 .cat-item.inactive{opacity:.5}
 .cat-item-actions{display:flex;gap:20px;flex-shrink:0}
-.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-@media(max-width:900px){.cat-grid{grid-template-columns:1fr}}
+/* auto-fit tự chia 4/3/2/1 cột theo chiều rộng màn hình, không cần media query riêng */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 
 .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
 @media(max-width:900px){.chart-row{grid-template-columns:1fr}}
@@ -310,6 +324,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <button class="tab active" data-tab="dash" onclick="switchTab('dash')">📊 Dashboard</button>
     <button class="tab" data-tab="tuvan" onclick="switchTab('tuvan')">📞 Tư vấn</button>
     <button class="tab" data-tab="hoso" onclick="switchTab('hoso')">🗃 Hồ sơ</button>
+    <button class="tab" data-tab="khachhang" onclick="switchTab('khachhang')">👥 Thông tin khách hàng</button>
     <button class="tab" data-tab="taichinh" onclick="switchTab('taichinh')">💰 Tài chính</button>
     <button class="tab" data-tab="leads" onclick="switchTab('leads')">📋 Khách đăng ký</button>
     <button class="tab" data-tab="posts" onclick="switchTab('posts')">📝 Bài viết</button>
@@ -361,7 +376,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="filters">
           <select id="fTvStatus" onchange="renderTuVan()">
             <option value="">Tất cả trạng thái</option>
-            <option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option>
+            <option>Mới</option><option>Đang tư vấn</option><option>Chốt</option><option>Hủy</option>
           </select>
           <input type="search" id="fTvSearch" placeholder="Tìm tên / SĐT..." oninput="renderTuVan()" style="width:170px">
           <button class="btn btn-p" onclick="openTvModal()">+ Thêm tư vấn</button>
@@ -391,12 +406,37 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <button class="btn btn-p" onclick="openHoSoModal()">+ Thêm hồ sơ</button>
         </div>
       </div>
+      <div class="filters" style="margin-bottom:14px;align-items:center">
+        <span style="font-weight:600;font-size:14px">Ngày nộp từ</span>
+        <input type="date" id="fHsTuNgay" onchange="renderHoSo()">
+        <span style="font-weight:600;font-size:14px">đến</span>
+        <input type="date" id="fHsDenNgay" onchange="renderHoSo()">
+        <button class="btn btn-g" onclick="resetHoSoFilters()">Reset</button>
+      </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Ngày</th><th>Tên khách</th><th>Nước đến</th><th>Mục đích</th><th>Đại lý ủy thác</th><th>Trạng thái</th><th>Lợi nhuận</th><th>Ngày trả KQ</th><th class="th-center">Thao tác</th></tr></thead>
+          <thead><tr><th>#</th><th>Ngày</th><th>Tên khách</th><th>SĐT</th><th>Nước đến</th><th>Mục đích</th><th>Đại lý ủy thác</th><th>Trạng thái</th><th>Lợi nhuận</th><th>Ngày nộp</th><th>Ngày trả KQ</th><th class="th-center">Thao tác</th></tr></thead>
           <tbody id="hsBody"></tbody>
         </table>
         <div class="empty hidden" id="hsEmpty">Chưa có hồ sơ nào</div>
+      </div>
+    </section>
+
+    <!-- ===== TAB THÔNG TIN KHÁCH HÀNG ===== -->
+    <section id="tab-khachhang" class="hidden">
+      <div class="panel-head">
+        <h2>Thông tin khách hàng</h2>
+        <div class="filters">
+          <input type="search" id="fKhSearch" placeholder="Tìm họ tên / SĐT..." oninput="renderKhachHang()" style="width:180px">
+          <button class="btn btn-p" onclick="openKhachHangModal()">+ Thêm khách hàng</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Họ và tên</th><th>Số ĐT</th><th>Ngày sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Email</th><th>Ghi chú</th><th class="th-center">Thao tác</th></tr></thead>
+          <tbody id="khBody"></tbody>
+        </table>
+        <div class="empty hidden" id="khEmpty">Chưa có khách hàng nào</div>
       </div>
     </section>
 
@@ -406,9 +446,9 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <h2>Tài chính</h2>
         <div class="filters" style="align-items:center">
           <span style="font-weight:600;font-size:14px">Từ ngày</span>
-          <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="tcFrom" oninput="onDateInput(this)" style="width:120px">
+          <input type="date" id="tcFrom">
           <span style="font-weight:600;font-size:14px">Đến ngày</span>
-          <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="tcTo" oninput="onDateInput(this)" style="width:120px">
+          <input type="date" id="tcTo">
           <button class="btn btn-p" onclick="loadTaiChinh()">Tìm kiếm</button>
         </div>
       </div>
@@ -469,6 +509,11 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div class="cat-add-row"><input type="text" id="newTruongNhom" placeholder="Tên đối tác mới"><button class="btn btn-p" onclick="addDanhMuc('truongnhom')">+ Thêm</button></div>
           <div id="listTruongNhom" class="cat-list"></div>
         </div>
+        <div class="cat-block c-doitacdm">
+          <h3>🤝 Đối tác giới thiệu</h3>
+          <div class="cat-add-row"><input type="text" id="newDoiTacDm" placeholder="Tên đối tác mới"><button class="btn btn-p" onclick="addDanhMuc('doitacdm')">+ Thêm</button></div>
+          <div id="listDoiTacDm" class="cat-list"></div>
+        </div>
       </div>
     </section>
 
@@ -480,7 +525,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="filters">
           <select id="fStatus" onchange="renderLeads()">
             <option value="">Tất cả trạng thái</option>
-            <option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option>
+            <option>Mới</option><option>Đang tư vấn</option><option>Chốt</option><option>Hủy</option>
           </select>
           <select id="fCountry" onchange="renderLeads()"><option value="">Tất cả quốc gia</option></select>
           <input type="search" id="fSearch" placeholder="Tìm tên / SĐT..." oninput="renderLeads()" style="width:170px">
@@ -582,7 +627,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="dlg-section-title">Thông tin khách hàng</div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Họ tên <span class="req-badge">Bắt buộc</span></label><input type="text" id="tvName"></div>
-          <div class="dlg-field"><label>Số điện thoại <span class="req-badge">Bắt buộc</span></label><input type="tel" id="tvPhone"></div>
+          <div class="dlg-field"><label>Số điện thoại</label><input type="tel" id="tvPhone"></div>
           <div class="dlg-field"><label>Email</label><input type="email" id="tvEmail"></div>
           <div class="dlg-field"><label>Link Facebook</label><input type="url" id="tvFb"></div>
         </div>
@@ -594,9 +639,9 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div class="dlg-field"><label>Nước đến <span class="req-badge">Bắt buộc</span></label><select id="tvCountry"></select></div>
           <div class="dlg-field"><label>Mục đích <span class="req-badge">Bắt buộc</span></label><select id="tvMucDich"></select></div>
           <div class="dlg-field"><label>Trạng thái tư vấn</label>
-            <select id="tvStatus" class="stt-tuvan"><option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option></select>
+            <select id="tvStatus" class="stt-tuvan"><option>Mới</option><option>Đang tư vấn</option><option>Chốt</option><option>Hủy</option></select>
           </div>
-          <div class="dlg-field"><label>Ngày nhắc lại</label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="tvNgayNhacLai" oninput="onDateInput(this)"></div>
+          <div class="dlg-field"><label>Ngày nhắc lại</label><input type="date" id="tvNgayNhacLai"></div>
         </div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Nội dung tư vấn</label><textarea id="tvNote" rows="3" style="width:100%"></textarea></div>
@@ -622,14 +667,17 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <div class="dlg-body">
       <input type="hidden" id="hoId">
       <input type="hidden" id="hoNguonTuVan">
-      <input type="hidden" id="hoChiThuDiLegacy" value="0">
+      <input type="hidden" id="hoKhachHangId">
 
       <div class="dlg-section">
         <div class="dlg-section-title">Thông tin khách</div>
         <div class="dlg-row">
-          <div class="dlg-field"><label>Ngày tạo <span class="req-badge">Bắt buộc</span></label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="hoNgay" oninput="onDateInput(this)"></div>
-          <div class="dlg-field"><label>Tên khách hàng <span class="req-badge">Bắt buộc</span></label><input type="text" id="hoTenKhach"></div>
-          <div class="dlg-field"><label>Đối tác</label><select id="hoTruongNhom"></select></div>
+          <div class="dlg-field"><label>Ngày tạo <span class="req-badge">Bắt buộc</span></label><input type="date" id="hoNgay"></div>
+          <div class="dlg-field ac-wrap"><label>Tên khách hàng <span class="req-badge">Bắt buộc</span></label>
+            <input type="text" id="hoTenKhach" autocomplete="off" oninput="onTenKhachInput()" onblur="hideKhSuggestSoon()">
+            <div class="ac-list hidden" id="khSuggestList"></div>
+          </div>
+          <div class="dlg-field"><label>Đối tác giới thiệu</label><select id="hoDoiTacDm"></select></div>
           <div class="dlg-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach"></div>
           <div class="dlg-field"><label>Số lượng hồ sơ</label><input type="text" inputmode="numeric" id="hoSoLuong" oninput="updateHoSoTotals()"></div>
         </div>
@@ -637,6 +685,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div class="dlg-field"><label>Nước đến <span class="req-badge">Bắt buộc</span></label><select id="hoNuoc"></select></div>
           <div class="dlg-field"><label>Mục đích <span class="req-badge">Bắt buộc</span></label><select id="hoMucDich"></select></div>
           <div class="dlg-field dlg-field-wide"><label>Địa chỉ</label><input type="text" id="hoDiaChi"></div>
+          <div class="dlg-field"><label>Email</label><input type="email" id="hoEmail"></div>
         </div>
       </div>
 
@@ -644,8 +693,8 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="dlg-section-title">Thông tin nộp hồ sơ</div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Đại lý ủy thác <span class="req-badge">Bắt buộc</span></label><select id="hoDoiTac"></select></div>
-          <div class="dlg-field"><label>Ngày nộp hồ sơ</label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="hoNgayNop" oninput="onDateInput(this)"></div>
-          <div class="dlg-field"><label>Ngày trả KQ</label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="hoNgayTraKq" oninput="onDateInput(this)"></div>
+          <div class="dlg-field"><label>Ngày nộp hồ sơ</label><input type="date" id="hoNgayNop"></div>
+          <div class="dlg-field"><label>Ngày trả KQ</label><input type="date" id="hoNgayTraKq"></div>
           <div class="dlg-field"><label>Trạng thái hồ sơ</label>
             <select id="hoTrangThai" class="status-select stt-hoso" onchange="updateHoSoStatusColor()">
               <option>Đang xử lý</option><option>Đã nộp</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
@@ -667,14 +716,16 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div class="dlg-field"><label>In ảnh</label><input type="text" inputmode="numeric" class="money-input" id="hoThuInAnh" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
           <div class="dlg-field"><label>Hỗ trợ khác</label><input type="text" inputmode="numeric" class="money-input" id="hoThuHoTro" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
           <div class="dlg-field"><label>Khách tip</label><input type="text" inputmode="numeric" class="money-input" id="hoThuKhachTip" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="dlg-field"><label>Ghi chú</label><input type="text" id="hoThuGhiChu"></div>
         </div>
 
         <div class="dlg-section-title">Thông tin chi</div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Lệ phí lãnh sự (đơn giá/người)</label><input type="text" inputmode="numeric" class="money-input" id="hoChiLanhSu" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
           <div class="dlg-field"><label>Đại lý/CTV (đơn giá/người)</label><input type="text" inputmode="numeric" class="money-input" id="hoChiDoiTacCtv" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
-          <div class="dlg-field"><label>Phí ship</label><input type="text" inputmode="numeric" class="money-input" id="hoChiThuVe" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="dlg-field"><label>Phí ship</label><input type="text" inputmode="numeric" class="money-input" id="hoChiPhiShip" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
           <div class="dlg-field"><label>Phí khác</label><input type="text" inputmode="numeric" class="money-input" id="hoChiPhiKhac" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="dlg-field"><label>Ghi chú</label><input type="text" id="hoChiGhiChu"></div>
         </div>
       </div>
 
@@ -709,7 +760,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           </div>
           <div class="subrow-add">
             <input type="text" id="xlpsNoiDung" placeholder="Nội dung">
-            <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="xlpsHanChot" oninput="onDateInput(this)">
+            <input type="date" id="xlpsHanChot">
             <input type="text" id="xlpsGhiChu" placeholder="Ghi chú">
             <select id="xlpsTrangThai" class="stt-xlps"><option>Đang xử lý</option><option>Hủy</option><option>Tạm dừng</option><option>Hoàn thành</option></select>
             <button class="btn btn-p" onclick="addXlps()">+ Thêm</button>
@@ -797,7 +848,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <input type="text" id="feeNoiNop" placeholder="Nơi nộp">
           <input type="text" id="feeDienVisa" placeholder="Diện visa">
           <input type="number" id="feeMuc" placeholder="Mức phí">
-          <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="feeNgayApDung" oninput="onDateInput(this)">
+          <input type="date" id="feeNgayApDung">
           <button class="btn btn-p" onclick="addDoiTacPhi()">+ Thêm</button>
         </div>
         <input type="text" id="feeGhiChu" placeholder="Ghi chú (tuỳ chọn)" style="margin-top:8px">
@@ -841,7 +892,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       <div class="dlg-section">
         <div class="dlg-section-title">Thông tin khoản chi</div>
         <div class="dlg-row">
-          <div class="dlg-field"><label>Ngày <span class="req-badge">Bắt buộc</span></label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="chiNgay" oninput="onDateInput(this)"></div>
+          <div class="dlg-field"><label>Ngày <span class="req-badge">Bắt buộc</span></label><input type="date" id="chiNgay"></div>
           <div class="dlg-field"><label>Số tiền <span class="req-badge">Bắt buộc</span></label><input type="text" inputmode="numeric" class="money-input" id="chiSoTien" placeholder="Vui lòng nhập" oninput="onChiMoneyInput(this)"></div>
           <div class="dlg-field dlg-field-wide"><label>Nội dung chi <span class="req-badge">Bắt buộc</span></label><input type="text" id="chiNoiDung" placeholder="VD: Thuê văn phòng T8"></div>
         </div>
@@ -853,6 +904,39 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <div class="modal-actions dlg-foot">
       <button class="btn btn-g" onclick="closeChiModal()">Đóng lại</button>
       <button class="btn btn-p" id="chiSaveBtn" onclick="saveChi()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL KHÁCH HÀNG (Thông tin khách hàng) ============ -->
+<div class="overlay hidden" id="khOverlay">
+  <div class="modal modal-lg dlg-standard">
+    <div class="dlg-head">
+      <h3 id="khModalTitle">Thêm khách hàng</h3>
+      <button type="button" class="modal-x" onclick="closeKhachHangModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="dlg-body">
+      <input type="hidden" id="khId">
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin khách hàng</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Họ và tên <span class="req-badge">Bắt buộc</span></label><input type="text" id="khHoTen"></div>
+          <div class="dlg-field"><label>Số ĐT</label><input type="tel" id="khSoDt"></div>
+          <div class="dlg-field"><label>Ngày tháng năm sinh</label><input type="date" id="khNgaySinh"></div>
+          <div class="dlg-field"><label>Căn cước công dân</label><input type="text" id="khCccd"></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide"><label>Địa chỉ</label><input type="text" id="khDiaChi"></div>
+          <div class="dlg-field"><label>Email</label><input type="email" id="khEmail"></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide"><label>Ghi chú</label><textarea id="khGhiChu" rows="2" style="width:100%"></textarea></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeKhachHangModal()">Đóng lại</button>
+      <button class="btn btn-p" id="khSaveBtn" onclick="saveKhachHang()">Lưu</button>
     </div>
   </div>
 </div>
@@ -899,6 +983,7 @@ let TOKEN = null, LEADS = [], POSTS = [], CATS = [];
 let DOI_TAC = [], DANH_MUC_NUOC = [], DANH_MUC_MUC_DICH = [], DANH_MUC_TRUONG_NHOM = [], HO_SO = [];
 let CUR_HOSO_XLPS = [], CUR_HOSO_THANHVIEN = [], CUR_FEE_DOITAC = null, CHART_DT = null, CHART_SL = null;
 let KHOAN_CHI = [], TC_ROWS = [];
+let KHACH_HANG = [], DANH_MUC_DOI_TAC_DM = [], KH_SUGGEST_CACHE = [], KH_SUGGEST_TIMER = null;
 const REMEMBER_KEY = 'tv_admin_refresh_token';
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -908,26 +993,6 @@ function fmtTime(iso){ const d=new Date(iso);
   return d.toLocaleDateString('vi-VN')+' '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(d){ return d ? new Date(d).toLocaleDateString('vi-VN') : '–'; }
 function fmtVND(n){ return Number(n||0).toLocaleString('vi-VN')+' đ'; }
-/* ==== ngày: ô nhập chữ có mask dd/mm/yyyy (không dùng type="date" vì hiển thị theo locale
-   trình duyệt, không đồng bộ được — xem 01_Docs/10_Chuan_Dialog_Chung.md mục 9) ==== */
-function onDateInput(el){
-  let d = el.value.replace(/[^\d]/g,'').slice(0,8);
-  if(d.length>4) d = d.slice(0,2)+'/'+d.slice(2,4)+'/'+d.slice(4);
-  else if(d.length>2) d = d.slice(0,2)+'/'+d.slice(2);
-  el.value = d;
-}
-function fromISODate(iso){
-  const m=(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
-  return m ? m[3]+'/'+m[2]+'/'+m[1] : '';
-}
-function toISODate(str){
-  const m=(str||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if(!m) return null;
-  const dd=+m[1], mm=+m[2], yyyy=+m[3];
-  const d = new Date(yyyy, mm-1, dd);
-  if(d.getFullYear()!==yyyy || d.getMonth()!==mm-1 || d.getDate()!==dd) return null;
-  return yyyy+'-'+m[2]+'-'+m[1];
-}
 function applyRowLabels(tbodyId){
   const tbody = $(tbodyId);
   const table = tbody.closest('table');
@@ -948,7 +1013,7 @@ function computeStatusWidths(){
   const ctx = canvas.getContext('2d');
   ctx.font = "700 13px 'Be Vietnam Pro', system-ui, sans-serif";
   const groups = {
-    tuvan:  ['Mới','Đã gọi','Chốt','Hủy'],
+    tuvan:  ['Mới','Đang tư vấn','Chốt','Hủy'],
     hoso:   ['Đang xử lý','Đã nộp','Đậu','Rớt','Hủy'],
     xlps:   ['Đang xử lý','Hủy','Tạm dừng','Hoàn thành'],
     doitac: ['Đang hợp tác','Ngừng hợp tác']
@@ -978,7 +1043,7 @@ initScrollLock();
 /* Bộ lọc ngày mặc định cho tab Tài chính: từ ngày 1 tháng hiện tại đến hôm nay */
 function tcDefaultFrom(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'; }
 function tcToday(){ return new Date().toISOString().slice(0,10); }
-function initTaiChinhFilters(){ $('tcFrom').value = fromISODate(tcDefaultFrom()); $('tcTo').value = fromISODate(tcToday()); }
+function initTaiChinhFilters(){ $('tcFrom').value = tcDefaultFrom(); $('tcTo').value = tcToday(); }
 initTaiChinhFilters();
 
 /* ==================== POPUP CONFIRM / THÔNG BÁO — dùng chung mọi màn hình ====================
@@ -1063,7 +1128,7 @@ $('loginForm').addEventListener('submit', async e=>{
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo()]);
+    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang()]);
     loadPosts();
     loadDashboard();
   }catch(err){
@@ -1093,7 +1158,7 @@ async function trySilentLogin(){
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo()]);
+    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang()]);
     loadPosts();
     loadDashboard();
   }catch(e){
@@ -1110,7 +1175,7 @@ if('serviceWorker' in navigator){
 /* ==================== TAB ==================== */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
-  ['dash','tuvan','hoso','taichinh','doitac','settings','leads','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
+  ['dash','tuvan','hoso','khachhang','taichinh','doitac','settings','leads','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
   if(name==='dash') loadDashboard();
   if(name==='taichinh') loadTaiChinh();
 }
@@ -1128,7 +1193,7 @@ async function loadLeads(){
     renderTuVan();
   }catch(e){ if(e.message!=='401') toast('Lỗi tải danh sách: '+e.message,'err'); }
 }
-function pillClass(s){ return {'Mới':'pill-new','Đã gọi':'pill-called','Chốt':'pill-won','Hủy':'pill-lost'}[s]||'pill-new'; }
+function pillClass(s){ return {'Mới':'pill-new','Đang tư vấn':'pill-called','Chốt':'pill-won','Hủy':'pill-lost'}[s]||'pill-new'; }
 function renderLeads(){
   const st=$('fStatus').value, ct=$('fCountry').value, q=$('fSearch').value.toLowerCase().trim();
   const rows = LEADS.filter(l=>
@@ -1140,7 +1205,7 @@ function renderLeads(){
   $('statRow').innerHTML = `
     <div class="stat"><div class="n">${LEADS.length}</div><div class="l">Tổng lead</div></div>
     <div class="stat"><div class="n">${cnt('Mới')}</div><div class="l">Chưa gọi</div></div>
-    <div class="stat"><div class="n">${cnt('Đã gọi')}</div><div class="l">Đã gọi</div></div>
+    <div class="stat"><div class="n">${cnt('Đang tư vấn')}</div><div class="l">Đang tư vấn</div></div>
     <div class="stat"><div class="n">${cnt('Chốt')}</div><div class="l">Đã chốt</div></div>`;
   $('leadsEmpty').classList.toggle('hidden', rows.length>0);
   $('leadsBody').innerHTML = rows.map((l,i)=>`
@@ -1155,7 +1220,7 @@ function renderLeads(){
         <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="pill stt-tuvan ${pillClass(l.status)}">${esc(l.status)}</span>
           <select onchange="updateLeadStatus(${l.id},this.value)" class="stt-tuvan">
-            ${['Mới','Đã gọi','Chốt','Hủy'].map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('')}
+            ${['Mới','Đang tư vấn','Chốt','Hủy'].map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('')}
           </select>
         </span>
       </td>
@@ -1270,14 +1335,15 @@ async function delPost(id){
 }
 
 /* ==================== PHASE 2: DANH MỤC DÙNG CHUNG (Nước / Mục đích / Trưởng nhóm) ==================== */
-function danhMucTable(type){ return {nuoc:'danh_muc_nuoc',mucdich:'danh_muc_muc_dich',truongnhom:'danh_muc_truong_nhom'}[type]; }
-function danhMucArr(type){ return {nuoc:DANH_MUC_NUOC,mucdich:DANH_MUC_MUC_DICH,truongnhom:DANH_MUC_TRUONG_NHOM}[type]; }
+function danhMucTable(type){ return {nuoc:'danh_muc_nuoc',mucdich:'danh_muc_muc_dich',truongnhom:'danh_muc_truong_nhom',doitacdm:'danh_muc_doi_tac'}[type]; }
+function danhMucArr(type){ return {nuoc:DANH_MUC_NUOC,mucdich:DANH_MUC_MUC_DICH,truongnhom:DANH_MUC_TRUONG_NHOM,doitacdm:DANH_MUC_DOI_TAC_DM}[type]; }
 async function loadDanhMuc(){
   try{
-    [DANH_MUC_NUOC, DANH_MUC_MUC_DICH, DANH_MUC_TRUONG_NHOM] = await Promise.all([
+    [DANH_MUC_NUOC, DANH_MUC_MUC_DICH, DANH_MUC_TRUONG_NHOM, DANH_MUC_DOI_TAC_DM] = await Promise.all([
       api('danh_muc_nuoc?select=*&order=ten'),
       api('danh_muc_muc_dich?select=*&order=ten'),
-      api('danh_muc_truong_nhom?select=*&order=ten')
+      api('danh_muc_truong_nhom?select=*&order=ten'),
+      api('danh_muc_doi_tac?select=*&order=ten')
     ]);
     fillDanhMucSelects();
     renderSettings();
@@ -1292,8 +1358,8 @@ function optsFromDanhMucText(arr){
 function fillDanhMucSelects(){
   $('hoNuoc').innerHTML = optsFromDanhMuc(DANH_MUC_NUOC);
   $('hoMucDich').innerHTML = optsFromDanhMuc(DANH_MUC_MUC_DICH);
-  $('hoTruongNhom').innerHTML = '<option value="">-- Không chọn --</option>'+
-    DANH_MUC_TRUONG_NHOM.map(x=>`<option value="${x.id}">${esc(x.ten)}${x.active?'':' (đã ẩn)'}</option>`).join('');
+  $('hoDoiTacDm').innerHTML = '<option value="">-- Không chọn --</option>'+
+    DANH_MUC_DOI_TAC_DM.map(x=>`<option value="${x.id}">${esc(x.ten)}${x.active?'':' (đã ẩn)'}</option>`).join('');
   $('tvCountry').innerHTML = optsFromDanhMucText(DANH_MUC_NUOC);
   $('tvMucDich').innerHTML = optsFromDanhMucText(DANH_MUC_MUC_DICH);
   const curFN=$('fHsNuoc').value;
@@ -1301,7 +1367,7 @@ function fillDanhMucSelects(){
   $('fHsNuoc').value=curFN;
 }
 function renderSettings(){
-  const blocks=[['listNuoc','nuoc'],['listMucDich','mucdich'],['listTruongNhom','truongnhom']];
+  const blocks=[['listNuoc','nuoc'],['listMucDich','mucdich'],['listTruongNhom','truongnhom'],['listDoiTacDm','doitacdm']];
   blocks.forEach(([elId,type])=>{
     const arr=danhMucArr(type);
     $(elId).innerHTML = arr.length ? arr.map(x=>`
@@ -1315,7 +1381,7 @@ function renderSettings(){
   });
 }
 async function addDanhMuc(type){
-  const inputId={nuoc:'newNuoc',mucdich:'newMucDich',truongnhom:'newTruongNhom'}[type];
+  const inputId={nuoc:'newNuoc',mucdich:'newMucDich',truongnhom:'newTruongNhom',doitacdm:'newDoiTacDm'}[type];
   const ten=$(inputId).value.trim();
   if(!ten){ toast('Nhập tên','err'); return; }
   try{
@@ -1343,6 +1409,10 @@ async function isDanhMucInUse(type, item){
   }
   if(type==='truongnhom'){
     const hs = await api('ho_so?truong_nhom_id=eq.'+item.id+'&select=id&limit=1');
+    return hs && hs.length>0;
+  }
+  if(type==='doitacdm'){
+    const hs = await api('ho_so?doi_tac_dm_id=eq.'+item.id+'&select=id&limit=1');
     return hs && hs.length>0;
   }
   return false;
@@ -1396,11 +1466,17 @@ async function loadDoiTac(){
   }catch(e){ if(e.message!=='401') toast('Lỗi tải đại lý ủy thác: '+e.message,'err'); }
 }
 function fillDoiTacSelects(){
-  $('hoDoiTac').innerHTML = '<option value="">-- Chọn đại lý --</option>'+DOI_TAC.map(d=>
-    `<option value="${d.id}">${esc(doiTacLabel(d))}${d.trang_thai==='Ngừng hợp tác'?' – Ngừng hợp tác':''}</option>`).join('');
   const curFD=$('fHsDoiTac').value;
   $('fHsDoiTac').innerHTML = '<option value="">Tất cả đại lý</option>'+DOI_TAC.map(d=>`<option value="${d.id}">${esc(doiTacLabel(d))}</option>`).join('');
   $('fHsDoiTac').value=curFD;
+}
+/* Dropdown "Đại lý ủy thác" trong dialog Hồ sơ — CHỈ hiện đại lý "Đang hợp tác" (Phase 4, mục 5.2),
+   trừ khi đang sửa 1 hồ sơ cũ đã gán sẵn 1 đại lý nay đã "Ngừng hợp tác" (vẫn hiện để không mất
+   dữ liệu/ép phải đổi đại lý ngoài ý muốn khi chỉ sửa các field khác). */
+function fillHoDoiTacOptions(currentId){
+  const list = DOI_TAC.filter(d=>d.trang_thai==='Đang hợp tác' || (currentId && d.id===Number(currentId)));
+  $('hoDoiTac').innerHTML = '<option value="">-- Chọn đại lý --</option>'+list.map(d=>
+    `<option value="${d.id}">${esc(doiTacLabel(d))}${d.trang_thai==='Ngừng hợp tác'?' – Ngừng hợp tác':''}</option>`).join('');
 }
 function renderDoiTac(){
   $('dtEmpty').classList.toggle('hidden', DOI_TAC.length>0);
@@ -1471,7 +1547,7 @@ async function openDoiTacFeeModal(id){
   $('dtFeeCompanyName').textContent = doiTacLabel(d);
   $('dtFeeDoiTacId').value=id;
   $('feeNoiNop').value=''; $('feeDienVisa').value=''; $('feeMuc').value=''; $('feeGhiChu').value='';
-  $('feeNgayApDung').value = fromISODate(new Date().toISOString().slice(0,10));
+  $('feeNgayApDung').value = new Date().toISOString().slice(0,10);
   $('dtFeeOverlay').classList.remove('hidden');
   await loadDoiTacPhi(id);
 }
@@ -1495,7 +1571,7 @@ async function addDoiTacPhi(){
     noi_nop: $('feeNoiNop').value.trim()||null,
     dien_visa: $('feeDienVisa').value.trim()||null,
     muc_phi: $('feeMuc').value?Number($('feeMuc').value):null,
-    ngay_ap_dung_tu: toISODate($('feeNgayApDung').value)||new Date().toISOString().slice(0,10),
+    ngay_ap_dung_tu: $('feeNgayApDung').value||new Date().toISOString().slice(0,10),
     ghi_chu: $('feeGhiChu').value.trim()||null
   };
   try{
@@ -1536,7 +1612,7 @@ function openTvModal(id){
   $('tvMucDich').value = l?.muc_dich||'';
   $('tvNote').value = l?.note||'';
   $('tvStatus').value = l?.status||'Mới';
-  $('tvNgayNhacLai').value = fromISODate(l?.ngay_nhac_lai);
+  $('tvNgayNhacLai').value = l?.ngay_nhac_lai||'';
   $('tvOverlay').classList.remove('hidden');
 }
 function closeTvModal(){ $('tvOverlay').classList.add('hidden'); }
@@ -1544,13 +1620,13 @@ async function saveTuVan(){
   const name=$('tvName').value.trim(), phone=$('tvPhone').value.trim();
   const country=$('tvCountry').value, muc_dich=$('tvMucDich').value;
   if(!name){ toast('Nhập họ tên','err'); return; }
-  if(!phone){ toast('Nhập số điện thoại','err'); return; }
+  // Số điện thoại không còn bắt buộc ở admin (Phase 4, PM xác nhận) — form công khai index.html vẫn giữ bắt buộc riêng
   if(!country){ toast('Vui lòng chọn Nước đến','err'); return; }
   if(!muc_dich){ toast('Vui lòng chọn Mục đích','err'); return; }
   const body={
-    name, phone, email:$('tvEmail').value.trim()||null, link_fb:$('tvFb').value.trim()||null,
+    name, phone: phone||null, email:$('tvEmail').value.trim()||null, link_fb:$('tvFb').value.trim()||null,
     country, muc_dich, note:$('tvNote').value.trim()||null, status:$('tvStatus').value,
-    ngay_nhac_lai: toISODate($('tvNgayNhacLai').value)||null
+    ngay_nhac_lai: $('tvNgayNhacLai').value||null
   };
   const id=$('tvId').value;
   const btn=$('tvSaveBtn'); btn.disabled=true;
@@ -1590,27 +1666,42 @@ function hsPillClass(s){
 }
 function renderHoSo(){
   const st=$('fHsStatus').value, nuocId=$('fHsNuoc').value, dtId=$('fHsDoiTac').value, q=$('fHsSearch').value.toLowerCase().trim();
+  const tuNgay=$('fHsTuNgay').value, denNgay=$('fHsDenNgay').value;
+  const todayStr = new Date().toISOString().slice(0,10);
   const rows = HO_SO.filter(h=>
     (!st||h.trang_thai===st) &&
     (!nuocId||String(h.nuoc_id)===nuocId) &&
     (!dtId||String(h.doi_tac_id)===dtId) &&
-    (!q||(h.ten_khach||'').toLowerCase().includes(q))
+    (!q||(h.ten_khach||'').toLowerCase().includes(q)) &&
+    (!tuNgay||(h.ngay_nop&&h.ngay_nop>=tuNgay)) &&
+    (!denNgay||(h.ngay_nop&&h.ngay_nop<=denNgay))
   );
   $('hsEmpty').classList.toggle('hidden', rows.length>0);
-  $('hsBody').innerHTML = rows.map((h,i)=>`
+  $('hsBody').innerHTML = rows.map((h,i)=>{
+    // Chỉ tô đỏ Ngày trả KQ khi Trạng thái = "Đã nộp" và ngày đó đã tới/quá hạn (PM xác nhận, Phase 4 mục 4)
+    const traKqDo = h.trang_thai==='Đã nộp' && h.ngay_tra_kq && h.ngay_tra_kq<=todayStr;
+    return `
     <tr>
       <td>${i+1}</td>
       <td>${fmtDate(h.ngay)}</td>
       <td><b>${esc(h.ten_khach)}</b></td>
+      <td>${h.sdt_khach?`<a href="tel:${esc(h.sdt_khach)}">${esc(h.sdt_khach)}</a>`:'–'}</td>
       <td>${esc(h.danh_muc_nuoc?.ten||'–')}</td>
       <td>${esc(h.danh_muc_muc_dich?.ten||'–')}</td>
       <td>${doiTacCellLabel(h.doi_tac)}</td>
       <td><span class="pill stt-hoso ${hsPillClass(h.trang_thai)}">${esc(h.trang_thai)}</span></td>
       <td>${fmtVND(h.loi_nhuan)}</td>
-      <td>${fmtDate(h.ngay_tra_kq)}</td>
+      <td>${fmtDate(h.ngay_nop)}</td>
+      <td>${traKqDo?`<span style="color:var(--err);font-weight:700">${fmtDate(h.ngay_tra_kq)}</span>`:fmtDate(h.ngay_tra_kq)}</td>
       <td class="td-actions"><button class="btn btn-p" onclick="openHoSoModal(${h.id})">Sửa</button></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   applyRowLabels('hsBody');
+}
+function resetHoSoFilters(){
+  $('fHsStatus').value=''; $('fHsNuoc').value=''; $('fHsDoiTac').value='';
+  $('fHsTuNgay').value=''; $('fHsDenNgay').value=''; $('fHsSearch').value='';
+  renderHoSo();
 }
 /* ==== tiền: hiển thị có dấu "." phân cách nghìn khi nhập, canh phải (theo thiết kế Figma) ==== */
 function unformatMoney(str){ return Number((str||'').toString().replace(/[^\d]/g,''))||0; }
@@ -1632,28 +1723,33 @@ function openHoSoModal(id, prefill){
   $('hoModalTitle').textContent = h ? 'Sửa hồ sơ' : 'Đăng ký hồ sơ mới';
   $('hoId').value = h?.id||'';
   $('hoNguonTuVan').value = h?.nguon_tu_van_id || prefill?.nguon_tu_van_id || '';
-  $('hoNgay').value = fromISODate(h?.ngay || new Date().toISOString().slice(0,10));
-  $('hoTruongNhom').value = h?.truong_nhom_id||'';
+  $('hoNgay').value = h?.ngay || new Date().toISOString().slice(0,10);
+  $('hoKhachHangId').value = h?.khach_hang_id||'';
   $('hoTenKhach').value = h ? h.ten_khach : (prefill?.ten_khach||'');
+  $('hoDoiTacDm').value = h?.doi_tac_dm_id||'';
   $('hoSdtKhach').value = h ? (h.sdt_khach||'') : (prefill?.sdt_khach||'');
   $('hoDiaChi').value = h?.dia_chi||'';
-  $('hoNuoc').value = h ? (h.nuoc_id||'') : (prefill?.nuoc_id||'');
+  $('hoEmail').value = h?.email||'';
+  markAutoFilled(!!h?.khach_hang_id);
+  hideKhSuggest();
+  // Nước đến mặc định "Nhật Bản" khi tạo hồ sơ mới (Phase 4, PM xác nhận) — vẫn chọn lại được nước khác
+  $('hoNuoc').value = h ? (h.nuoc_id||'') : (prefill?.nuoc_id || DANH_MUC_NUOC.find(n=>n.ten==='Nhật Bản')?.id || '');
   $('hoMucDich').value = h ? (h.muc_dich_id||'') : (prefill?.muc_dich_id||'');
+  fillHoDoiTacOptions(h?.doi_tac_id);
   $('hoDoiTac').value = h?.doi_tac_id||'';
   $('hoSoLuong').value = h?.so_luong||1;
   $('hoThuLePhi').value = formatMoney(h?.thu_le_phi);
   $('hoThuInAnh').value = formatMoney(h?.thu_in_anh);
   $('hoThuHoTro').value = formatMoney(h?.thu_ho_tro_khac);
   $('hoThuKhachTip').value = formatMoney(h?.thu_khach_tip);
+  $('hoThuGhiChu').value = h?.thu_ghi_chu||'';
   $('hoChiLanhSu').value = formatMoney(h?.chi_le_phi_lanh_su);
   $('hoChiDoiTacCtv').value = formatMoney(h?.chi_doi_tac_ctv);
-  $('hoChiThuVe').value = formatMoney(h?.chi_thu_ve);
+  $('hoChiPhiShip').value = formatMoney(h?.chi_phi_ship);
   $('hoChiPhiKhac').value = formatMoney(h?.chi_phi_khac);
-  // "Thư đi" không còn hiển thị trên UI (đã gộp vào "Phí ship") — giữ số cũ của hồ sơ này
-  // (nếu có, từ trước khi đổi giao diện) để Tổng chi/Lợi nhuận vẫn đúng, không hiện cho sửa.
-  $('hoChiThuDiLegacy').value = h?.chi_thu_di||0;
-  $('hoNgayNop').value = fromISODate(h?.ngay_nop);
-  $('hoNgayTraKq').value = fromISODate(h?.ngay_tra_kq);
+  $('hoChiGhiChu').value = h?.chi_ghi_chu||'';
+  $('hoNgayNop').value = h?.ngay_nop||'';
+  $('hoNgayTraKq').value = h?.ngay_tra_kq||'';
   $('hoTrangThai').value = h?.trang_thai||'Đang xử lý';
   updateHoSoStatusColor();
   $('hoNote').value = h ? (h.note||'') : (prefill?.note||'');
@@ -1665,6 +1761,8 @@ function openHoSoModal(id, prefill){
   $('hoTvienBox').classList.toggle('hidden', !h);
   if(h) loadThanhVien(h.id); else { CUR_HOSO_THANHVIEN=[]; renderThanhVien(); }
   $('hoOverlay').classList.remove('hidden');
+  const body = $('hoOverlay').querySelector('.dlg-body');
+  if(body) body.scrollTop = 0;
 }
 function closeHoSoModal(){ $('hoOverlay').classList.add('hidden'); }
 function updateHoSoTotals(){
@@ -1672,9 +1770,8 @@ function updateHoSoTotals(){
   let soLuong = parseInt($('hoSoLuong').value,10)||1;
   if(soLuong<1) soLuong=1;
   $('hoSoLuong').value = soLuong;
-  const chiThuDiLegacy = Number($('hoChiThuDiLegacy').value)||0;
   const thu = m('hoThuLePhi')+m('hoThuInAnh')+m('hoThuHoTro')+m('hoThuKhachTip');
-  const chi = (m('hoChiLanhSu')+m('hoChiDoiTacCtv'))*soLuong + chiThuDiLegacy + m('hoChiThuVe')+m('hoChiPhiKhac');
+  const chi = (m('hoChiLanhSu')+m('hoChiDoiTacCtv'))*soLuong + m('hoChiPhiShip')+m('hoChiPhiKhac');
   $('hoTongThu').value = fmtVND(thu);
   $('hoTongChi').value = fmtVND(chi);
   $('hoLoiNhuan').value = fmtVND(thu-chi);
@@ -1689,17 +1786,21 @@ async function saveHoSo(){
   let soLuong = parseInt($('hoSoLuong').value,10)||1;
   if(soLuong<1) soLuong=1;
   const body={
-    ngay: toISODate($('hoNgay').value) || new Date().toISOString().slice(0,10),
-    truong_nhom_id: $('hoTruongNhom').value||null,
+    ngay: $('hoNgay').value || new Date().toISOString().slice(0,10),
+    khach_hang_id: $('hoKhachHangId').value||null,
+    doi_tac_dm_id: $('hoDoiTacDm').value||null,
     ten_khach, sdt_khach: $('hoSdtKhach').value.trim()||null, dia_chi: $('hoDiaChi').value.trim()||null,
+    email: $('hoEmail').value.trim()||null,
     nuoc_id: Number(nuoc_id), muc_dich_id: Number(muc_dich_id), doi_tac_id: Number(doi_tac_id),
     so_luong: soLuong,
     thu_le_phi: unformatMoney($('hoThuLePhi').value), thu_in_anh: unformatMoney($('hoThuInAnh').value),
     thu_ho_tro_khac: unformatMoney($('hoThuHoTro').value), thu_khach_tip: unformatMoney($('hoThuKhachTip').value),
+    thu_ghi_chu: $('hoThuGhiChu').value.trim()||null,
     chi_le_phi_lanh_su: unformatMoney($('hoChiLanhSu').value), chi_doi_tac_ctv: unformatMoney($('hoChiDoiTacCtv').value),
-    chi_thu_ve: unformatMoney($('hoChiThuVe').value),
+    chi_phi_ship: unformatMoney($('hoChiPhiShip').value),
     chi_phi_khac: unformatMoney($('hoChiPhiKhac').value),
-    ngay_nop: toISODate($('hoNgayNop').value)||null, ngay_tra_kq: toISODate($('hoNgayTraKq').value)||null,
+    chi_ghi_chu: $('hoChiGhiChu').value.trim()||null,
+    ngay_nop: $('hoNgayNop').value||null, ngay_tra_kq: $('hoNgayTraKq').value||null,
     trang_thai: $('hoTrangThai').value, note: $('hoNote').value.trim()||null,
     nguon_tu_van_id: $('hoNguonTuVan').value||null
   };
@@ -1713,6 +1814,121 @@ async function saveHoSo(){
     if(!$('tab-taichinh').classList.contains('hidden')) loadTaiChinh();
   }catch(e){ toast('Lỗi lưu hồ sơ: '+e.message,'err'); }
   finally{ btn.disabled=false; }
+}
+
+/* ==== Autocomplete "Tên khách hàng" (dialog Hồ sơ) — gõ chữ gọi API khach_hang, chọn 1 dòng
+   tự điền SĐT/Địa chỉ/Email + đổi nền #DDE1E6 (Phase 4, mục 5.1). Gõ tự do vẫn lưu được bình
+   thường với khach_hang_id = null. ==== */
+function markAutoFilled(on){
+  ['hoSdtKhach','hoDiaChi','hoEmail'].forEach(id=>$(id).classList.toggle('autofilled', on));
+}
+function onTenKhachInput(){
+  $('hoKhachHangId').value = '';
+  markAutoFilled(false);
+  clearTimeout(KH_SUGGEST_TIMER);
+  const q = $('hoTenKhach').value.trim();
+  if(!q){ hideKhSuggest(); return; }
+  KH_SUGGEST_TIMER = setTimeout(async ()=>{
+    try{
+      const rows = await api('khach_hang?ho_ten=ilike.*'+encodeURIComponent(q)+'*&select=id,ho_ten,so_dt,dia_chi,email&limit=8');
+      renderKhSuggest(rows||[]);
+    }catch(e){ /* im lặng — không chặn việc gõ tự do nếu API lỗi */ }
+  }, 300);
+}
+function renderKhSuggest(rows){
+  KH_SUGGEST_CACHE = rows;
+  const list = $('khSuggestList');
+  if(!rows.length){ list.classList.add('hidden'); list.innerHTML=''; return; }
+  list.innerHTML = rows.map(r=>`
+    <div class="ac-item" onmousedown="pickKhachHang(${r.id})">
+      <div>${esc(r.ho_ten)}</div>
+      <div class="ac-sub">${esc(r.so_dt||'–')}${r.dia_chi?' · '+esc(r.dia_chi):''}</div>
+    </div>`).join('');
+  list.classList.remove('hidden');
+}
+function pickKhachHang(id){
+  const r = KH_SUGGEST_CACHE.find(x=>x.id===id);
+  if(!r) return;
+  $('hoTenKhach').value = r.ho_ten;
+  $('hoKhachHangId').value = r.id;
+  $('hoSdtKhach').value = r.so_dt||'';
+  $('hoDiaChi').value = r.dia_chi||'';
+  $('hoEmail').value = r.email||'';
+  markAutoFilled(true);
+  hideKhSuggest();
+}
+function hideKhSuggest(){ $('khSuggestList').classList.add('hidden'); }
+function hideKhSuggestSoon(){ setTimeout(hideKhSuggest, 150); } // trễ 1 chút để onmousedown kịp bắt trước khi blur ẩn list
+
+/* ==================== PHASE 4: THÔNG TIN KHÁCH HÀNG ==================== */
+async function loadKhachHang(){
+  try{
+    KHACH_HANG = await api('khach_hang?select=*&order=ho_ten') || [];
+    renderKhachHang();
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải khách hàng: '+e.message,'err'); }
+}
+function renderKhachHang(){
+  const q = $('fKhSearch').value.toLowerCase().trim();
+  const rows = KHACH_HANG.filter(k=>!q||(k.ho_ten||'').toLowerCase().includes(q)||(k.so_dt||'').includes(q));
+  $('khEmpty').classList.toggle('hidden', rows.length>0);
+  $('khBody').innerHTML = rows.map((k,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td><b>${esc(k.ho_ten)}</b></td>
+      <td>${k.so_dt?`<a href="tel:${esc(k.so_dt)}">${esc(k.so_dt)}</a>`:'–'}</td>
+      <td>${fmtDate(k.ngay_sinh)}</td>
+      <td>${esc(k.cccd||'–')}</td>
+      <td>${esc(k.dia_chi||'–')}</td>
+      <td>${esc(k.email||'–')}</td>
+      <td>${esc(k.ghi_chu||'–')}</td>
+      <td class="td-actions">
+        <button class="btn btn-p" onclick="openKhachHangModal(${k.id})">Sửa</button>
+        <button class="btn btn-d" onclick="delKhachHang(${k.id})">Xóa</button>
+      </td>
+    </tr>`).join('');
+  applyRowLabels('khBody');
+}
+function openKhachHangModal(id){
+  const k = id ? KHACH_HANG.find(x=>x.id===id) : null;
+  $('khModalTitle').textContent = k ? 'Sửa khách hàng' : 'Thêm khách hàng';
+  $('khId').value = k?.id||'';
+  $('khHoTen').value = k?.ho_ten||'';
+  $('khSoDt').value = k?.so_dt||'';
+  $('khNgaySinh').value = k?.ngay_sinh||'';
+  $('khCccd').value = k?.cccd||'';
+  $('khDiaChi').value = k?.dia_chi||'';
+  $('khEmail').value = k?.email||'';
+  $('khGhiChu').value = k?.ghi_chu||'';
+  $('khOverlay').classList.remove('hidden');
+}
+function closeKhachHangModal(){ $('khOverlay').classList.add('hidden'); }
+async function saveKhachHang(){
+  const ho_ten=$('khHoTen').value.trim();
+  if(!ho_ten){ toast('Nhập họ và tên','err'); return; }
+  const so_dt=$('khSoDt').value.trim();
+  const id=$('khId').value;
+  // Cảnh báo trùng SĐT — không chặn lưu (Phase 4, PM xác nhận)
+  const trung = so_dt && KHACH_HANG.some(k=>k.so_dt===so_dt && String(k.id)!==String(id));
+  const body={
+    ho_ten, so_dt: so_dt||null, ngay_sinh: $('khNgaySinh').value||null,
+    cccd: $('khCccd').value.trim()||null, dia_chi: $('khDiaChi').value.trim()||null,
+    email: $('khEmail').value.trim()||null, ghi_chu: $('khGhiChu').value.trim()||null
+  };
+  const btn=$('khSaveBtn'); btn.disabled=true;
+  try{
+    if(id) await api('khach_hang?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
+    else await api('khach_hang',{method:'POST',body:JSON.stringify(body)});
+    closeKhachHangModal(); loadKhachHang();
+    toast(trung ? 'Đã lưu — lưu ý SĐT này đã tồn tại ở 1 khách hàng khác' : (id?'Đã cập nhật khách hàng':'Đã thêm khách hàng'), trung?'warn':'ok');
+  }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
+  finally{ btn.disabled=false; }
+}
+async function delKhachHang(id){
+  if(!await showConfirmPopup({message:'Xóa khách hàng này? Không thể hoàn tác.'})) return;
+  try{
+    await api('khach_hang?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadKhachHang(); toast('Đã xóa khách hàng');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 
 /* ==== Xử lý phát sinh (bảng con của Hồ sơ) ==== */
@@ -1739,8 +1955,8 @@ function renderXlps(){
 async function addXlps(){
   const hoId = $('hoId').value;
   if(!hoId){ toast('Lưu hồ sơ trước khi thêm dòng xử lý phát sinh','err'); return; }
-  const noi_dung=$('xlpsNoiDung').value.trim(), han_chot=toISODate($('xlpsHanChot').value);
-  if(!noi_dung || !han_chot){ toast('Nhập Nội dung và Hạn chốt (đúng định dạng dd/mm/yyyy)','err'); return; }
+  const noi_dung=$('xlpsNoiDung').value.trim(), han_chot=$('xlpsHanChot').value;
+  if(!noi_dung || !han_chot){ toast('Nhập Nội dung và Hạn chốt','err'); return; }
   try{
     await api('ho_so_xu_ly_phat_sinh',{method:'POST',body:JSON.stringify({
       ho_so_id:Number(hoId), noi_dung, han_chot, ghi_chu:$('xlpsGhiChu').value.trim()||null, trang_thai:$('xlpsTrangThai').value
@@ -1882,12 +2098,12 @@ function tcSetRange(type){
   else if(type==='quynay'){ const q=Math.floor(now.getMonth()/3); from=fmt(new Date(now.getFullYear(),q*3,1)); to=fmt(now); }
   else if(type==='namnay'){ from=fmt(new Date(now.getFullYear(),0,1)); to=fmt(now); }
   else return;
-  $('tcFrom').value=fromISODate(from); $('tcTo').value=fromISODate(to);
+  $('tcFrom').value=from; $('tcTo').value=to;
   loadTaiChinh();
 }
 async function loadTaiChinh(){
-  const from = toISODate($('tcFrom').value) || tcDefaultFrom();
-  const to = toISODate($('tcTo').value) || tcToday();
+  const from = $('tcFrom').value || tcDefaultFrom();
+  const to = $('tcTo').value || tcToday();
   try{
     const [hoSoRows, chiRows] = await Promise.all([
       api('ho_so?select=id,ten_khach,ngay_tra_kq,loi_nhuan,danh_muc_nuoc(ten)&trang_thai=eq.'+encodeURIComponent('Đậu')+'&ngay_tra_kq=gte.'+from+'&ngay_tra_kq=lte.'+to+'&order=ngay_tra_kq.desc'),
@@ -1927,7 +2143,7 @@ function openChiModal(id){
   const c = id ? KHOAN_CHI.find(x=>x.id===id) : null;
   $('chiModalTitle').textContent = c ? 'Sửa khoản chi' : 'Thêm khoản chi';
   $('chiId').value = c?.id||'';
-  $('chiNgay').value = fromISODate(c?.ngay || tcToday());
+  $('chiNgay').value = c?.ngay || tcToday();
   $('chiNoiDung').value = c?.noi_dung||'';
   $('chiSoTien').value = formatMoney(c?.so_tien);
   $('chiGhiChu').value = c?.ghi_chu||'';
@@ -1935,9 +2151,9 @@ function openChiModal(id){
 }
 function closeChiModal(){ $('chiOverlay').classList.add('hidden'); }
 async function saveChi(){
-  const ngay=toISODate($('chiNgay').value), noi_dung=$('chiNoiDung').value.trim();
+  const ngay=$('chiNgay').value, noi_dung=$('chiNoiDung').value.trim();
   const so_tien=unformatMoney($('chiSoTien').value);
-  if(!ngay){ toast('Nhập ngày chi đúng định dạng dd/mm/yyyy','err'); return; }
+  if(!ngay){ toast('Chọn ngày chi','err'); return; }
   if(!noi_dung){ toast('Nhập nội dung chi','err'); return; }
   if(!so_tien || so_tien<=0){ toast('Số tiền phải lớn hơn 0','err'); return; }
   const body={ ngay, noi_dung, so_tien, ghi_chu: $('chiGhiChu').value.trim()||null };

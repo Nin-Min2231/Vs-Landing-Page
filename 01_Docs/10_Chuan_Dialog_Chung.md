@@ -132,28 +132,31 @@ Xem hàm `hsStatusSelectClass()`/`updateHoSoStatusColor()` trong `admin.html` l�
 | Bảng phí đại lý | `#dtFeeOverlay` | 2 nhóm (Các mức phí đã có, Thêm mức phí mới) | modal-xl, chỉ có nút "Đóng lại" (không có nút Lưu — mỗi dòng phí lưu ngay khi bấm "+ Thêm") |
 | Bài viết | `#postOverlay` | 2 nhóm (Thông tin bài viết, Nội dung) | modal-lg, textarea nội dung dài (8 dòng) nằm trong `.dlg-body` nên cuộn được khi bài dài |
 | Sửa tên danh mục | `#renameOverlay` | Không chia section (chỉ 1 field) | Dialog nhỏ nhất — vẫn dùng `dlg-standard`/`dlg-head`/`dlg-foot` để đồng bộ màu/nút, nhưng field đặt trực tiếp trong `.dlg-body`, không bọc `.dlg-section` |
-| Khoản chi (Tài chính, Phase 3) | `#chiOverlay` | 1 nhóm (Thông tin khoản chi) | modal-lg, field Ngày dùng mask `dd/mm/yyyy` (xem mục 9) thay vì `type="date"` |
+| Khoản chi (Tài chính, Phase 3) | `#chiOverlay` | 1 nhóm (Thông tin khoản chi) | modal-lg, field Ngày dùng `type="date"` (xem mục 9) |
+| Khách hàng (Thông tin khách hàng, Phase 4) | `#khOverlay` | 1 nhóm (Thông tin khách hàng) | modal-lg, ít field nên chỉ 1 section |
 
 Khi tạo dialog mới trong tương lai, thêm 1 dòng vào bảng này để danh sách luôn cập nhật.
 
-## 9. Định dạng ngày `dd/mm/yyyy` (thay cho `type="date"` mặc định của trình duyệt)
+## 9. Định dạng ngày — dùng `type="date"` chuẩn HTML5 (đã đổi lại ở Phase 4, 2026-08)
 
-`<input type="date">` hiển thị theo locale của trình duyệt/hệ điều hành người dùng (có thể ra
-`mm/dd/yyyy` nếu máy đặt tiếng Anh), **không đồng bộ được** dù trang có `<html lang="vi">`. Từ
-2026-08, mọi field ngày trong `admin.html` đổi sang ô nhập chữ có mask, tự thêm dấu `/` khi gõ,
-luôn hiển thị đúng `dd/mm/yyyy` bất kể trình duyệt:
+⚠️ **Lịch sử đổi qua đổi lại — đọc kỹ để không đổi nhầm hướng:**
+- Có giai đoạn ngắn (giữa Phase 3) toàn bộ field ngày đổi sang ô nhập chữ có mask `dd/mm/yyyy`
+  (hàm `onDateInput()`/`fromISODate()`/`toISODate()`) vì lo `<input type="date">` hiển thị theo
+  locale trình duyệt (có thể ra `mm/dd/yyyy` nếu máy đặt tiếng Anh).
+- **Phase 4 (2026-08) đã đổi lại `type="date"` chuẩn HTML5 cho TOÀN BỘ field ngày** — PM yêu cầu
+  có icon lịch (calendar picker) toàn hệ thống + phát hiện mask cũ gây lỗi nhập liệu ("Ngày nộp
+  chỉ nhận dd/mm"). Vì giá trị thật của `<input type="date">` luôn là ISO `yyyy-mm-dd` bất kể
+  hiển thị theo locale nào, không ảnh hưởng dữ liệu lưu — chỉ là hiển thị có thể khác chút theo
+  máy người dùng, chấp nhận được để đổi lấy icon lịch + input ổn định hơn.
+- **3 hàm `onDateInput()`/`fromISODate()`/`toISODate()` đã bị XÓA khỏi `admin.html`** — không còn
+  tồn tại trong code. **Không tự ý viết lại mask ngày nữa** trừ khi PM yêu cầu rõ ràng.
 
+Mẫu chuẩn hiện tại cho mọi field ngày:
 ```html
-<input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10"
-  id="xxxNgay" oninput="onDateInput(this)">
+<input type="date" id="xxxNgay">
 ```
-
-3 hàm dùng chung (định nghĩa ở phần "TIỆN ÍCH CHUNG" đầu `<script>`):
+Đọc/ghi trực tiếp `.value` (đã là ISO `yyyy-mm-dd`), không cần chuyển đổi:
 ```js
-onDateInput(el)     // gắn vào oninput — tự chèn dấu "/" khi gõ số
-fromISODate(iso)     // "2026-08-01" -> "01/08/2026" (dùng khi đổ dữ liệu cũ vào ô lúc mở dialog)
-toISODate(str)       // "01/08/2026" -> "2026-08-01" (dùng khi gửi API); trả về null nếu sai định dạng
-                     // hoặc ngày không có thật (vd 31/02) — validate ở JS trước khi lưu
+$('xxxNgay').value = data?.ngay || '';   // lúc mở dialog
+ngay: $('xxxNgay').value || null          // lúc lưu
 ```
-Cách dùng: `$('xxxNgay').value = fromISODate(data?.ngay);` lúc mở dialog, và
-`ngay: toISODate($('xxxNgay').value) || null` lúc lưu (kiểm tra `null` để báo lỗi nếu bắt buộc).
