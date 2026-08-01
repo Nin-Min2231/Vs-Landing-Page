@@ -91,6 +91,8 @@ tr:hover td{background:var(--pl)}
 .pill-called{background:#FEF3C7;color:var(--warn)}
 .pill-won{background:#DCFCE7;color:var(--ok)}
 .pill-lost{background:#F1F5F9;color:var(--mut)}
+/* ===== Phase 3 — Tài chính: pill "Chi" (tái dùng token màu --err có sẵn) ===== */
+.pill-chi{background:#FEE2E2;color:var(--err)}
 td select{width:auto;font-size:13px;padding:5px 8px}
 .empty{text-align:center;color:var(--mut);padding:40px}
 /* nhóm nút "Thao tác" dùng chung cho mọi bảng */
@@ -310,6 +312,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <button class="tab active" data-tab="dash" onclick="switchTab('dash')">📊 Dashboard</button>
     <button class="tab" data-tab="tuvan" onclick="switchTab('tuvan')">📞 Tư vấn</button>
     <button class="tab" data-tab="hoso" onclick="switchTab('hoso')">🗃 Hồ sơ</button>
+    <button class="tab" data-tab="taichinh" onclick="switchTab('taichinh')">💰 Tài chính</button>
     <button class="tab" data-tab="leads" onclick="switchTab('leads')">📋 Khách đăng ký</button>
     <button class="tab" data-tab="posts" onclick="switchTab('posts')">📝 Bài viết</button>
     <button class="tab" data-tab="doitac" onclick="switchTab('doitac')">🤝 Đại lý ủy thác</button>
@@ -396,6 +399,41 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <tbody id="hsBody"></tbody>
         </table>
         <div class="empty hidden" id="hsEmpty">Chưa có hồ sơ nào</div>
+      </div>
+    </section>
+
+    <!-- ===== TAB TÀI CHÍNH ===== -->
+    <section id="tab-taichinh" class="hidden">
+      <div class="panel-head">
+        <h2>Tài chính</h2>
+        <div class="filters" style="align-items:center">
+          <span style="font-weight:600;font-size:14px">Từ ngày</span>
+          <input type="date" id="tcFrom">
+          <span style="font-weight:600;font-size:14px">Đến ngày</span>
+          <input type="date" id="tcTo">
+          <button class="btn btn-p" onclick="loadTaiChinh()">Tìm kiếm</button>
+        </div>
+      </div>
+      <div class="filters" style="margin-bottom:14px">
+        <button class="btn btn-g" onclick="tcSetRange('thangnay')">Tháng này</button>
+        <button class="btn btn-g" onclick="tcSetRange('thangtruoc')">Tháng trước</button>
+        <button class="btn btn-g" onclick="tcSetRange('quynay')">Quý này</button>
+        <button class="btn btn-g" onclick="tcSetRange('namnay')">Năm nay</button>
+      </div>
+      <div class="stat-row" id="tcStatRow"></div>
+      <div class="panel-head">
+        <h2 style="font-size:16px">Danh sách Thu / Chi</h2>
+        <div class="filters">
+          <button class="btn btn-p" onclick="openChiModal()">+ Thêm khoản chi</button>
+          <button class="btn btn-ok" onclick="exportTaiChinhCSV()">⬇ Xuất CSV</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Ngày</th><th>Phân loại</th><th>Nội dung</th><th>Số tiền</th><th class="th-center">Thao tác</th></tr></thead>
+          <tbody id="tcBody"></tbody>
+        </table>
+        <div class="empty hidden" id="tcEmpty">Chưa có dữ liệu trong khoảng thời gian này</div>
       </div>
     </section>
 
@@ -793,6 +831,27 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
   </div>
 </div>
 
+<!-- ============ MODAL KHOẢN CHI (Tài chính) ============ -->
+<div class="overlay hidden" id="chiOverlay">
+  <div class="modal dlg-standard" style="max-width:480px">
+    <div class="dlg-head">
+      <h3 id="chiModalTitle">Thêm khoản chi</h3>
+      <button type="button" class="modal-x" onclick="closeChiModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="dlg-body">
+      <input type="hidden" id="chiId">
+      <div class="dlg-field"><label>Ngày <span class="req-badge">Bắt buộc</span></label><input type="date" id="chiNgay"></div>
+      <div class="dlg-field"><label>Nội dung chi <span class="req-badge">Bắt buộc</span></label><input type="text" id="chiNoiDung" placeholder="VD: Thuê văn phòng T8"></div>
+      <div class="dlg-field"><label>Số tiền <span class="req-badge">Bắt buộc</span></label><input type="text" inputmode="numeric" class="money-input" id="chiSoTien" placeholder="Vui lòng nhập" oninput="onChiMoneyInput(this)"></div>
+      <div class="dlg-field"><label>Ghi chú</label><textarea id="chiGhiChu" rows="2" style="width:100%"></textarea></div>
+    </div>
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeChiModal()">Đóng lại</button>
+      <button class="btn btn-p" id="chiSaveBtn" onclick="saveChi()">Lưu</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ POPUP CONFIRM (dùng chung mọi màn hình — xem showConfirmPopup()) ============ -->
 <div class="overlay hidden" id="confirmOverlay">
   <div class="modal popup-std">
@@ -834,6 +893,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 let TOKEN = null, LEADS = [], POSTS = [], CATS = [];
 let DOI_TAC = [], DANH_MUC_NUOC = [], DANH_MUC_MUC_DICH = [], DANH_MUC_TRUONG_NHOM = [], HO_SO = [];
 let CUR_HOSO_XLPS = [], CUR_HOSO_THANHVIEN = [], CUR_FEE_DOITAC = null, CHART_DT = null, CHART_SL = null;
+let KHOAN_CHI = [], TC_ROWS = [];
 const REMEMBER_KEY = 'tv_admin_refresh_token';
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -889,6 +949,12 @@ function initScrollLock(){
   check();
 }
 initScrollLock();
+
+/* Bộ lọc ngày mặc định cho tab Tài chính: từ ngày 1 tháng hiện tại đến hôm nay */
+function tcDefaultFrom(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'; }
+function tcToday(){ return new Date().toISOString().slice(0,10); }
+function initTaiChinhFilters(){ $('tcFrom').value = tcDefaultFrom(); $('tcTo').value = tcToday(); }
+initTaiChinhFilters();
 
 /* ==================== POPUP CONFIRM / THÔNG BÁO — dùng chung mọi màn hình ====================
    showConfirmPopup({title, message, confirmText, cancelText, danger}) -> Promise<boolean>
@@ -1019,8 +1085,9 @@ if('serviceWorker' in navigator){
 /* ==================== TAB ==================== */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
-  ['dash','tuvan','hoso','doitac','settings','leads','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
+  ['dash','tuvan','hoso','taichinh','doitac','settings','leads','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
   if(name==='dash') loadDashboard();
+  if(name==='taichinh') loadTaiChinh();
 }
 
 /* ==================== LEADS (Khách đăng ký — tab gốc Phase 1, giữ nguyên) ==================== */
@@ -1779,6 +1846,109 @@ function renderDashboard(byMonth, dangXuLy, nhacLai, xlps7){
     <tr><td>${esc(n.ten_khach)}</td><td>${n.sdt_khach?`<a href="tel:${esc(n.sdt_khach)}">${esc(n.sdt_khach)}</a>`:'–'}</td>
     <td>${fmtDate(n.ngay_nhac_lai)}</td></tr>`).join('');
   applyRowLabels('dashNhacLaiBody');
+}
+
+/* ==================== PHASE 3: TÀI CHÍNH ====================
+   Khoản thu = loi_nhuan của ho_so có trang_thai='Đậu', theo ngay_tra_kq.
+   Khoản chi = bảng khoan_chi độc lập, nhập tay (chi phí vận hành công ty — KHÔNG liên
+   quan tới các cột chi_... của ho_so, những cột đó đã trừ vào loi_nhuan hồ sơ rồi).
+   2 nguồn dữ liệu gộp ở phía client, không dùng view/join CSDL. */
+function tcSetRange(type){
+  const now = new Date(), pad = n=>String(n).padStart(2,'0');
+  const fmt = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  let from, to;
+  if(type==='thangnay'){ from=fmt(new Date(now.getFullYear(),now.getMonth(),1)); to=fmt(now); }
+  else if(type==='thangtruoc'){ from=fmt(new Date(now.getFullYear(),now.getMonth()-1,1)); to=fmt(new Date(now.getFullYear(),now.getMonth(),0)); }
+  else if(type==='quynay'){ const q=Math.floor(now.getMonth()/3); from=fmt(new Date(now.getFullYear(),q*3,1)); to=fmt(now); }
+  else if(type==='namnay'){ from=fmt(new Date(now.getFullYear(),0,1)); to=fmt(now); }
+  else return;
+  $('tcFrom').value=from; $('tcTo').value=to;
+  loadTaiChinh();
+}
+async function loadTaiChinh(){
+  const from = $('tcFrom').value || tcDefaultFrom();
+  const to = $('tcTo').value || tcToday();
+  try{
+    const [hoSoRows, chiRows] = await Promise.all([
+      api('ho_so?select=id,ten_khach,ngay_tra_kq,loi_nhuan,danh_muc_nuoc(ten)&trang_thai=eq.'+encodeURIComponent('Đậu')+'&ngay_tra_kq=gte.'+from+'&ngay_tra_kq=lte.'+to+'&order=ngay_tra_kq.desc'),
+      api('khoan_chi?select=*&ngay=gte.'+from+'&ngay=lte.'+to+'&order=ngay.desc')
+    ]);
+    KHOAN_CHI = chiRows||[];
+    const thu = (hoSoRows||[]).map(h=>({ngay:h.ngay_tra_kq, loai:'Thu', noi_dung: h.ten_khach+' - '+(h.danh_muc_nuoc?.ten||'–'), so_tien:Number(h.loi_nhuan||0), ref_id:h.id}));
+    const chi = KHOAN_CHI.map(c=>({ngay:c.ngay, loai:'Chi', noi_dung:c.noi_dung, so_tien:Number(c.so_tien||0), ref_id:c.id}));
+    TC_ROWS = thu.concat(chi).sort((a,b)=> (a.ngay||'')<(b.ngay||'') ? 1 : (a.ngay||'')>(b.ngay||'') ? -1 : 0);
+    renderTaiChinh(thu, chi);
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải dữ liệu tài chính: '+e.message,'err'); }
+}
+function renderTaiChinh(thuArr, chiArr){
+  const tongThu = thuArr.reduce((s,r)=>s+r.so_tien,0);
+  const tongChi = chiArr.reduce((s,r)=>s+r.so_tien,0);
+  const loiNhuan = tongThu - tongChi;
+  $('tcStatRow').innerHTML = `
+    <div class="stat"><div class="n" style="color:${loiNhuan>=0?'var(--ok)':'var(--err)'}">${fmtVND(loiNhuan)}</div><div class="l">Lợi nhuận</div></div>
+    <div class="stat"><div class="n">${fmtVND(tongThu)}</div><div class="l">Khoản thu</div></div>
+    <div class="stat"><div class="n">${fmtVND(tongChi)}</div><div class="l">Khoản chi</div></div>
+    <div class="stat"><div class="n">${thuArr.length}</div><div class="l">Số hồ sơ đậu trong kỳ</div></div>`;
+  $('tcEmpty').classList.toggle('hidden', TC_ROWS.length>0);
+  $('tcBody').innerHTML = TC_ROWS.map(r=>`
+    <tr>
+      <td>${fmtDate(r.ngay)}</td>
+      <td><span class="pill ${r.loai==='Thu'?'pill-won':'pill-chi'}">${r.loai}</span></td>
+      <td>${esc(r.noi_dung)}</td>
+      <td style="color:${r.loai==='Thu'?'var(--ok)':'var(--err)'};font-weight:700">${r.loai==='Thu'?'':'-'}${fmtVND(r.so_tien)}</td>
+      <td class="td-actions">${r.loai==='Thu'
+        ? '<span class="hint" style="padding:0">(Từ Hồ sơ)</span>'
+        : `<button class="btn btn-g" onclick="openChiModal(${r.ref_id})">Sửa</button><button class="btn btn-d" onclick="delChi(${r.ref_id})">Xóa</button>`}</td>
+    </tr>`).join('');
+  applyRowLabels('tcBody');
+}
+function onChiMoneyInput(el){ const digits=el.value.replace(/[^\d]/g,''); el.value = digits ? Number(digits).toLocaleString('vi-VN') : ''; }
+function openChiModal(id){
+  const c = id ? KHOAN_CHI.find(x=>x.id===id) : null;
+  $('chiModalTitle').textContent = c ? 'Sửa khoản chi' : 'Thêm khoản chi';
+  $('chiId').value = c?.id||'';
+  $('chiNgay').value = c?.ngay || tcToday();
+  $('chiNoiDung').value = c?.noi_dung||'';
+  $('chiSoTien').value = formatMoney(c?.so_tien);
+  $('chiGhiChu').value = c?.ghi_chu||'';
+  $('chiOverlay').classList.remove('hidden');
+}
+function closeChiModal(){ $('chiOverlay').classList.add('hidden'); }
+async function saveChi(){
+  const ngay=$('chiNgay').value, noi_dung=$('chiNoiDung').value.trim();
+  const so_tien=unformatMoney($('chiSoTien').value);
+  if(!ngay){ toast('Chọn ngày chi','err'); return; }
+  if(!noi_dung){ toast('Nhập nội dung chi','err'); return; }
+  if(!so_tien || so_tien<=0){ toast('Số tiền phải lớn hơn 0','err'); return; }
+  const body={ ngay, noi_dung, so_tien, ghi_chu: $('chiGhiChu').value.trim()||null };
+  const id=$('chiId').value;
+  const btn=$('chiSaveBtn'); btn.disabled=true;
+  try{
+    if(id) await api('khoan_chi?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
+    else await api('khoan_chi',{method:'POST',body:JSON.stringify(body)});
+    closeChiModal(); loadTaiChinh(); toast(id?'Đã cập nhật khoản chi':'Đã thêm khoản chi');
+  }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
+  finally{ btn.disabled=false; }
+}
+async function delChi(id){
+  if(!await showConfirmPopup({message:'Xóa khoản chi này? Không thể hoàn tác.'})) return;
+  try{
+    await api('khoan_chi?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadTaiChinh(); toast('Đã xóa khoản chi');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+}
+function exportTaiChinhCSV(){
+  if(!TC_ROWS.length){ toast('Chưa có dữ liệu để xuất','err'); return; }
+  const head=['Ngày','Phân loại','Nội dung','Số tiền'];
+  const csvCell = v => '"'+(v??'').toString().replace(/"/g,'""')+'"';
+  const lines=[head.join(',')].concat(TC_ROWS.map(r=>
+    [fmtDate(r.ngay), r.loai, r.noi_dung, r.so_tien].map(csvCell).join(',')));
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='tai_chinh_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Đã xuất '+TC_ROWS.length+' dòng ra CSV');
 }
 </script>
 </body>
