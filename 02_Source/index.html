@@ -42,6 +42,8 @@ const COMPANY_ADDRESS   = "303 Âu Cơ, Liên Chiểu, Đà Nẵng";
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{font-family:var(--font);color:var(--color-text);background:var(--color-bg);font-size:16px;line-height:1.6}
+/* Khóa cuộn trang chính khi popup bài viết đang mở (xem initScrollLock() cuối script) */
+html.no-scroll,body.no-scroll{overflow:hidden;height:100%}
 img{max-width:100%}
 .container{max-width:1200px;margin:0 auto;padding:0 var(--sp-3)}
 section{padding:var(--sp-10) 0}
@@ -798,6 +800,20 @@ document.getElementById('postOverlay').addEventListener('click', e=>{
   if(e.target.id==='postOverlay') closePostDetail();
 });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePostDetail(); });
+
+/* Tự khóa/mở cuộn trang chính theo trạng thái hiện/ẩn của popup bài viết */
+function initScrollLock(){
+  const check = ()=>{
+    const anyOpen = [...document.querySelectorAll('.post-overlay')].some(o=>o.classList.contains('show'));
+    document.documentElement.classList.toggle('no-scroll', anyOpen);
+    document.body.classList.toggle('no-scroll', anyOpen);
+  };
+  document.querySelectorAll('.post-overlay').forEach(el=>{
+    new MutationObserver(check).observe(el, {attributes:true, attributeFilter:['class']});
+  });
+  check();
+}
+initScrollLock();
 
 /* ==================== FAQ ACCORDION ==================== */
 document.querySelectorAll('.faq-q').forEach(btn=>{

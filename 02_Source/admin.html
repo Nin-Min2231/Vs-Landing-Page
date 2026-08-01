@@ -32,6 +32,8 @@ const SUPABASE_ANON_KEY = "sb_publishable_mp5Q5GRLV_ll8E4eNeivWw_aUv0q0xR";
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:15px;line-height:1.5}
 .hidden{display:none!important}
+/* Khóa cuộn màn hình chính khi có popup/dialog đang mở (xem initScrollLock() cuối script) */
+html.no-scroll,body.no-scroll{overflow:hidden;height:100%}
 .btn{padding:10px 18px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font);
   font-weight:600;font-size:14px;transition:.15s}
 /* Hệ màu button: xanh dương = hành động chính, xám = phụ/trung tính,
@@ -212,6 +214,31 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .stt-xlps{width:var(--w-xlps,120px)}
 .stt-doitac{width:var(--w-doitac,140px)}
 .pill.stt-tuvan,.pill.stt-hoso,.pill.stt-xlps,.pill.stt-doitac{text-align:center}
+
+/* ===== Popup Confirm / Thông báo — dùng chung mọi màn hình (theo thiết kế
+   Popup_Confirm.png / Popup_thong_bao.png). Nội dung đổ vào lúc gọi showConfirmPopup()/
+   showNotifyPopup(), xem cuối script. ===== */
+.modal.popup-std{max-width:420px;padding:0;border-radius:12px;overflow:hidden}
+.popup-head{background:#116EB1;color:#fff;display:flex;align-items:center;
+  justify-content:space-between;padding:10px 18px;flex-shrink:0}
+.popup-head h3{color:#fff;font-size:16px;margin:0}
+.popup-x{background:none;border:none;color:#fff;font-size:16px;cursor:pointer;
+  width:30px;height:30px;flex-shrink:0;border-radius:6px;display:flex;
+  align-items:center;justify-content:center}
+.popup-x:hover{background:rgba(255,255,255,.18)}
+.popup-body{padding:26px 22px 8px;text-align:center;font-size:15px;color:var(--tx);line-height:1.7}
+.popup-foot{padding:18px 22px 22px;justify-content:center;gap:16px}
+.ntf-icon{width:44px;height:44px;border-radius:50%;border:2.5px solid var(--err);
+  color:var(--err);font-size:20px;font-weight:700;display:flex;align-items:center;
+  justify-content:center;margin:0 auto 14px}
+.ntf-icon.ntf-success{border-color:var(--ok);color:var(--ok)}
+.ntf-icon.ntf-warning{border-color:var(--warn);color:var(--warn)}
+.ntf-icon.ntf-info{border-color:var(--p);color:var(--p)}
+@media(max-width:480px){
+  .popup-head{padding:6px 16px}
+  .popup-body{padding:20px 16px 6px}
+  .popup-foot{padding:14px 16px 18px;gap:12px}
+}
 
 .pill-xl-dxl{background:var(--pl);color:var(--p)}
 .pill-xl-ht{background:#DCFCE7;color:var(--ok)}
@@ -766,6 +793,40 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
   </div>
 </div>
 
+<!-- ============ POPUP CONFIRM (dùng chung mọi màn hình — xem showConfirmPopup()) ============ -->
+<div class="overlay hidden" id="confirmOverlay">
+  <div class="modal popup-std">
+    <div class="popup-head">
+      <h3 id="cfmTitle">Xác nhận</h3>
+      <button type="button" class="popup-x" id="cfmCloseBtn" aria-label="Đóng">✕</button>
+    </div>
+    <div class="popup-body">
+      <p id="cfmMessage"></p>
+    </div>
+    <div class="modal-actions popup-foot">
+      <button class="btn btn-d" id="cfmCancelBtn">Hủy bỏ</button>
+      <button class="btn btn-p" id="cfmOkBtn">Đồng ý</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ POPUP THÔNG BÁO (dùng chung mọi màn hình — xem showNotifyPopup()) ============ -->
+<div class="overlay hidden" id="notifyOverlay">
+  <div class="modal popup-std">
+    <div class="popup-head">
+      <h3 id="ntfTitle">Thông báo</h3>
+      <button type="button" class="popup-x" id="ntfCloseBtn" aria-label="Đóng">✕</button>
+    </div>
+    <div class="popup-body">
+      <div class="ntf-icon" id="ntfIcon"></div>
+      <p id="ntfMessage"></p>
+    </div>
+    <div class="modal-actions popup-foot" style="justify-content:center">
+      <button class="btn btn-p" id="ntfOkBtn">OK</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -813,6 +874,63 @@ function computeStatusWidths(){
   }
 }
 computeStatusWidths();
+
+/* Tự khóa/mở cuộn màn hình chính theo số overlay (.overlay) đang hiển thị — không cần sửa
+   từng hàm open/close, chỉ cần các overlay dùng đúng quy ước class "hidden" như hiện tại. */
+function initScrollLock(){
+  const check = ()=>{
+    const anyOpen = [...document.querySelectorAll('.overlay')].some(o=>!o.classList.contains('hidden'));
+    document.documentElement.classList.toggle('no-scroll', anyOpen);
+    document.body.classList.toggle('no-scroll', anyOpen);
+  };
+  document.querySelectorAll('.overlay').forEach(el=>{
+    new MutationObserver(check).observe(el, {attributes:true, attributeFilter:['class']});
+  });
+  check();
+}
+initScrollLock();
+
+/* ==================== POPUP CONFIRM / THÔNG BÁO — dùng chung mọi màn hình ====================
+   showConfirmPopup({title, message, confirmText, cancelText, danger}) -> Promise<boolean>
+   showNotifyPopup({title, message, type}) -> Promise<void>
+   Nội dung (tiêu đề/thông điệp/tên nút) truyền vào lúc gọi, tùy màn hình mà thay đổi. */
+function showConfirmPopup({title='Xác nhận', message='', confirmText='Đồng ý', cancelText='Hủy bỏ', danger=false}={}){
+  return new Promise(resolve=>{
+    $('cfmTitle').textContent = title;
+    $('cfmMessage').innerHTML = message;
+    $('cfmOkBtn').textContent = confirmText;
+    $('cfmCancelBtn').textContent = cancelText;
+    $('cfmOkBtn').className = 'btn '+(danger?'btn-d':'btn-p');
+    const overlay = $('confirmOverlay');
+    const done = result=>{
+      overlay.classList.add('hidden');
+      $('cfmOkBtn').onclick = $('cfmCancelBtn').onclick = $('cfmCloseBtn').onclick = null;
+      resolve(result);
+    };
+    $('cfmOkBtn').onclick = ()=>done(true);
+    $('cfmCancelBtn').onclick = ()=>done(false);
+    $('cfmCloseBtn').onclick = ()=>done(false);
+    overlay.classList.remove('hidden');
+  });
+}
+function showNotifyPopup({title='Thông báo', message='', type='error'}={}){
+  return new Promise(resolve=>{
+    $('ntfTitle').textContent = title;
+    $('ntfMessage').textContent = message;
+    const icon = $('ntfIcon');
+    icon.className = 'ntf-icon '+(type==='error'?'':'ntf-'+type);
+    icon.textContent = {error:'✕',success:'✓',warning:'!',info:'i'}[type] || '✕';
+    const overlay = $('notifyOverlay');
+    const done = ()=>{
+      overlay.classList.add('hidden');
+      $('ntfOkBtn').onclick = $('ntfCloseBtn').onclick = null;
+      resolve();
+    };
+    $('ntfOkBtn').onclick = done;
+    $('ntfCloseBtn').onclick = done;
+    overlay.classList.remove('hidden');
+  });
+}
 
 async function api(path, opts={}){
   const res = await fetch(SUPABASE_URL+'/rest/v1/'+path, {
@@ -995,7 +1113,7 @@ async function addCategory(){
   }catch(e){ toast(e.message.includes('duplicate')?'Danh mục đã tồn tại':'Lỗi: '+e.message,'err'); }
 }
 async function delCategory(id){
-  if(!confirm('Xóa danh mục này? Bài viết thuộc danh mục sẽ chuyển thành "Không chọn".')) return;
+  if(!await showConfirmPopup({message:'Xóa danh mục này? Bài viết thuộc danh mục sẽ chuyển thành "Không chọn".'})) return;
   try{ await api('categories?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadCats(); loadPosts(); toast('Đã xóa danh mục');
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
@@ -1053,7 +1171,7 @@ async function savePost(){
   finally{ btn.disabled=false; }
 }
 async function delPost(id){
-  if(!confirm('Xóa bài viết này? Không thể hoàn tác.')) return;
+  if(!await showConfirmPopup({message:'Xóa bài viết này? Không thể hoàn tác.'})) return;
   try{ await api('posts?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadPosts(); toast('Đã xóa bài viết');
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
@@ -1147,17 +1265,17 @@ async function isDanhMucInUse(type, item){
 async function deleteDanhMuc(type,id){
   const item = danhMucArr(type).find(x=>x.id===id);
   if(!item) return;
-  if(!confirm(`Xóa "${item.ten}"? Không thể hoàn tác.`)) return;
+  if(!await showConfirmPopup({message:`Xóa "${esc(item.ten)}"? Không thể hoàn tác.`})) return;
   try{
     if(await isDanhMucInUse(type,item)){
-      toast('Dữ liệu đang được dùng nên không thể xóa','err'); return;
+      showNotifyPopup({message:'Dữ liệu đang được dùng nên không thể xóa'}); return;
     }
     await api(danhMucTable(type)+'?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadDanhMuc(); toast('Đã xóa');
   }catch(e){
     const msg=e.message.toLowerCase();
     if(msg.includes('foreign key')||msg.includes('violates')||msg.includes('23503'))
-      toast('Dữ liệu đang được dùng nên không thể xóa','err');
+      showNotifyPopup({message:'Dữ liệu đang được dùng nên không thể xóa'});
     else toast('Lỗi xóa: '+e.message,'err');
   }
 }
@@ -1250,14 +1368,14 @@ async function saveDoiTac(){
   finally{ btn.disabled=false; }
 }
 async function delDoiTac(id){
-  if(!confirm('Xóa đại lý ủy thác này? Không thể hoàn tác.')) return;
+  if(!await showConfirmPopup({message:'Xóa đại lý ủy thác này? Không thể hoàn tác.'})) return;
   try{
     await api('doi_tac?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadDoiTac(); toast('Đã xóa đại lý ủy thác');
   }catch(e){
     const msg=e.message.toLowerCase();
     if(msg.includes('foreign key')||msg.includes('violates')||msg.includes('23503'))
-      toast('Không thể xóa: đại lý này đang có hồ sơ tham chiếu. Hãy dùng "Ngừng hợp tác" thay vì xóa.','err');
+      showNotifyPopup({message:'Đại lý này đang có hồ sơ tham chiếu nên không thể xóa. Hãy dùng "Ngừng hợp tác" thay vì xóa.'});
     else toast('Lỗi xóa: '+e.message,'err');
   }
 }
@@ -1360,7 +1478,7 @@ async function saveTuVan(){
     await loadLeads();
     toast(id?'Đã cập nhật tư vấn':'Đã thêm tư vấn');
     if(body.status==='Chốt' && savedRow){
-      if(confirm('Hồ sơ này đã chốt, Chị Hiền muốn thêm thông tin này vào hồ sơ xử lý không?')){
+      if(await showConfirmPopup({message:'Hồ sơ này đã chốt, Chị Hiền muốn thêm thông tin này vào hồ sơ xử lý không?', confirmText:'Đồng ý', cancelText:'Không cần'})){
         const nuoc = DANH_MUC_NUOC.find(n=>n.ten===savedRow.country);
         const md = DANH_MUC_MUC_DICH.find(m=>m.ten===savedRow.muc_dich);
         switchTab('hoso');
@@ -1552,7 +1670,7 @@ async function updateXlpsStatus(id,trang_thai){
   }catch(e){ toast('Lỗi: '+e.message,'err'); }
 }
 async function delXlps(id){
-  if(!confirm('Xóa dòng xử lý phát sinh này?')) return;
+  if(!await showConfirmPopup({message:'Xóa dòng xử lý phát sinh này?'})) return;
   try{
     await api('ho_so_xu_ly_phat_sinh?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadXlps($('hoId').value); toast('Đã xóa');
@@ -1602,7 +1720,7 @@ async function addThanhVien(){
   }catch(e){ toast('Lỗi thêm: '+e.message,'err'); }
 }
 async function delThanhVien(id){
-  if(!confirm('Xóa thành viên này khỏi nhóm?')) return;
+  if(!await showConfirmPopup({message:'Xóa thành viên này khỏi nhóm?'})) return;
   const hoId = $('hoId').value;
   try{
     await api('ho_so_thanh_vien?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
