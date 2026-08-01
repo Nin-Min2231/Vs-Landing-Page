@@ -155,33 +155,37 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .pill-hs-rot{background:#FEE2E2;color:var(--err)}
 .pill-hs-huy{background:#F1F5F9;color:var(--mut)}
 
-/* ===== Dialog "Đăng ký hồ sơ mới" — theo thiết kế Figma (màu/kích thước lấy đúng token) ===== */
-.modal.modal-hoso{display:flex;flex-direction:column;padding:0;max-height:92vh}
-.modal-hoso-head{display:flex;align-items:center;justify-content:space-between;
+/* ===== "Dialog chuẩn" (dlg-*) — mẫu dialog dùng chung cho mọi màn hình, gốc từ thiết kế
+   Figma dialog Hồ sơ. Tài liệu đầy đủ: 01_Docs/10_Chuan_Dialog_Chung.md — đọc trước khi
+   copy mẫu này sang 1 dialog khác. ===== */
+.modal.dlg-standard{display:flex;flex-direction:column;padding:0;max-height:92vh}
+.dlg-head{display:flex;align-items:center;justify-content:space-between;
   padding:18px 24px;border-bottom:1px solid var(--bd);flex-shrink:0}
-.modal-hoso-head h3{color:#0752A3;font-size:18px;flex:1;text-align:center;margin:0}
-.modal-hoso-head .modal-x{background:none;border:none;font-size:22px;cursor:pointer;
-  color:#050F2B;line-height:1;padding:2px 6px;flex-shrink:0}
-.modal-hoso-body{flex:1;overflow-y:auto;padding:18px 24px}
-.modal.modal-hoso .modal-actions.modal-hoso-foot{flex-shrink:0;padding:14px 24px;
+.dlg-head h3{color:#0752A3;font-size:18px;flex:1;text-align:center;margin:0}
+.dlg-head .modal-x{background:none;border:none;font-size:22px;line-height:1;cursor:pointer;
+  color:#050F2B;flex-shrink:0;width:40px;height:40px;
+  display:flex;align-items:center;justify-content:center;border-radius:8px}
+.dlg-head .modal-x:hover{background:var(--pl)}
+.dlg-body{flex:1;overflow-y:auto;padding:18px 24px}
+.modal.dlg-standard .modal-actions.dlg-foot{flex-shrink:0;padding:14px 24px;
   border-top:1px solid var(--bd);margin:0}
 @media(max-width:480px){
-  .modal-hoso-head{padding:14px 16px}
-  .modal-hoso-body{padding:14px 16px}
-  .modal.modal-hoso .modal-actions.modal-hoso-foot{padding:12px 16px}
+  .dlg-head{padding:14px 16px}
+  .dlg-body{padding:14px 16px}
+  .modal.dlg-standard .modal-actions.dlg-foot{padding:12px 16px}
 }
 
-.hs-section{background:#CCE3F0;border:1px solid #D5D9E0;border-radius:8px;
+.dlg-section{background:#CCE3F0;border:1px solid #D5D9E0;border-radius:8px;
   padding:14px 16px;margin-bottom:16px}
-.hs-section:last-child{margin-bottom:0}
-.hs-section-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;
+.dlg-section:last-child{margin-bottom:0}
+.dlg-section-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;
   color:#111418;margin-bottom:12px}
-.hs-section-title::before{content:'';width:4px;height:16px;background:#1E5AE8;flex-shrink:0}
-.hs-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 14px;margin-bottom:10px}
-.hs-row:last-child{margin-bottom:0}
-.hs-field label{font-size:13px;font-weight:600;color:#3F454D;margin:0 0 5px}
-.hs-field select,.hs-field input,.hs-field textarea{border:1.5px solid rgba(0,64,133,.5)}
-.hs-field-wide{grid-column:span 2}
+.dlg-section-title::before{content:'';width:4px;height:16px;background:#1E5AE8;flex-shrink:0}
+.dlg-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 14px;margin-bottom:10px}
+.dlg-row:last-child{margin-bottom:0}
+.dlg-field label{font-size:13px;font-weight:600;color:#3F454D;margin:0 0 5px}
+.dlg-field select,.dlg-field input,.dlg-field textarea{border:1.5px solid rgba(0,64,133,.5)}
+.dlg-field-wide{grid-column:span 2}
 .req-badge{background:#D64550;color:#fff;font-size:10px;font-weight:600;padding:2px 8px;
   border-radius:4px;margin-left:6px;vertical-align:middle;white-space:nowrap}
 .money-input{text-align:right}
@@ -476,31 +480,43 @@ tr.danger td{background:#FEE2E2}
 
 <!-- ============ MODAL TƯ VẤN ============ -->
 <div class="overlay hidden" id="tvOverlay">
-  <div class="modal">
-    <h3 id="tvModalTitle">Thêm tư vấn</h3>
-    <input type="hidden" id="tvId">
-    <div class="field-2">
-      <div><label>Họ tên *</label><input type="text" id="tvName"></div>
-      <div><label>Số điện thoại *</label><input type="tel" id="tvPhone"></div>
+  <div class="modal modal-lg dlg-standard">
+    <div class="dlg-head">
+      <h3 id="tvModalTitle">Thêm tư vấn</h3>
+      <button type="button" class="modal-x" onclick="closeTvModal()" aria-label="Đóng">✕</button>
     </div>
-    <div class="field-2">
-      <div><label>Email</label><input type="email" id="tvEmail"></div>
-      <div><label>Link Facebook</label><input type="url" id="tvFb"></div>
-    </div>
-    <div class="field-2">
-      <div><label>Nước đến *</label><select id="tvCountry"></select></div>
-      <div><label>Mục đích *</label><select id="tvMucDich"></select></div>
-    </div>
-    <label>Nội dung tư vấn</label>
-    <textarea id="tvNote" rows="3"></textarea>
-    <div class="field-2">
-      <div><label>Trạng thái tư vấn</label>
-        <select id="tvStatus"><option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option></select>
+
+    <div class="dlg-body">
+      <input type="hidden" id="tvId">
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin khách hàng</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Họ tên <span class="req-badge">Bắt buộc</span></label><input type="text" id="tvName"></div>
+          <div class="dlg-field"><label>Số điện thoại <span class="req-badge">Bắt buộc</span></label><input type="tel" id="tvPhone"></div>
+          <div class="dlg-field"><label>Email</label><input type="email" id="tvEmail"></div>
+          <div class="dlg-field"><label>Link Facebook</label><input type="url" id="tvFb"></div>
+        </div>
       </div>
-      <div><label>Ngày nhắc lại</label><input type="date" id="tvNgayNhacLai"></div>
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Chi tiết tư vấn</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Nước đến <span class="req-badge">Bắt buộc</span></label><select id="tvCountry"></select></div>
+          <div class="dlg-field"><label>Mục đích <span class="req-badge">Bắt buộc</span></label><select id="tvMucDich"></select></div>
+          <div class="dlg-field"><label>Trạng thái tư vấn</label>
+            <select id="tvStatus"><option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option></select>
+          </div>
+          <div class="dlg-field"><label>Ngày nhắc lại</label><input type="date" id="tvNgayNhacLai"></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Nội dung tư vấn</label><textarea id="tvNote" rows="3" style="width:100%"></textarea></div>
+        </div>
+      </div>
     </div>
-    <div class="modal-actions">
-      <button class="btn btn-g" onclick="closeTvModal()">Hủy</button>
+
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeTvModal()">Đóng lại</button>
       <button class="btn btn-p" id="tvSaveBtn" onclick="saveTuVan()">Lưu</button>
     </div>
   </div>
@@ -508,40 +524,40 @@ tr.danger td{background:#FEE2E2}
 
 <!-- ============ MODAL HỒ SƠ ============ -->
 <div class="overlay hidden" id="hoOverlay">
-  <div class="modal modal-xl modal-hoso">
-    <div class="modal-hoso-head">
+  <div class="modal modal-xl dlg-standard">
+    <div class="dlg-head">
       <h3 id="hoModalTitle">Đăng ký hồ sơ mới</h3>
       <button type="button" class="modal-x" onclick="closeHoSoModal()" aria-label="Đóng">✕</button>
     </div>
 
-    <div class="modal-hoso-body">
+    <div class="dlg-body">
       <input type="hidden" id="hoId">
       <input type="hidden" id="hoNguonTuVan">
       <input type="hidden" id="hoChiThuDiLegacy" value="0">
 
-      <div class="hs-section">
-        <div class="hs-section-title">Thông tin khách</div>
-        <div class="hs-row">
-          <div class="hs-field"><label>Ngày tạo <span class="req-badge">Bắt buộc</span></label><input type="date" id="hoNgay"></div>
-          <div class="hs-field"><label>Tên khách hàng <span class="req-badge">Bắt buộc</span></label><input type="text" id="hoTenKhach"></div>
-          <div class="hs-field"><label>Đối tác</label><select id="hoTruongNhom"></select></div>
-          <div class="hs-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach"></div>
-          <div class="hs-field"><label>Số lượng hồ sơ</label><input type="text" inputmode="numeric" id="hoSoLuong" oninput="updateHoSoTotals()"></div>
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin khách</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Ngày tạo <span class="req-badge">Bắt buộc</span></label><input type="date" id="hoNgay"></div>
+          <div class="dlg-field"><label>Tên khách hàng <span class="req-badge">Bắt buộc</span></label><input type="text" id="hoTenKhach"></div>
+          <div class="dlg-field"><label>Đối tác</label><select id="hoTruongNhom"></select></div>
+          <div class="dlg-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach"></div>
+          <div class="dlg-field"><label>Số lượng hồ sơ</label><input type="text" inputmode="numeric" id="hoSoLuong" oninput="updateHoSoTotals()"></div>
         </div>
-        <div class="hs-row">
-          <div class="hs-field"><label>Nước đến <span class="req-badge">Bắt buộc</span></label><select id="hoNuoc"></select></div>
-          <div class="hs-field"><label>Mục đích <span class="req-badge">Bắt buộc</span></label><select id="hoMucDich"></select></div>
-          <div class="hs-field hs-field-wide"><label>Địa chỉ</label><input type="text" id="hoDiaChi"></div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Nước đến <span class="req-badge">Bắt buộc</span></label><select id="hoNuoc"></select></div>
+          <div class="dlg-field"><label>Mục đích <span class="req-badge">Bắt buộc</span></label><select id="hoMucDich"></select></div>
+          <div class="dlg-field dlg-field-wide"><label>Địa chỉ</label><input type="text" id="hoDiaChi"></div>
         </div>
       </div>
 
-      <div class="hs-section">
-        <div class="hs-section-title">Thông tin nộp hồ sơ</div>
-        <div class="hs-row">
-          <div class="hs-field"><label>Đại lý ủy thác <span class="req-badge">Bắt buộc</span></label><select id="hoDoiTac"></select></div>
-          <div class="hs-field"><label>Ngày nộp hồ sơ</label><input type="date" id="hoNgayNop"></div>
-          <div class="hs-field"><label>Ngày trả KQ</label><input type="date" id="hoNgayTraKq"></div>
-          <div class="hs-field"><label>Trạng thái hồ sơ</label>
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin nộp hồ sơ</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Đại lý ủy thác <span class="req-badge">Bắt buộc</span></label><select id="hoDoiTac"></select></div>
+          <div class="dlg-field"><label>Ngày nộp hồ sơ</label><input type="date" id="hoNgayNop"></div>
+          <div class="dlg-field"><label>Ngày trả KQ</label><input type="date" id="hoNgayTraKq"></div>
+          <div class="dlg-field"><label>Trạng thái hồ sơ</label>
             <select id="hoTrangThai" class="status-select" onchange="updateHoSoStatusColor()">
               <option>Đang xử lý</option><option>Đã nộp</option><option>Chờ kết quả</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
             </select>
@@ -549,32 +565,32 @@ tr.danger td{background:#FEE2E2}
         </div>
       </div>
 
-      <div class="hs-section">
-        <div class="hs-row">
-          <div class="hs-field"><label>Tổng thu</label><input type="text" id="hoTongThu" readonly class="money-readonly"></div>
-          <div class="hs-field"><label>Tổng chi</label><input type="text" id="hoTongChi" readonly class="money-readonly"></div>
-          <div class="hs-field"><label>Lợi nhuận</label><input type="text" id="hoLoiNhuan" readonly class="money-readonly"></div>
+      <div class="dlg-section">
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Tổng thu</label><input type="text" id="hoTongThu" readonly class="money-readonly"></div>
+          <div class="dlg-field"><label>Tổng chi</label><input type="text" id="hoTongChi" readonly class="money-readonly"></div>
+          <div class="dlg-field"><label>Lợi nhuận</label><input type="text" id="hoLoiNhuan" readonly class="money-readonly"></div>
         </div>
 
-        <div class="hs-section-title">Thông tin thu</div>
-        <div class="hs-row">
-          <div class="hs-field"><label>Lệ phí người nộp</label><input type="text" inputmode="numeric" class="money-input" id="hoThuLePhi" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
-          <div class="hs-field"><label>In ảnh</label><input type="text" inputmode="numeric" class="money-input" id="hoThuInAnh" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
-          <div class="hs-field"><label>Hỗ trợ khác</label><input type="text" inputmode="numeric" class="money-input" id="hoThuHoTro" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
-          <div class="hs-field"><label>Khách tip</label><input type="text" inputmode="numeric" class="money-input" id="hoThuKhachTip" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+        <div class="dlg-section-title">Thông tin thu</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Lệ phí người nộp</label><input type="text" inputmode="numeric" class="money-input" id="hoThuLePhi" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="dlg-field"><label>In ảnh</label><input type="text" inputmode="numeric" class="money-input" id="hoThuInAnh" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="dlg-field"><label>Hỗ trợ khác</label><input type="text" inputmode="numeric" class="money-input" id="hoThuHoTro" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="dlg-field"><label>Khách tip</label><input type="text" inputmode="numeric" class="money-input" id="hoThuKhachTip" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
         </div>
 
-        <div class="hs-section-title">Thông tin chi</div>
-        <div class="hs-row">
-          <div class="hs-field"><label>Lệ phí lãnh sự (đơn giá/người)</label><input type="text" inputmode="numeric" class="money-input" id="hoChiLanhSu" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
-          <div class="hs-field"><label>Đại lý/CTV (đơn giá/người)</label><input type="text" inputmode="numeric" class="money-input" id="hoChiDoiTacCtv" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
-          <div class="hs-field"><label>Phí ship</label><input type="text" inputmode="numeric" class="money-input" id="hoChiThuVe" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
-          <div class="hs-field"><label>Phí khác</label><input type="text" inputmode="numeric" class="money-input" id="hoChiPhiKhac" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+        <div class="dlg-section-title">Thông tin chi</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Lệ phí lãnh sự (đơn giá/người)</label><input type="text" inputmode="numeric" class="money-input" id="hoChiLanhSu" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="dlg-field"><label>Đại lý/CTV (đơn giá/người)</label><input type="text" inputmode="numeric" class="money-input" id="hoChiDoiTacCtv" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="dlg-field"><label>Phí ship</label><input type="text" inputmode="numeric" class="money-input" id="hoChiThuVe" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="dlg-field"><label>Phí khác</label><input type="text" inputmode="numeric" class="money-input" id="hoChiPhiKhac" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
         </div>
       </div>
 
-      <div class="hs-section">
-        <div class="hs-section-title">Thành viên nhóm</div>
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thành viên nhóm</div>
         <div id="hoTvienHint" class="hint hidden">Lưu hồ sơ trước để thêm thành viên nhóm.</div>
         <div id="hoTvienBox">
           <div class="tbl-wrap" style="margin-bottom:10px">
@@ -592,8 +608,8 @@ tr.danger td{background:#FEE2E2}
         </div>
       </div>
 
-      <div class="hs-section">
-        <div class="hs-section-title">Xử lý phát sinh</div>
+      <div class="dlg-section">
+        <div class="dlg-section-title">Xử lý phát sinh</div>
         <div id="hoXlpsHint" class="hint hidden">Lưu hồ sơ trước để thêm dòng xử lý phát sinh.</div>
         <div id="hoXlpsBox">
           <div class="tbl-wrap" style="margin-bottom:10px">
@@ -612,13 +628,13 @@ tr.danger td{background:#FEE2E2}
         </div>
       </div>
 
-      <div class="hs-section">
-        <div class="hs-section-title">Ghi chú</div>
+      <div class="dlg-section">
+        <div class="dlg-section-title">Ghi chú</div>
         <textarea id="hoNote" rows="3" style="width:100%"></textarea>
       </div>
     </div>
 
-    <div class="modal-actions modal-hoso-foot">
+    <div class="modal-actions dlg-foot">
       <button class="btn btn-g" onclick="closeHoSoModal()">Đóng lại</button>
       <button class="btn btn-p" id="hoSaveBtn" onclick="saveHoSo()">Lưu hồ sơ</button>
     </div>

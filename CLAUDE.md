@@ -83,6 +83,8 @@ Toàn bộ token nằm trong CSS `:root{...}` đầu mỗi file (biến `--color
 
 Chi tiết đầy đủ: `01_Docs/04_Design_System.md` (sheet `04_Design System` trong Excel có bảng màu với ô màu minh họa trực quan).
 
+**Dialog/popup trong `admin.html`:** khi tạo mới hoặc sửa lại 1 dialog nhiều field, đọc `01_Docs/10_Chuan_Dialog_Chung.md` trước — có sẵn mẫu HTML/CSS dùng chung (class `dlg-*`), bảng màu, cách format tiền, để mọi dialog đồng bộ giao diện. Ví dụ tham chiếu: dialog "Đăng ký hồ sơ mới" (`#hoOverlay`).
+
 ## 7. Database schema (Supabase)
 
 Định nghĩa đầy đủ trong `02_Source/supabase_setup.sql` (idempotent — chạy lại không lỗi). Tóm tắt:
