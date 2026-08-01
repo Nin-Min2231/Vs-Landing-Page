@@ -132,5 +132,28 @@ Xem hàm `hsStatusSelectClass()`/`updateHoSoStatusColor()` trong `admin.html` l�
 | Bảng phí đại lý | `#dtFeeOverlay` | 2 nhóm (Các mức phí đã có, Thêm mức phí mới) | modal-xl, chỉ có nút "Đóng lại" (không có nút Lưu — mỗi dòng phí lưu ngay khi bấm "+ Thêm") |
 | Bài viết | `#postOverlay` | 2 nhóm (Thông tin bài viết, Nội dung) | modal-lg, textarea nội dung dài (8 dòng) nằm trong `.dlg-body` nên cuộn được khi bài dài |
 | Sửa tên danh mục | `#renameOverlay` | Không chia section (chỉ 1 field) | Dialog nhỏ nhất — vẫn dùng `dlg-standard`/`dlg-head`/`dlg-foot` để đồng bộ màu/nút, nhưng field đặt trực tiếp trong `.dlg-body`, không bọc `.dlg-section` |
+| Khoản chi (Tài chính, Phase 3) | `#chiOverlay` | 1 nhóm (Thông tin khoản chi) | modal-lg, field Ngày dùng mask `dd/mm/yyyy` (xem mục 9) thay vì `type="date"` |
 
 Khi tạo dialog mới trong tương lai, thêm 1 dòng vào bảng này để danh sách luôn cập nhật.
+
+## 9. Định dạng ngày `dd/mm/yyyy` (thay cho `type="date"` mặc định của trình duyệt)
+
+`<input type="date">` hiển thị theo locale của trình duyệt/hệ điều hành người dùng (có thể ra
+`mm/dd/yyyy` nếu máy đặt tiếng Anh), **không đồng bộ được** dù trang có `<html lang="vi">`. Từ
+2026-08, mọi field ngày trong `admin.html` đổi sang ô nhập chữ có mask, tự thêm dấu `/` khi gõ,
+luôn hiển thị đúng `dd/mm/yyyy` bất kể trình duyệt:
+
+```html
+<input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10"
+  id="xxxNgay" oninput="onDateInput(this)">
+```
+
+3 hàm dùng chung (định nghĩa ở phần "TIỆN ÍCH CHUNG" đầu `<script>`):
+```js
+onDateInput(el)     // gắn vào oninput — tự chèn dấu "/" khi gõ số
+fromISODate(iso)     // "2026-08-01" -> "01/08/2026" (dùng khi đổ dữ liệu cũ vào ô lúc mở dialog)
+toISODate(str)       // "01/08/2026" -> "2026-08-01" (dùng khi gửi API); trả về null nếu sai định dạng
+                     // hoặc ngày không có thật (vd 31/02) — validate ở JS trước khi lưu
+```
+Cách dùng: `$('xxxNgay').value = fromISODate(data?.ngay);` lúc mở dialog, và
+`ngay: toISODate($('xxxNgay').value) || null` lúc lưu (kiểm tra `null` để báo lỗi nếu bắt buộc).

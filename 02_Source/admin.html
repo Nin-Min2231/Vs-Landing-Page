@@ -157,7 +157,6 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 
 .pill-hs-dxl{background:var(--pl);color:var(--p)}
 .pill-hs-dn{background:#FEF3C7;color:var(--warn)}
-.pill-hs-ckq{background:#FFE8D5;color:var(--acc)}
 .pill-hs-dau{background:#DCFCE7;color:var(--ok)}
 .pill-hs-rot{background:#FEE2E2;color:var(--err)}
 .pill-hs-huy{background:#F1F5F9;color:var(--mut)}
@@ -204,7 +203,6 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
   font-weight:700;font-size:15px}
 .status-select.st-dxl{background:#FFF2E0}
 .status-select.st-dn{background:#FEF3C7}
-.status-select.st-ckq{background:#FFE8D5}
 .status-select.st-dau{background:#DCFCE7}
 .status-select.st-rot{background:#FEE2E2}
 .status-select.st-huy{background:#F1F5F9}
@@ -385,7 +383,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="filters">
           <select id="fHsStatus" onchange="renderHoSo()">
             <option value="">Tất cả trạng thái</option>
-            <option>Đang xử lý</option><option>Đã nộp</option><option>Chờ kết quả</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
+            <option>Đang xử lý</option><option>Đã nộp</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
           </select>
           <select id="fHsNuoc" onchange="renderHoSo()"><option value="">Tất cả nước đến</option></select>
           <select id="fHsDoiTac" onchange="renderHoSo()"><option value="">Tất cả đại lý</option></select>
@@ -408,9 +406,9 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <h2>Tài chính</h2>
         <div class="filters" style="align-items:center">
           <span style="font-weight:600;font-size:14px">Từ ngày</span>
-          <input type="date" id="tcFrom">
+          <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="tcFrom" oninput="onDateInput(this)" style="width:120px">
           <span style="font-weight:600;font-size:14px">Đến ngày</span>
-          <input type="date" id="tcTo">
+          <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="tcTo" oninput="onDateInput(this)" style="width:120px">
           <button class="btn btn-p" onclick="loadTaiChinh()">Tìm kiếm</button>
         </div>
       </div>
@@ -598,7 +596,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div class="dlg-field"><label>Trạng thái tư vấn</label>
             <select id="tvStatus" class="stt-tuvan"><option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option></select>
           </div>
-          <div class="dlg-field"><label>Ngày nhắc lại</label><input type="date" id="tvNgayNhacLai"></div>
+          <div class="dlg-field"><label>Ngày nhắc lại</label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="tvNgayNhacLai" oninput="onDateInput(this)"></div>
         </div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Nội dung tư vấn</label><textarea id="tvNote" rows="3" style="width:100%"></textarea></div>
@@ -629,7 +627,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       <div class="dlg-section">
         <div class="dlg-section-title">Thông tin khách</div>
         <div class="dlg-row">
-          <div class="dlg-field"><label>Ngày tạo <span class="req-badge">Bắt buộc</span></label><input type="date" id="hoNgay"></div>
+          <div class="dlg-field"><label>Ngày tạo <span class="req-badge">Bắt buộc</span></label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="hoNgay" oninput="onDateInput(this)"></div>
           <div class="dlg-field"><label>Tên khách hàng <span class="req-badge">Bắt buộc</span></label><input type="text" id="hoTenKhach"></div>
           <div class="dlg-field"><label>Đối tác</label><select id="hoTruongNhom"></select></div>
           <div class="dlg-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach"></div>
@@ -646,11 +644,11 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="dlg-section-title">Thông tin nộp hồ sơ</div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Đại lý ủy thác <span class="req-badge">Bắt buộc</span></label><select id="hoDoiTac"></select></div>
-          <div class="dlg-field"><label>Ngày nộp hồ sơ</label><input type="date" id="hoNgayNop"></div>
-          <div class="dlg-field"><label>Ngày trả KQ</label><input type="date" id="hoNgayTraKq"></div>
+          <div class="dlg-field"><label>Ngày nộp hồ sơ</label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="hoNgayNop" oninput="onDateInput(this)"></div>
+          <div class="dlg-field"><label>Ngày trả KQ</label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="hoNgayTraKq" oninput="onDateInput(this)"></div>
           <div class="dlg-field"><label>Trạng thái hồ sơ</label>
             <select id="hoTrangThai" class="status-select stt-hoso" onchange="updateHoSoStatusColor()">
-              <option>Đang xử lý</option><option>Đã nộp</option><option>Chờ kết quả</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
+              <option>Đang xử lý</option><option>Đã nộp</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
             </select>
           </div>
         </div>
@@ -711,7 +709,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           </div>
           <div class="subrow-add">
             <input type="text" id="xlpsNoiDung" placeholder="Nội dung">
-            <input type="date" id="xlpsHanChot">
+            <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="xlpsHanChot" oninput="onDateInput(this)">
             <input type="text" id="xlpsGhiChu" placeholder="Ghi chú">
             <select id="xlpsTrangThai" class="stt-xlps"><option>Đang xử lý</option><option>Hủy</option><option>Tạm dừng</option><option>Hoàn thành</option></select>
             <button class="btn btn-p" onclick="addXlps()">+ Thêm</button>
@@ -799,7 +797,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <input type="text" id="feeNoiNop" placeholder="Nơi nộp">
           <input type="text" id="feeDienVisa" placeholder="Diện visa">
           <input type="number" id="feeMuc" placeholder="Mức phí">
-          <input type="date" id="feeNgayApDung">
+          <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="feeNgayApDung" oninput="onDateInput(this)">
           <button class="btn btn-p" onclick="addDoiTacPhi()">+ Thêm</button>
         </div>
         <input type="text" id="feeGhiChu" placeholder="Ghi chú (tuỳ chọn)" style="margin-top:8px">
@@ -833,17 +831,24 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 
 <!-- ============ MODAL KHOẢN CHI (Tài chính) ============ -->
 <div class="overlay hidden" id="chiOverlay">
-  <div class="modal dlg-standard" style="max-width:480px">
+  <div class="modal modal-lg dlg-standard">
     <div class="dlg-head">
       <h3 id="chiModalTitle">Thêm khoản chi</h3>
       <button type="button" class="modal-x" onclick="closeChiModal()" aria-label="Đóng">✕</button>
     </div>
     <div class="dlg-body">
       <input type="hidden" id="chiId">
-      <div class="dlg-field"><label>Ngày <span class="req-badge">Bắt buộc</span></label><input type="date" id="chiNgay"></div>
-      <div class="dlg-field"><label>Nội dung chi <span class="req-badge">Bắt buộc</span></label><input type="text" id="chiNoiDung" placeholder="VD: Thuê văn phòng T8"></div>
-      <div class="dlg-field"><label>Số tiền <span class="req-badge">Bắt buộc</span></label><input type="text" inputmode="numeric" class="money-input" id="chiSoTien" placeholder="Vui lòng nhập" oninput="onChiMoneyInput(this)"></div>
-      <div class="dlg-field"><label>Ghi chú</label><textarea id="chiGhiChu" rows="2" style="width:100%"></textarea></div>
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin khoản chi</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Ngày <span class="req-badge">Bắt buộc</span></label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="chiNgay" oninput="onDateInput(this)"></div>
+          <div class="dlg-field"><label>Số tiền <span class="req-badge">Bắt buộc</span></label><input type="text" inputmode="numeric" class="money-input" id="chiSoTien" placeholder="Vui lòng nhập" oninput="onChiMoneyInput(this)"></div>
+          <div class="dlg-field dlg-field-wide"><label>Nội dung chi <span class="req-badge">Bắt buộc</span></label><input type="text" id="chiNoiDung" placeholder="VD: Thuê văn phòng T8"></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide"><label>Ghi chú</label><textarea id="chiGhiChu" rows="2" style="width:100%"></textarea></div>
+        </div>
+      </div>
     </div>
     <div class="modal-actions dlg-foot">
       <button class="btn btn-g" onclick="closeChiModal()">Đóng lại</button>
@@ -903,6 +908,26 @@ function fmtTime(iso){ const d=new Date(iso);
   return d.toLocaleDateString('vi-VN')+' '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(d){ return d ? new Date(d).toLocaleDateString('vi-VN') : '–'; }
 function fmtVND(n){ return Number(n||0).toLocaleString('vi-VN')+' đ'; }
+/* ==== ngày: ô nhập chữ có mask dd/mm/yyyy (không dùng type="date" vì hiển thị theo locale
+   trình duyệt, không đồng bộ được — xem 01_Docs/10_Chuan_Dialog_Chung.md mục 9) ==== */
+function onDateInput(el){
+  let d = el.value.replace(/[^\d]/g,'').slice(0,8);
+  if(d.length>4) d = d.slice(0,2)+'/'+d.slice(2,4)+'/'+d.slice(4);
+  else if(d.length>2) d = d.slice(0,2)+'/'+d.slice(2);
+  el.value = d;
+}
+function fromISODate(iso){
+  const m=(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? m[3]+'/'+m[2]+'/'+m[1] : '';
+}
+function toISODate(str){
+  const m=(str||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(!m) return null;
+  const dd=+m[1], mm=+m[2], yyyy=+m[3];
+  const d = new Date(yyyy, mm-1, dd);
+  if(d.getFullYear()!==yyyy || d.getMonth()!==mm-1 || d.getDate()!==dd) return null;
+  return yyyy+'-'+m[2]+'-'+m[1];
+}
 function applyRowLabels(tbodyId){
   const tbody = $(tbodyId);
   const table = tbody.closest('table');
@@ -924,7 +949,7 @@ function computeStatusWidths(){
   ctx.font = "700 13px 'Be Vietnam Pro', system-ui, sans-serif";
   const groups = {
     tuvan:  ['Mới','Đã gọi','Chốt','Hủy'],
-    hoso:   ['Đang xử lý','Đã nộp','Chờ kết quả','Đậu','Rớt','Hủy'],
+    hoso:   ['Đang xử lý','Đã nộp','Đậu','Rớt','Hủy'],
     xlps:   ['Đang xử lý','Hủy','Tạm dừng','Hoàn thành'],
     doitac: ['Đang hợp tác','Ngừng hợp tác']
   };
@@ -953,7 +978,7 @@ initScrollLock();
 /* Bộ lọc ngày mặc định cho tab Tài chính: từ ngày 1 tháng hiện tại đến hôm nay */
 function tcDefaultFrom(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'; }
 function tcToday(){ return new Date().toISOString().slice(0,10); }
-function initTaiChinhFilters(){ $('tcFrom').value = tcDefaultFrom(); $('tcTo').value = tcToday(); }
+function initTaiChinhFilters(){ $('tcFrom').value = fromISODate(tcDefaultFrom()); $('tcTo').value = fromISODate(tcToday()); }
 initTaiChinhFilters();
 
 /* ==================== POPUP CONFIRM / THÔNG BÁO — dùng chung mọi màn hình ====================
@@ -1199,7 +1224,7 @@ async function loadPosts(){
         <td>${fmtTime(p.created_at)}</td>
         <td>${p.published?'✅ Công khai':'🚫 Ẩn'}</td>
         <td class="td-actions">
-          <button class="btn btn-g" onclick="openPostModal(${p.id})">Sửa</button>
+          <button class="btn btn-p" onclick="openPostModal(${p.id})">Sửa</button>
           <button class="btn btn-d" onclick="delPost(${p.id})">Xóa</button>
         </td>
       </tr>`).join('');
@@ -1283,8 +1308,7 @@ function renderSettings(){
       <div class="cat-item ${x.active?'':'inactive'}">
         <span>${esc(x.ten)}${x.active?'':' (đã ẩn)'}</span>
         <div class="cat-item-actions">
-          <button class="btn btn-g" onclick="openRenameModal('${type}',${x.id})">Sửa</button>
-          <button class="btn btn-g" onclick="toggleDanhMuc('${type}',${x.id},${!x.active})">${x.active?'Ẩn':'Hiện'}</button>
+          <button class="btn btn-p" onclick="openRenameModal('${type}',${x.id})">Sửa</button>
           <button class="btn btn-d" onclick="deleteDanhMuc('${type}',${x.id})">Xóa</button>
         </div>
       </div>`).join('') : '<div class="hint">Chưa có mục nào</div>';
@@ -1298,12 +1322,6 @@ async function addDanhMuc(type){
     await api(danhMucTable(type),{method:'POST',body:JSON.stringify({ten})});
     $(inputId).value=''; loadDanhMuc(); toast('Đã thêm');
   }catch(e){ toast(e.message.includes('duplicate')?'Mục này đã tồn tại':'Lỗi: '+e.message,'err'); }
-}
-async function toggleDanhMuc(type,id,active){
-  try{
-    await api(danhMucTable(type)+'?id=eq.'+id,{method:'PATCH',body:JSON.stringify({active}),prefer:'return=minimal'});
-    loadDanhMuc(); toast(active?'Đã hiện lại':'Đã ẩn');
-  }catch(e){ toast('Lỗi: '+e.message,'err'); }
 }
 /* Kiểm tra 1 mục danh mục có đang được tham chiếu ở Hồ sơ (FK) hoặc Tư vấn (cột text
    country/muc_dich lưu theo TÊN, không phải FK) hay không, trước khi cho xóa hẳn. */
@@ -1394,7 +1412,7 @@ function renderDoiTac(){
       <td>${d.sdt_lien_he?`<a href="tel:${esc(d.sdt_lien_he)}">${esc(d.sdt_lien_he)}</a>`:'–'}</td>
       <td><span class="pill stt-doitac ${d.trang_thai==='Đang hợp tác'?'pill-dt-on':'pill-dt-off'}">${esc(d.trang_thai)}</span></td>
       <td class="td-actions">
-        <button class="btn btn-g" onclick="openDoiTacModal(${d.id})">Sửa</button>
+        <button class="btn btn-p" onclick="openDoiTacModal(${d.id})">Sửa</button>
         <button class="btn btn-g" onclick="openDoiTacFeeModal(${d.id})">Bảng phí</button>
         <button class="btn btn-d" onclick="delDoiTac(${d.id})">Xóa</button>
       </td>
@@ -1453,7 +1471,7 @@ async function openDoiTacFeeModal(id){
   $('dtFeeCompanyName').textContent = doiTacLabel(d);
   $('dtFeeDoiTacId').value=id;
   $('feeNoiNop').value=''; $('feeDienVisa').value=''; $('feeMuc').value=''; $('feeGhiChu').value='';
-  $('feeNgayApDung').value = new Date().toISOString().slice(0,10);
+  $('feeNgayApDung').value = fromISODate(new Date().toISOString().slice(0,10));
   $('dtFeeOverlay').classList.remove('hidden');
   await loadDoiTacPhi(id);
 }
@@ -1477,7 +1495,7 @@ async function addDoiTacPhi(){
     noi_nop: $('feeNoiNop').value.trim()||null,
     dien_visa: $('feeDienVisa').value.trim()||null,
     muc_phi: $('feeMuc').value?Number($('feeMuc').value):null,
-    ngay_ap_dung_tu: $('feeNgayApDung').value||new Date().toISOString().slice(0,10),
+    ngay_ap_dung_tu: toISODate($('feeNgayApDung').value)||new Date().toISOString().slice(0,10),
     ghi_chu: $('feeGhiChu').value.trim()||null
   };
   try{
@@ -1502,7 +1520,7 @@ function renderTuVan(){
       <td>${esc(l.muc_dich||'–')}</td>
       <td><span class="pill stt-tuvan ${pillClass(l.status)}">${esc(l.status)}</span></td>
       <td>${fmtDate(l.ngay_nhac_lai)}</td>
-      <td class="td-actions"><button class="btn btn-g" onclick="openTvModal(${l.id})">Sửa</button></td>
+      <td class="td-actions"><button class="btn btn-p" onclick="openTvModal(${l.id})">Sửa</button></td>
     </tr>`).join('');
   applyRowLabels('tvBody');
 }
@@ -1518,7 +1536,7 @@ function openTvModal(id){
   $('tvMucDich').value = l?.muc_dich||'';
   $('tvNote').value = l?.note||'';
   $('tvStatus').value = l?.status||'Mới';
-  $('tvNgayNhacLai').value = l?.ngay_nhac_lai||'';
+  $('tvNgayNhacLai').value = fromISODate(l?.ngay_nhac_lai);
   $('tvOverlay').classList.remove('hidden');
 }
 function closeTvModal(){ $('tvOverlay').classList.add('hidden'); }
@@ -1532,7 +1550,7 @@ async function saveTuVan(){
   const body={
     name, phone, email:$('tvEmail').value.trim()||null, link_fb:$('tvFb').value.trim()||null,
     country, muc_dich, note:$('tvNote').value.trim()||null, status:$('tvStatus').value,
-    ngay_nhac_lai: $('tvNgayNhacLai').value||null
+    ngay_nhac_lai: toISODate($('tvNgayNhacLai').value)||null
   };
   const id=$('tvId').value;
   const btn=$('tvSaveBtn'); btn.disabled=true;
@@ -1568,7 +1586,7 @@ async function loadHoSo(){
   }catch(e){ if(e.message!=='401') toast('Lỗi tải hồ sơ: '+e.message,'err'); }
 }
 function hsPillClass(s){
-  return {'Đang xử lý':'pill-hs-dxl','Đã nộp':'pill-hs-dn','Chờ kết quả':'pill-hs-ckq','Đậu':'pill-hs-dau','Rớt':'pill-hs-rot','Hủy':'pill-hs-huy'}[s]||'pill-hs-dxl';
+  return {'Đang xử lý':'pill-hs-dxl','Đã nộp':'pill-hs-dn','Đậu':'pill-hs-dau','Rớt':'pill-hs-rot','Hủy':'pill-hs-huy'}[s]||'pill-hs-dxl';
 }
 function renderHoSo(){
   const st=$('fHsStatus').value, nuocId=$('fHsNuoc').value, dtId=$('fHsDoiTac').value, q=$('fHsSearch').value.toLowerCase().trim();
@@ -1590,7 +1608,7 @@ function renderHoSo(){
       <td><span class="pill stt-hoso ${hsPillClass(h.trang_thai)}">${esc(h.trang_thai)}</span></td>
       <td>${fmtVND(h.loi_nhuan)}</td>
       <td>${fmtDate(h.ngay_tra_kq)}</td>
-      <td class="td-actions"><button class="btn btn-g" onclick="openHoSoModal(${h.id})">Sửa</button></td>
+      <td class="td-actions"><button class="btn btn-p" onclick="openHoSoModal(${h.id})">Sửa</button></td>
     </tr>`).join('');
   applyRowLabels('hsBody');
 }
@@ -1603,7 +1621,7 @@ function onMoneyInput(el){
   updateHoSoTotals();
 }
 function hsStatusSelectClass(s){
-  return {'Đang xử lý':'st-dxl','Đã nộp':'st-dn','Chờ kết quả':'st-ckq','Đậu':'st-dau','Rớt':'st-rot','Hủy':'st-huy'}[s]||'st-dxl';
+  return {'Đang xử lý':'st-dxl','Đã nộp':'st-dn','Đậu':'st-dau','Rớt':'st-rot','Hủy':'st-huy'}[s]||'st-dxl';
 }
 function updateHoSoStatusColor(){
   const sel=$('hoTrangThai');
@@ -1614,7 +1632,7 @@ function openHoSoModal(id, prefill){
   $('hoModalTitle').textContent = h ? 'Sửa hồ sơ' : 'Đăng ký hồ sơ mới';
   $('hoId').value = h?.id||'';
   $('hoNguonTuVan').value = h?.nguon_tu_van_id || prefill?.nguon_tu_van_id || '';
-  $('hoNgay').value = h?.ngay || new Date().toISOString().slice(0,10);
+  $('hoNgay').value = fromISODate(h?.ngay || new Date().toISOString().slice(0,10));
   $('hoTruongNhom').value = h?.truong_nhom_id||'';
   $('hoTenKhach').value = h ? h.ten_khach : (prefill?.ten_khach||'');
   $('hoSdtKhach').value = h ? (h.sdt_khach||'') : (prefill?.sdt_khach||'');
@@ -1634,8 +1652,8 @@ function openHoSoModal(id, prefill){
   // "Thư đi" không còn hiển thị trên UI (đã gộp vào "Phí ship") — giữ số cũ của hồ sơ này
   // (nếu có, từ trước khi đổi giao diện) để Tổng chi/Lợi nhuận vẫn đúng, không hiện cho sửa.
   $('hoChiThuDiLegacy').value = h?.chi_thu_di||0;
-  $('hoNgayNop').value = h?.ngay_nop||'';
-  $('hoNgayTraKq').value = h?.ngay_tra_kq||'';
+  $('hoNgayNop').value = fromISODate(h?.ngay_nop);
+  $('hoNgayTraKq').value = fromISODate(h?.ngay_tra_kq);
   $('hoTrangThai').value = h?.trang_thai||'Đang xử lý';
   updateHoSoStatusColor();
   $('hoNote').value = h ? (h.note||'') : (prefill?.note||'');
@@ -1671,7 +1689,7 @@ async function saveHoSo(){
   let soLuong = parseInt($('hoSoLuong').value,10)||1;
   if(soLuong<1) soLuong=1;
   const body={
-    ngay: $('hoNgay').value || new Date().toISOString().slice(0,10),
+    ngay: toISODate($('hoNgay').value) || new Date().toISOString().slice(0,10),
     truong_nhom_id: $('hoTruongNhom').value||null,
     ten_khach, sdt_khach: $('hoSdtKhach').value.trim()||null, dia_chi: $('hoDiaChi').value.trim()||null,
     nuoc_id: Number(nuoc_id), muc_dich_id: Number(muc_dich_id), doi_tac_id: Number(doi_tac_id),
@@ -1681,7 +1699,7 @@ async function saveHoSo(){
     chi_le_phi_lanh_su: unformatMoney($('hoChiLanhSu').value), chi_doi_tac_ctv: unformatMoney($('hoChiDoiTacCtv').value),
     chi_thu_ve: unformatMoney($('hoChiThuVe').value),
     chi_phi_khac: unformatMoney($('hoChiPhiKhac').value),
-    ngay_nop: $('hoNgayNop').value||null, ngay_tra_kq: $('hoNgayTraKq').value||null,
+    ngay_nop: toISODate($('hoNgayNop').value)||null, ngay_tra_kq: toISODate($('hoNgayTraKq').value)||null,
     trang_thai: $('hoTrangThai').value, note: $('hoNote').value.trim()||null,
     nguon_tu_van_id: $('hoNguonTuVan').value||null
   };
@@ -1691,6 +1709,8 @@ async function saveHoSo(){
     if(id) await api('ho_so?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
     else await api('ho_so',{method:'POST',body:JSON.stringify(body)});
     closeHoSoModal(); loadHoSo(); toast(id?'Đã cập nhật hồ sơ':'Đã thêm hồ sơ');
+    // Sửa hồ sơ có thể đổi Lợi nhuận/Ngày trả KQ -> làm mới luôn tab Tài chính nếu đang mở
+    if(!$('tab-taichinh').classList.contains('hidden')) loadTaiChinh();
   }catch(e){ toast('Lỗi lưu hồ sơ: '+e.message,'err'); }
   finally{ btn.disabled=false; }
 }
@@ -1719,8 +1739,8 @@ function renderXlps(){
 async function addXlps(){
   const hoId = $('hoId').value;
   if(!hoId){ toast('Lưu hồ sơ trước khi thêm dòng xử lý phát sinh','err'); return; }
-  const noi_dung=$('xlpsNoiDung').value.trim(), han_chot=$('xlpsHanChot').value;
-  if(!noi_dung || !han_chot){ toast('Nhập Nội dung và Hạn chốt','err'); return; }
+  const noi_dung=$('xlpsNoiDung').value.trim(), han_chot=toISODate($('xlpsHanChot').value);
+  if(!noi_dung || !han_chot){ toast('Nhập Nội dung và Hạn chốt (đúng định dạng dd/mm/yyyy)','err'); return; }
   try{
     await api('ho_so_xu_ly_phat_sinh',{method:'POST',body:JSON.stringify({
       ho_so_id:Number(hoId), noi_dung, han_chot, ghi_chu:$('xlpsGhiChu').value.trim()||null, trang_thai:$('xlpsTrangThai').value
@@ -1862,12 +1882,12 @@ function tcSetRange(type){
   else if(type==='quynay'){ const q=Math.floor(now.getMonth()/3); from=fmt(new Date(now.getFullYear(),q*3,1)); to=fmt(now); }
   else if(type==='namnay'){ from=fmt(new Date(now.getFullYear(),0,1)); to=fmt(now); }
   else return;
-  $('tcFrom').value=from; $('tcTo').value=to;
+  $('tcFrom').value=fromISODate(from); $('tcTo').value=fromISODate(to);
   loadTaiChinh();
 }
 async function loadTaiChinh(){
-  const from = $('tcFrom').value || tcDefaultFrom();
-  const to = $('tcTo').value || tcToday();
+  const from = toISODate($('tcFrom').value) || tcDefaultFrom();
+  const to = toISODate($('tcTo').value) || tcToday();
   try{
     const [hoSoRows, chiRows] = await Promise.all([
       api('ho_so?select=id,ten_khach,ngay_tra_kq,loi_nhuan,danh_muc_nuoc(ten)&trang_thai=eq.'+encodeURIComponent('Đậu')+'&ngay_tra_kq=gte.'+from+'&ngay_tra_kq=lte.'+to+'&order=ngay_tra_kq.desc'),
@@ -1897,8 +1917,8 @@ function renderTaiChinh(thuArr, chiArr){
       <td>${esc(r.noi_dung)}</td>
       <td style="color:${r.loai==='Thu'?'var(--ok)':'var(--err)'};font-weight:700">${r.loai==='Thu'?'':'-'}${fmtVND(r.so_tien)}</td>
       <td class="td-actions">${r.loai==='Thu'
-        ? '<span class="hint" style="padding:0">(Từ Hồ sơ)</span>'
-        : `<button class="btn btn-g" onclick="openChiModal(${r.ref_id})">Sửa</button><button class="btn btn-d" onclick="delChi(${r.ref_id})">Xóa</button>`}</td>
+        ? `<button class="btn btn-p" onclick="openHoSoModal(${r.ref_id})">Chi tiết</button>`
+        : `<button class="btn btn-p" onclick="openChiModal(${r.ref_id})">Sửa</button><button class="btn btn-d" onclick="delChi(${r.ref_id})">Xóa</button>`}</td>
     </tr>`).join('');
   applyRowLabels('tcBody');
 }
@@ -1907,7 +1927,7 @@ function openChiModal(id){
   const c = id ? KHOAN_CHI.find(x=>x.id===id) : null;
   $('chiModalTitle').textContent = c ? 'Sửa khoản chi' : 'Thêm khoản chi';
   $('chiId').value = c?.id||'';
-  $('chiNgay').value = c?.ngay || tcToday();
+  $('chiNgay').value = fromISODate(c?.ngay || tcToday());
   $('chiNoiDung').value = c?.noi_dung||'';
   $('chiSoTien').value = formatMoney(c?.so_tien);
   $('chiGhiChu').value = c?.ghi_chu||'';
@@ -1915,9 +1935,9 @@ function openChiModal(id){
 }
 function closeChiModal(){ $('chiOverlay').classList.add('hidden'); }
 async function saveChi(){
-  const ngay=$('chiNgay').value, noi_dung=$('chiNoiDung').value.trim();
+  const ngay=toISODate($('chiNgay').value), noi_dung=$('chiNoiDung').value.trim();
   const so_tien=unformatMoney($('chiSoTien').value);
-  if(!ngay){ toast('Chọn ngày chi','err'); return; }
+  if(!ngay){ toast('Nhập ngày chi đúng định dạng dd/mm/yyyy','err'); return; }
   if(!noi_dung){ toast('Nhập nội dung chi','err'); return; }
   if(!so_tien || so_tien<=0){ toast('Số tiền phải lớn hơn 0','err'); return; }
   const body={ ngay, noi_dung, so_tien, ghi_chu: $('chiGhiChu').value.trim()||null };
