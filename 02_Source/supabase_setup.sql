@@ -68,9 +68,7 @@ drop policy if exists "auth_all_categories" on public.categories;
 create policy "auth_all_categories" on public.categories
   for all to authenticated using (true) with check (true);
 
--- 7. Danh mục mẫu
-insert into public.categories (name)
-values ('Kinh nghiệm xin visa'), ('Tin tức'), ('Khuyến mãi')
-on conflict (name) do nothing;
+-- 7. Danh mục bài viết: KHÔNG insert dữ liệu mẫu ở đây (2026-08, xem CLAUDE.md mục 10) —
+--    tự thêm bằng tay qua admin.html (tab "Danh mục") khi cần danh mục thật.
 
 -- ✅ Xong! Tiếp theo: Authentication → Users → Add user để tạo tài khoản admin.

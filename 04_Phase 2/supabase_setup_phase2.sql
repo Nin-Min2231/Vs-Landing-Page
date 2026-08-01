@@ -28,28 +28,10 @@ create table if not exists public.danh_muc_truong_nhom (
   active  boolean not null default true
 );
 
--- Dữ liệu khởi tạo — lấy từ Quan Ly Khach Hang.xlsx, đã chuẩn hoá
--- (loại "CMTC" khỏi danh sách Nước vì đây là mã mục đích bị nhập nhầm cột)
-insert into public.danh_muc_nuoc (ten) values
-  ('Nhật Bản'),('Hàn Quốc'),('Úc'),('Đài Loan'),('Mỹ'),
-  ('Pháp'),('Thái Lan'),('Đức'),('Anh'),('Canada'),
-  ('Trung Quốc'),('New Zealand')
-on conflict (ten) do nothing;
-
--- Danh sách "Mục đích" — PM đã tự chỉnh sửa lại giá trị khởi tạo cuối cùng trong
--- Phase2_Dac_ta.xlsx (sheet 5_Cai_dat_chung), thay cho đề xuất gom nhóm ban đầu của Claude
-insert into public.danh_muc_muc_dich (ten) values
-  ('Nộp giúp'),('Du học'),('Đoàn tụ'),('Làm việc'),('Du lịch'),
-  ('Công tác'),('Thăm thân'),('Thăm bạn'),('Chăm đẻ')
-on conflict (ten) do nothing;
-
--- Trưởng nhóm — PM đã cung cấp danh sách tên thật (sheet 5_Cai_dat_chung), đây là TÊN NGƯỜI,
--- khác với "Đại lý ủy thác" (đơn vị/công ty) ở mục B bên dưới.
--- PM xác nhận: "Ms. Quỳnh Vi/ Hoanh/ Phuc Trang" là 1 người (nhiều tên gọi khác nhau), không phải 3 người.
-insert into public.danh_muc_truong_nhom (ten) values
-  ('Thủy JP'),('Ms. Trang VJP'),('Ms. Quỳnh Hoa'),('Ms. Thùy Dương'),
-  ('Ms. Quỳnh Vi / Hoanh / Phuc Trang')
-on conflict (ten) do nothing;
+-- KHÔNG insert dữ liệu khởi tạo ở đây (2026-08, xem CLAUDE.md mục 10) — danh sách Nước đến/
+-- Mục đích/Đối tác thật do người dùng tự nhập qua admin.html (tab "Cài đặt chung") khi cần.
+-- (Trước 2026-08 file này từng insert sẵn 12 Nước/9 Mục đích/5 Đối tác mẫu — đã bỏ vì người
+-- dùng đã tự quản lý dữ liệu thật trên product, chạy lại SQL không nên tự chèn lại.)
 
 -- ============================================================
 -- B. ĐẠI LÝ ỦY THÁC (Master) — Màn hình "Đại lý ủy thác"
@@ -136,7 +118,9 @@ create table if not exists public.ho_so (
   -- TIẾN ĐỘ
   ngay_nop        date,
   ngay_tra_kq     date,
-  trang_thai      text not null default 'Đang xử lý',  -- Đang xử lý/Đã nộp/Chờ kết quả/Đậu/Rớt/Hủy
+  trang_thai      text not null default 'Đang xử lý',  -- Đang xử lý/Đã nộp/Đậu/Rớt/Hủy
+  -- (2026-08) Đã bỏ trạng thái "Chờ kết quả" khỏi UI admin.html — cột này vẫn TEXT tự do nên
+  -- không cần ALTER gì thêm, chỉ không còn giá trị mới nào được tạo ra với trạng thái đó nữa.
   -- (Đã BỎ cột ngay_nhac_lai ở đây theo xác nhận của PM — "Ngày nhắc tư vấn lại" chỉ áp dụng
   --  cho bảng leads/Tư vấn, không áp dụng cho Hồ sơ. Xem mục D bên dưới.)
   note            text
@@ -317,7 +301,7 @@ order by 1;
 create or replace view public.v_ho_so_dang_xu_ly as
 select count(*) as so_luong
 from public.ho_so
-where trang_thai in ('Đang xử lý','Đã nộp','Chờ kết quả');
+where trang_thai in ('Đang xử lý','Đã nộp');
 
 -- PM xác nhận: nhắc lại CHỈ áp dụng cho Tư vấn (leads), không áp dụng cho Hồ sơ
 create or replace view public.v_tu_van_can_nhac_lai as
