@@ -6,6 +6,12 @@
 <title>Trang quản trị – Top Visa</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="icon" type="image/png" href="assets/favicon.png">
+<!-- PWA: cho phép "Cài đặt" trang admin như 1 ứng dụng trên điện thoại/máy tính -->
+<link rel="manifest" href="admin-manifest.webmanifest">
+<meta name="theme-color" content="#0F1E3D">
+<link rel="apple-touch-icon" href="assets/logo.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TopVisa Admin">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -98,13 +104,17 @@ td select{width:auto;font-size:13px;padding:5px 8px}
   tr{display:block;background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(15,30,61,.08);
     border:1px solid var(--bd);margin-bottom:12px;padding:12px 14px}
   tr:hover td{background:none}
-  td{display:block;border:none;padding:6px 0;border-bottom:1px dashed var(--bd);font-size:14px}
+  td{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:none;padding:6px 0;
+    border-bottom:1px dashed var(--bd);font-size:14px}
   td:last-child{border-bottom:none;padding-bottom:0}
   td:first-child{padding-top:0}
   td[data-label="#"]{display:none}
-  td::before{content:attr(data-label);display:block;font-size:11px;font-weight:700;
-    color:var(--mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
+  td::before{content:attr(data-label) ":";font-weight:700;color:var(--tx);flex-shrink:0}
   td:not([data-label])::before{content:none}
+  td b,td strong{font-weight:600}
+  /* Cột "Thao tác" — không cần nhãn, chỉ canh giữa nút trong thẻ */
+  td[data-label="Thao tác"]{justify-content:center}
+  td[data-label="Thao tác"]::before{content:none}
 }
 
 /* modal */
@@ -153,7 +163,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
    copy mẫu này sang 1 dialog khác. ===== */
 .modal.dlg-standard{display:flex;flex-direction:column;padding:0;max-height:92vh}
 .dlg-head{display:flex;align-items:center;justify-content:space-between;
-  padding:18px 24px;border-bottom:1px solid var(--bd);flex-shrink:0}
+  padding:6px 24px;border-bottom:1px solid var(--bd);flex-shrink:0}
 .dlg-head h3{color:#0752A3;font-size:18px;flex:1;text-align:center;margin:0}
 .dlg-head .modal-x{background:none;border:none;font-size:22px;line-height:1;cursor:pointer;
   color:#050F2B;flex-shrink:0;width:40px;height:40px;
@@ -163,9 +173,13 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .modal.dlg-standard .modal-actions.dlg-foot{flex-shrink:0;padding:14px 24px;
   border-top:1px solid var(--bd);margin:0}
 @media(max-width:480px){
-  .dlg-head{padding:14px 16px}
+  .dlg-head{padding:6px 16px}
   .dlg-body{padding:14px 16px}
   .modal.dlg-standard .modal-actions.dlg-foot{padding:12px 16px}
+  /* Dialog trên điện thoại: badge "Bắt buộc" đổi thành dấu * đỏ cho gọn
+     (!important vì rule .req-badge gốc định nghĩa sau đoạn này trong file, specificity bằng nhau) */
+  .req-badge{background:none!important;padding:0!important;margin-left:3px;color:transparent!important;font-size:0!important}
+  .req-badge::after{content:"*";color:#DC2626;font-size:15px;font-weight:700}
 }
 
 .dlg-section{background:#CCE3F0;border:1px solid #D5D9E0;border-radius:8px;
@@ -191,6 +205,14 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .status-select.st-rot{background:#FEE2E2}
 .status-select.st-huy{background:#F1F5F9}
 
+/* Chiều rộng cố định cho các nhóm trạng thái (đo bằng canvas lúc tải trang, xem
+   computeStatusWidths()) — áp cho cả pill lẫn select cùng 1 nhóm để không bị lệch nhau. */
+.stt-tuvan{width:var(--w-tuvan,92px)}
+.stt-hoso{width:var(--w-hoso,140px)}
+.stt-xlps{width:var(--w-xlps,120px)}
+.stt-doitac{width:var(--w-doitac,140px)}
+.pill.stt-tuvan,.pill.stt-hoso,.pill.stt-xlps,.pill.stt-doitac{text-align:center}
+
 .pill-xl-dxl{background:var(--pl);color:var(--p)}
 .pill-xl-ht{background:#DCFCE7;color:var(--ok)}
 .pill-xl-td{background:#FEF3C7;color:var(--warn)}
@@ -198,8 +220,6 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 
 .pill-dt-on{background:#DCFCE7;color:var(--ok)}
 .pill-dt-off{background:#F1F5F9;color:var(--mut)}
-
-tr.danger td{background:#FEE2E2}
 
 .cat-block{background:#fff;border-radius:var(--r);border-top:4px solid var(--bd);padding:16px 18px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
 .cat-block h3{font-size:16px;margin-bottom:10px}
@@ -511,7 +531,7 @@ tr.danger td{background:#FEE2E2}
           <div class="dlg-field"><label>Nước đến <span class="req-badge">Bắt buộc</span></label><select id="tvCountry"></select></div>
           <div class="dlg-field"><label>Mục đích <span class="req-badge">Bắt buộc</span></label><select id="tvMucDich"></select></div>
           <div class="dlg-field"><label>Trạng thái tư vấn</label>
-            <select id="tvStatus"><option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option></select>
+            <select id="tvStatus" class="stt-tuvan"><option>Mới</option><option>Đã gọi</option><option>Chốt</option><option>Hủy</option></select>
           </div>
           <div class="dlg-field"><label>Ngày nhắc lại</label><input type="date" id="tvNgayNhacLai"></div>
         </div>
@@ -564,7 +584,7 @@ tr.danger td{background:#FEE2E2}
           <div class="dlg-field"><label>Ngày nộp hồ sơ</label><input type="date" id="hoNgayNop"></div>
           <div class="dlg-field"><label>Ngày trả KQ</label><input type="date" id="hoNgayTraKq"></div>
           <div class="dlg-field"><label>Trạng thái hồ sơ</label>
-            <select id="hoTrangThai" class="status-select" onchange="updateHoSoStatusColor()">
+            <select id="hoTrangThai" class="status-select stt-hoso" onchange="updateHoSoStatusColor()">
               <option>Đang xử lý</option><option>Đã nộp</option><option>Chờ kết quả</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
             </select>
           </div>
@@ -628,7 +648,7 @@ tr.danger td{background:#FEE2E2}
             <input type="text" id="xlpsNoiDung" placeholder="Nội dung">
             <input type="date" id="xlpsHanChot">
             <input type="text" id="xlpsGhiChu" placeholder="Ghi chú">
-            <select id="xlpsTrangThai"><option>Đang xử lý</option><option>Hủy</option><option>Tạm dừng</option><option>Hoàn thành</option></select>
+            <select id="xlpsTrangThai" class="stt-xlps"><option>Đang xử lý</option><option>Hủy</option><option>Tạm dừng</option><option>Hoàn thành</option></select>
             <button class="btn btn-p" onclick="addXlps()">+ Thêm</button>
           </div>
         </div>
@@ -665,7 +685,7 @@ tr.danger td{background:#FEE2E2}
           <div class="dlg-field"><label>Tên người đại diện</label><input type="text" id="dtTenDaiDien"></div>
           <div class="dlg-field"><label>SĐT liên hệ</label><input type="tel" id="dtSdt"></div>
           <div class="dlg-field"><label>Trạng thái hợp tác</label>
-            <select id="dtTrangThai"><option>Đang hợp tác</option><option>Ngừng hợp tác</option></select>
+            <select id="dtTrangThai" class="stt-doitac"><option>Đang hợp tác</option><option>Ngừng hợp tác</option></select>
           </div>
         </div>
         <div class="dlg-row">
@@ -775,6 +795,25 @@ function applyRowLabels(tbodyId){
   });
 }
 
+/* Đo bề ngang chữ dài nhất trong mỗi nhóm trạng thái (bằng canvas) để đặt làm chiều rộng
+   cố định cho pill/select trạng thái tương ứng — tránh bị nhảy kích thước khi đổi trạng thái. */
+function computeStatusWidths(){
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.font = "700 13px 'Be Vietnam Pro', system-ui, sans-serif";
+  const groups = {
+    tuvan:  ['Mới','Đã gọi','Chốt','Hủy'],
+    hoso:   ['Đang xử lý','Đã nộp','Chờ kết quả','Đậu','Rớt','Hủy'],
+    xlps:   ['Đang xử lý','Hủy','Tạm dừng','Hoàn thành'],
+    doitac: ['Đang hợp tác','Ngừng hợp tác']
+  };
+  for(const key in groups){
+    const maxW = Math.max(...groups[key].map(t=>ctx.measureText(t).width));
+    document.documentElement.style.setProperty('--w-'+key, Math.ceil(maxW+56)+'px');
+  }
+}
+computeStatusWidths();
+
 async function api(path, opts={}){
   const res = await fetch(SUPABASE_URL+'/rest/v1/'+path, {
     ...opts,
@@ -854,6 +893,11 @@ async function trySilentLogin(){
 }
 trySilentLogin();
 
+/* ==================== PWA: đăng ký service worker để có thể "Cài đặt" ==================== */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw-admin.js').catch(()=>{}); });
+}
+
 /* ==================== TAB ==================== */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
@@ -899,8 +943,8 @@ function renderLeads(){
       <td style="max-width:220px">${esc(l.note||'–')}</td>
       <td>
         <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="pill ${pillClass(l.status)}">${esc(l.status)}</span>
-          <select onchange="updateLeadStatus(${l.id},this.value)" style="width:auto">
+          <span class="pill stt-tuvan ${pillClass(l.status)}">${esc(l.status)}</span>
+          <select onchange="updateLeadStatus(${l.id},this.value)" class="stt-tuvan">
             ${['Mới','Đã gọi','Chốt','Hủy'].map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('')}
           </select>
         </span>
@@ -1056,6 +1100,7 @@ function renderSettings(){
         <div class="cat-item-actions">
           <button class="btn btn-g" onclick="openRenameModal('${type}',${x.id})">Sửa</button>
           <button class="btn btn-g" onclick="toggleDanhMuc('${type}',${x.id},${!x.active})">${x.active?'Ẩn':'Hiện'}</button>
+          <button class="btn btn-d" onclick="deleteDanhMuc('${type}',${x.id})">Xóa</button>
         </div>
       </div>`).join('') : '<div class="hint">Chưa có mục nào</div>';
   });
@@ -1074,6 +1119,47 @@ async function toggleDanhMuc(type,id,active){
     await api(danhMucTable(type)+'?id=eq.'+id,{method:'PATCH',body:JSON.stringify({active}),prefer:'return=minimal'});
     loadDanhMuc(); toast(active?'Đã hiện lại':'Đã ẩn');
   }catch(e){ toast('Lỗi: '+e.message,'err'); }
+}
+/* Kiểm tra 1 mục danh mục có đang được tham chiếu ở Hồ sơ (FK) hoặc Tư vấn (cột text
+   country/muc_dich lưu theo TÊN, không phải FK) hay không, trước khi cho xóa hẳn. */
+async function isDanhMucInUse(type, item){
+  const enc = encodeURIComponent(item.ten);
+  if(type==='nuoc'){
+    const [hs, ld] = await Promise.all([
+      api('ho_so?nuoc_id=eq.'+item.id+'&select=id&limit=1'),
+      api('leads?country=eq.'+enc+'&select=id&limit=1')
+    ]);
+    return (hs&&hs.length>0) || (ld&&ld.length>0);
+  }
+  if(type==='mucdich'){
+    const [hs, ld] = await Promise.all([
+      api('ho_so?muc_dich_id=eq.'+item.id+'&select=id&limit=1'),
+      api('leads?muc_dich=eq.'+enc+'&select=id&limit=1')
+    ]);
+    return (hs&&hs.length>0) || (ld&&ld.length>0);
+  }
+  if(type==='truongnhom'){
+    const hs = await api('ho_so?truong_nhom_id=eq.'+item.id+'&select=id&limit=1');
+    return hs && hs.length>0;
+  }
+  return false;
+}
+async function deleteDanhMuc(type,id){
+  const item = danhMucArr(type).find(x=>x.id===id);
+  if(!item) return;
+  if(!confirm(`Xóa "${item.ten}"? Không thể hoàn tác.`)) return;
+  try{
+    if(await isDanhMucInUse(type,item)){
+      toast('Dữ liệu đang được dùng nên không thể xóa','err'); return;
+    }
+    await api(danhMucTable(type)+'?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadDanhMuc(); toast('Đã xóa');
+  }catch(e){
+    const msg=e.message.toLowerCase();
+    if(msg.includes('foreign key')||msg.includes('violates')||msg.includes('23503'))
+      toast('Dữ liệu đang được dùng nên không thể xóa','err');
+    else toast('Lỗi xóa: '+e.message,'err');
+  }
 }
 function openRenameModal(type,id){
   const cur = danhMucArr(type).find(x=>x.id===id);
@@ -1121,7 +1207,7 @@ function renderDoiTac(){
       <td><b>${esc(d.ten_cong_ty)}</b></td>
       <td>${esc(d.ten_dai_dien||'–')}</td>
       <td>${d.sdt_lien_he?`<a href="tel:${esc(d.sdt_lien_he)}">${esc(d.sdt_lien_he)}</a>`:'–'}</td>
-      <td><span class="pill ${d.trang_thai==='Đang hợp tác'?'pill-dt-on':'pill-dt-off'}">${esc(d.trang_thai)}</span></td>
+      <td><span class="pill stt-doitac ${d.trang_thai==='Đang hợp tác'?'pill-dt-on':'pill-dt-off'}">${esc(d.trang_thai)}</span></td>
       <td class="td-actions">
         <button class="btn btn-g" onclick="openDoiTacModal(${d.id})">Sửa</button>
         <button class="btn btn-g" onclick="openDoiTacFeeModal(${d.id})">Bảng phí</button>
@@ -1229,7 +1315,7 @@ function renderTuVan(){
       <td>${l.phone?`<a href="tel:${esc(l.phone)}">${esc(l.phone)}</a>`:'–'}</td>
       <td>${esc(l.country||'–')}</td>
       <td>${esc(l.muc_dich||'–')}</td>
-      <td><span class="pill ${pillClass(l.status)}">${esc(l.status)}</span></td>
+      <td><span class="pill stt-tuvan ${pillClass(l.status)}">${esc(l.status)}</span></td>
       <td>${fmtDate(l.ngay_nhac_lai)}</td>
       <td class="td-actions"><button class="btn btn-g" onclick="openTvModal(${l.id})">Sửa</button></td>
     </tr>`).join('');
@@ -1316,7 +1402,7 @@ function renderHoSo(){
       <td>${esc(h.danh_muc_nuoc?.ten||'–')}</td>
       <td>${esc(h.danh_muc_muc_dich?.ten||'–')}</td>
       <td>${doiTacCellLabel(h.doi_tac)}</td>
-      <td><span class="pill ${hsPillClass(h.trang_thai)}">${esc(h.trang_thai)}</span></td>
+      <td><span class="pill stt-hoso ${hsPillClass(h.trang_thai)}">${esc(h.trang_thai)}</span></td>
       <td>${fmtVND(h.loi_nhuan)}</td>
       <td>${fmtDate(h.ngay_tra_kq)}</td>
       <td class="td-actions"><button class="btn btn-g" onclick="openHoSoModal(${h.id})">Sửa</button></td>
@@ -1336,7 +1422,7 @@ function hsStatusSelectClass(s){
 }
 function updateHoSoStatusColor(){
   const sel=$('hoTrangThai');
-  sel.className = 'status-select '+hsStatusSelectClass(sel.value);
+  sel.className = 'status-select stt-hoso '+hsStatusSelectClass(sel.value);
 }
 function openHoSoModal(id, prefill){
   const h = id ? HO_SO.find(x=>x.id===id) : null;
@@ -1438,7 +1524,7 @@ function renderXlps(){
       <td>${esc(x.noi_dung)}</td>
       <td>${fmtDate(x.han_chot)}</td>
       <td>${esc(x.ghi_chu||'–')}</td>
-      <td><select onchange="updateXlpsStatus(${x.id},this.value)">
+      <td><select onchange="updateXlpsStatus(${x.id},this.value)" class="stt-xlps">
         ${['Đang xử lý','Hủy','Tạm dừng','Hoàn thành'].map(s=>`<option ${s===x.trang_thai?'selected':''}>${s}</option>`).join('')}
       </select></td>
       <td><button class="btn btn-d" onclick="delXlps(${x.id})">Xóa</button></td>
@@ -1564,9 +1650,9 @@ function renderDashboard(byMonth, dangXuLy, nhacLai, xlps7){
 
   $('dashXlpsEmpty').classList.toggle('hidden', xlps7.length>0);
   $('dashXlpsBody').innerHTML = xlps7.map(x=>`
-    <tr class="${x.qua_han||x.den_han?'danger':''}">
+    <tr>
       <td>${esc(x.ten_khach)}</td><td>${esc(x.noi_dung)}</td>
-      <td>${fmtDate(x.han_chot)}${x.qua_han?' (quá hạn)':x.den_han?' (hôm nay)':''}</td>
+      <td>${fmtDate(x.han_chot)}${x.qua_han?' <span style="color:var(--err);font-weight:700">(Quá hạn)</span>':x.den_han?' <span style="color:var(--err);font-weight:700">(Cần xử lý hôm nay)</span>':''}</td>
     </tr>`).join('');
   applyRowLabels('dashXlpsBody');
 

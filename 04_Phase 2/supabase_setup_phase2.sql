@@ -92,12 +92,16 @@ create table if not exists public.ho_so (
   -- (2026-08) Nhãn hiển thị trên UI đổi từ "Trưởng nhóm" → "Đối tác" theo yêu cầu mới nhất —
   -- tên bảng/cột kỹ thuật GIỮ NGUYÊN danh_muc_truong_nhom / truong_nhom_id để không phải sửa FK,
   -- giống cách xử lý doi_tac/doi_tac_id → "Đại lý ủy thác" ở mục B.
-  truong_nhom_id        bigint references public.danh_muc_truong_nhom(id) on delete set null,
+  -- (2026-08) Đổi on delete set null -> restrict: màn Cài đặt chung giờ cho phép XÓA HẲN 1 mục
+  -- danh mục nếu không còn hồ sơ nào tham chiếu (admin.html tự kiểm tra trước khi xoá) — đổi sang
+  -- restrict để CSDL cũng chặn (phòng trường hợp check ở client bị bỏ qua/lỗi), tránh hồ sơ cũ bị
+  -- mất thông tin do bị set về null âm thầm.
+  truong_nhom_id        bigint references public.danh_muc_truong_nhom(id) on delete restrict,
   ten_khach             text not null,   -- khách chính / người đại diện nhóm
   sdt_khach             text,
   dia_chi               text,
-  nuoc_id               bigint references public.danh_muc_nuoc(id) on delete set null,
-  muc_dich_id           bigint references public.danh_muc_muc_dich(id) on delete set null,
+  nuoc_id               bigint references public.danh_muc_nuoc(id) on delete restrict,
+  muc_dich_id           bigint references public.danh_muc_muc_dich(id) on delete restrict,
   -- PM xác nhận: BẮT BUỘC phải chọn 1 Đại lý ủy thác cho mỗi hồ sơ (đổi từ đề xuất ban đầu
   -- là được để trống cho "khách lẻ"). "on delete restrict" để không cho xoá 1 đại lý nếu đang
   -- có hồ sơ tham chiếu tới (tránh hồ sơ cũ bị mất thông tin đại lý ủy thác).
@@ -164,6 +168,20 @@ alter table public.ho_so add column tong_chi numeric generated always as
 alter table public.ho_so add column loi_nhuan numeric generated always as
   ((thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip)
    - ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac)) stored;
+
+-- (2026-08) Đổi 3 khoá ngoại nuoc_id/muc_dich_id/truong_nhom_id từ "on delete set null" sang
+-- "on delete restrict" — màn Cài đặt chung giờ cho xoá hẳn 1 mục danh mục nếu không còn hồ sơ
+-- nào tham chiếu; đổi restrict để CSDL cũng chặn xoá (phòng client bỏ qua bước kiểm tra),
+-- tránh hồ sơ cũ bị mất thông tin do bị set về null âm thầm.
+alter table public.ho_so drop constraint if exists ho_so_nuoc_id_fkey;
+alter table public.ho_so add constraint ho_so_nuoc_id_fkey
+  foreign key (nuoc_id) references public.danh_muc_nuoc(id) on delete restrict;
+alter table public.ho_so drop constraint if exists ho_so_muc_dich_id_fkey;
+alter table public.ho_so add constraint ho_so_muc_dich_id_fkey
+  foreign key (muc_dich_id) references public.danh_muc_muc_dich(id) on delete restrict;
+alter table public.ho_so drop constraint if exists ho_so_truong_nhom_id_fkey;
+alter table public.ho_so add constraint ho_so_truong_nhom_id_fkey
+  foreign key (truong_nhom_id) references public.danh_muc_truong_nhom(id) on delete restrict;
 
 -- ============================================================
 -- C.1b BẢNG CON "THÀNH VIÊN NHÓM" — theo yêu cầu bổ sung của PM: 1 hồ sơ có thể đi

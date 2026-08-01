@@ -1,0 +1,15 @@
+{
+  "name": "Top Visa Admin",
+  "short_name": "TopVisa Admin",
+  "description": "Trang quản trị nội bộ Top Visa",
+  "start_url": "/admin.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F6F9FE",
+  "theme_color": "#0F1E3D",
+  "orientation": "any",
+  "icons": [
+    { "src": "assets/logo.png", "sizes": "240x240", "type": "image/png", "purpose": "any" },
+    { "src": "assets/logo.png", "sizes": "240x240", "type": "image/png", "purpose": "maskable" }
+  ]
+}

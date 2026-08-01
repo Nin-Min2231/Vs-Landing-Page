@@ -66,7 +66,7 @@ Với dialog quá đơn giản (1-2 field, chắc chắn không bao giờ dài h
 | `.dlg-row` | hàng chứa nhiều field | Grid tự chia cột, xuống dòng tự động khi hẹp |
 | `.dlg-field` | 1 field (label + input) | Đơn vị nhỏ nhất trong `.dlg-row` |
 | `.dlg-field-wide` | field cần rộng hơn (vd Địa chỉ, Ghi chú) | Chiếm gấp đôi chiều rộng 1 field thường |
-| `.req-badge` | thẻ nhỏ cạnh label | Badge đỏ "Bắt buộc" |
+| `.req-badge` | thẻ nhỏ cạnh label | Badge đỏ "Bắt buộc". Trên điện thoại (≤480px) tự đổi thành dấu `*` đỏ để gọn (xem `@media(max-width:480px)` — dùng `!important` vì rule gốc `.req-badge` định nghĩa SAU đoạn media query này trong file, cùng specificity nên phải chặn tay) |
 | `.money-input` | input số tiền cho nhập tay | Canh phải chữ, kết hợp hàm JS ở mục 5 |
 | `.money-readonly` | input tổng tiền chỉ đọc | Nền xanh lá `#E6F8EB`, canh phải, chữ đậm |
 | `.status-select` + `.st-*` | select trạng thái | Đổi màu nền theo giá trị đang chọn (xem mục 6) |
