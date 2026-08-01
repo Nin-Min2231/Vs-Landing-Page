@@ -17,7 +17,7 @@ Toàn bộ tài liệu thiết kế (yêu cầu, sitemap, wireframe, design syst
 | 3. Front-end (`index.html`) | ✅ Xong, đã gắn thông tin thật (logo, hotline, Zalo, Facebook, địa chỉ) + USP + slider đánh giá thật + section Tin tức |
 | 4. Back-end (Supabase) | ✅ **Đã chạy thật** — `SUPABASE_URL`/`SUPABASE_ANON_KEY` đã điền giá trị thật trong cả 2 file HTML |
 | 5. Kiểm thử | 🟡 Một phần — đã test thủ công, **chưa chạy đủ** 14 test case ở `01_Docs/05_Ke_hoach_du_an.md` |
-| 6. Deploy | ✅ **Đã lên Internet** — qua Cloudflare Workers (không phải Cloudflare Pages), tại `https://topvisa.nguyennc1357.workers.dev` |
+| 6. Deploy | ✅ **Đã lên Internet** — qua Cloudflare Workers, domain riêng **`https://topvisa5s.com`** (đã trỏ, 2026-08) — vẫn còn chạy song song ở `https://topvisa.nguyennc1357.workers.dev` (cùng 1 bản deploy) |
 
 Chi tiết đầy đủ + lịch sử quyết định kỹ thuật của lần deploy này: `01_Docs/08_Ban_giao_Claude_Code.md` ⭐ (đọc trước khi động vào deploy/Supabase). Checklist test case: `01_Docs/05_Ke_hoach_du_an.md` hoặc sheet `05_Kế hoạch` trong file Excel.
 
@@ -143,3 +143,45 @@ Không có test framework/build. Cách verify tối thiểu sau mỗi lần sử
 ## 11. Khi hoàn thành một thay đổi
 
 Cập nhật ngắn gọn checklist liên quan trong `README.md` (mục "Việc cần làm trước khi công khai") và, nếu ảnh hưởng tài liệu thiết kế, cập nhật luôn `.md` tương ứng trong `01_Docs/` + note lại trong file Excel (không bắt buộc format lại toàn bộ Excel mỗi lần, chỉ sửa nội dung liên quan).
+
+## 12. SEO — domain riêng `topvisa5s.com` + việc lên top Google (2026-08)
+
+**Bối cảnh:** 2026-08, phát hiện tìm `topvisa5s.com` trên Google không ra kết quả nào (kể cả
+`site:topvisa5s.com`) — **không phải do lỗi kỹ thuật hay bị chặn**, mà vì domain **chưa từng
+được Google thu thập dữ liệu (crawl) lần nào** — hoàn toàn bình thường với domain mới, chưa ai
+khai báo với Google. Đã kiểm tra kỹ: `robots.txt` (mặc định của Cloudflare) không chặn crawl,
+trang tải bình thường, có title/description đầy đủ.
+
+**Đã làm trong code (`02_Source/index.html` + 2 file mới):**
+- Thêm `<link rel="canonical" href="https://topvisa5s.com/">` — vì trang chạy được ở CẢ 2 nơi
+  (`topvisa5s.com` và `topvisa.nguyennc1357.workers.dev`, cùng 1 bản deploy) nên cần khai báo rõ
+  domain "chính" để Google không tính là 2 trang trùng nội dung.
+- Thêm đầy đủ Open Graph + Twitter Card (ảnh dùng tạm `assets/logo.png` 240×240 — nếu muốn ảnh
+  chia sẻ Facebook/Zalo đẹp hơn, nên có ảnh riêng tỉ lệ 1200×630).
+- Thêm structured data (JSON-LD) 2 khối: `TravelAgency` (tên/địa chỉ/SĐT công ty) và `FAQPage`
+  (lấy đúng y nguyên nội dung từ `<section id="faq">` — **sửa FAQ ở đâu thì phải sửa lại cả 2
+  chỗ cho khớp nhau**, Google phạt nếu structured data không khớp nội dung hiển thị).
+- Tạo mới `02_Source/robots.txt` (cho phép crawl toàn bộ, chặn riêng `/admin.html`, trỏ tới
+  sitemap) và `02_Source/sitemap.xml` (1 URL trang chủ) — trước đó 2 file này chưa từng tồn tại.
+
+**Việc CẦN người dùng tự làm (Claude Code không có quyền đăng nhập tài khoản Google của bạn):**
+1. Tạo tài khoản **Google Search Console** (search.google.com/search-console, miễn phí) → thêm
+   property `https://topvisa5s.com` → xác minh quyền sở hữu (cách dễ nhất: thẻ HTML đã có sẵn
+   `<meta name="google-site-verification">` do Google cấp — dán vào đầu `<head>` của
+   `index.html` rồi nhờ Claude Code deploy lại, hoặc dùng cách xác minh qua DNS trên Cloudflare).
+2. Sau khi xác minh xong: vào **Sitemaps** → khai báo `https://topvisa5s.com/sitemap.xml`.
+3. Vào **URL Inspection** → dán `https://topvisa5s.com/` → bấm **"Yêu cầu lập chỉ mục" (Request
+   Indexing)** — đây là bước nhanh nhất để Google bắt đầu thu thập dữ liệu (thường vài giờ–vài
+   ngày thay vì chờ tự nhiên vài tuần).
+4. Tạo **Google Business Profile** (business.google.com, miễn phí) cho "Top Visa" — rất quan
+   trọng cho SEO địa phương (Đà Nẵng), giúp lên Google Maps + "local pack" khi khách tìm "dịch vụ
+   visa Đà Nẵng". Cần xác minh (thường qua SĐT hoặc thư bưu điện).
+5. (Khuyến khích, không bắt buộc) Đăng ký thêm **Bing Webmaster Tools** — tự động import được
+   dữ liệu từ Google Search Console, tốn thêm 5 phút nhưng phủ thêm Bing/Cốc Cốc.
+6. (Khuyến khích) Xin/tạo backlink thật: link từ trang Facebook công ty, các hội nhóm/diễn đàn
+   liên quan — Google xếp hạng cao một phần dựa vào có trang khác trỏ link về, domain càng mới
+   càng cần việc này để được tin tưởng nhanh hơn.
+
+**Không tự bịa** số liệu (đánh giá/rating) hay tạo review giả để nhét vào structured data — vi
+phạm chính sách Google, có thể bị phạt (giảm hạng/ẩn khỏi kết quả). Nếu sau này có review thật
+kèm rating, mới cân nhắc thêm schema `AggregateRating`.

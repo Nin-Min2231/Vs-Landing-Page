@@ -49,7 +49,7 @@ Tìm chữ `[THAY_THẾ]` trong `index.html` (Ctrl+F) và thay bằng thông tin
 
 ## Đã đưa lên Internet (2026-07-30)
 
-Trang đang chạy thật tại `https://topvisa.nguyennc1357.workers.dev` (Supabase đã kết nối thật, form/admin hoạt động). Chi tiết đầy đủ về hạ tầng, quyết định kỹ thuật, và việc cần làm tiếp theo: xem `01_Docs/08_Ban_giao_Claude_Code.md`.
+Trang đang chạy thật tại domain riêng **`https://topvisa5s.com`** (vẫn còn chạy song song ở `https://topvisa.nguyennc1357.workers.dev`, cùng 1 bản deploy) — Supabase đã kết nối thật, form/admin hoạt động. Chi tiết đầy đủ về hạ tầng, quyết định kỹ thuật, và việc cần làm tiếp theo: xem `01_Docs/08_Ban_giao_Claude_Code.md`.
 
 ## Phase 2 — Quản lý khách hàng / Admin CRM (2026-07-31)
 
@@ -68,6 +68,19 @@ Trang đang chạy thật tại `https://topvisa.nguyennc1357.workers.dev` (Supa
 - [ ] Test theo checklist mục 8 trong file bàn giao trên với dữ liệu thật (đã tự kiểm tra được phần
       không cần đăng nhập: giao diện, định dạng tiền, 4 nút lọc nhanh, RLS chặn `anon` đọc/ghi
       `khoan_chi` — còn phần cần đăng nhập admin thật thì người dùng tự test).
+
+## SEO — đưa `topvisa5s.com` lên Google (2026-08-01)
+
+Phát hiện tìm `topvisa5s.com` trên Google không ra kết quả — do domain **chưa từng được Google
+thu thập dữ liệu**, không phải lỗi kỹ thuật. Đã tối ưu code (canonical, Open Graph, structured
+data, `robots.txt`, `sitemap.xml`) — chi tiết đầy đủ ở `CLAUDE.md` mục 12.
+
+- [x] Thêm canonical/Open Graph/Twitter Card/JSON-LD (TravelAgency + FAQPage) vào `index.html`.
+- [x] Tạo `02_Source/robots.txt` + `02_Source/sitemap.xml`.
+- [ ] **Cần bạn tự làm** (không thể làm thay vì cần đăng nhập tài khoản Google riêng của bạn):
+      tạo Google Search Console → xác minh `topvisa5s.com` → khai báo sitemap → "Yêu cầu lập chỉ
+      mục". Nên làm thêm Google Business Profile cho SEO địa phương Đà Nẵng. Xem hướng dẫn từng
+      bước ở `CLAUDE.md` mục 12.
 
 ## Muốn sửa nội dung?
 
