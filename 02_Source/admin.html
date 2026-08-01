@@ -134,15 +134,8 @@ td select{width:auto;font-size:13px;padding:5px 8px}
 /* ===== Phase 2 ===== */
 .modal-lg{max-width:920px}
 .modal-xl{max-width:1200px}
-.modal-2col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-@media(max-width:760px){.modal-2col{grid-template-columns:1fr}}
-.modal-2col h4{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
-.field-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:480px){.field-2{grid-template-columns:1fr}}
 input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 
-.subpanel{margin-top:20px;padding-top:16px;border-top:1.5px dashed var(--bd)}
-.subpanel h4{font-size:14px;margin-bottom:10px}
 .subrow-add{display:grid;grid-template-columns:2fr 1fr 1.4fr 1fr auto;gap:6px;margin-top:10px;align-items:end}
 @media(max-width:760px){.subrow-add{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.subrow-add{grid-template-columns:1fr}}
@@ -457,22 +450,35 @@ tr.danger td{background:#FEE2E2}
 
 <!-- ============ MODAL BÀI VIẾT ============ -->
 <div class="overlay hidden" id="postOverlay">
-  <div class="modal">
-    <h3 id="postModalTitle">Thêm bài viết</h3>
-    <input type="hidden" id="postId">
-    <label>Tiêu đề *</label>
-    <input type="text" id="postTitle">
-    <label>Danh mục</label>
-    <select id="postCat"></select>
-    <label>Link ảnh đại diện (URL)</label>
-    <input type="url" id="postImage" placeholder="https://... (tải ảnh lên postimages.org để lấy link miễn phí)">
-    <label>Nội dung</label>
-    <textarea id="postContent" rows="8" placeholder="Nội dung bài viết..."></textarea>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:14px">
-      <input type="checkbox" id="postPublished" checked style="width:auto"> Hiển thị công khai
-    </label>
-    <div class="modal-actions">
-      <button class="btn btn-g" onclick="closePostModal()">Hủy</button>
+  <div class="modal modal-lg dlg-standard">
+    <div class="dlg-head">
+      <h3 id="postModalTitle">Thêm bài viết</h3>
+      <button type="button" class="modal-x" onclick="closePostModal()" aria-label="Đóng">✕</button>
+    </div>
+
+    <div class="dlg-body">
+      <input type="hidden" id="postId">
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin bài viết</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Tiêu đề <span class="req-badge">Bắt buộc</span></label><input type="text" id="postTitle"></div>
+          <div class="dlg-field"><label>Danh mục</label><select id="postCat"></select></div>
+          <div class="dlg-field dlg-field-wide"><label>Link ảnh đại diện (URL)</label><input type="url" id="postImage" placeholder="https://... (tải ảnh lên postimages.org để lấy link miễn phí)"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input type="checkbox" id="postPublished" checked style="width:auto"> Hiển thị công khai
+        </label>
+      </div>
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Nội dung</div>
+        <textarea id="postContent" rows="8" placeholder="Nội dung bài viết..." style="width:100%"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closePostModal()">Đóng lại</button>
       <button class="btn btn-p" id="postSaveBtn" onclick="savePost()">Lưu bài viết</button>
     </div>
   </div>
@@ -643,18 +649,38 @@ tr.danger td{background:#FEE2E2}
 
 <!-- ============ MODAL ĐẠI LÝ ỦY THÁC ============ -->
 <div class="overlay hidden" id="dtOverlay">
-  <div class="modal">
-    <h3 id="dtModalTitle">Thêm đại lý ủy thác</h3>
-    <input type="hidden" id="dtId">
-    <label>Tên công ty *</label><input type="text" id="dtTenCongTy">
-    <label>Tên người đại diện</label><input type="text" id="dtTenDaiDien">
-    <label>SĐT liên hệ</label><input type="tel" id="dtSdt">
-    <label>Địa chỉ</label><input type="text" id="dtDiaChi">
-    <label>Trạng thái hợp tác</label>
-    <select id="dtTrangThai"><option>Đang hợp tác</option><option>Ngừng hợp tác</option></select>
-    <label>Ghi chú</label><textarea id="dtGhiChu" rows="2"></textarea>
-    <div class="modal-actions">
-      <button class="btn btn-g" onclick="closeDoiTacModal()">Hủy</button>
+  <div class="modal modal-lg dlg-standard">
+    <div class="dlg-head">
+      <h3 id="dtModalTitle">Thêm đại lý ủy thác</h3>
+      <button type="button" class="modal-x" onclick="closeDoiTacModal()" aria-label="Đóng">✕</button>
+    </div>
+
+    <div class="dlg-body">
+      <input type="hidden" id="dtId">
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin đại lý ủy thác</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Tên công ty <span class="req-badge">Bắt buộc</span></label><input type="text" id="dtTenCongTy"></div>
+          <div class="dlg-field"><label>Tên người đại diện</label><input type="text" id="dtTenDaiDien"></div>
+          <div class="dlg-field"><label>SĐT liên hệ</label><input type="tel" id="dtSdt"></div>
+          <div class="dlg-field"><label>Trạng thái hợp tác</label>
+            <select id="dtTrangThai"><option>Đang hợp tác</option><option>Ngừng hợp tác</option></select>
+          </div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Địa chỉ</label><input type="text" id="dtDiaChi"></div>
+        </div>
+      </div>
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Ghi chú</div>
+        <textarea id="dtGhiChu" rows="3" style="width:100%"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeDoiTacModal()">Đóng lại</button>
       <button class="btn btn-p" id="dtSaveBtn" onclick="saveDoiTac()">Lưu</button>
     </div>
   </div>
@@ -662,41 +688,59 @@ tr.danger td{background:#FEE2E2}
 
 <!-- ============ MODAL BẢNG PHÍ ĐẠI LÝ ============ -->
 <div class="overlay hidden" id="dtFeeOverlay">
-  <div class="modal modal-xl">
-    <h3>Bảng phí — <span id="dtFeeCompanyName"></span></h3>
-    <input type="hidden" id="dtFeeDoiTacId">
-    <div class="tbl-wrap" style="margin-bottom:12px">
-      <table>
-        <thead><tr><th>Nơi nộp</th><th>Diện visa</th><th>Mức phí</th><th>Áp dụng từ</th><th>Ghi chú</th></tr></thead>
-        <tbody id="dtFeeBody"></tbody>
-      </table>
-      <div class="empty hidden" id="dtFeeEmpty">Chưa có mức phí nào</div>
+  <div class="modal modal-xl dlg-standard">
+    <div class="dlg-head">
+      <h3>Bảng phí — <span id="dtFeeCompanyName"></span></h3>
+      <button type="button" class="modal-x" onclick="closeDoiTacFeeModal()" aria-label="Đóng">✕</button>
     </div>
-    <h4 style="font-size:13px;color:var(--mut);margin-bottom:4px;text-transform:uppercase">Thêm mức phí mới</h4>
-    <div class="subrow-add">
-      <input type="text" id="feeNoiNop" placeholder="Nơi nộp">
-      <input type="text" id="feeDienVisa" placeholder="Diện visa">
-      <input type="number" id="feeMuc" placeholder="Mức phí">
-      <input type="date" id="feeNgayApDung">
-      <button class="btn btn-p" onclick="addDoiTacPhi()">+ Thêm</button>
+
+    <div class="dlg-body">
+      <input type="hidden" id="dtFeeDoiTacId">
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Các mức phí đã có</div>
+        <div class="tbl-wrap" style="margin-bottom:12px">
+          <table>
+            <thead><tr><th>Nơi nộp</th><th>Diện visa</th><th>Mức phí</th><th>Áp dụng từ</th><th>Ghi chú</th></tr></thead>
+            <tbody id="dtFeeBody"></tbody>
+          </table>
+          <div class="empty hidden" id="dtFeeEmpty">Chưa có mức phí nào</div>
+        </div>
+      </div>
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thêm mức phí mới</div>
+        <div class="subrow-add">
+          <input type="text" id="feeNoiNop" placeholder="Nơi nộp">
+          <input type="text" id="feeDienVisa" placeholder="Diện visa">
+          <input type="number" id="feeMuc" placeholder="Mức phí">
+          <input type="date" id="feeNgayApDung">
+          <button class="btn btn-p" onclick="addDoiTacPhi()">+ Thêm</button>
+        </div>
+        <input type="text" id="feeGhiChu" placeholder="Ghi chú (tuỳ chọn)" style="margin-top:8px">
+      </div>
     </div>
-    <input type="text" id="feeGhiChu" placeholder="Ghi chú (tuỳ chọn)" style="margin-top:8px">
-    <div class="modal-actions">
-      <button class="btn btn-g" onclick="closeDoiTacFeeModal()">Đóng</button>
+
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeDoiTacFeeModal()">Đóng lại</button>
     </div>
   </div>
 </div>
 
 <!-- ============ MODAL SỬA TÊN DANH MỤC ============ -->
 <div class="overlay hidden" id="renameOverlay">
-  <div class="modal" style="max-width:400px">
-    <h3>Sửa tên</h3>
-    <input type="hidden" id="renameType">
-    <input type="hidden" id="renameId">
-    <label>Tên</label>
-    <input type="text" id="renameValue">
-    <div class="modal-actions">
-      <button class="btn btn-g" onclick="closeRenameModal()">Hủy</button>
+  <div class="modal dlg-standard" style="max-width:400px">
+    <div class="dlg-head">
+      <h3>Sửa tên</h3>
+      <button type="button" class="modal-x" onclick="closeRenameModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="dlg-body">
+      <input type="hidden" id="renameType">
+      <input type="hidden" id="renameId">
+      <div class="dlg-field"><label>Tên</label><input type="text" id="renameValue"></div>
+    </div>
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeRenameModal()">Đóng lại</button>
       <button class="btn btn-p" onclick="saveRename()">Lưu</button>
     </div>
   </div>

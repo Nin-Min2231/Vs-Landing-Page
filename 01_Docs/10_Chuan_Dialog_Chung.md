@@ -3,6 +3,8 @@
 > Dành cho AI agent (Claude Code). Đọc file này TRƯỚC khi tạo mới hoặc sửa lại 1 dialog (popup form) bất kỳ trong `admin.html`, để giao diện các dialog luôn đồng bộ — cùng màu sắc, cùng cách bố trí, cùng cách cuộn, cùng vị trí nút.
 >
 > Nguồn gốc: dialog "Đăng ký hồ sơ mới" (tab Hồ sơ), làm theo thiết kế Figma ngày 2026-08. Xem `admin.html`, khối `#hoOverlay` là ví dụ tham chiếu đầy đủ nhất — copy cấu trúc từ đó khi cần.
+>
+> Cập nhật 2026-08: đã áp dụng mẫu này cho **toàn bộ 6 dialog** trong `admin.html` (Hồ sơ, Tư vấn, Đại lý ủy thác, Bảng phí đại lý, Bài viết, Sửa tên danh mục) — xem danh sách chi tiết ở mục 8.
 
 ## 1. Khi nào dùng mẫu này
 
@@ -11,7 +13,7 @@ Dùng cho **mọi dialog dạng form nhiều field** trong `admin.html` — đ�
 - Form có thể dài hơn màn hình (cần cuộn), nhưng vẫn muốn luôn thấy tiêu đề + nút Lưu/Đóng mà không phải cuộn tới tận đầu/cuối.
 - Form có field tiền (VNĐ) cần định dạng dấu chấm ngăn cách hàng nghìn.
 
-Không bắt buộc dùng cho dialog quá đơn giản (1-2 field, chắc chắn không bao giờ dài hơn màn hình) — những dialog nhỏ như "Sửa tên danh mục" (`#renameOverlay`) có thể giữ nguyên kiểu modal cũ, không cần áp mẫu này.
+Với dialog quá đơn giản (1-2 field, chắc chắn không bao giờ dài hơn màn hình) như "Sửa tên danh mục" (`#renameOverlay`), vẫn nên dùng `dlg-standard`/`dlg-head`/`dlg-body`/`dlg-foot` để đồng bộ màu sắc + vị trí nút X/nút Lưu, nhưng KHÔNG cần chia `.dlg-section`/`.dlg-row` — chỉ cần bọc field trong `.dlg-field` đơn giản (xem `#renameOverlay` làm ví dụ).
 
 ## 2. Cấu trúc HTML mẫu (copy — chỉ đổi nội dung bên trong)
 
@@ -120,9 +122,15 @@ Xem hàm `hsStatusSelectClass()`/`updateHoSoStatusColor()` trong `admin.html` l�
 - Bảng con (Thành viên nhóm, Xử lý phát sinh...) tự chuyển từ dạng bảng sang dạng thẻ (card) trên màn hình <700px — quy tắc này áp dụng chung cho MỌI bảng `.tbl-wrap` + `<table>` trong toàn bộ `admin.html`, không riêng gì dialog — nhớ gọi `applyRowLabels('xxxBody')` sau khi render bảng con để dòng thẻ hiện đúng tên field.
 - Đã test thật trên khung hình điện thoại 375px — không tràn ngang, nút X đủ lớn để bấm, nút Đóng/Lưu không bị vỡ layout.
 
-## 8. Các dialog CHƯA áp dụng mẫu này (còn giữ kiểu cũ)
+## 8. Danh sách dialog đã áp dụng mẫu này (2026-08 — cả 6/6 dialog trong `admin.html`)
 
-Tính đến 2026-08, mới chỉ có dialog **Hồ sơ** (`#hoOverlay`) dùng mẫu `dlg-*`. Các dialog sau vẫn còn kiểu modal đơn giản cũ (chưa đổi, vì không ai yêu cầu và bản thân chúng khá ngắn gọn, chưa chắc đã cần):
-- `#tvOverlay` (Tư vấn), `#dtOverlay` (Đại lý ủy thác), `#dtFeeOverlay` (Bảng phí), `#postOverlay` (Bài viết), `#renameOverlay` (Sửa tên danh mục).
+| Dialog | ID overlay | Số nhóm field (`.dlg-section`) | Ghi chú riêng |
+|---|---|---|---|
+| Đăng ký hồ sơ mới | `#hoOverlay` | 6 nhóm (Thông tin khách, Thông tin nộp hồ sơ, Thu/Chi, Thành viên nhóm, Xử lý phát sinh, Ghi chú) | Dialog gốc, tham chiếu đầy đủ nhất — có field tiền (`money-input`), select đổi màu theo trạng thái (`status-select`), field Số lượng cho sửa tay |
+| Tư vấn | `#tvOverlay` | 2 nhóm (Thông tin khách hàng, Chi tiết tư vấn) | modal-lg |
+| Đại lý ủy thác | `#dtOverlay` | 2 nhóm (Thông tin đại lý ủy thác, Ghi chú) | modal-lg |
+| Bảng phí đại lý | `#dtFeeOverlay` | 2 nhóm (Các mức phí đã có, Thêm mức phí mới) | modal-xl, chỉ có nút "Đóng lại" (không có nút Lưu — mỗi dòng phí lưu ngay khi bấm "+ Thêm") |
+| Bài viết | `#postOverlay` | 2 nhóm (Thông tin bài viết, Nội dung) | modal-lg, textarea nội dung dài (8 dòng) nằm trong `.dlg-body` nên cuộn được khi bài dài |
+| Sửa tên danh mục | `#renameOverlay` | Không chia section (chỉ 1 field) | Dialog nhỏ nhất — vẫn dùng `dlg-standard`/`dlg-head`/`dlg-foot` để đồng bộ màu/nút, nhưng field đặt trực tiếp trong `.dlg-body`, không bọc `.dlg-section` |
 
-Nếu người dùng yêu cầu đồng bộ giao diện cho 1 trong các dialog trên, làm theo đúng mục 2-6 ở trên, và cập nhật lại danh sách này.
+Khi tạo dialog mới trong tương lai, thêm 1 dòng vào bảng này để danh sách luôn cập nhật.

@@ -13,6 +13,6 @@ Khi cần tạo mới hoặc sửa bố cục 1 dialog (popup form) trong `02_So
 - Cách làm select đổi màu theo trạng thái.
 - Lưu ý responsive (đã tự động qua CSS Grid `auto-fit`, không cần viết media query riêng).
 
-Dialog tham chiếu đầy đủ nhất: `#hoOverlay` (dialog "Đăng ký hồ sơ mới", tab Hồ sơ) trong `admin.html` — copy cấu trúc từ đó.
+Dialog tham chiếu đầy đủ nhất: `#hoOverlay` (dialog "Đăng ký hồ sơ mới", tab Hồ sơ) trong `admin.html` — copy cấu trúc từ đó. Tính đến 2026-08, cả 6/6 dialog trong `admin.html` đã dùng mẫu này (xem bảng ở mục 8 của tài liệu) — dialog mới tạo thêm sau này cũng phải theo mẫu, nhớ cập nhật bảng đó.
 
 Không tự bịa màu/spacing mới khi có thể tái dùng token đã liệt kê trong tài liệu trên hoặc trong `01_Docs/04_Design_System.md`.
