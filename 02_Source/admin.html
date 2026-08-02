@@ -196,6 +196,11 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .dlg-field label{font-size:13px;font-weight:600;color:#3F454D;margin:0 0 5px}
 .dlg-field select,.dlg-field input,.dlg-field textarea{border:1.5px solid rgba(0,64,133,.5)}
 .dlg-field-wide{grid-column:span 2}
+/* Dòng "Nước đến/Mục đích/Địa chỉ/Email" (dialog Hồ sơ): ép cột cụ thể vì auto-fit mặc định
+   không đủ rộng cho Địa chỉ — Địa chỉ cố định ~320px, Email lấy phần dư nhiều hơn để dễ đọc
+   email dài. Về màn hẹp (điện thoại/tablet) trả lại kiểu auto-fit thường để khỏi tràn ngang. */
+.dlg-row-addr-email{grid-template-columns:1fr 1fr 320px 1.8fr}
+@media(max-width:700px){.dlg-row-addr-email{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
 .req-badge{background:#D64550;color:#fff;font-size:10px;font-weight:600;padding:2px 8px;
   border-radius:4px;margin-left:6px;vertical-align:middle;white-space:nowrap}
 .money-input{text-align:right}
@@ -681,13 +686,13 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
             </div>
           </div>
           <div class="dlg-field"><label>Đối tác</label><select id="hoTruongNhom"></select></div>
-          <div class="dlg-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach" readonly style="max-width:120px"></div>
+          <div class="dlg-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach" readonly style="max-width:170px"></div>
           <div class="dlg-field"><label>Số lượng hồ sơ</label><input type="text" inputmode="numeric" id="hoSoLuong" oninput="updateHoSoTotals()" style="max-width:80px"></div>
         </div>
-        <div class="dlg-row">
+        <div class="dlg-row dlg-row-addr-email">
           <div class="dlg-field"><label>Nước đến <span class="req-badge">Bắt buộc</span></label><select id="hoNuoc"></select></div>
           <div class="dlg-field"><label>Mục đích <span class="req-badge">Bắt buộc</span></label><select id="hoMucDich"></select></div>
-          <div class="dlg-field dlg-field-wide"><label>Địa chỉ</label><input type="text" id="hoDiaChi" readonly></div>
+          <div class="dlg-field"><label>Địa chỉ</label><input type="text" id="hoDiaChi" readonly></div>
           <div class="dlg-field"><label>Email</label><input type="email" id="hoEmail" readonly></div>
         </div>
       </div>
@@ -1013,6 +1018,17 @@ let KHACH_HANG = [];
 const REMEMBER_KEY = 'tv_admin_refresh_token';
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* ==== Tìm kiếm free-text KHÔNG phân biệt dấu tiếng Việt — dùng chung cho MỌI ô tìm kiếm
+   (fHsSearch, fKhSearch, fTvSearch, fSearch, khPickSearch...). Gõ "a" phải ra được cả
+   "á/à/ả/ã/ạ/â/ầ/ấ/ẩ/ẫ/ậ/ă/ằ/ắ/ẳ/ẵ/ặ", gõ "e" ra "e/ê", gõ "o" ra "o/ô/ơ", "d" ra "d/đ"...
+   Cách làm: NFD tách chữ cái ra khỏi dấu thanh/dấu mũ rồi bỏ hết dấu (̀-ͯ gồm cả
+   dấu mũ ^, dấu trăng ˘, dấu móc horn), riêng "đ" không tách được bằng NFD nên xử lý tay.
+   ⚠️ QUY ƯỚC cho code sau này: bất kỳ ô input tìm kiếm tự do (type="search"/lọc theo tên,
+   địa chỉ...) nào thêm mới đều PHẢI so sánh qua vnNorm(...) ở cả 2 phía (dữ liệu + từ khóa),
+   KHÔNG dùng .toLowerCase().includes() thô — xem thêm CLAUDE.md mục 13. ==== */
+function vnNorm(s){
+  return (s??'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d');
+}
 function toast(msg,type='ok'){ const t=$('toast'); t.textContent=msg; t.className='toast show '+type;
   setTimeout(()=>t.classList.remove('show'),4000); }
 function fmtTime(iso){ const d=new Date(iso);
@@ -1221,10 +1237,10 @@ async function loadLeads(){
 }
 function pillClass(s){ return {'Mới':'pill-new','Đang tư vấn':'pill-called','Chốt':'pill-won','Hủy':'pill-lost'}[s]||'pill-new'; }
 function renderLeads(){
-  const st=$('fStatus').value, ct=$('fCountry').value, q=$('fSearch').value.toLowerCase().trim();
+  const st=$('fStatus').value, ct=$('fCountry').value, q=vnNorm($('fSearch').value.trim());
   const rows = LEADS.filter(l=>
     (!st||l.status===st) && (!ct||l.country===ct) &&
-    (!q||(l.name||'').toLowerCase().includes(q)||(l.phone||'').includes(q))
+    (!q||vnNorm(l.name).includes(q)||vnNorm(l.phone).includes(q))
   );
   // thống kê
   const cnt = s => LEADS.filter(l=>l.status===s).length;
@@ -1601,8 +1617,8 @@ async function addDoiTacPhi(){
 
 /* ==================== PHASE 2: TƯ VẤN (mở rộng bảng leads) ==================== */
 function renderTuVan(){
-  const st=$('fTvStatus').value, q=$('fTvSearch').value.toLowerCase().trim();
-  const rows = LEADS.filter(l=>(!st||l.status===st)&&(!q||(l.name||'').toLowerCase().includes(q)||(l.phone||'').includes(q)));
+  const st=$('fTvStatus').value, q=vnNorm($('fTvSearch').value.trim());
+  const rows = LEADS.filter(l=>(!st||l.status===st)&&(!q||vnNorm(l.name).includes(q)||vnNorm(l.phone).includes(q)));
   $('tvEmpty').classList.toggle('hidden', rows.length>0);
   $('tvBody').innerHTML = rows.map((l,i)=>`
     <tr>
@@ -1683,13 +1699,13 @@ function hsPillClass(s){
   return {'Đang xử lý':'pill-hs-dxl','Đã nộp':'pill-hs-dn','Đậu':'pill-hs-dau','Rớt':'pill-hs-rot','Hủy':'pill-hs-huy'}[s]||'pill-hs-dxl';
 }
 function renderHoSo(){
-  const st=$('fHsStatus').value, dtId=$('fHsDoiTac').value, q=$('fHsSearch').value.toLowerCase().trim();
+  const st=$('fHsStatus').value, dtId=$('fHsDoiTac').value, q=vnNorm($('fHsSearch').value.trim());
   const tuNgay=$('fHsTuNgay').value, denNgay=$('fHsDenNgay').value;
   const todayStr = new Date().toISOString().slice(0,10);
   const rows = HO_SO.filter(h=>
     (!st||h.trang_thai===st) &&
     (!dtId||String(h.doi_tac_id)===dtId) &&
-    (!q||(h.ten_khach||'').toLowerCase().includes(q)) &&
+    (!q||vnNorm(h.ten_khach).includes(q)) &&
     (!tuNgay||(h.ngay_nop&&h.ngay_nop>=tuNgay)) &&
     (!denNgay||(h.ngay_nop&&h.ngay_nop<=denNgay))
   );
@@ -1845,8 +1861,8 @@ function openKhPickModal(){
 }
 function closeKhPickModal(){ $('khPickOverlay').classList.add('hidden'); }
 function renderKhPickList(){
-  const q = $('khPickSearch').value.toLowerCase().trim();
-  const rows = KHACH_HANG.filter(k=>!q||(k.ho_ten||'').toLowerCase().includes(q)||(k.so_dt||'').includes(q));
+  const q = vnNorm($('khPickSearch').value.trim());
+  const rows = KHACH_HANG.filter(k=>!q||vnNorm(k.ho_ten).includes(q)||vnNorm(k.so_dt).includes(q));
   $('khPickEmpty').classList.toggle('hidden', rows.length>0);
   $('khPickBody').innerHTML = rows.map(k=>`
     <tr class="kh-pick-row" onclick="pickKhachHang(${k.id})">
@@ -1876,8 +1892,8 @@ async function loadKhachHang(){
   }catch(e){ if(e.message!=='401') toast('Lỗi tải khách hàng: '+e.message,'err'); }
 }
 function renderKhachHang(){
-  const q = $('fKhSearch').value.toLowerCase().trim();
-  const rows = KHACH_HANG.filter(k=>!q||(k.ho_ten||'').toLowerCase().includes(q)||(k.so_dt||'').includes(q));
+  const q = vnNorm($('fKhSearch').value.trim());
+  const rows = KHACH_HANG.filter(k=>!q||vnNorm(k.ho_ten).includes(q)||vnNorm(k.so_dt).includes(q));
   $('khEmpty').classList.toggle('hidden', rows.length>0);
   $('khBody').innerHTML = rows.map((k,i)=>`
     <tr>

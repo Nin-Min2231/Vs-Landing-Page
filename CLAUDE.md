@@ -185,3 +185,22 @@ trang tải bình thường, có title/description đầy đủ.
 **Không tự bịa** số liệu (đánh giá/rating) hay tạo review giả để nhét vào structured data — vi
 phạm chính sách Google, có thể bị phạt (giảm hạng/ẩn khỏi kết quả). Nếu sau này có review thật
 kèm rating, mới cân nhắc thêm schema `AggregateRating`.
+
+## 13. Tìm kiếm free-text không phân biệt dấu tiếng Việt — hàm dùng chung `vnNorm()` (2026-08)
+
+**Quy tắc bắt buộc:** mọi ô nhập tìm kiếm tự do trong `admin.html` (lọc theo tên khách, SĐT, địa
+chỉ...) đều phải cho phép gõ **không dấu** mà vẫn ra đúng kết quả có dấu — gõ "a" phải khớp cả
+"á/à/ả/ã/ạ/â/ầ/ấ/ẩ/ẫ/ậ/ă/ằ/ắ/ẳ/ẵ/ặ", gõ "e" khớp "e/ê", gõ "o" khớp "o/ô/ơ", gõ "d" khớp "d/đ"...
+Đây là nhu cầu thực tế vì nhân viên thường gõ tắt không dấu cho nhanh.
+
+**Cách làm — hàm `vnNorm(s)`** định nghĩa 1 lần trong `02_Source/admin.html` (khu vực "TIỆN ÍCH
+CHUNG" đầu `<script>`, ngay sau hàm `esc()`): lowercase → tách dấu bằng `normalize('NFD')` → xóa
+hết dấu (`̀`-`ͯ`) → xử lý riêng `đ`→`d` (vì `đ` không tách được bằng NFD). So khớp bằng
+`vnNorm(dữ liệu).includes(vnNorm(từ khóa))` ở **cả 2 phía**.
+
+**⚠️ Khi thêm bất kỳ ô tìm kiếm tự do MỚI nào sau này** (thêm tab mới, thêm bộ lọc mới...): PHẢI
+gọi qua `vnNorm()` như 5 chỗ đã áp dụng, KHÔNG viết lại `.toLowerCase().includes()` thô — nếu
+không, ô đó sẽ là chỗ duy nhất trong hệ thống không tìm được khi gõ không dấu, không đồng bộ với
+phần còn lại. 5 chỗ đã áp dụng (tham chiếu khi cần thêm chỗ thứ 6): `fHsSearch`→`renderHoSo()`,
+`fKhSearch`→`renderKhachHang()`, `fTvSearch`→`renderTuVan()`, `fSearch`→`renderLeads()`,
+`khPickSearch`→`renderKhPickList()` (dialog "Chọn khách hàng").
