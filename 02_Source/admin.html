@@ -215,17 +215,28 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .stt-doitac{width:var(--w-doitac,140px)}
 .pill.stt-tuvan,.pill.stt-hoso,.pill.stt-xlps,.pill.stt-doitac{text-align:center}
 
-/* ===== Phase 4: field tự điền từ autocomplete Tên khách hàng — đổi nền để nhân viên biết
-   đây là dữ liệu lấy từ khách hàng có sẵn (Dialog_Tao_moi_ho_so.png) ===== */
+/* ===== field tự điền từ dialog "Chọn khách hàng" — đổi nền để nhân viên biết đây là dữ
+   liệu lấy từ khách hàng có sẵn, không gõ tay được (Dialog_Tao_moi_ho_so.png) ===== */
 .autofilled{background:#DDE1E6!important}
-/* ===== Phase 4: gợi ý autocomplete Tên khách hàng (dialog Hồ sơ) ===== */
-.ac-wrap{position:relative}
-.ac-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--bd);
-  border-radius:8px;box-shadow:var(--sh);max-height:220px;overflow-y:auto;z-index:60;margin-top:4px}
-.ac-item{padding:8px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--bd)}
-.ac-item:last-child{border-bottom:none}
-.ac-item:hover{background:var(--pl)}
-.ac-item .ac-sub{font-size:12px;color:var(--mut)}
+/* ===== Ô "Tên khách hàng" (dialog Hồ sơ): input readonly + nút kính lúp mở dialog chọn ===== */
+.kh-pick-wrap{display:flex;gap:6px}
+.kh-pick-wrap input{flex:1;min-width:0}
+.kh-pick-btn{flex-shrink:0;width:44px;border:1.5px solid rgba(0,64,133,.5);border-radius:8px;
+  background:#fff;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
+.kh-pick-btn:hover{background:var(--pl)}
+/* ===== Dialog "Chọn khách hàng" (tìm kiếm) — chọn 1 dòng để điền dialog Hồ sơ ===== */
+.kh-pick-row{cursor:pointer}
+/* ===== Cột "Địa chỉ" trên các bảng list: cắt ngắn 1 dòng, không xuống dòng, xem đủ khi hover ===== */
+.addr-trunc{display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;vertical-align:bottom}
+@media(max-width:700px){.addr-trunc{max-width:60vw}}
+/* ===== Thanh điều kiện search "Quản lý hồ sơ": ép 1 dòng trên desktop, cuộn ngang nếu chật ===== */
+.filters-hoso{gap:10px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+.filters-hoso>*{flex-shrink:0}
+.filters-hoso .filters-label{font-weight:600;font-size:13px;white-space:nowrap}
+.filters-hoso input[type=date]{width:145px}
+.filters-hoso input[type=search]{width:130px}
+@media(max-width:700px){.filters-hoso{flex-wrap:wrap;overflow-x:visible}}
 
 /* ===== Popup Confirm / Thông báo — dùng chung mọi màn hình (theo thiết kế
    Popup_Confirm.png / Popup_thong_bao.png). Nội dung đổ vào lúc gọi showConfirmPopup()/
@@ -395,23 +406,20 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <section id="tab-hoso" class="hidden">
       <div class="panel-head">
         <h2>Quản lý hồ sơ</h2>
-        <div class="filters">
-          <select id="fHsStatus" onchange="renderHoSo()">
-            <option value="">Tất cả trạng thái</option>
-            <option>Đang xử lý</option><option>Đã nộp</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
-          </select>
-          <select id="fHsNuoc" onchange="renderHoSo()"><option value="">Tất cả nước đến</option></select>
-          <select id="fHsDoiTac" onchange="renderHoSo()"><option value="">Tất cả đại lý</option></select>
-          <input type="search" id="fHsSearch" placeholder="Tìm tên khách..." oninput="renderHoSo()" style="width:150px">
-          <button class="btn btn-p" onclick="openHoSoModal()">+ Thêm hồ sơ</button>
-        </div>
       </div>
-      <div class="filters" style="margin-bottom:14px;align-items:center">
-        <span style="font-weight:600;font-size:14px">Ngày nộp từ</span>
+      <div class="filters filters-hoso" style="margin-bottom:14px;align-items:center">
+        <select id="fHsStatus" onchange="renderHoSo()">
+          <option value="">Tất cả trạng thái</option>
+          <option>Đang xử lý</option><option>Đã nộp</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
+        </select>
+        <select id="fHsDoiTac" onchange="renderHoSo()"><option value="">Tất cả đại lý</option></select>
+        <input type="search" id="fHsSearch" placeholder="Tìm tên khách..." oninput="renderHoSo()">
+        <span class="filters-label">Ngày nộp từ</span>
         <input type="date" id="fHsTuNgay" onchange="renderHoSo()">
-        <span style="font-weight:600;font-size:14px">đến</span>
+        <span class="filters-label">đến</span>
         <input type="date" id="fHsDenNgay" onchange="renderHoSo()">
         <button class="btn btn-g" onclick="resetHoSoFilters()">Reset</button>
+        <button class="btn btn-p" onclick="openHoSoModal()">+ Thêm hồ sơ</button>
       </div>
       <div class="tbl-wrap">
         <table>
@@ -433,7 +441,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Họ và tên</th><th>Số ĐT</th><th>Ngày sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Email</th><th>Ghi chú</th><th class="th-center">Thao tác</th></tr></thead>
+          <thead><tr><th>#</th><th>Họ và tên</th><th>Số ĐT</th><th>Ngày sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Email</th><th class="th-center">Thao tác</th></tr></thead>
           <tbody id="khBody"></tbody>
         </table>
         <div class="empty hidden" id="khEmpty">Chưa có khách hàng nào</div>
@@ -673,19 +681,21 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="dlg-section-title">Thông tin khách</div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Ngày tạo <span class="req-badge">Bắt buộc</span></label><input type="date" id="hoNgay"></div>
-          <div class="dlg-field ac-wrap"><label>Tên khách hàng <span class="req-badge">Bắt buộc</span></label>
-            <input type="text" id="hoTenKhach" autocomplete="off" oninput="onTenKhachInput()" onblur="hideKhSuggestSoon()">
-            <div class="ac-list hidden" id="khSuggestList"></div>
+          <div class="dlg-field"><label>Tên khách hàng <span class="req-badge">Bắt buộc</span></label>
+            <div class="kh-pick-wrap">
+              <input type="text" id="hoTenKhach" readonly placeholder="Bấm 🔍 để chọn khách hàng">
+              <button type="button" class="kh-pick-btn" onclick="openKhPickModal()" title="Tìm khách hàng" aria-label="Tìm khách hàng">🔍</button>
+            </div>
           </div>
           <div class="dlg-field"><label>Đối tác giới thiệu</label><select id="hoDoiTacDm"></select></div>
-          <div class="dlg-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach"></div>
+          <div class="dlg-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach" readonly></div>
           <div class="dlg-field"><label>Số lượng hồ sơ</label><input type="text" inputmode="numeric" id="hoSoLuong" oninput="updateHoSoTotals()"></div>
         </div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Nước đến <span class="req-badge">Bắt buộc</span></label><select id="hoNuoc"></select></div>
           <div class="dlg-field"><label>Mục đích <span class="req-badge">Bắt buộc</span></label><select id="hoMucDich"></select></div>
-          <div class="dlg-field dlg-field-wide"><label>Địa chỉ</label><input type="text" id="hoDiaChi"></div>
-          <div class="dlg-field"><label>Email</label><input type="email" id="hoEmail"></div>
+          <div class="dlg-field dlg-field-wide"><label>Địa chỉ</label><input type="text" id="hoDiaChi" readonly></div>
+          <div class="dlg-field"><label>Email</label><input type="email" id="hoEmail" readonly></div>
         </div>
       </div>
 
@@ -941,6 +951,29 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
   </div>
 </div>
 
+<!-- ============ MODAL CHỌN KHÁCH HÀNG (tìm kiếm từ dialog Hồ sơ, bấm 🔍) ============ -->
+<div class="overlay hidden" id="khPickOverlay">
+  <div class="modal modal-lg dlg-standard">
+    <div class="dlg-head">
+      <h3>Chọn khách hàng</h3>
+      <button type="button" class="modal-x" onclick="closeKhPickModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="dlg-body">
+      <input type="search" id="khPickSearch" placeholder="Tìm họ tên / SĐT..." oninput="renderKhPickList()" style="margin-bottom:12px">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Tên khách hàng</th><th>Ngày sinh</th><th>Số điện thoại</th></tr></thead>
+          <tbody id="khPickBody"></tbody>
+        </table>
+        <div class="empty hidden" id="khPickEmpty">Không tìm thấy khách hàng phù hợp</div>
+      </div>
+    </div>
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeKhPickModal()">Đóng lại</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ POPUP CONFIRM (dùng chung mọi màn hình — xem showConfirmPopup()) ============ -->
 <div class="overlay hidden" id="confirmOverlay">
   <div class="modal popup-std">
@@ -983,7 +1016,7 @@ let TOKEN = null, LEADS = [], POSTS = [], CATS = [];
 let DOI_TAC = [], DANH_MUC_NUOC = [], DANH_MUC_MUC_DICH = [], DANH_MUC_TRUONG_NHOM = [], HO_SO = [];
 let CUR_HOSO_XLPS = [], CUR_HOSO_THANHVIEN = [], CUR_FEE_DOITAC = null, CHART_DT = null, CHART_SL = null;
 let KHOAN_CHI = [], TC_ROWS = [];
-let KHACH_HANG = [], DANH_MUC_DOI_TAC_DM = [], KH_SUGGEST_CACHE = [], KH_SUGGEST_TIMER = null;
+let KHACH_HANG = [], DANH_MUC_DOI_TAC_DM = [];
 const REMEMBER_KEY = 'tv_admin_refresh_token';
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1362,9 +1395,6 @@ function fillDanhMucSelects(){
     DANH_MUC_DOI_TAC_DM.map(x=>`<option value="${x.id}">${esc(x.ten)}${x.active?'':' (đã ẩn)'}</option>`).join('');
   $('tvCountry').innerHTML = optsFromDanhMucText(DANH_MUC_NUOC);
   $('tvMucDich').innerHTML = optsFromDanhMucText(DANH_MUC_MUC_DICH);
-  const curFN=$('fHsNuoc').value;
-  $('fHsNuoc').innerHTML='<option value="">Tất cả nước đến</option>'+DANH_MUC_NUOC.map(x=>`<option value="${x.id}">${esc(x.ten)}</option>`).join('');
-  $('fHsNuoc').value=curFN;
 }
 function renderSettings(){
   const blocks=[['listNuoc','nuoc'],['listMucDich','mucdich'],['listTruongNhom','truongnhom'],['listDoiTacDm','doitacdm']];
@@ -1665,12 +1695,11 @@ function hsPillClass(s){
   return {'Đang xử lý':'pill-hs-dxl','Đã nộp':'pill-hs-dn','Đậu':'pill-hs-dau','Rớt':'pill-hs-rot','Hủy':'pill-hs-huy'}[s]||'pill-hs-dxl';
 }
 function renderHoSo(){
-  const st=$('fHsStatus').value, nuocId=$('fHsNuoc').value, dtId=$('fHsDoiTac').value, q=$('fHsSearch').value.toLowerCase().trim();
+  const st=$('fHsStatus').value, dtId=$('fHsDoiTac').value, q=$('fHsSearch').value.toLowerCase().trim();
   const tuNgay=$('fHsTuNgay').value, denNgay=$('fHsDenNgay').value;
   const todayStr = new Date().toISOString().slice(0,10);
   const rows = HO_SO.filter(h=>
     (!st||h.trang_thai===st) &&
-    (!nuocId||String(h.nuoc_id)===nuocId) &&
     (!dtId||String(h.doi_tac_id)===dtId) &&
     (!q||(h.ten_khach||'').toLowerCase().includes(q)) &&
     (!tuNgay||(h.ngay_nop&&h.ngay_nop>=tuNgay)) &&
@@ -1699,7 +1728,7 @@ function renderHoSo(){
   applyRowLabels('hsBody');
 }
 function resetHoSoFilters(){
-  $('fHsStatus').value=''; $('fHsNuoc').value=''; $('fHsDoiTac').value='';
+  $('fHsStatus').value=''; $('fHsDoiTac').value='';
   $('fHsTuNgay').value=''; $('fHsDenNgay').value=''; $('fHsSearch').value='';
   renderHoSo();
 }
@@ -1731,7 +1760,6 @@ function openHoSoModal(id, prefill){
   $('hoDiaChi').value = h?.dia_chi||'';
   $('hoEmail').value = h?.email||'';
   markAutoFilled(!!h?.khach_hang_id);
-  hideKhSuggest();
   // Nước đến mặc định "Nhật Bản" khi tạo hồ sơ mới (Phase 4, PM xác nhận) — vẫn chọn lại được nước khác
   $('hoNuoc').value = h ? (h.nuoc_id||'') : (prefill?.nuoc_id || DANH_MUC_NUOC.find(n=>n.ten==='Nhật Bản')?.id || '');
   $('hoMucDich').value = h ? (h.muc_dich_id||'') : (prefill?.muc_dich_id||'');
@@ -1779,7 +1807,7 @@ function updateHoSoTotals(){
 async function saveHoSo(){
   const ten_khach=$('hoTenKhach').value.trim();
   const nuoc_id=$('hoNuoc').value, muc_dich_id=$('hoMucDich').value, doi_tac_id=$('hoDoiTac').value;
-  if(!ten_khach){ toast('Nhập tên khách hàng','err'); return; }
+  if(!ten_khach){ toast('Vui lòng bấm 🔍 để chọn khách hàng','err'); return; }
   if(!nuoc_id){ toast('Vui lòng chọn Nước đến','err'); return; }
   if(!muc_dich_id){ toast('Vui lòng chọn Mục đích','err'); return; }
   if(!doi_tac_id){ toast('Vui lòng chọn Đại lý ủy thác','err'); return; }
@@ -1816,38 +1844,32 @@ async function saveHoSo(){
   finally{ btn.disabled=false; }
 }
 
-/* ==== Autocomplete "Tên khách hàng" (dialog Hồ sơ) — gõ chữ gọi API khach_hang, chọn 1 dòng
-   tự điền SĐT/Địa chỉ/Email + đổi nền #DDE1E6 (Phase 4, mục 5.1). Gõ tự do vẫn lưu được bình
-   thường với khach_hang_id = null. ==== */
+/* ==== Chọn "Tên khách hàng" (dialog Hồ sơ) qua dialog tìm kiếm "Chọn khách hàng" — bấm 🔍
+   mở dialog, chọn 1 dòng tự điền Tên/SĐT/Địa chỉ/Email + đổi nền #DDE1E6. Không gõ tay được,
+   luôn lấy đúng dữ liệu từ "Thông tin khách hàng" (không còn cho gõ tự do như trước). ==== */
 function markAutoFilled(on){
-  ['hoSdtKhach','hoDiaChi','hoEmail'].forEach(id=>$(id).classList.toggle('autofilled', on));
+  ['hoTenKhach','hoSdtKhach','hoDiaChi','hoEmail'].forEach(id=>$(id).classList.toggle('autofilled', on));
 }
-function onTenKhachInput(){
-  $('hoKhachHangId').value = '';
-  markAutoFilled(false);
-  clearTimeout(KH_SUGGEST_TIMER);
-  const q = $('hoTenKhach').value.trim();
-  if(!q){ hideKhSuggest(); return; }
-  KH_SUGGEST_TIMER = setTimeout(async ()=>{
-    try{
-      const rows = await api('khach_hang?ho_ten=ilike.*'+encodeURIComponent(q)+'*&select=id,ho_ten,so_dt,dia_chi,email&limit=8');
-      renderKhSuggest(rows||[]);
-    }catch(e){ /* im lặng — không chặn việc gõ tự do nếu API lỗi */ }
-  }, 300);
+function openKhPickModal(){
+  $('khPickSearch').value = '';
+  renderKhPickList();
+  $('khPickOverlay').classList.remove('hidden');
 }
-function renderKhSuggest(rows){
-  KH_SUGGEST_CACHE = rows;
-  const list = $('khSuggestList');
-  if(!rows.length){ list.classList.add('hidden'); list.innerHTML=''; return; }
-  list.innerHTML = rows.map(r=>`
-    <div class="ac-item" onmousedown="pickKhachHang(${r.id})">
-      <div>${esc(r.ho_ten)}</div>
-      <div class="ac-sub">${esc(r.so_dt||'–')}${r.dia_chi?' · '+esc(r.dia_chi):''}</div>
-    </div>`).join('');
-  list.classList.remove('hidden');
+function closeKhPickModal(){ $('khPickOverlay').classList.add('hidden'); }
+function renderKhPickList(){
+  const q = $('khPickSearch').value.toLowerCase().trim();
+  const rows = KHACH_HANG.filter(k=>!q||(k.ho_ten||'').toLowerCase().includes(q)||(k.so_dt||'').includes(q));
+  $('khPickEmpty').classList.toggle('hidden', rows.length>0);
+  $('khPickBody').innerHTML = rows.map(k=>`
+    <tr class="kh-pick-row" onclick="pickKhachHang(${k.id})">
+      <td><b>${esc(k.ho_ten)}</b></td>
+      <td>${fmtDate(k.ngay_sinh)}</td>
+      <td>${k.so_dt?esc(k.so_dt):'–'}</td>
+    </tr>`).join('');
+  applyRowLabels('khPickBody');
 }
 function pickKhachHang(id){
-  const r = KH_SUGGEST_CACHE.find(x=>x.id===id);
+  const r = KHACH_HANG.find(x=>x.id===id);
   if(!r) return;
   $('hoTenKhach').value = r.ho_ten;
   $('hoKhachHangId').value = r.id;
@@ -1855,10 +1877,8 @@ function pickKhachHang(id){
   $('hoDiaChi').value = r.dia_chi||'';
   $('hoEmail').value = r.email||'';
   markAutoFilled(true);
-  hideKhSuggest();
+  closeKhPickModal();
 }
-function hideKhSuggest(){ $('khSuggestList').classList.add('hidden'); }
-function hideKhSuggestSoon(){ setTimeout(hideKhSuggest, 150); } // trễ 1 chút để onmousedown kịp bắt trước khi blur ẩn list
 
 /* ==================== PHASE 4: THÔNG TIN KHÁCH HÀNG ==================== */
 async function loadKhachHang(){
@@ -1878,9 +1898,8 @@ function renderKhachHang(){
       <td>${k.so_dt?`<a href="tel:${esc(k.so_dt)}">${esc(k.so_dt)}</a>`:'–'}</td>
       <td>${fmtDate(k.ngay_sinh)}</td>
       <td>${esc(k.cccd||'–')}</td>
-      <td>${esc(k.dia_chi||'–')}</td>
+      <td>${k.dia_chi?`<span class="addr-trunc" title="${esc(k.dia_chi)}">${esc(k.dia_chi)}</span>`:'–'}</td>
       <td>${esc(k.email||'–')}</td>
-      <td>${esc(k.ghi_chu||'–')}</td>
       <td class="td-actions">
         <button class="btn btn-p" onclick="openKhachHangModal(${k.id})">Sửa</button>
         <button class="btn btn-d" onclick="delKhachHang(${k.id})">Xóa</button>

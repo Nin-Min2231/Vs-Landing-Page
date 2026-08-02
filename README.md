@@ -84,11 +84,13 @@ data, `robots.txt`, `sitemap.xml`) — chi tiết đầy đủ ở `CLAUDE.md` m
 
 ## Phase 4 — Thông tin khách hàng & nâng cấp Hồ sơ/Tư vấn (2026-08-01)
 
-Đã thêm tab mới "👥 Thông tin khách hàng" (quản lý khách đã từng làm hồ sơ, autocomplete khi tạo
-Hồ sơ) + danh mục "Đối tác giới thiệu" trong Cài đặt chung + nâng cấp lớn dialog "Đăng ký hồ sơ
-mới" (autocomplete Tên khách hàng, field Email, icon lịch cho mọi field ngày, gộp Thư đi/Thư về
-thành Phí ship) + nâng cấp list Hồ sơ (thêm cột SĐT/Ngày nộp, tô đỏ Ngày trả KQ, bộ lọc khoảng
-ngày + nút Reset) + Tư vấn (SĐT không bắt buộc, đổi "Đã gọi" → "Đang tư vấn") — xem chi tiết
+Đã thêm tab mới "👥 Thông tin khách hàng" (quản lý khách đã từng làm hồ sơ) + danh mục "Đối tác
+giới thiệu" trong Cài đặt chung + nâng cấp lớn dialog "Đăng ký hồ sơ mới" (chọn Tên khách hàng qua
+dialog tìm kiếm — bấm icon 🔍 mở dialog chọn từ "Thông tin khách hàng", không gõ tay được nữa;
+field Email; icon lịch cho mọi field ngày; gộp Thư đi/Thư về thành Phí ship) + nâng cấp list Hồ sơ
+(thêm cột SĐT/Ngày nộp, tô đỏ Ngày trả KQ, bộ lọc gộp 1 dòng không xuống dòng — bỏ lọc "Nước đến",
+nút Reset cạnh nút Thêm hồ sơ) + list Thông tin khách hàng (bỏ cột Ghi chú, cột Địa chỉ cắt ngắn
+không xuống dòng) + Tư vấn (SĐT không bắt buộc, đổi "Đã gọi" → "Đang tư vấn") — xem chi tiết
 `07_Phase 4_Thong_Tin_Khach_Hang/Phase4_BanGiao_Claude_Code.md`.
 
 - [x] Đã chạy `07_Phase 4_Thong_Tin_Khach_Hang/supabase_setup_phase4.sql` trong Supabase SQL Editor
