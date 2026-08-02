@@ -279,8 +279,6 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .cat-block.c-mucdich h3{color:var(--acc)}
 .cat-block.c-truongnhom{border-top-color:var(--ok)}
 .cat-block.c-truongnhom h3{color:var(--ok)}
-.cat-block.c-doitacdm{border-top-color:#7C3AED}
-.cat-block.c-doitacdm h3{color:#7C3AED}
 .cat-add-row{display:flex;gap:8px;margin-bottom:12px}
 .cat-add-row input{flex:1}
 .cat-list{max-height:320px;overflow-y:auto;padding-right:4px}
@@ -517,11 +515,6 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div class="cat-add-row"><input type="text" id="newTruongNhom" placeholder="Tên đối tác mới"><button class="btn btn-p" onclick="addDanhMuc('truongnhom')">+ Thêm</button></div>
           <div id="listTruongNhom" class="cat-list"></div>
         </div>
-        <div class="cat-block c-doitacdm">
-          <h3>🤝 Đối tác giới thiệu</h3>
-          <div class="cat-add-row"><input type="text" id="newDoiTacDm" placeholder="Tên đối tác mới"><button class="btn btn-p" onclick="addDanhMuc('doitacdm')">+ Thêm</button></div>
-          <div id="listDoiTacDm" class="cat-list"></div>
-        </div>
       </div>
     </section>
 
@@ -681,15 +674,15 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="dlg-section-title">Thông tin khách</div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Ngày tạo <span class="req-badge">Bắt buộc</span></label><input type="date" id="hoNgay"></div>
-          <div class="dlg-field"><label>Tên khách hàng <span class="req-badge">Bắt buộc</span></label>
+          <div class="dlg-field dlg-field-wide"><label>Tên khách hàng <span class="req-badge">Bắt buộc</span></label>
             <div class="kh-pick-wrap">
               <input type="text" id="hoTenKhach" readonly placeholder="Bấm 🔍 để chọn khách hàng">
               <button type="button" class="kh-pick-btn" onclick="openKhPickModal()" title="Tìm khách hàng" aria-label="Tìm khách hàng">🔍</button>
             </div>
           </div>
-          <div class="dlg-field"><label>Đối tác giới thiệu</label><select id="hoDoiTacDm"></select></div>
-          <div class="dlg-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach" readonly></div>
-          <div class="dlg-field"><label>Số lượng hồ sơ</label><input type="text" inputmode="numeric" id="hoSoLuong" oninput="updateHoSoTotals()"></div>
+          <div class="dlg-field"><label>Đối tác</label><select id="hoTruongNhom"></select></div>
+          <div class="dlg-field"><label>Số ĐT khách</label><input type="tel" id="hoSdtKhach" readonly style="max-width:120px"></div>
+          <div class="dlg-field"><label>Số lượng hồ sơ</label><input type="text" inputmode="numeric" id="hoSoLuong" oninput="updateHoSoTotals()" style="max-width:80px"></div>
         </div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Nước đến <span class="req-badge">Bắt buộc</span></label><select id="hoNuoc"></select></div>
@@ -1016,7 +1009,7 @@ let TOKEN = null, LEADS = [], POSTS = [], CATS = [];
 let DOI_TAC = [], DANH_MUC_NUOC = [], DANH_MUC_MUC_DICH = [], DANH_MUC_TRUONG_NHOM = [], HO_SO = [];
 let CUR_HOSO_XLPS = [], CUR_HOSO_THANHVIEN = [], CUR_FEE_DOITAC = null, CHART_DT = null, CHART_SL = null;
 let KHOAN_CHI = [], TC_ROWS = [];
-let KHACH_HANG = [], DANH_MUC_DOI_TAC_DM = [];
+let KHACH_HANG = [];
 const REMEMBER_KEY = 'tv_admin_refresh_token';
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1368,15 +1361,14 @@ async function delPost(id){
 }
 
 /* ==================== PHASE 2: DANH MỤC DÙNG CHUNG (Nước / Mục đích / Trưởng nhóm) ==================== */
-function danhMucTable(type){ return {nuoc:'danh_muc_nuoc',mucdich:'danh_muc_muc_dich',truongnhom:'danh_muc_truong_nhom',doitacdm:'danh_muc_doi_tac'}[type]; }
-function danhMucArr(type){ return {nuoc:DANH_MUC_NUOC,mucdich:DANH_MUC_MUC_DICH,truongnhom:DANH_MUC_TRUONG_NHOM,doitacdm:DANH_MUC_DOI_TAC_DM}[type]; }
+function danhMucTable(type){ return {nuoc:'danh_muc_nuoc',mucdich:'danh_muc_muc_dich',truongnhom:'danh_muc_truong_nhom'}[type]; }
+function danhMucArr(type){ return {nuoc:DANH_MUC_NUOC,mucdich:DANH_MUC_MUC_DICH,truongnhom:DANH_MUC_TRUONG_NHOM}[type]; }
 async function loadDanhMuc(){
   try{
-    [DANH_MUC_NUOC, DANH_MUC_MUC_DICH, DANH_MUC_TRUONG_NHOM, DANH_MUC_DOI_TAC_DM] = await Promise.all([
+    [DANH_MUC_NUOC, DANH_MUC_MUC_DICH, DANH_MUC_TRUONG_NHOM] = await Promise.all([
       api('danh_muc_nuoc?select=*&order=ten'),
       api('danh_muc_muc_dich?select=*&order=ten'),
-      api('danh_muc_truong_nhom?select=*&order=ten'),
-      api('danh_muc_doi_tac?select=*&order=ten')
+      api('danh_muc_truong_nhom?select=*&order=ten')
     ]);
     fillDanhMucSelects();
     renderSettings();
@@ -1391,13 +1383,13 @@ function optsFromDanhMucText(arr){
 function fillDanhMucSelects(){
   $('hoNuoc').innerHTML = optsFromDanhMuc(DANH_MUC_NUOC);
   $('hoMucDich').innerHTML = optsFromDanhMuc(DANH_MUC_MUC_DICH);
-  $('hoDoiTacDm').innerHTML = '<option value="">-- Không chọn --</option>'+
-    DANH_MUC_DOI_TAC_DM.map(x=>`<option value="${x.id}">${esc(x.ten)}${x.active?'':' (đã ẩn)'}</option>`).join('');
+  $('hoTruongNhom').innerHTML = '<option value="">-- Không chọn --</option>'+
+    DANH_MUC_TRUONG_NHOM.map(x=>`<option value="${x.id}">${esc(x.ten)}${x.active?'':' (đã ẩn)'}</option>`).join('');
   $('tvCountry').innerHTML = optsFromDanhMucText(DANH_MUC_NUOC);
   $('tvMucDich').innerHTML = optsFromDanhMucText(DANH_MUC_MUC_DICH);
 }
 function renderSettings(){
-  const blocks=[['listNuoc','nuoc'],['listMucDich','mucdich'],['listTruongNhom','truongnhom'],['listDoiTacDm','doitacdm']];
+  const blocks=[['listNuoc','nuoc'],['listMucDich','mucdich'],['listTruongNhom','truongnhom']];
   blocks.forEach(([elId,type])=>{
     const arr=danhMucArr(type);
     $(elId).innerHTML = arr.length ? arr.map(x=>`
@@ -1411,7 +1403,7 @@ function renderSettings(){
   });
 }
 async function addDanhMuc(type){
-  const inputId={nuoc:'newNuoc',mucdich:'newMucDich',truongnhom:'newTruongNhom',doitacdm:'newDoiTacDm'}[type];
+  const inputId={nuoc:'newNuoc',mucdich:'newMucDich',truongnhom:'newTruongNhom'}[type];
   const ten=$(inputId).value.trim();
   if(!ten){ toast('Nhập tên','err'); return; }
   try{
@@ -1439,10 +1431,6 @@ async function isDanhMucInUse(type, item){
   }
   if(type==='truongnhom'){
     const hs = await api('ho_so?truong_nhom_id=eq.'+item.id+'&select=id&limit=1');
-    return hs && hs.length>0;
-  }
-  if(type==='doitacdm'){
-    const hs = await api('ho_so?doi_tac_dm_id=eq.'+item.id+'&select=id&limit=1');
     return hs && hs.length>0;
   }
   return false;
@@ -1755,7 +1743,7 @@ function openHoSoModal(id, prefill){
   $('hoNgay').value = h?.ngay || new Date().toISOString().slice(0,10);
   $('hoKhachHangId').value = h?.khach_hang_id||'';
   $('hoTenKhach').value = h ? h.ten_khach : (prefill?.ten_khach||'');
-  $('hoDoiTacDm').value = h?.doi_tac_dm_id||'';
+  $('hoTruongNhom').value = h?.truong_nhom_id||'';
   $('hoSdtKhach').value = h ? (h.sdt_khach||'') : (prefill?.sdt_khach||'');
   $('hoDiaChi').value = h?.dia_chi||'';
   $('hoEmail').value = h?.email||'';
@@ -1816,7 +1804,7 @@ async function saveHoSo(){
   const body={
     ngay: $('hoNgay').value || new Date().toISOString().slice(0,10),
     khach_hang_id: $('hoKhachHangId').value||null,
-    doi_tac_dm_id: $('hoDoiTacDm').value||null,
+    truong_nhom_id: $('hoTruongNhom').value||null,
     ten_khach, sdt_khach: $('hoSdtKhach').value.trim()||null, dia_chi: $('hoDiaChi').value.trim()||null,
     email: $('hoEmail').value.trim()||null,
     nuoc_id: Number(nuoc_id), muc_dich_id: Number(muc_dich_id), doi_tac_id: Number(doi_tac_id),
