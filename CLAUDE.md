@@ -204,3 +204,51 @@ không, ô đó sẽ là chỗ duy nhất trong hệ thống không tìm đượ
 phần còn lại. 5 chỗ đã áp dụng (tham chiếu khi cần thêm chỗ thứ 6): `fHsSearch`→`renderHoSo()`,
 `fKhSearch`→`renderKhachHang()`, `fTvSearch`→`renderTuVan()`, `fSearch`→`renderLeads()`,
 `khPickSearch`→`renderKhPickList()` (dialog "Chọn khách hàng").
+
+## 14. Kiểm tra ràng buộc trước khi xóa — hàm dùng chung `isRecordInUse()` (2026-08)
+
+**Quy tắc bắt buộc:** với dữ liệu có thể đang được **tham chiếu ở màn hình/bảng khác** (vd:
+khách hàng đã gắn vào 1 hồ sơ, đại lý ủy thác đã gắn vào 1 hồ sơ, danh mục Nước đến/Mục đích/Đối
+tác đã dùng trong hồ sơ hoặc tư vấn...), nút "Xóa" **PHẢI chặn xóa** nếu dữ liệu đang được dùng —
+không cho xóa mất dữ liệu đang bị tham chiếu, tránh để lại "tham chiếu treo" (hồ sơ trỏ tới 1
+khách hàng/đại lý/danh mục không còn tồn tại). Thay vào đó báo lỗi dễ hiểu, vd: "Khách hàng này đã
+có hồ sơ nên không thể xóa."
+
+**Cách làm — hàm `isRecordInUse(refs)`** định nghĩa trong `02_Source/admin.html` (ngay trước
+`isDanhMucInUse`, khu vực Cài đặt chung): nhận vào mảng `[{table, column, value}]`, query từng
+bảng xem có dòng nào `column = value` không (`value` mặc định dùng `id` của record đang định xóa,
+nhưng có thể truyền giá trị khác — vd `leads.country` lưu theo TÊN chứ không phải id). Trả về
+`true` nếu **bất kỳ** bảng nào có dữ liệu tham chiếu.
+
+Mẫu áp dụng trong 1 hàm xóa (`delXxx`):
+```js
+async function delXxx(id){
+  if(!await showConfirmPopup({message:'Xóa X này? Không thể hoàn tác.'})) return;
+  try{
+    if(await isRecordInUse([{table:'bang_con',column:'xxx_id',value:id}])){
+      showNotifyPopup({message:'X này đang được dùng nên không thể xóa'}); return;
+    }
+    await api('xxx?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    ...
+  }catch(e){
+    // fallback: nếu isRecordInUse lọt 1 trường hợp, để DB tự chặn qua lỗi FK và vẫn báo thân thiện
+    const msg=e.message.toLowerCase();
+    if(msg.includes('foreign key')||msg.includes('violates')||msg.includes('23503'))
+      showNotifyPopup({message:'X này đang được dùng nên không thể xóa'});
+    else toast('Lỗi xóa: '+e.message,'err');
+  }
+}
+```
+Luôn làm **CẢ 2 lớp**: pre-check bằng `isRecordInUse()` (chặn sớm, UX tốt hơn — không cần đợi DB
+trả lỗi) VÀ fallback bắt lỗi FK ở `catch` (phòng khi pre-check bỏ sót 1 bảng tham chiếu nào đó).
+
+**4 nơi đã áp dụng** (tham chiếu khi cần thêm chỗ mới): `delKhachHang`→chặn nếu `ho_so.khach_hang_id`
+đang dùng; `delDoiTac`→chặn nếu `ho_so.doi_tac_id` hoặc `doi_tac_phi.doi_tac_id` đang dùng;
+`deleteDanhMuc` (dùng chung cho Nước đến/Mục đích/Đối tác qua hàm con `isDanhMucInUse`)→chặn nếu
+`ho_so` hoặc `leads` đang dùng.
+
+**⚠️ Khi thêm nút "Xóa" MỚI nào sau này** trên dữ liệu có thể bị bảng khác tham chiếu: PHẢI gọi
+qua `isRecordInUse()` theo đúng mẫu trên. Các bảng "lá" không ai tham chiếu tới (khoản chi, xử lý
+phát sinh/thành viên nhóm của hồ sơ, bài viết...) thì **không cần** — riêng `categories` (danh mục
+bài viết) cũng không cần vì `posts.category_id` cho phép NULL (xóa danh mục thì bài viết tự
+chuyển "Không chọn", không bị chặn — đây là thiết kế cố ý, khác với các trường hợp chặn ở trên).

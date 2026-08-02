@@ -84,14 +84,20 @@ data, `robots.txt`, `sitemap.xml`) — chi tiết đầy đủ ở `CLAUDE.md` m
 
 ## Phase 4 — Thông tin khách hàng & nâng cấp Hồ sơ/Tư vấn (2026-08-01)
 
-Đã thêm tab mới "👥 Thông tin khách hàng" (quản lý khách đã từng làm hồ sơ) + danh mục "Đối tác
-giới thiệu" trong Cài đặt chung + nâng cấp lớn dialog "Đăng ký hồ sơ mới" (chọn Tên khách hàng qua
-dialog tìm kiếm — bấm icon 🔍 mở dialog chọn từ "Thông tin khách hàng", không gõ tay được nữa;
-field Email; icon lịch cho mọi field ngày; gộp Thư đi/Thư về thành Phí ship) + nâng cấp list Hồ sơ
-(thêm cột SĐT/Ngày nộp, tô đỏ Ngày trả KQ, bộ lọc gộp 1 dòng không xuống dòng — bỏ lọc "Nước đến",
-nút Reset cạnh nút Thêm hồ sơ) + list Thông tin khách hàng (bỏ cột Ghi chú, cột Địa chỉ cắt ngắn
-không xuống dòng) + Tư vấn (SĐT không bắt buộc, đổi "Đã gọi" → "Đang tư vấn") — xem chi tiết
-`07_Phase 4_Thong_Tin_Khach_Hang/Phase4_BanGiao_Claude_Code.md`.
+Đã thêm tab mới "👥 Thông tin khách hàng" (quản lý khách đã từng làm hồ sơ) + nâng cấp lớn dialog
+"Đăng ký hồ sơ mới" (chọn Tên khách hàng qua dialog tìm kiếm — bấm icon 🔍 mở dialog chọn từ
+"Thông tin khách hàng", không gõ tay được nữa; field Email; icon lịch cho mọi field ngày; gộp Thư
+đi/Thư về thành Phí ship; field "Đối tác" lấy đúng danh mục "👤 Đối tác" trong Cài đặt chung) +
+nâng cấp list Hồ sơ (thêm cột SĐT/Ngày nộp, tô đỏ Ngày trả KQ, bộ lọc gộp 1 dòng không xuống dòng —
+bỏ lọc "Nước đến", nút Reset cạnh nút Thêm hồ sơ) + list Thông tin khách hàng (bỏ cột Ghi chú, cột
+Địa chỉ cắt ngắn không xuống dòng) + Tư vấn (SĐT không bắt buộc, đổi "Đã gọi" → "Đang tư vấn") —
+xem chi tiết `07_Phase 4_Thong_Tin_Khach_Hang/Phase4_BanGiao_Claude_Code.md`.
+
+Bổ sung sau đó (2026-08): tìm kiếm không phân biệt dấu tiếng Việt cho mọi ô tìm kiếm tự do (hàm
+dùng chung `vnNorm()`, xem `CLAUDE.md` mục 13); chặn xóa "Thông tin khách hàng"/"Đại lý ủy thác"
+nếu đã có hồ sơ tham chiếu (hàm dùng chung `isRecordInUse()`, xem `CLAUDE.md` mục 14); Dashboard
+sửa lại thống kê "Hồ sơ đang xử lý" (trước đó gộp nhầm cả "Đang xử lý" + "Đã nộp") và thêm 2 thống
+kê mới "Hồ sơ đang nộp" + "Hồ sơ đang tư vấn".
 
 - [x] Đã chạy `07_Phase 4_Thong_Tin_Khach_Hang/supabase_setup_phase4.sql` trong Supabase SQL Editor
       (có xóa cột `chi_thu_di`/`chi_thu_ve` trên bảng `ho_so` đang có dữ liệu thật — người dùng xác

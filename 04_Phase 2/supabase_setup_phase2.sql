@@ -298,6 +298,11 @@ where ngay_nop is not null
 group by 1
 order by 1;
 
+-- (2026-08) KHÔNG còn được admin.html dùng nữa — Dashboard giờ đếm trực tiếp từ mảng HO_SO/LEADS
+-- đã nạp sẵn ở client (khớp đúng số liệu đang hiển thị ở màn Hồ sơ/Tư vấn), vì view này gộp
+-- nhầm "Đang xử lý" + "Đã nộp" vào chung 1 số "Hồ sơ đang xử lý" (đã tách lại thành 2 thống kê
+-- riêng: "Hồ sơ đang xử lý" và "Hồ sơ đang nộp" — xem CLAUDE.md mục 14). Giữ lại view này ở đây
+-- chỉ để không phá vỡ nếu còn nơi khác tình cờ query tới, không cần xóa.
 create or replace view public.v_ho_so_dang_xu_ly as
 select count(*) as so_luong
 from public.ho_so

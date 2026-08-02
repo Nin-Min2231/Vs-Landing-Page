@@ -1427,29 +1427,26 @@ async function addDanhMuc(type){
     $(inputId).value=''; loadDanhMuc(); toast('Đã thêm');
   }catch(e){ toast(e.message.includes('duplicate')?'Mục này đã tồn tại':'Lỗi: '+e.message,'err'); }
 }
-/* Kiểm tra 1 mục danh mục có đang được tham chiếu ở Hồ sơ (FK) hoặc Tư vấn (cột text
-   country/muc_dich lưu theo TÊN, không phải FK) hay không, trước khi cho xóa hẳn. */
+/* ==== Kiểm tra ràng buộc TRƯỚC KHI XÓA — dùng chung cho MỌI màn hình có nút "Xóa" trên dữ
+   liệu có thể đang được tham chiếu ở nơi khác (Hồ sơ, Tư vấn, Bảng phí đại lý...). Nếu đang
+   được dùng thì CHẶN xóa (không cho xóa), báo lỗi dễ hiểu thay vì để lỗi FK kỹ thuật từ CSDL.
+   refs: mảng {table, column, value} — value mặc định = id nếu không truyền (dùng cho cột lưu
+   theo TÊN như leads.country/leads.muc_dich, không phải FK theo id).
+   ⚠️ QUY ƯỚC cho code sau này: bất kỳ nút "Xóa" MỚI nào thêm sau này trên dữ liệu có thể bị
+   tham chiếu ở bảng khác đều PHẢI gọi qua isRecordInUse(refs) trước khi xóa (chặn nếu đang
+   dùng) — xem thêm CLAUDE.md mục 14. Các bảng "lá" không ai tham chiếu tới (khoan_chi,
+   ho_so_xu_ly_phat_sinh, ho_so_thanh_vien, posts...) thì không cần check này. ==== */
+async function isRecordInUse(refs){
+  const checks = await Promise.all(refs.map(r=>api(r.table+'?'+r.column+'=eq.'+encodeURIComponent(r.value)+'&select=id&limit=1')));
+  return checks.some(rows=>rows && rows.length>0);
+}
 async function isDanhMucInUse(type, item){
-  const enc = encodeURIComponent(item.ten);
-  if(type==='nuoc'){
-    const [hs, ld] = await Promise.all([
-      api('ho_so?nuoc_id=eq.'+item.id+'&select=id&limit=1'),
-      api('leads?country=eq.'+enc+'&select=id&limit=1')
-    ]);
-    return (hs&&hs.length>0) || (ld&&ld.length>0);
-  }
-  if(type==='mucdich'){
-    const [hs, ld] = await Promise.all([
-      api('ho_so?muc_dich_id=eq.'+item.id+'&select=id&limit=1'),
-      api('leads?muc_dich=eq.'+enc+'&select=id&limit=1')
-    ]);
-    return (hs&&hs.length>0) || (ld&&ld.length>0);
-  }
-  if(type==='truongnhom'){
-    const hs = await api('ho_so?truong_nhom_id=eq.'+item.id+'&select=id&limit=1');
-    return hs && hs.length>0;
-  }
-  return false;
+  const refsByType = {
+    nuoc: [{table:'ho_so',column:'nuoc_id',value:item.id},{table:'leads',column:'country',value:item.ten}],
+    mucdich: [{table:'ho_so',column:'muc_dich_id',value:item.id},{table:'leads',column:'muc_dich',value:item.ten}],
+    truongnhom: [{table:'ho_so',column:'truong_nhom_id',value:item.id}]
+  };
+  return isRecordInUse(refsByType[type]||[]);
 }
 async function deleteDanhMuc(type,id){
   const item = danhMucArr(type).find(x=>x.id===id);
@@ -1564,13 +1561,17 @@ async function saveDoiTac(){
 }
 async function delDoiTac(id){
   if(!await showConfirmPopup({message:'Xóa đại lý ủy thác này? Không thể hoàn tác.'})) return;
+  const blockMsg = 'Đại lý này đang có hồ sơ tham chiếu nên không thể xóa. Hãy dùng "Ngừng hợp tác" thay vì xóa.';
   try{
+    if(await isRecordInUse([{table:'ho_so',column:'doi_tac_id',value:id},{table:'doi_tac_phi',column:'doi_tac_id',value:id}])){
+      showNotifyPopup({message:blockMsg}); return;
+    }
     await api('doi_tac?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadDoiTac(); toast('Đã xóa đại lý ủy thác');
   }catch(e){
     const msg=e.message.toLowerCase();
     if(msg.includes('foreign key')||msg.includes('violates')||msg.includes('23503'))
-      showNotifyPopup({message:'Đại lý này đang có hồ sơ tham chiếu nên không thể xóa. Hãy dùng "Ngừng hợp tác" thay vì xóa.'});
+      showNotifyPopup({message:blockMsg});
     else toast('Lỗi xóa: '+e.message,'err');
   }
 }
@@ -1948,10 +1949,19 @@ async function saveKhachHang(){
 }
 async function delKhachHang(id){
   if(!await showConfirmPopup({message:'Xóa khách hàng này? Không thể hoàn tác.'})) return;
+  const blockMsg = 'Khách hàng này đã có hồ sơ nên không thể xóa.';
   try{
+    if(await isRecordInUse([{table:'ho_so',column:'khach_hang_id',value:id}])){
+      showNotifyPopup({message:blockMsg}); return;
+    }
     await api('khach_hang?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadKhachHang(); toast('Đã xóa khách hàng');
-  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+  }catch(e){
+    const msg=e.message.toLowerCase();
+    if(msg.includes('foreign key')||msg.includes('violates')||msg.includes('23503'))
+      showNotifyPopup({message:blockMsg});
+    else toast('Lỗi xóa: '+e.message,'err');
+  }
 }
 
 /* ==== Xử lý phát sinh (bảng con của Hồ sơ) ==== */
@@ -2059,23 +2069,30 @@ async function delThanhVien(id){
 /* ==================== PHASE 2: DASHBOARD ==================== */
 async function loadDashboard(){
   try{
-    const [byMonth, dangXuLyArr, nhacLai, xlps7] = await Promise.all([
+    const [byMonth, nhacLai, xlps7] = await Promise.all([
       api('v_dashboard_theo_thang?select=*&order=thang'),
-      api('v_ho_so_dang_xu_ly?select=*'),
       api('v_tu_van_can_nhac_lai?select=*&order=ngay_nhac_lai'),
       api('v_xu_ly_phat_sinh_7_ngay?select=*&order=han_chot')
     ]);
-    renderDashboard(byMonth||[], (dangXuLyArr&&dangXuLyArr[0])||{so_luong:0}, nhacLai||[], xlps7||[]);
+    renderDashboard(byMonth||[], nhacLai||[], xlps7||[]);
   }catch(e){ if(e.message!=='401') toast('Lỗi tải Dashboard: '+e.message,'err'); }
 }
-function renderDashboard(byMonth, dangXuLy, nhacLai, xlps7){
+function renderDashboard(byMonth, nhacLai, xlps7){
   const now = new Date();
   const curKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   const curRow = byMonth.find(r=>r.thang && r.thang.slice(0,7)===curKey);
+  // 3 thống kê Hồ sơ/Tư vấn: đếm trực tiếp từ HO_SO/LEADS đã nạp sẵn (khớp đúng với dữ liệu
+  // đang hiển thị ở màn "Hồ sơ"/"Tư vấn", không dùng view riêng để tránh lệch số liệu — trước
+  // đây view v_ho_so_dang_xu_ly gộp nhầm cả "Đang xử lý" lẫn "Đã nộp" vào chung 1 số).
+  const hsDangXuLy = HO_SO.filter(h=>h.trang_thai==='Đang xử lý').length;
+  const hsDaNop = HO_SO.filter(h=>h.trang_thai==='Đã nộp').length;
+  const hsDangTuVan = LEADS.filter(l=>l.status==='Đang tư vấn').length;
   $('dashStatRow').innerHTML = `
     <div class="stat"><div class="n">${fmtVND(curRow?.doanh_thu)}</div><div class="l">Doanh thu tháng này</div></div>
     <div class="stat"><div class="n">${fmtVND(curRow?.loi_nhuan)}</div><div class="l">Lợi nhuận tháng này</div></div>
-    <div class="stat"><div class="n">${dangXuLy.so_luong||0}</div><div class="l">Hồ sơ đang xử lý</div></div>
+    <div class="stat"><div class="n">${hsDangXuLy}</div><div class="l">Hồ sơ đang xử lý</div></div>
+    <div class="stat"><div class="n">${hsDaNop}</div><div class="l">Hồ sơ đang nộp</div></div>
+    <div class="stat"><div class="n">${hsDangTuVan}</div><div class="l">Hồ sơ đang tư vấn</div></div>
     <div class="stat"><div class="n">${nhacLai.length}</div><div class="l">Cần nhắc lại (7 ngày)</div></div>`;
 
   const labels = byMonth.map(r=>{ const d=new Date(r.thang); return (d.getMonth()+1)+'/'+d.getFullYear(); });
