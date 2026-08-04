@@ -22,9 +22,9 @@ Visa-Landing-Page/
 ├── 02_Source/                 ← source code
 │   ├── index.html                 Landing page (mở bằng trình duyệt xem ngay)
 │   ├── admin.html                 Trang quản trị (cần cấu hình Supabase)
-│   ├── supabase_setup.sql         Script tạo database (chạy 1 lần trong Supabase)
 │   └── assets/                    Logo, favicon, QR Zalo (deploy kèm 2 file HTML)
-└── 03_Information/            ← thông tin gốc công ty (logo, QR, Information.md — nguồn dữ liệu thật)
+├── 03_Information/            ← thông tin gốc công ty (logo, QR, Information.md — nguồn dữ liệu thật)
+└── 05_Database/               ← ⭐ TOÀN BỘ script SQL cần chạy trên Supabase (đọc README.md trong đây)
 ```
 
 > ⚠️ Khi deploy Cloudflare Pages: kéo thả cả 2 file HTML **và thư mục `assets`** (giữ nguyên tên).
@@ -55,7 +55,7 @@ Trang đang chạy thật tại domain riêng **`https://topvisa5s.com`** (vẫn
 
 Đã code xong 5 tab mới trong `admin.html` (Dashboard, Tư vấn, Hồ sơ, Đại lý ủy thác, Cài đặt chung) — xem chi tiết `04_Phase 2/Phase2_Ban_giao_Claude_Code.md`.
 
-- [ ] **Cần chạy `04_Phase 2/supabase_setup_phase2.sql` trong Supabase SQL Editor trước khi dùng** (tạo bảng mới, mở rộng bảng `leads`) — Claude Code không tự chạy được bước này.
+- [ ] **Cần chạy `05_Database/02_supabase_setup_phase2.sql` trong Supabase SQL Editor trước khi dùng** (tạo bảng mới, mở rộng bảng `leads`) — Claude Code không tự chạy được bước này.
 - [ ] Test theo checklist mục 8 trong file bàn giao trên sau khi migration chạy xong.
 
 ## Phase 3 — Tài chính (2026-08-01)
@@ -64,7 +64,7 @@ Trang đang chạy thật tại domain riêng **`https://topvisa5s.com`** (vẫn
 (Khoản thu tự động từ Hồ sơ đã đậu, Khoản chi nhập tay) — xem chi tiết
 `06_Phase 3_Tai_Chinh/Phase3_TaiChinh_Ban_giao_Claude_Code.md`. Đã đẩy lên `main` và deploy thật.
 
-- [x] Chạy `06_Phase 3_Tai_Chinh/supabase_setup_phase3.sql` trong Supabase SQL Editor (bảng `khoan_chi`).
+- [x] Chạy `05_Database/03_supabase_setup_phase3.sql` trong Supabase SQL Editor (bảng `khoan_chi`).
 - [ ] Test theo checklist mục 8 trong file bàn giao trên với dữ liệu thật (đã tự kiểm tra được phần
       không cần đăng nhập: giao diện, định dạng tiền, 4 nút lọc nhanh, RLS chặn `anon` đọc/ghi
       `khoan_chi` — còn phần cần đăng nhập admin thật thì người dùng tự test).
@@ -106,17 +106,53 @@ ngày nộp của Hồ sơ gộp chung với tiêu đề "Quản lý hồ sơ" t
 **mọi màn hình list giờ khoá cố định phần tiêu đề/lọc/thống kê, chỉ bảng kết quả cuộn riêng** (class
 `tab-scroll`, xem `CLAUDE.md` mục 17 — chuẩn bắt buộc áp dụng cho màn list mới sau này).
 
-- [x] Đã chạy `07_Phase 4_Thong_Tin_Khach_Hang/supabase_setup_phase4.sql` trong Supabase SQL Editor
-      (có xóa cột `chi_thu_di`/`chi_thu_ve` trên bảng `ho_so` đang có dữ liệu thật — người dùng xác
-      nhận đã chạy thành công).
-- [ ] **Cần chạy lại `04_Phase 2/supabase_setup_phase2.sql` trong Supabase SQL Editor** (đã cập
-      nhật thêm cột `leads.nguon` — file vẫn idempotent, chạy lại toàn bộ không lỗi/không ảnh hưởng
-      dữ liệu đã có, chỉ phần thêm cột mới này sẽ chạy vì dùng DO block tự kiểm tra cột chưa có).
+- [x] Đã chạy `supabase_setup_phase4.sql` (giờ là `05_Database/04_supabase_setup_phase4.sql`) trong
+      Supabase SQL Editor (có xóa cột `chi_thu_di`/`chi_thu_ve` trên bảng `ho_so` đang có dữ liệu
+      thật — người dùng xác nhận đã chạy thành công).
+- [ ] **Cần chạy lại `05_Database/02_supabase_setup_phase2.sql` trong Supabase SQL Editor** (đã cập
+      nhật thêm cột `leads.nguon`). ⚠️ Lần chạy đầu (2026-08-04) bị lỗi `42703: column "chi_thu_di"
+      does not exist` — **đã sửa xong** (file cũ có 1 đoạn tính lại `tong_chi`/`loi_nhuan` viết từ
+      trước khi Phase 4 xoá cột `chi_thu_di`/`chi_thu_ve`, giờ đã bọc điều kiện kiểm tra đúng
+      trạng thái database, xem `CLAUDE.md` mục 15) — **cần chạy lại file ĐÃ SỬA** (kéo bản mới nhất
+      bằng `git pull` trước khi copy vào SQL Editor) để migration `leads.nguon` áp dụng thành công.
 - [ ] Test theo checklist mục 11 trong file bàn giao trên với dữ liệu thật (đã tự kiểm tra được phần
       không cần đăng nhập qua DOM: autocomplete, mặc định Nước đến=Nhật Bản, lọc Đại lý ủy thác chỉ
       hiện Đang hợp tác, tô đỏ Ngày trả KQ đúng 3 trường hợp, tính lại Tổng chi với Phí ship, Reset
       bộ lọc, RLS chặn `anon` trên `khach_hang`/`danh_muc_doi_tac` — còn phần cần đăng nhập admin
       thật thì người dùng tự test, đặc biệt đối chiếu số liệu trước/sau migration theo mục 0).
+
+## Tối ưu điện thoại cho Admin CRM (2026-08-04)
+
+Test thật trên khổ điện thoại ~412×915 phát hiện 3 vấn đề, đã sửa:
+
+- Bộ lọc/thống kê/tiêu đề của mọi màn hình list (Tư vấn, Hồ sơ, Thông tin khách hàng, Tài chính,
+  Đại lý ủy thác, Bài viết, Danh mục bài viết) **không còn cố định trên điện thoại nữa** (chỉ giữ
+  cố định trên máy tính) — trên điện thoại, nếu ép đứng yên thì phần này quá cao, che gần hết màn
+  hình, chỉ còn 1 khe nhỏ xem list. Giờ điện thoại cuộn nguyên trang như bình thường.
+- Nhóm chip trạng thái (màn Hồ sơ) từng bị tràn ngang trên điện thoại — đã sửa để tự xuống dòng.
+- Icon lịch của các ô ngày tháng có thể hiện mũi tên thay vì hình lịch trên 1 số điện thoại — đã tự
+  vẽ icon lịch riêng cho điện thoại (web/máy tính không đổi gì, vẫn đúng từ trước).
+- Nút "+ Thêm..." (đăng ký mới) trên các màn list giờ nổi cố định góc phải màn hình điện thoại khi
+  cuộn, để luôn bấm được mà không cần cuộn lên lại.
+
+Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 17.
+
+- [ ] **Cần bạn tự kiểm tra trên điện thoại thật** (Claude Code không có màn hình điện thoại thật để
+      xem trực tiếp): icon lịch đã đúng hình lịch chưa (phần dễ sai lệch nhất giữa các dòng máy),
+      và trải nghiệm cuộn trang tổng thể trên máy của bạn.
+
+## Gom toàn bộ SQL về `05_Database/` (2026-08-04)
+
+Theo yêu cầu người dùng (tránh nhầm lẫn chạy nhầm bản cũ — từng gây lỗi thật, xem mục Phase 4 ở
+trên): 4 file SQL trước đây nằm rải rác ở `02_Source/supabase_setup.sql`,
+`04_Phase 2/supabase_setup_phase2.sql`, `06_Phase 3_Tai_Chinh/supabase_setup_phase3.sql`,
+`07_Phase 4_Thong_Tin_Khach_Hang/supabase_setup_phase4.sql` đã được **gom về `05_Database/`**
+(đổi tên `01_..`→`04_..` theo đúng thứ tự phase) và **xóa hẳn bản gốc** ở 4 vị trí cũ. Từ nay:
+
+- **Cần chạy SQL gì → luôn tìm trong `05_Database/`** (đọc `05_Database/README.md` trước, có ghi
+  rõ thứ tự chạy 01→04 và lý do vẫn an toàn chạy lại toàn bộ dù database đã qua hết 4 phase).
+- Các thư mục `04_Phase 2/`, `06_Phase 3_Tai_Chinh/`, `07_Phase 4_Thong_Tin_Khach_Hang/` vẫn còn
+  giữ tài liệu bàn giao/ảnh thiết kế (không phải SQL) như cũ, không bị xóa.
 
 ## Muốn sửa nội dung?
 

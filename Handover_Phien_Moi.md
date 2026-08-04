@@ -1,173 +1,188 @@
-# Handover — Bàn giao sang phiên làm việc mới (2026-08-01)
+# Handover — Bàn giao sang phiên làm việc mới (2026-08-04, bản 2)
 
-> File này **GHI ĐÈ HOÀN TOÀN** `04_Phase 2/Phase2_Handover_Phien_Moi.md` — nội dung bản cũ (Phase 2
-> CRM: Dashboard/Tư vấn/Hồ sơ/Đại lý ủy thác/Cài đặt chung, hệ thống dialog chuẩn, popup Confirm/
-> Thông báo) **đã xong và đã deploy từ trước**, không cần đọc lại. Đọc file này TRƯỚC khi làm bất kỳ
-> gì tiếp, theo đúng thứ tự: `CLAUDE.md` → file này → bắt tay vào **mục 1**.
+> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (kể cả bản 1 viết sớm hơn cùng ngày, và
+> `04_Phase 2/Phase2_Handover_Phien_Moi.md`) — không cần đọc lại các bản cũ. Đọc file này TRƯỚC khi
+> làm bất kỳ gì tiếp, theo đúng thứ tự: `CLAUDE.md` → file này → bắt tay vào **mục 1**.
+>
+> File này viết để dùng được cho **cả Claude Code lẫn Claude Cowork** (hoặc bất kỳ agent nào khác
+> tiếp quản dự án) — không giả định sẵn bối cảnh hội thoại trước đó.
 
-## 0. Bối cảnh — 1 phiên rất dài, đi qua nhiều "phase" liên tiếp
+## 0. Bối cảnh — 1 phiên dài, tiếp nối ngay sau Phase 2→4 + SEO
 
-Phiên vừa qua (worktree nhánh `claude/phase-3-tai-chinh-9e6053`) làm liên tục nhiều yêu cầu lớn
-theo đúng thứ tự thời gian:
+Phiên trước đó (đã tóm tắt trong bản handover cũ hơn, giờ không cần đọc lại) hoàn thành Phase 3
+(Tài chính), dọn SQL, SEO domain riêng, Phase 4 (Thông tin khách hàng + nâng cấp Hồ sơ/Tư vấn).
+Phiên **vừa rồi** (nhánh `claude/ho-so-khach-hang-ui-2368dd`, 10 commit liên tiếp, từ `424818a` đến
+`283c969`, cộng thêm 1 đợt dọn dẹp tài liệu không qua git-commit-code) làm tiếp:
 
-1. **Phase 3 — Tài chính**: thêm tab "💰 Tài chính" (Lợi nhuận/Khoản thu/Khoản chi).
-2. **6 điểm sửa UI/UX** theo yêu cầu người dùng (dialog Khoản chi theo chuẩn, nút "Chi tiết", định
-   dạng ngày, bỏ "Chờ kết quả", nút Sửa màu xanh, bỏ nút Ẩn/Hiện) — **quan trọng: điểm định dạng
-   ngày dd/mm/yyyy ở bước này SAU ĐÓ ĐÃ BỊ ĐỔI NGƯỢC LẠI ở Phase 4** (xem mục 3.5).
-3. **Dọn dẹp SQL**: bỏ toàn bộ câu `insert into ...` (dữ liệu mẫu) khỏi file setup, ghi quy tắc vào
-   `CLAUDE.md` để không tự thêm nữa.
-4. **SEO**: phát hiện domain riêng `topvisa5s.com` (đã gắn nhưng chưa ghi vào tài liệu) chưa được
-   Google index — tối ưu code (canonical/OG/JSON-LD/robots.txt/sitemap.xml) + hướng dẫn người dùng
-   tự làm Google Search Console + Google Business Profile (đang dở, xem mục 2).
-5. **Phase 4 — Thông tin khách hàng + nâng cấp Hồ sơ/Tư vấn**: tab mới, danh mục mới, autocomplete,
-   đổi lại toàn bộ field ngày về `type="date"` chuẩn (revert lại quyết định ở mục 2).
+1. Dialog "Đăng ký hồ sơ": ô "Tên khách hàng" đổi sang **bắt buộc chọn qua dialog tìm kiếm** (icon
+   🔍), chỉnh kích thước field, sửa field "Đối tác" lấy nhầm danh mục.
+2. Hàm dùng chung `vnNorm()` — tìm kiếm không phân biệt dấu tiếng Việt.
+3. Hàm dùng chung `isRecordInUse()` — chặn xóa Khách hàng/Đại lý ủy thác nếu đang có hồ sơ.
+4. Sửa 3 thống kê Dashboard.
+5. **Gộp tab "Tư vấn" + "Khách đăng ký"** thành 1 tab, thêm cột phân loại nguồn "Từ Web"/"Tự tạo".
+6. Phát hiện + sửa 1 lỗi SQL thật (`42703 chi_thu_di`) trong migration Phase 2.
+7. Chip checkbox trạng thái (Hồ sơ); gộp dòng lọc Tài chính + Hồ sơ; thêm cơ chế chung **"tab cuộn
+   cố định"** (`tab-scroll`) cho 7 màn list — chỉ desktop.
+8. Test thật khổ điện thoại ~412×915 → phát hiện + sửa 4 vấn đề mobile.
+9. **Kiểm tra + cập nhật đầy đủ tài liệu** (CLAUDE.md/README.md/Handover) cho khớp trạng thái thật.
+10. **Gom toàn bộ SQL rải rác về 1 thư mục `05_Database/`** (yêu cầu người dùng, xem mục 3.9) —
+    người dùng cũng tự tay xóa 2 thư mục không còn cần thiết (`05_Bugs Report/`,
+    `08_Phase 5_Tu_Van/` — thư mục sau chỉ là 1 file CSV xuất từ admin.html, không phải tài liệu).
 
-**Tất cả đã code xong, test qua DOM (Claude Browser — ảnh chụp màn hình bị lỗi trong phiên này,
-đã chuyển sang đọc DOM/gọi hàm trực tiếp để test), và deploy thành công lên `https://topvisa5s.com`
-+ `https://topvisa.nguyennc1357.workers.dev`.** HEAD của nhánh làm việc trùng khớp `origin/main`.
+**Tất cả đã code xong, test qua DOM (Claude Browser — screenshot bị lỗi trong suốt phiên này, đã
+dùng `javascript_tool` gọi hàm/đọc DOM trực tiếp), và deploy thành công lên `https://topvisa5s.com`
++ `https://topvisa.nguyennc1357.workers.dev`.** Việc gom SQL (mục 10) là thay đổi **mới nhất, chưa
+commit tại thời điểm viết file này** — xem mục 1 để biết trạng thái chính xác lúc bạn đọc.
 
 ## 1. Việc CẦN LÀM NGAY / cần hỏi lại người dùng
 
-1. **Google Business Profile — câu hỏi chưa có câu trả lời**: đã hỏi người dùng "nhân viên Top Visa
-   có bao giờ đến tận nhà/văn phòng khách để lấy giấy tờ/tư vấn trực tiếp không" (để quyết định có
-   tick ô "Service business" khi tạo Google Business Profile hay không) — **chưa nhận được câu trả
-   lời khi phiên kết thúc**. Nếu người dùng hỏi tiếp về bước này, hỏi lại câu trên trước khi khuyên.
-2. **Search Console/Business Profile chưa xong hẳn**: người dùng đã xác minh quyền sở hữu
-   `https://topvisa5s.com` (URL prefix, thẻ HTML) và đang giữa chừng làm Google Business Profile
-   (đã qua bước chọn loại hình doanh nghiệp). Cần hỏi lại xem đã khai báo sitemap + bấm "Yêu cầu lập
-   chỉ mục" trong Search Console chưa, và Business Profile đã xác minh xong chưa (thường mất vài
-   ngày nếu xác minh qua thư bưu điện).
-3. **Phase 4 — chưa xác nhận đối chiếu số liệu migration**: người dùng báo "đã chạy SQL thành công"
-   nhưng **chưa xác nhận cụ thể** đã đối chiếu `count(*)`/`sum(chi_phi_ship)` trước-sau theo đúng
-   mục 0 của `07_Phase 4_Thong_Tin_Khach_Hang/Phase4_BanGiao_Claude_Code.md` chưa. Không bắt buộc
-   phải làm lại (migration đã chạy, dữ liệu đã ở trạng thái mới), nhưng nếu người dùng nghi ngờ có
-   hồ sơ bị lệch số tiền, đây là việc đầu tiên cần kiểm tra lại.
-4. **Checklist test đầy đủ với tài khoản đăng nhập thật** cho cả Phase 3 (mục 8) và Phase 4 (mục 11)
-   trong 2 file bàn giao tương ứng — phần không cần đăng nhập đã tự test qua DOM, phần cần đăng nhập
-   (thêm/sửa/xóa Khoản chi thật, tạo Hồ sơ thật liên kết Khách hàng thật...) người dùng chưa xác
-   nhận đã tự làm.
+1. **⚠️ QUAN TRỌNG NHẤT — chạy lại SQL migration:** người dùng cần chạy lại
+   `05_Database/02_supabase_setup_phase2.sql` (bản **đã sửa lỗi** `42703`, và giờ đã **đổi chỗ**
+   sang `05_Database/` — xem mục 3.9) trong Supabase SQL Editor để áp dụng cột `leads.nguon` mới.
+   **Nhắc người dùng `git pull` trước** để chắc chắn lấy đúng file mới nhất ở vị trí mới.
+2. **Xác nhận trên điện thoại thật (Claude Code/Cowork không có màn hình thật để xem):** icon lịch
+   đã hiện đúng hình lịch chưa (xem mục 3.8 điểm 2), và trải nghiệm cuộn trang tổng thể trên máy
+   thật của người dùng.
+3. **Test đầy đủ với đăng nhập admin thật** cho toàn bộ tính năng mới — phần không cần đăng nhập
+   đã tự test qua DOM, phần cần đăng nhập người dùng chưa xác nhận đã tự làm.
+4. **Google Search Console / Google Business Profile** — dang dở từ trước, **chưa có cập nhật mới**
+   trong phiên vừa rồi (xem `CLAUDE.md` mục 12).
+5. **Kiểm tra xem commit "gom SQL về 05_Database/" đã được đẩy lên GitHub + deploy chưa** — nếu bạn
+   đọc file này mà thấy `05_Database/` chưa tồn tại hoặc còn thấy `02_Source/supabase_setup.sql`,
+   nghĩa là bước commit/push của mục 3.9 chưa hoàn tất, cần làm tiếp trước khi báo "xong" cho
+   người dùng.
+6. `git stash` còn tồn đọng ở thư mục gốc dự án (KHÔNG phải worktree) — xem mục 4.
 
 ## 2. Trạng thái tổng thể
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Phase 3 — Tài chính (tab, CRUD Khoản chi, xuất CSV) | ✅ Code xong, deploy — xem mục 3.1 |
-| Dọn SQL — bỏ insert dữ liệu mẫu + quy tắc CLAUDE.md | ✅ Xong, deploy |
-| SEO — canonical/OG/JSON-LD/robots.txt/sitemap.xml | ✅ Code xong, deploy |
-| SEO — Google Search Console | 🟡 Đã xác minh quyền sở hữu — **chưa xác nhận đã khai báo sitemap + Request Indexing** |
-| SEO — Google Business Profile | 🟡 Đang làm dở (đã chọn loại hình DN) — chưa xác nhận xong |
-| Phase 4 — Thông tin khách hàng + nâng cấp Hồ sơ/Tư vấn | ✅ Code xong, deploy — xem mục 3.5 |
-| Phase 4 — migration đã chạy trên Supabase thật | 🟡 Người dùng báo "thành công", **chưa xác nhận đối chiếu số liệu** |
-| Test đầy đủ với đăng nhập thật (Phase 3 + Phase 4) | 🟡 Người dùng chưa xác nhận đã tự làm |
+| Dialog Hồ sơ — chọn khách hàng qua tìm kiếm, chỉnh kích thước field | ✅ Code xong, deploy |
+| `vnNorm()` / `isRecordInUse()` / Dashboard 3 thống kê | ✅ Code xong, deploy |
+| Gộp tab Tư vấn + Khách đăng ký, thêm cột "Nguồn" | ✅ Code xong, deploy |
+| Migration `leads.nguon` (`05_Database/02_supabase_setup_phase2.sql`) | 🔴 **Cần người dùng chạy lại** (bản đã sửa lỗi + đổi chỗ) — xem mục 1.1 |
+| Chip checkbox trạng thái + gộp dòng lọc + "tab cuộn cố định" (desktop) | ✅ Code xong, deploy |
+| 4 fix mobile (tắt cuộn cố định, chip tràn ngang, icon lịch, nút nổi) | ✅ Code xong, deploy — 🟡 chưa xác nhận trên điện thoại thật |
+| Tài liệu CLAUDE.md/README.md/Handover — rà soát + cập nhật đầy đủ | ✅ Xong |
+| **Gom SQL về `05_Database/`, xóa bản cũ rải rác** | 🟡 Đã làm xong trong worktree — **kiểm tra đã commit/push/deploy chưa** khi bạn đọc file này (mục 1.5) |
+| Test đầy đủ với đăng nhập admin thật (toàn bộ tính năng mới) | 🟡 Người dùng chưa xác nhận |
+| Google Search Console / Business Profile | 🟡 Dang dở từ trước |
 
 ## 3. Chi tiết các phần quan trọng (để không phải đọc lại toàn bộ code)
 
-### 3.1 Phase 3 — Tab "💰 Tài chính"
-Bảng mới `khoan_chi` (chi phí vận hành, nhập tay — **khác hoàn toàn** các cột `chi_...` trong
-`ho_so`, không được cộng trùng). Khoản thu = `loi_nhuan` của `ho_so` có `trang_thai='Đậu'`, theo
-`ngay_tra_kq`. RLS chỉ `authenticated`. Chi tiết: `06_Phase 3_Tai_Chinh/Phase3_TaiChinh_Ban_giao_Claude_Code.md`
-(⚠️ file này CHỈ có ở thư mục gốc dự án, KHÔNG có trong git/worktree — xem mục 4).
+### 3.1 Dialog "Đăng ký hồ sơ" — chọn khách hàng qua tìm kiếm
+Ô "Tên khách hàng"/"Số ĐT khách"/"Địa chỉ"/"Email" giờ **readonly hoàn toàn** — chỉ điền được bằng
+cách bấm icon 🔍 mở dialog "Chọn khách hàng" (`#khPickOverlay`). **Hệ quả quan trọng:** muốn đăng
+ký hồ sơ cho ai, người đó phải có sẵn trong "Thông tin khách hàng" trước. Field "Đối tác" đã sửa
+lại lấy đúng danh mục "👤 Đối tác" (`danh_muc_truong_nhom`) thay vì "Đối tác giới thiệu"
+(`danh_muc_doi_tac`, đã bỏ hẳn khỏi Cài đặt chung — bảng vẫn còn trong Supabase, chỉ không quản lý
+qua UI nữa).
 
-### 3.2 6 điểm sửa UI/UX (đã áp dụng, 1 điểm đã bị override ở Phase 4)
-1. Dialog "Thêm khoản chi" đổi theo đúng chuẩn `.dlg-section`/`.dlg-row` (xem `01_Docs/10_Chuan_Dialog_Chung.md`).
-2. Dòng "Thu" trong bảng Tài chính: nút "Chi tiết" mở dialog Hồ sơ (cho sửa), thay vì chỉ hiện chữ.
-3. ~~Định dạng ngày dd/mm/yyyy (mask tự viết)~~ — **ĐÃ BỊ THAY THẾ hoàn toàn ở Phase 4** bằng
-   `<input type="date">` chuẩn, xem mục 3.5.
-4. Bỏ trạng thái "Chờ kết quả" khỏi màn Hồ sơ.
-5. Nút "Sửa" đổi từ xám sang xanh chữ trắng (`btn-p`) — áp dụng toàn bộ, còn nguyên tới giờ.
-6. Bỏ nút "Ẩn/Hiện" trong Cài đặt chung — còn nguyên tới giờ.
+### 3.2 `vnNorm()` — tìm kiếm không phân biệt dấu tiếng Việt
+Xem `CLAUDE.md` mục 13. Áp dụng cho 4 ô: `fHsSearch`, `fKhSearch`, `fTvSearch`, `khPickSearch`.
+**Bắt buộc dùng lại cho mọi ô tìm kiếm mới.**
 
-### 3.3 Dọn SQL — không tự thêm `insert into` nữa
-Đã bỏ insert dữ liệu mẫu khỏi `02_Source/supabase_setup.sql` và `04_Phase 2/supabase_setup_phase2.sql`.
-**Quy tắc mới ghi trong `CLAUDE.md` mục 10**: không tự ý thêm `insert into ...` vào bất kỳ file SQL
-setup/migration nào nữa — lý do `on conflict do nothing` không bảo vệ được nếu người dùng đã xóa 1
-dòng dữ liệu mẫu trước đó (chạy lại SQL sẽ vô tình chèn lại). Nếu 1 tính năng mới thật sự cần dữ liệu
-khởi tạo, phải hỏi người dùng trước.
+### 3.3 `isRecordInUse()` — kiểm tra ràng buộc trước khi xóa
+Xem `CLAUDE.md` mục 14. Áp dụng cho `delKhachHang`, `delDoiTac`, `deleteDanhMuc`. **Bắt buộc dùng
+lại cho mọi nút "Xóa" mới trên dữ liệu có thể bị tham chiếu.**
 
-### 3.4 SEO — domain riêng `topvisa5s.com`
-**Phát hiện quan trọng**: dự án đã có domain riêng `https://topvisa5s.com` (gắn qua Cloudflare) từ
-trước, nhưng tài liệu cũ (`01_Docs/08_Ban_giao_Claude_Code.md`) vẫn ghi "chưa mua domain" — đã cập
-nhật `CLAUDE.md` mục 2 phản ánh đúng thực tế. Trang chạy song song ở CẢ 2 nơi (`topvisa5s.com` và
-`topvisa.nguyennc1357.workers.dev`, cùng 1 bản deploy).
+### 3.4 Gộp "Tư vấn" + "Khách đăng ký" → 1 tab, thêm cột "Nguồn"
+Xem `CLAUDE.md` mục 15. Tab "Khách đăng ký" đã **xóa hẳn**. Cột mới `leads.nguon` ('Từ Web' / 'Tự
+tạo') — **cần chạy lại migration mới verify được trên Supabase thật** (mục 1.1). Dữ liệu lead CŨ
+đã backfill thành 'Tự tạo' theo yêu cầu người dùng.
 
-Nguyên nhân tìm `topvisa5s.com` trên Google không ra kết quả: domain **chưa từng được Google crawl**
-(không phải lỗi kỹ thuật). Đã làm: canonical trỏ về `topvisa5s.com`, Open Graph/Twitter Card đầy đủ,
-JSON-LD (`TravelAgency` + `FAQPage` khớp đúng nội dung FAQ hiển thị), `robots.txt` + `sitemap.xml`
-mới (trước đó chưa từng tồn tại), thẻ `<meta name="google-site-verification">` (người dùng đã xác
-minh xong property URL-prefix `https://topvisa5s.com`). Chi tiết đầy đủ + hướng dẫn từng bước Search
-Console/Business Profile: `CLAUDE.md` mục 12.
+### 3.5 Chip checkbox trạng thái (Hồ sơ) + gộp dòng lọc
+Xem `CLAUDE.md` mục 16. Mặc định "Đang xử lý" + "Đã nộp" được tick. Dòng lọc Hồ sơ/Tài chính
+(`.filters-hoso`) KHÔNG bọc cuộn ngang — đủ chỗ thì 1 dòng, không đủ tự xuống dòng.
 
-**Việc dở dang của người dùng** (xem mục 1 ở trên): Search Console mới xác minh xong, chưa xác nhận
-khai báo sitemap + Request Indexing; Google Business Profile đang tạo dở.
+### 3.6 "Tab cuộn cố định" (`tab-scroll`) — CHỈ áp dụng desktop
+Xem `CLAUDE.md` mục 17. **Desktop** (>700px): 7 màn list khoá cố định tiêu đề/lọc/thống kê, chỉ
+bảng kết quả cuộn riêng. **Mobile** (≤700px): cơ chế này **TẮT HẲN**, cuộn nguyên trang bình thường.
 
-### 3.5 Phase 4 — Thông tin khách hàng + nâng cấp Hồ sơ/Tư vấn (mới nhất, đáng chú ý nhất)
+### 3.7 4 fix mobile (test thật khổ ~412×915)
+1. Chip trạng thái (Hồ sơ) tràn ngang → `flex-basis:100%;min-width:0`.
+2. Icon lịch hiện mũi tên thay vì hình lịch trên 1 số điện thoại → tự vẽ SVG riêng, CHỈ mobile.
+3. Nút "+ Thêm..." bị cuộn mất → class `.btn-add-fab`, nổi cố định góc phải trên mobile.
 
-**Tab mới "👥 Thông tin khách hàng"**: bảng `khach_hang` (Họ tên/SĐT/Ngày sinh/CCCD/Địa chỉ/Email/
-Ghi chú), CRUD đầy đủ kể cả xóa (khác Hồ sơ/Tư vấn không cho xóa hẳn), cảnh báo trùng SĐT không
-chặn lưu, RLS chỉ `authenticated` (có CCCD/ngày sinh — dữ liệu cá nhân nhạy cảm).
+Chi tiết đầy đủ + giới hạn kỹ thuật (không verify được icon lịch bằng mắt) xem `CLAUDE.md` mục 17
+đoạn cuối.
 
-**Danh mục mới "🤝 Đối tác giới thiệu"** (`danh_muc_doi_tac`/`doi_tac_dm_id`) trong Cài đặt chung —
-⚠️ **ĐÃ THAY THẾ HẲN** field "Đối tác" cũ (thực ra là Trưởng nhóm/`danh_muc_truong_nhom`/
-`truong_nhom_id`, đổi tên hiển thị từ Phase 2) trong dialog Hồ sơ, theo quyết định của người dùng
-khi được hỏi (2 field tên gần giống nhau, ảnh thiết kế Phase 4 cũng chỉ có 1 dropdown ở vị trí đó).
-**Lưu ý cho phiên sau**: bảng `danh_muc_truong_nhom` + cột `truong_nhom_id` trên `ho_so` **vẫn còn
-trong CSDL, dữ liệu hồ sơ cũ không mất**, chỉ không còn sửa được từ dialog Hồ sơ nữa. Cài đặt chung
-vẫn còn hiện đủ 4 khối: 🌍 Nước đến, 🎯 Mục đích, 👤 Đối tác (= Trưởng nhóm cũ, không xóa), 🤝 Đối
-tác giới thiệu (mới).
+### 3.8 Lỗi SQL `42703 chi_thu_di` — bối cảnh đầy đủ
+Khối ALTER trong migration Phase 2 (đổi công thức `tong_chi`/`loi_nhuan`) viết **từ trước Phase 4**
+— công thức gốc dùng `chi_thu_di + chi_thu_ve`, 2 cột đã bị Phase 4 xóa hẳn và thay bằng
+`chi_phi_ship`. Người dùng chạy lại Phase 2 SQL (để áp dụng `leads.nguon` mới) thì dính lỗi này.
+Đã sửa: bọc khối đó trong `DO` block kiểm tra cột `chi_phi_ship` có tồn tại chưa để chọn đúng công
+thức. **Bài học cho phiên sau:** không mặc định 1 file SQL cũ "chạy lại an toàn" chỉ vì có
+`if not exists` — phải kiểm tra có migration SAU đó đã đổi schema mà file cũ chưa biết không.
 
-**Dialog Hồ sơ nâng cấp**: autocomplete Tên khách hàng (gõ → gọi API `khach_hang` → gợi ý → chọn 1
-dòng tự điền SĐT/Địa chỉ/Email, nền đổi `#DDE1E6`, sửa lại tên thì tự bỏ liên kết); field Email mới;
-mặc định Nước đến = "Nhật Bản" khi tạo mới; Đại lý ủy thác dropdown chỉ hiện "Đang hợp tác" (trừ khi
-đang sửa hồ sơ cũ đã gán đại lý nay ngừng hợp tác — vẫn hiện để không mất dữ liệu); gộp "Thư đi" +
-"Thư về" thành 1 cột thật `chi_phi_ship` (Phase 2 trước đó chỉ hack bằng cách giữ `chi_thu_di` ẩn +
-đổi nhãn `chi_thu_ve`, giờ Phase 4 migration đã xóa hẳn 2 cột cũ và tạo cột mới đúng nghĩa); thêm
-Ghi chú riêng cho Thu và Chi; tự cuộn lên đầu dialog khi mở.
+### 3.9 ⭐ MỚI NHẤT — Gom toàn bộ SQL về `05_Database/` (2026-08-04)
+Theo yêu cầu người dùng (đúng sau khi phát hiện lỗi ở mục 3.8 — muốn tránh lặp lại kiểu nhầm lẫn
+"chạy nhầm file cũ"): đã **di chuyển** 4 file SQL về 1 thư mục duy nhất, đổi tên theo thứ tự phase:
 
-**List Hồ sơ**: thêm cột SĐT + Ngày nộp; tô đỏ "Ngày trả KQ" **CHỈ** khi Trạng thái = "Đã nộp" VÀ
-ngày đó ≤ hôm nay (không áp dụng Đang xử lý/Đậu/Rớt/Hủy dù cùng ngày); thêm bộ lọc khoảng "Ngày nộp"
-(Từ ngày/Đến ngày) + nút "Reset" (xóa hết điều kiện lọc kể cả ô tìm kiếm tên).
+| Cũ (đã XÓA) | Mới |
+|---|---|
+| `02_Source/supabase_setup.sql` | `05_Database/01_supabase_setup.sql` |
+| `04_Phase 2/supabase_setup_phase2.sql` | `05_Database/02_supabase_setup_phase2.sql` |
+| `06_Phase 3_Tai_Chinh/supabase_setup_phase3.sql` (chỉ ở thư mục gốc, không có trong git) | `05_Database/03_supabase_setup_phase3.sql` |
+| `07_Phase 4_Thong_Tin_Khach_Hang/supabase_setup_phase4.sql` (chỉ ở thư mục gốc, không có trong git) | `05_Database/04_supabase_setup_phase4.sql` |
 
-**Tư vấn**: SĐT không còn bắt buộc ở admin (form công khai `index.html` không đổi, vẫn bắt buộc
-riêng); đổi tên trạng thái "Đã gọi" → "Đang tư vấn" (toàn bộ 7 chỗ trong code, dữ liệu cũ trong DB
-đã được migration Phase 4 tự đổi tên, class CSS kỹ thuật `.pill-called` giữ nguyên).
+Nội dung mỗi file được copy **y nguyên byte-for-byte** (đã `diff` xác nhận), không sửa logic gì
+thêm trong lúc di chuyển. Đã thêm `05_Database/README.md` ghi rõ thứ tự chạy + quy tắc thêm
+migration mới (đọc trước khi động vào SQL). Đã cập nhật lại toàn bộ đường dẫn trong `CLAUDE.md`,
+`README.md`, `01_Docs/07_Huong_dan_Deploy.md`, `01_Docs/05_Ke_hoach_du_an.md`. **Các thư mục
+`04_Phase 2/`, `06_Phase 3_Tai_Chinh/`, `07_Phase 4_Thong_Tin_Khach_Hang/` vẫn còn tài liệu bàn
+giao/ảnh thiết kế (không phải SQL) như cũ, KHÔNG bị xóa** — chỉ riêng file `.sql` bị chuyển đi.
 
-**⚠️ Đổi lại TOÀN BỘ field ngày về `<input type="date">` chuẩn HTML5** (9 field: Ngày tạo/Ngày nộp/
-Ngày trả KQ ở Hồ sơ, Hạn chốt ở Xử lý phát sinh, Ngày áp dụng ở Bảng phí đại lý, Ngày nhắc lại ở Tư
-vấn, Từ ngày/Đến ngày ở Tài chính, Ngày ở Khoản chi, Ngày sinh ở Khách hàng) — **hủy bỏ hoàn toàn**
-cơ chế mask dd/mm/yyyy tự viết ở mục 3.2 điểm 3. Đã xóa hẳn 3 hàm `onDateInput()`/`fromISODate()`/
-`toISODate()` khỏi code — **không tự ý viết lại mask ngày nữa** trừ khi người dùng yêu cầu rõ ràng
-(lý do đổi lại: PM yêu cầu icon lịch toàn hệ thống + mask cũ gây lỗi nhập liệu thực tế).
+**⚠️ Quy tắc mới cho mọi phiên sau:** không tạo lại file SQL rải rác ở thư mục Phase riêng nữa —
+mọi migration mới (thêm cột, đổi bảng...) đều thêm vào `05_Database/` (file mới hoặc nối vào file
+gần nhất, xem `05_Database/README.md`).
 
-Migration Phase 4 (`07_Phase 4_Thong_Tin_Khach_Hang/supabase_setup_phase4.sql`) có **XÓA CỘT**
-(`chi_thu_di`, `chi_thu_ve`) trên bảng `ho_so` đang có dữ liệu thật, đã cộng dồn dữ liệu cũ vào
-`chi_phi_ship` trước khi xóa, bọc trong 1 transaction. Người dùng xác nhận đã chạy thành công.
+## 4. ⚠️ Rủi ro "2 bản sao file" (đã gọn bớt, nhưng vẫn còn)
 
-## 4. ⚠️ QUAN TRỌNG — rủi ro "2 bản sao file" vẫn còn, đọc kỹ trước khi cần các file bàn giao
+Thư mục gốc dự án trên máy người dùng (`D:\01_NguyenNC\10_Claude\03_Study VS1\Vs-Landing-Page\`)
+vẫn có thể có nhiều hơn những gì trong git/worktree. Đã xác nhận còn (KHÔNG có trong git):
 
-Các thư mục `06_Phase 3_Tai_Chinh/` và `07_Phase 4_Thong_Tin_Khach_Hang/` (chứa file bàn giao + SQL
-+ ảnh thiết kế) **CHỈ tồn tại ở thư mục gốc dự án**
-(`D:\01_NguyenNC\10_Claude\03_Study VS1\Vs-Landing-Page\`), **KHÔNG có trong git/worktree** — đã xác
-nhận bằng lệnh `ls` ở đầu mỗi phase. Khi cần đọc lại các file này ở phiên sau, phải đọc bằng đường
-dẫn tuyệt đối tới thư mục gốc, KHÔNG tìm trong worktree. File `CLAUDE.md`, `README.md`,
-`01_Docs/10_Chuan_Dialog_Chung.md`, `02_Source/*`, `04_Phase 2/*` thì có trong cả 2 nơi (đã đồng bộ
-qua git) — sửa ở worktree rồi push là đủ, không cần sửa tay ở thư mục gốc.
+- `06_Phase 3_Tai_Chinh/Phase3_TaiChinh_Ban_giao_Claude_Code.md` — tài liệu bàn giao Phase 3 (SQL
+  đã chuyển đi, chỉ còn tài liệu).
+- `07_Phase 4_Thong_Tin_Khach_Hang/Phase4_BanGiao_Claude_Code.md` + `Dialog_Tao_moi_ho_so.png` —
+  tài liệu + ảnh thiết kế Phase 4 (SQL đã chuyển đi).
+- `04_Phase 2/01_Design/` — 3 ảnh thiết kế Figma tham chiếu (dialog/popup chuẩn).
+- `05_Branding_5S/` — tài liệu thương hiệu/logo mới "5S mệnh Kim", làm **ngoài luồng Claude Code**,
+  không liên quan code.
+- **Người dùng đã tự xóa** `05_Bugs Report/` (Excel báo lỗi QA) và `08_Phase 5_Tu_Van/` (chỉ là 1
+  file CSV tự xuất, không phải tài liệu) — **không còn tồn tại nữa**, đừng nhắc tới 2 mục này nữa
+  trong các phiên sau (bản handover trước có nhắc, giờ đã lỗi thời).
+- **1 `git stash` vẫn còn tồn đọng** ở thư mục gốc, tên
+  `"backup truoc khi pull 2026-08 - file nhap cu chua commit o 04_Phase 2 va Handover_Phien_Moi.md"`
+  — chứa vài bản nháp cũ (đã so sánh, cũ hơn/kém đầy đủ hơn bản chính thức trong git, khả năng cao
+  an toàn để bỏ qua) — **chưa xóa hẳn**, để đó phòng khi cần đối chiếu. Dùng `git stash list`/
+  `git stash show -p` nếu cần xem lại.
+
+File `CLAUDE.md`, `README.md`, `01_Docs/*`, `02_Source/*`, `05_Database/*`, `Handover_Phien_Moi.md`
+thì có trong cả 2 nơi (đã đồng bộ qua git). Thư mục gốc đã `git pull` lên đúng bản mới nhất cuối
+mỗi phiên — nhưng **kiểm tra lại** nếu commit "gom SQL" (mục 3.9) mới xong, có thể thư mục gốc
+CHƯA `git pull` bản đó (xem mục 1.5).
 
 ## 5. Quy trình deploy (tiếp tục dùng đúng cách này)
 
-- KHÔNG có quyền chạy SQL trực tiếp lên Supabase — luôn nhờ người dùng tự chạy trong SQL Editor,
-  đặc biệt các migration có ALTER/DROP COLUMN trên bảng có dữ liệu thật phải nhắc người dùng backup
-  + đối chiếu số liệu trước-sau (xem mục 0 của các file bàn giao Phase 3/4).
-- Sửa code → kiểm tra cú pháp JS (`node -e "new Function(...)"`) + cân bằng thẻ HTML (Python
-  `HTMLParser`) → test qua Claude Browser (mở file local, dùng `javascript_tool` gọi hàm/đọc DOM
-  trực tiếp nếu `computer screenshot` bị lỗi "Browser pane không hiển thị" như phiên này) → `git
-  add` + `git commit` → `git push origin <nhánh>` rồi `git push origin <nhánh>:main` (fast-forward
-  thẳng, KHÔNG tạo Pull Request).
-- Verify sau deploy: `curl -sL https://topvisa5s.com/...` — **luôn dùng `-L`** để theo dõi redirect
-  (phát hiện trong phiên này: `/admin.html` bị Cloudflare 307-redirect sang `/admin`, nếu không có
-  `-L` lệnh `curl` chờ vô hạn không bao giờ thấy nội dung mới, dù deploy đã xong từ lâu).
+- KHÔNG có quyền chạy SQL trực tiếp lên Supabase — luôn nhờ người dùng tự chạy trong SQL Editor.
+  **Trước khi bảo người dùng "chạy lại file X"**, kiểm tra file đó có bị ảnh hưởng bởi migration
+  SAU nó không (bài học mục 3.8) — không mặc định "idempotent" là an toàn tuyệt đối.
+- Sửa code → kiểm tra cú pháp JS + cân bằng thẻ HTML → test qua Claude Browser (`javascript_tool`
+  gọi hàm/đọc DOM trực tiếp — screenshot không dùng được trong phiên này; viewport nhỏ hơn ~500px
+  cũng không set được, phải mô phỏng bằng cách ép `max-width` tạm thời lên 1 container) → `git add`
+  + `git commit` (luôn có dòng `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`) →
+  `git push origin <nhánh>` rồi `git push origin <nhánh>:main` (fast-forward thẳng, KHÔNG tạo Pull
+  Request).
+- Verify sau deploy: `curl -sL https://topvisa5s.com/...` (luôn `-L`). Cloudflare cache theo từng
+  edge node riêng biệt — 1-2 lần `curl` đầu có thể vẫn ra bản CŨ dù deploy đã xong — `curl` lặp lại
+  5-10 lần cách nhau vài giây, thấy ổn định ở bản MỚI thì mới kết luận deploy xong.
+- **Khi thay đổi liên quan tới file SQL:** luôn thao tác trong `05_Database/` (xem mục 3.9), không
+  tạo lại file/thư mục Phase SQL rải rác.
 
 ## 6. Tài liệu tham khảo (đọc theo đúng thứ tự nếu cần)
 
-`CLAUDE.md` → file này → `01_Docs/10_Chuan_Dialog_Chung.md` (chuẩn dialog, đã cập nhật mục 9 nói về
-việc dùng lại `type="date"`) → `06_Phase 3_Tai_Chinh/Phase3_TaiChinh_Ban_giao_Claude_Code.md` (chỉ
-ở thư mục gốc) → `07_Phase 4_Thong_Tin_Khach_Hang/Phase4_BanGiao_Claude_Code.md` (chỉ ở thư mục gốc).
+`CLAUDE.md` (đặc biệt mục 12–17) → file này → `05_Database/README.md` (SQL) →
+`01_Docs/10_Chuan_Dialog_Chung.md` (chuẩn dialog) →
+`06_Phase 3_Tai_Chinh/Phase3_TaiChinh_Ban_giao_Claude_Code.md` (chỉ ở thư mục gốc) →
+`07_Phase 4_Thong_Tin_Khach_Hang/Phase4_BanGiao_Claude_Code.md` (chỉ ở thư mục gốc).

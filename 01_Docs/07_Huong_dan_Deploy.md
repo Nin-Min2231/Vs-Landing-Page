@@ -21,7 +21,7 @@ Nên đăng ký cả 3 bằng CÙNG MỘT email công việc, lưu mật khẩu 
 1. Vào **supabase.com** → Sign up → **New Project**.
 2. Đặt tên project: `visa-landing`. Chọn region: **Southeast Asia (Singapore)** (gần VN nhất). Đặt Database Password mạnh → **lưu lại mật khẩu này**.
 3. Chờ ~2 phút để project khởi tạo.
-4. Menu trái → **SQL Editor** → **New query** → mở file `02_Source/supabase_setup.sql` bằng Notepad, copy TOÀN BỘ nội dung, dán vào → bấm **Run**. Thấy "Success" là xong (đã tạo bảng leads, posts, categories + luật bảo mật).
+4. Menu trái → **SQL Editor** → **New query** → mở file `05_Database/01_supabase_setup.sql` bằng Notepad, copy TOÀN BỘ nội dung, dán vào → bấm **Run**. Thấy "Success" là xong (đã tạo bảng leads, posts, categories + luật bảo mật). ⚠️ (2026-08) Dự án đã phát triển thêm nhiều tính năng quản trị (Admin CRM) sau bước này — nếu đang cài mới hoàn toàn, chạy tiếp lần lượt các file `05_Database/02_...sql` → `05_Database/03_...sql` → `05_Database/04_...sql` (đọc `05_Database/README.md` để biết thứ tự và mỗi file thêm gì).
 5. Tạo tài khoản admin: menu trái → **Authentication** → **Users** → **Add user** → **Create new user** → nhập email + mật khẩu của bạn → Create. (Đây là tài khoản đăng nhập trang admin.)
 6. Lấy 2 thông số kết nối: menu trái → **Project Settings** → **API Keys**:
    - Dashboard bản mới sẽ mở sẵn tab **"Publishable and secret API keys"** — lấy **Publishable key** (chuỗi bắt đầu bằng `sb_publishable_...`). Đây là bản thay thế mới của "anon public key" cũ, **an toàn để đặt công khai** trên web.

@@ -65,7 +65,7 @@
 |---|---|
 | Mục tiêu | Lưu lead, đăng nhập admin, quản lý bài viết |
 | Công việc | Tạo project Supabase, chạy SQL tạo bảng + RLS, nối config vào 2 file HTML |
-| Đầu ra | `02_Source/supabase_setup.sql`, `02_Source/admin.html` |
+| Đầu ra | `05_Database/01_supabase_setup.sql` (từ 2026-08, xem `CLAUDE.md` mục 4), `02_Source/admin.html` |
 | Thời gian | 1–2 ngày |
 
 **Checklist hoàn thành:**
