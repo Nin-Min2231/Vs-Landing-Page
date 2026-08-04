@@ -129,7 +129,7 @@ Xem hàm `hsStatusSelectClass()`/`updateHoSoStatusColor()` trong `admin.html` l�
 | Đăng ký hồ sơ mới | `#hoOverlay` | 6 nhóm (Thông tin khách, Thông tin nộp hồ sơ, Thu/Chi, Thành viên nhóm, Xử lý phát sinh, Ghi chú) | Dialog gốc, tham chiếu đầy đủ nhất — có field tiền (`money-input`), select đổi màu theo trạng thái (`status-select`), field Số lượng cho sửa tay |
 | Tư vấn | `#tvOverlay` | 2 nhóm (Thông tin khách hàng, Chi tiết tư vấn) | modal-lg |
 | Đại lý ủy thác | `#dtOverlay` | 2 nhóm (Thông tin đại lý ủy thác, Ghi chú) | modal-lg |
-| Bảng phí đại lý | `#dtFeeOverlay` | 2 nhóm (Các mức phí đã có, Thêm mức phí mới) | modal-xl, chỉ có nút "Đóng lại" (không có nút Lưu — mỗi dòng phí lưu ngay khi bấm "+ Thêm mức phí"). Nhóm "Thêm mức phí mới" (2026-08, Phase 5): Nơi nộp = droplist cố định 3 giá trị (Đà Nẵng/Hà Nội/TP Hồ Chí Minh, không phải danh mục Cài đặt chung); Đất nước/Diện visa = droplist danh_muc_nuoc/danh_muc_muc_dich, bắt buộc; Phí ủy thác/Phí lãnh sự = `money-input`; Áp dụng từ = ô mask dd/mm/yyyy (mục 9) |
+| Bảng phí đại lý | `#dtFeeOverlay` | 2 nhóm (Các mức phí đã có, Thêm mức phí mới) | modal-xl, chỉ có nút "Đóng lại" (không có nút Lưu — mỗi dòng phí lưu ngay khi bấm "+ Thêm mức phí"). Nhóm "Thêm mức phí mới" (2026-08, Phase 5): Nơi nộp = droplist cố định 3 giá trị (Đà Nẵng/Hà Nội/TP Hồ Chí Minh, không phải danh mục Cài đặt chung); Đất nước/Diện visa = droplist danh_muc_nuoc/danh_muc_muc_dich, bắt buộc; Phí ủy thác/Phí lãnh sự = `money-input`; Áp dụng từ = ô mask dd/mm/yyyy (mục 9). Bảng "Các mức phí đã có" có thêm cột "Thao tác" + nút Xóa từng dòng (`delDoiTacPhi()`, chặn xóa nếu đã có Hồ sơ khớp — xem CLAUDE.md mục 21) |
 | Bài viết | `#postOverlay` | 2 nhóm (Thông tin bài viết, Nội dung) | modal-lg, textarea nội dung dài (8 dòng) nằm trong `.dlg-body` nên cuộn được khi bài dài |
 | Sửa tên danh mục | `#renameOverlay` | Không chia section (chỉ 1 field) | Dialog nhỏ nhất — vẫn dùng `dlg-standard`/`dlg-head`/`dlg-foot` để đồng bộ màu/nút, nhưng field đặt trực tiếp trong `.dlg-body`, không bọc `.dlg-section` |
 | Khoản chi (Tài chính, Phase 3) | `#chiOverlay` | 1 nhóm (Thông tin khoản chi) | modal-lg, field Ngày dùng `type="date"` (xem mục 9) |
@@ -185,3 +185,8 @@ if(!iso){ toast('Ngày ... không hợp lệ, vui lòng nhập đúng dd/mm/yyyy
 12 field ngày hiện có trong `admin.html` dùng đúng mẫu này: `fHsTuNgay`, `fHsDenNgay`, `tcFrom`,
 `tcTo`, `tvNgayNhacLai`, `hoNgay`, `hoNgayNop`, `hoNgayTraKq`, `xlpsHanChot`, `feeNgayApDung`,
 `chiNgay`, `khNgaySinh`.
+
+**Icon lịch (📅) tự động, không cần thêm gì:** `initDatePickers()` tự quét MỌI input có đúng
+`oninput="onDateInput(this)"` lúc tải trang và tự bọc thêm nút mở popup lịch mini bên cạnh — copy
+đúng mẫu HTML trên là field mới TỰ CÓ icon lịch, không cần sửa gì thêm. Chi tiết đầy đủ:
+`CLAUDE.md` mục 20.

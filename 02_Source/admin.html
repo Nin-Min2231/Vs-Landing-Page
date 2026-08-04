@@ -267,6 +267,32 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .kh-pick-btn{flex-shrink:0;width:44px;border:1.5px solid rgba(0,64,133,.5);border-radius:8px;
   background:#fff;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
 .kh-pick-btn:hover{background:var(--pl)}
+/* ===== Icon lịch tùy chỉnh cho MỌI ô ngày mask dd/mm/yyyy (2026-08) — bọc quanh input bằng JS
+   lúc tải trang (initDatePickers()), không sửa từng input trong HTML, xem CLAUDE.md mục 20.
+   Cùng cơ chế flex input+nút như .kh-pick-wrap/.kh-pick-btn ở trên để đồng bộ giao diện. ===== */
+.date-mask-wrap{display:flex;gap:6px}
+.date-mask-wrap input{flex:1;min-width:0}
+.date-pick-btn{flex-shrink:0;width:40px;border:1.5px solid rgba(0,64,133,.5);border-radius:8px;
+  background:#fff;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+.date-pick-btn:hover{background:var(--pl)}
+.date-picker-popup{position:fixed;z-index:200;background:#fff;border:1px solid var(--bd);
+  border-radius:10px;box-shadow:var(--sh);padding:12px;width:258px}
+.dp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.dp-header button{width:26px;height:26px;border:none;background:var(--pl);border-radius:6px;
+  cursor:pointer;font-size:15px;font-weight:700;color:var(--p);flex-shrink:0}
+.dp-header button:hover{background:var(--p);color:#fff}
+.dp-header span{font-weight:700;font-size:14px;color:var(--pd)}
+.dp-weekdays,.dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.dp-weekdays span{font-size:11px;font-weight:700;color:var(--mut);padding:4px 0}
+.dp-days span{font-size:13px;padding:6px 0;border-radius:6px;cursor:pointer}
+.dp-days span:hover{background:var(--pl)}
+.dp-day-other{color:var(--mut);opacity:.4;cursor:default}
+.dp-day-other:hover{background:none}
+.dp-day-today{border:1.5px solid var(--p);font-weight:700}
+.dp-day-selected{background:var(--p)!important;color:#fff;font-weight:700}
+.dp-footer{display:flex;justify-content:space-between;gap:6px;margin-top:10px;padding-top:8px;
+  border-top:1px solid var(--bd)}
+.dp-footer button{font-size:12px;padding:5px 8px;flex:1}
 /* ===== Dialog "Chọn khách hàng" (tìm kiếm) — chọn 1 dòng để điền dialog Hồ sơ ===== */
 .kh-pick-row{cursor:pointer}
 /* ===== Cột "Địa chỉ" trên các bảng list: cắt ngắn 1 dòng, không xuống dòng, xem đủ khi hover ===== */
@@ -875,7 +901,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="dlg-section-title">Các mức phí đã có</div>
         <div class="tbl-wrap" style="margin-bottom:12px">
           <table>
-            <thead><tr><th>Nơi nộp</th><th>Đất nước</th><th>Diện visa</th><th>Phí ủy thác</th><th>Phí lãnh sự</th><th>Áp dụng từ</th><th>Ghi chú</th></tr></thead>
+            <thead><tr><th>Nơi nộp</th><th>Đất nước</th><th>Diện visa</th><th>Phí ủy thác</th><th>Phí lãnh sự</th><th>Áp dụng từ</th><th>Ghi chú</th><th class="th-center">Thao tác</th></tr></thead>
             <tbody id="dtFeeBody"></tbody>
           </table>
           <div class="empty hidden" id="dtFeeEmpty">Chưa có mức phí nào</div>
@@ -1053,11 +1079,29 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 
 <div class="toast" id="toast"></div>
 
+<!-- ===== Popup lịch chọn ngày (dùng chung cho MỌI ô mask dd/mm/yyyy) ===== -->
+<div class="date-picker-popup hidden" id="datePickerPopup">
+  <div class="dp-header">
+    <button type="button" onclick="dpChangeMonth(-1)" aria-label="Tháng trước">‹</button>
+    <span id="dpMonthYear"></span>
+    <button type="button" onclick="dpChangeMonth(1)" aria-label="Tháng sau">›</button>
+  </div>
+  <div class="dp-weekdays">
+    <span>CN</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span>
+  </div>
+  <div class="dp-days" id="dpDaysGrid"></div>
+  <div class="dp-footer">
+    <button type="button" class="btn btn-g" onclick="dpGotoToday()">Hôm nay</button>
+    <button type="button" class="btn btn-g" onclick="dpClear()">Xóa</button>
+    <button type="button" class="btn btn-g" onclick="closeDatePicker()">Đóng</button>
+  </div>
+</div>
+
 <script>
 /* ==================== TIỆN ÍCH CHUNG ==================== */
 let TOKEN = null, LEADS = [], POSTS = [], CATS = [];
 let DOI_TAC = [], DANH_MUC_NUOC = [], DANH_MUC_MUC_DICH = [], DANH_MUC_TRUONG_NHOM = [], HO_SO = [];
-let CUR_HOSO_XLPS = [], CUR_HOSO_THANHVIEN = [], CUR_FEE_DOITAC = null, CHART_DT = null, CHART_SL = null;
+let CUR_HOSO_XLPS = [], CUR_HOSO_THANHVIEN = [], CUR_FEE_DOITAC = null, CUR_FEE_ROWS = [], CHART_DT = null, CHART_SL = null;
 let KHOAN_CHI = [], TC_ROWS = [];
 let KHACH_HANG = [];
 const REMEMBER_KEY = 'tv_admin_refresh_token';
@@ -1106,6 +1150,110 @@ function toISODate(str){
   if(d.getFullYear()!==yyyy || d.getMonth()!==mm-1 || d.getDate()!==dd) return null;
   return yyyy+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
 }
+/* ==== Icon lịch tùy chỉnh cho MỌI ô ngày mask dd/mm/yyyy (2026-08) ====
+   Không sửa từng input trong HTML — initDatePickers() (gọi 1 lần lúc tải trang) tự tìm MỌI input
+   có đúng oninput="onDateInput(this)" (dấu hiệu nhận biết field ngày, xem mục onDateInput trên),
+   bọc thêm 1 nút 📅 bên cạnh. Field ngày MỚI thêm sau này chỉ cần dùng đúng mẫu HTML ở mục 9,
+   01_Docs/10_Chuan_Dialog_Chung.md — TỰ ĐỘNG có icon lịch, không cần sửa gì thêm ở đây.
+   Bấm nút mở 1 popup lịch DUY NHẤT dùng chung (không tạo 1 popup riêng cho mỗi field) — biến
+   DP_TARGET giữ input đang chọn. Chọn ngày -> gán .value + tự bắn 'input'+'change' để mọi
+   onchange có sẵn (renderHoSo(), lookupDoiTacPhi() gián tiếp qua onchange của select khác...)
+   vẫn hoạt động đúng như khi gõ tay/onchange tự nhiên. ==== */
+let DP_TARGET = null, DP_YEAR = 0, DP_MONTH = 0;
+function initDatePickers(){
+  document.querySelectorAll('input[oninput="onDateInput(this)"]').forEach(input=>{
+    if(input.closest('.date-mask-wrap')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'date-mask-wrap';
+    if(input.style.width){ wrap.style.width = input.style.width; input.style.width = ''; }
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'date-pick-btn';
+    btn.setAttribute('aria-label','Chọn ngày');
+    btn.textContent = '📅';
+    btn.onclick = ()=>openDatePicker(input, btn);
+    wrap.appendChild(btn);
+  });
+}
+function openDatePicker(input, btn){
+  DP_TARGET = input;
+  const iso = toISODate(input.value);
+  const base = iso ? new Date(iso+'T00:00:00') : new Date();
+  DP_YEAR = base.getFullYear(); DP_MONTH = base.getMonth();
+  renderDatePicker();
+  positionDatePicker(btn);
+  $('datePickerPopup').classList.remove('hidden');
+}
+function closeDatePicker(){ $('datePickerPopup').classList.add('hidden'); DP_TARGET = null; }
+function positionDatePicker(btn){
+  const popup = $('datePickerPopup');
+  const r = btn.getBoundingClientRect();
+  const pw = popup.offsetWidth || 258, ph = popup.offsetHeight || 300;
+  let left = Math.min(r.left, window.innerWidth - pw - 8);
+  left = Math.max(8, left);
+  let top = r.bottom + 4;
+  if(top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 4);
+  popup.style.left = left+'px'; popup.style.top = top+'px';
+}
+function dpChangeMonth(delta){
+  DP_MONTH += delta;
+  if(DP_MONTH<0){ DP_MONTH=11; DP_YEAR--; } else if(DP_MONTH>11){ DP_MONTH=0; DP_YEAR++; }
+  renderDatePicker();
+}
+function renderDatePicker(){
+  $('dpMonthYear').textContent = 'Tháng '+(DP_MONTH+1)+' - '+DP_YEAR;
+  const firstWeekday = new Date(DP_YEAR, DP_MONTH, 1).getDay();
+  const totalDays = new Date(DP_YEAR, DP_MONTH+1, 0).getDate();
+  const prevMonthDays = new Date(DP_YEAR, DP_MONTH, 0).getDate();
+  const todayIso = new Date().toISOString().slice(0,10);
+  const curIso = DP_TARGET ? toISODate(DP_TARGET.value) : null;
+  let html = '';
+  for(let i=firstWeekday-1;i>=0;i--) html += `<span class="dp-day-other">${prevMonthDays-i}</span>`;
+  for(let d=1; d<=totalDays; d++){
+    const iso = DP_YEAR+'-'+String(DP_MONTH+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    let cls=[];
+    if(iso===todayIso) cls.push('dp-day-today');
+    if(iso===curIso) cls.push('dp-day-selected');
+    html += `<span class="${cls.join(' ')}" onclick="dpSelectDay(${d})">${d}</span>`;
+  }
+  const trailing = (7 - ((firstWeekday+totalDays) % 7)) % 7;
+  for(let d=1; d<=trailing; d++) html += `<span class="dp-day-other">${d}</span>`;
+  $('dpDaysGrid').innerHTML = html;
+}
+function dpSetInputValue(ddmmyyyy){
+  if(!DP_TARGET) return;
+  DP_TARGET.value = ddmmyyyy;
+  DP_TARGET.dispatchEvent(new Event('input', {bubbles:true}));
+  DP_TARGET.dispatchEvent(new Event('change', {bubbles:true}));
+}
+function dpSelectDay(d){
+  dpSetInputValue(String(d).padStart(2,'0')+'/'+String(DP_MONTH+1).padStart(2,'0')+'/'+DP_YEAR);
+  closeDatePicker();
+}
+function dpGotoToday(){
+  const t = new Date();
+  DP_YEAR = t.getFullYear(); DP_MONTH = t.getMonth();
+  dpSetInputValue(fromISODate(t.toISOString().slice(0,10)));
+  closeDatePicker();
+}
+function dpClear(){ dpSetInputValue(''); closeDatePicker(); }
+document.addEventListener('mousedown', e=>{
+  const popup = $('datePickerPopup');
+  if(!popup || popup.classList.contains('hidden')) return;
+  if(popup.contains(e.target) || e.target.closest('.date-pick-btn')) return;
+  closeDatePicker();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape' && !$('datePickerPopup').classList.contains('hidden')) closeDatePicker();
+});
+window.addEventListener('scroll', ()=>{
+  if(!$('datePickerPopup').classList.contains('hidden')) closeDatePicker();
+}, true);
+window.addEventListener('resize', ()=>{
+  if(!$('datePickerPopup').classList.contains('hidden')) closeDatePicker();
+});
 function applyRowLabels(tbodyId){
   const tbody = $(tbodyId);
   const table = tbody.closest('table');
@@ -1158,6 +1306,7 @@ function tcDefaultFrom(){ const d=new Date(); return d.getFullYear()+'-'+String(
 function tcToday(){ return new Date().toISOString().slice(0,10); }
 function initTaiChinhFilters(){ $('tcFrom').value = fromISODate(tcDefaultFrom()); $('tcTo').value = fromISODate(tcToday()); }
 initTaiChinhFilters();
+initDatePickers();
 
 /* ==================== POPUP CONFIRM / THÔNG BÁO — dùng chung mọi màn hình ====================
    showConfirmPopup({title, message, confirmText, cancelText, danger}) -> Promise<boolean>
@@ -1618,6 +1767,7 @@ function closeDoiTacFeeModal(){ $('dtFeeOverlay').classList.add('hidden'); CUR_F
 async function loadDoiTacPhi(id){
   try{
     const rows = await api('doi_tac_phi?doi_tac_id=eq.'+id+'&select=*,danh_muc_nuoc(ten),danh_muc_muc_dich(ten)&order=ngay_ap_dung_tu.desc') || [];
+    CUR_FEE_ROWS = rows;
     $('dtFeeEmpty').classList.toggle('hidden', rows.length>0);
     $('dtFeeBody').innerHTML = rows.map(f=>`
       <tr><td>${esc(f.noi_nop||'–')}</td><td>${esc(f.danh_muc_nuoc?.ten||'–')}</td>
@@ -1625,9 +1775,34 @@ async function loadDoiTacPhi(id){
       <td>${f.phi_uy_thac!=null?fmtVND(f.phi_uy_thac):'–'}</td>
       <td>${f.phi_lanh_su!=null?fmtVND(f.phi_lanh_su):'–'}</td>
       <td>${fmtDate(f.ngay_ap_dung_tu)}</td>
-      <td>${esc(f.ghi_chu||'–')}</td></tr>`).join('');
+      <td>${esc(f.ghi_chu||'–')}</td>
+      <td class="td-actions"><button class="btn btn-d" onclick="delDoiTacPhi(${f.id})">Xóa</button></td></tr>`).join('');
     applyRowLabels('dtFeeBody');
   }catch(e){ toast('Lỗi tải bảng phí: '+e.message,'err'); }
+}
+/* ==== Xóa 1 dòng "mức phí" (Bảng phí đại lý, 2026-08) — CHẶN xóa nếu đã có Hồ sơ đăng ký đúng
+   tổ hợp Đại lý + Nước đến + Mục đích của dòng phí này (ho_so KHÔNG lưu id của dòng phí đã dùng
+   lúc tự điền — chỉ copy giá trị số tiền qua — nên không có FK thật để CSDL tự chặn, phải tự
+   kiểm tra bằng tay qua isDoiTacPhiInUse() trước khi xóa, không có lớp fallback FK ở catch như
+   isRecordInUse() các nơi khác vì không có ràng buộc FK nào để bắt). Dòng phí tạo TRƯỚC Phase 5
+   (chưa có nuoc_id/muc_dich_id) không tra được theo tổ hợp này -> luôn cho xóa tự do. ==== */
+async function isDoiTacPhiInUse(fee){
+  if(!fee.nuoc_id || !fee.muc_dich_id) return false;
+  const rows = await api('ho_so?doi_tac_id=eq.'+fee.doi_tac_id+'&nuoc_id=eq.'+fee.nuoc_id+'&muc_dich_id=eq.'+fee.muc_dich_id+'&select=id&limit=1');
+  return !!(rows && rows.length>0);
+}
+async function delDoiTacPhi(id){
+  const fee = CUR_FEE_ROWS.find(f=>f.id===id);
+  if(!fee) return;
+  if(!await showConfirmPopup({message:'Xóa mức phí này? Không thể hoàn tác.'})) return;
+  try{
+    if(await isDoiTacPhiInUse(fee)){
+      showNotifyPopup({message:'Mức phí này đã có hồ sơ đăng ký theo đúng Đại lý + Nước đến + Mục đích nên không thể xóa.'});
+      return;
+    }
+    await api('doi_tac_phi?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadDoiTacPhi(CUR_FEE_DOITAC); toast('Đã xóa mức phí');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 async function addDoiTacPhi(){
   if(!CUR_FEE_DOITAC) return;

@@ -74,6 +74,21 @@ thử xóa/sửa lại vài ô ngày trên trình duyệt thật của bạn đ�
 3. Nhánh này (`claude/fee-table-dialog-agent-4f5717`) **CHƯA merge/push lên `main`** tại thời điểm
    viết mục này — kiểm tra lại nếu đọc file này ở phiên sau.
 
+**Cập nhật thêm ngay sau khi commit/deploy bản trên (cùng ngày 2026-08-04):** người dùng phản hồi
+2 việc cần xử lý tiếp — cả 2 đã code + test xong, xem chi tiết `CLAUDE.md` mục 20-21:
+1. Thêm lại **icon lịch (📅) tùy chỉnh** cho 12 field ngày mask dd/mm/yyyy — bấm mở popup lịch mini
+   tự viết (không dùng thư viện), vẫn gõ tay được như cũ. `initDatePickers()` tự bọc icon cho MỌI
+   input có `oninput="onDateInput(this)"`, field ngày mới thêm sau này tự động có icon.
+2. Thêm nút **"Xóa"** cho từng dòng trong bảng "Các mức phí đã có" (Bảng phí đại lý) — chặn xóa nếu
+   đã có Hồ sơ khớp đúng Đại lý+Nước đến+Mục đích (không có FK thật, chỉ pre-check bằng tay qua
+   `isDoiTacPhiInUse()`, xem CLAUDE.md mục 21 để hiểu rõ đánh đổi).
+
+⚠️ **Giới hạn test đã biết:** vị trí hiển thị THẬT của popup lịch trên màn hình (nằm dưới/trên nút,
+kẹp trong viewport) **không verify được bằng mắt** trong phiên này — công cụ Claude Browser ở đây
+trả `window.innerWidth`/`innerHeight` = 0 (không compositing khung nhìn thật), đã xác nhận đây là
+giới hạn công cụ chứ không phải bug code (đọc lại thuật toán định vị bằng tay, chuẩn). Nên tự tay
+kiểm tra trên trình duyệt thật, đặc biệt field gần mép dưới/phải màn hình.
+
 ## 1. Việc CẦN LÀM NGAY / cần hỏi lại người dùng
 
 1. **⚠️ QUAN TRỌNG NHẤT — chạy lại SQL migration:** người dùng cần chạy lại

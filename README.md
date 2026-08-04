@@ -159,6 +159,14 @@ Xem `01_Docs/10_Chuan_Dialog_Chung.md` mục 9 (đã viết lại toàn bộ).
       Nước đến/Mục đích/Đại lý ủy thác đã có phí để kiểm tra tự điền, gõ thử vài ô ngày (kể cả
       trường hợp gõ sai/gõ dở) ở nhiều dialog khác nhau.
 
+**Bổ sung thêm cùng ngày:** thêm icon lịch (📅) tùy chỉnh mở popup chọn ngày cho cả 12 ô ngày (vẫn
+gõ tay được như cũ); thêm nút "Xóa" cho từng dòng trong bảng "Các mức phí đã có" (Bảng phí đại lý),
+tự chặn xóa nếu dòng phí đó đã có Hồ sơ đăng ký đúng tổ hợp Đại lý/Nước đến/Mục đích — xem
+`CLAUDE.md` mục 20-21.
+
+- [ ] Tự tay kiểm tra vị trí hiển thị popup lịch trên trình duyệt thật (nằm dưới/trên nút bấm, đặc
+      biệt với field gần mép dưới/phải màn hình) — công cụ test tự động không xem được bằng mắt.
+
 Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 17.
 
 - [ ] **Cần bạn tự kiểm tra trên điện thoại thật** (Claude Code không có màn hình điện thoại thật để

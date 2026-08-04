@@ -473,3 +473,63 @@ và "gọi `toISODate()` để biết có hợp lệ hay không" — **không ba
 trống bằng ngày hôm nay, luôn báo lỗi rõ bằng `toast(...,'err')` và chặn lưu khi người dùng gõ dở
 hoặc gõ sai. 12 field ngày hiện có, 3 hàm dùng chung `onDateInput()`/`fromISODate()`/`toISODate()`
 — xem chi tiết đầy đủ + mẫu code ở `01_Docs/10_Chuan_Dialog_Chung.md` mục 9.
+
+## 20. Icon lịch tùy chỉnh (custom date-picker) cho ô mask `dd/mm/yyyy` (2026-08-04)
+
+**Bối cảnh:** sau khi đổi 12 field ngày sang mask chữ (mục 19), người dùng mất icon lịch bấm chọn
+có sẵn của `<input type="date">`. Đã thêm lại 1 popup lịch mini tự viết (vanilla JS, không dùng
+thư viện ngoài — đúng triết lý dự án) để vừa gõ tay được vừa bấm chọn được.
+
+**Cách hoạt động — KHÔNG cần sửa từng field ngày trong HTML:**
+- `initDatePickers()` (gọi 1 lần lúc script chạy, gần `initTaiChinhFilters()`) tự tìm MỌI
+  `<input oninput="onDateInput(this)">` có sẵn trong trang — đây là dấu hiệu nhận biết 1 field là
+  "ô ngày mask", đúng theo mẫu chuẩn ở mục 9 — rồi tự bọc thêm 1 `<div class="date-mask-wrap">`
+  quanh input + thêm 1 `<button class="date-pick-btn">📅</button>` bên cạnh (giống cơ chế
+  `.kh-pick-wrap`/`.kh-pick-btn` của ô "Tên khách hàng").
+- **Field ngày MỚI thêm sau này** (đúng mẫu HTML ở mục 9: `oninput="onDateInput(this)"`) sẽ
+  **TỰ ĐỘNG có icon lịch**, không cần đụng gì thêm ở đây — nếu field ngày mới KHÔNG tự có icon,
+  kiểm tra lại đã copy đúng `oninput="onDateInput(this)"` (đúng y nguyên chuỗi, không thêm tham số
+  khác) chưa, vì đó là selector duy nhất `initDatePickers()` dùng để nhận diện.
+- Bấm nút 📅 mở 1 popup lịch DUY NHẤT dùng chung cho toàn trang (`#datePickerPopup`, không tạo 1
+  popup riêng cho mỗi field, biến `DP_TARGET` giữ input đang chọn) — tự đọc `.value` hiện tại qua
+  `toISODate()` để hiện đúng tháng/năm, mặc định tháng hiện tại nếu trống/không hợp lệ. Chọn ngày
+  → gán `.value` = `dd/mm/yyyy` + tự bắn cả sự kiện `input` và `change` (`dispatchEvent`) để MỌI
+  `onchange`/`oninput` đã gắn sẵn trên field đó (vd `renderHoSo()` ở bộ lọc Hồ sơ) vẫn chạy đúng y
+  như khi gõ tay — đã test xác nhận qua Claude Browser. 3 nút cuối popup: "Hôm nay" (chọn luôn ngày
+  hôm nay), "Xóa" (xóa trắng field — dùng cho field không bắt buộc), "Đóng" (đóng không chọn gì).
+  Tự đóng khi: bấm ra ngoài popup, nhấn `Esc`, cuộn trang, đổi kích thước màn hình.
+- CSS: `.date-mask-wrap`/`.date-pick-btn`/`.date-picker-popup`/`.dp-*` (khu vực gần
+  `.kh-pick-wrap` trong `<style>`), dùng lại đúng biến màu `--p`/`--pl`/`--pd`/`--mut`/`--bd`/`--sh`
+  có sẵn, không tự bịa màu mới.
+- **⚠️ Giới hạn đã biết:** popup tự định vị bằng `getBoundingClientRect()` +
+  `window.innerWidth/innerHeight` (kẹp trong viewport, ưu tiên hiện dưới nút, tự lật lên trên nếu
+  không đủ chỗ dưới) — đây là kỹ thuật chuẩn, đã test đúng logic, nhưng **không thể verify bằng
+  mắt qua Claude Browser trong phiên viết tính năng này** vì công cụ browser tự động trả
+  `window.innerWidth`/`innerHeight` = 0 (môi trường sandbox không compositing khung nhìn thật) —
+  đã kiểm chứng kỹ đây là giới hạn của công cụ test, không phải bug code (mọi hành vi khác: mở
+  popup, vẽ đúng lưới ngày, chọn ngày, chuyển tháng/năm, nút Hôm nay/Xóa, đóng khi click ra
+  ngoài/Esc, bắn đúng onchange... đều đã test qua và đúng). Nên tự tay thử trên trình duyệt thật
+  ở vài vị trí field khác nhau (đặc biệt field gần mép dưới/phải màn hình) để chắc chắn 100%.
+
+## 21. Nút "Xóa" cho từng dòng phí trong Bảng phí đại lý (2026-08-04)
+
+Bảng "Các mức phí đã có" (`#dtFeeBody`, dialog `#dtFeeOverlay`) trước đây chỉ xem, không xóa được
+từng dòng. Đã thêm cột "Thao tác" + nút "Xóa" (`delDoiTacPhi(id)`).
+
+**Cách chặn xóa khác với mọi nơi khác trong hệ thống (đọc kỹ để không nhầm mẫu với mục 14):**
+`ho_so` **KHÔNG lưu id của dòng phí** đã dùng để tự điền lúc tạo hồ sơ (mục 18) — chỉ copy 2 giá
+trị số tiền qua rồi thôi, không giữ liên kết ngược — nên **không có FK thật** giữa `ho_so` và
+`doi_tac_phi` để CSDL tự chặn. Thay vào đó, hàm `isDoiTacPhiInUse(fee)` tự kiểm tra: có tồn tại
+Hồ sơ nào khớp ĐÚNG cả 3 giá trị `doi_tac_id` + `nuoc_id` + `muc_dich_id` của dòng phí đang định
+xóa không (bỏ qua "Nơi nộp" — cùng lý do đã giải thích ở mục 18, dialog Hồ sơ không có field này).
+Nếu có → chặn xóa, báo "Mức phí này đã có hồ sơ đăng ký theo đúng Đại lý + Nước đến + Mục đích nên
+không thể xóa." Dòng phí tạo TRƯỚC Phase 5 (thiếu `nuoc_id`/`muc_dich_id`) **luôn cho xóa tự do**
+— không tra được theo tổ hợp này nên không thể xác định "đang dùng" hay không.
+
+**Hệ quả cần biết:** nếu 1 đại lý có NHIỀU dòng phí cùng tổ hợp Nước đến+Mục đích (khác Nơi nộp
+hoặc khác đợt "Áp dụng từ" — lịch sử tăng/giảm giá theo thời gian) và ĐÃ có ít nhất 1 Hồ sơ dùng
+tổ hợp đó, thì **TẤT CẢ** các dòng phí cùng tổ hợp đều bị chặn xóa (không phân biệt được chính
+xác Hồ sơ cũ đã dùng đúng dòng giá nào tại thời điểm tạo) — đây là đánh đổi chấp nhận được để đơn
+giản hóa, giống cách các nơi khác trong hệ thống cũng chặn rộng hơn mức cần thiết một chút để đổi
+lấy an toàn dữ liệu (xem mục 14). Không có fallback bắt lỗi FK ở `catch` như mẫu `isRecordInUse()`
+(mục 14) vì không có ràng buộc FK thật nào để CSDL trả lỗi — pre-check là lớp chặn DUY NHẤT.
