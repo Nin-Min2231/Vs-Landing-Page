@@ -57,7 +57,7 @@ label{font-weight:600;font-size:13px;display:block;margin:12px 0 5px}
 
 /* app */
 header.bar{background:var(--dark);color:#fff;padding:0 20px;display:flex;align-items:center;
-  justify-content:space-between;height:58px;position:sticky;top:0;z-index:50;gap:10px}
+  justify-content:space-between;height:58px;position:sticky;top:0;z-index:50;gap:10px;flex-shrink:0}
 .bar .brand{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar .brand span{color:var(--acc)}
 .bar .who{font-size:13px;opacity:.8;margin-right:12px;white-space:nowrap}
@@ -69,16 +69,29 @@ header.bar{background:var(--dark);color:#fff;padding:0 20px;display:flex;align-i
   .bar .who{display:none}
 }
 .tabs{display:flex;gap:6px;background:#fff;padding:10px 20px;border-bottom:1px solid var(--bd);
-  position:sticky;top:58px;z-index:40;overflow-x:auto}
+  position:sticky;top:58px;z-index:40;overflow-x:auto;flex-shrink:0}
 .tab{padding:9px 18px;border-radius:999px;border:none;background:none;font-family:var(--font);
   font-weight:600;font-size:14px;cursor:pointer;color:var(--mut);white-space:nowrap}
 .tab.active{background:var(--pl);color:var(--p)}
-main{padding:20px 32px;max-width:1600px;margin:0 auto}
+/* ===== "Khung ứng dụng" cao đúng 1 màn hình, không cuộn cả trang — mỗi tab con tự lo cuộn
+   riêng bên trong (xem .tab-scroll bên dưới) để search/thống kê/tiêu đề luôn đứng yên. ===== */
+#appView{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+main{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;
+  padding:20px 32px;max-width:1600px;margin:0 auto;width:100%}
 @media(max-width:700px){main{padding:20px}}
 .panel-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
 .panel-head h2{font-size:19px}
 .filters{display:flex;gap:20px;flex-wrap:wrap}
 .filters input,.filters select{width:auto;font-size:14px;padding:8px 10px}
+
+/* ===== "Tab cuộn cố định" (2026-08) — QUY ƯỚC CHUNG cho mọi màn hình list: thêm class
+   "tab-scroll" vào <section id="tab-xxx"> nào có search/thống kê + bảng kết quả, để phần
+   search/thống kê/tiêu đề đứng yên, CHỈ bảng kết quả (.tbl-wrap, phải là phần tử con CUỐI
+   CÙNG của section) cuộn bên trong. Áp dụng cho MỌI tab list mới thêm sau này — không cần
+   sửa CSS gì thêm, chỉ cần thêm class + đảm bảo .tbl-wrap là con cuối cùng. Xem CLAUDE.md. ===== */
+.tab-scroll{display:flex;flex-direction:column;flex:1;min-height:0}
+.tab-scroll>*{flex-shrink:0}
+.tab-scroll>.tbl-wrap{flex:1;min-height:0;overflow-y:auto}
 
 /* table */
 .tbl-wrap{background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(15,30,61,.08);overflow-x:auto}
@@ -242,12 +255,13 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .filters-hoso{gap:10px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
 .filters-hoso>*{flex-shrink:0}
 .filters-hoso .filters-label{font-weight:600;font-size:13px;white-space:nowrap}
+.filters-hoso h2{font-size:19px;white-space:nowrap}
 .filters-hoso input[type=date]{width:145px}
 .filters-hoso input[type=search]{width:130px}
 @media(max-width:700px){.filters-hoso{flex-wrap:wrap;overflow-x:visible}}
 /* ===== Bộ lọc "Trạng thái" màn Hồ sơ: chip checkbox nhiều lựa chọn thay cho dropdown 1 lựa
    chọn — mỗi chip dùng đúng màu của pill trạng thái tương ứng để dễ nhận biết. ===== */
-.hs-status-filter{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.hs-status-filter{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex-shrink:0}
 .chk-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;
   font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--bd);background:#fff;
   color:var(--mut);transition:.15s;user-select:none}
@@ -399,7 +413,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     </section>
 
     <!-- ===== TAB TƯ VẤN ===== -->
-    <section id="tab-tuvan" class="hidden">
+    <section id="tab-tuvan" class="hidden tab-scroll">
       <div class="stat-row" id="tvStatRow"></div>
       <div class="panel-head">
         <h2>Tư vấn khách hàng</h2>
@@ -429,19 +443,16 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     </section>
 
     <!-- ===== TAB HỒ SƠ ===== -->
-    <section id="tab-hoso" class="hidden">
-      <div class="panel-head">
-        <h2>Quản lý hồ sơ</h2>
-      </div>
-      <div class="hs-status-filter" id="fHsStatusGroup">
-        <label class="chk-chip chip-dxl is-checked"><input type="checkbox" value="Đang xử lý" checked onchange="onHsStatusChipChange(this)">Đang xử lý</label>
-        <label class="chk-chip chip-dn is-checked"><input type="checkbox" value="Đã nộp" checked onchange="onHsStatusChipChange(this)">Đã nộp</label>
-        <label class="chk-chip chip-dau"><input type="checkbox" value="Đậu" onchange="onHsStatusChipChange(this)">Đậu</label>
-        <label class="chk-chip chip-rot"><input type="checkbox" value="Rớt" onchange="onHsStatusChipChange(this)">Rớt</label>
-        <label class="chk-chip chip-huy"><input type="checkbox" value="Hủy" onchange="onHsStatusChipChange(this)">Hủy</label>
-      </div>
+    <section id="tab-hoso" class="hidden tab-scroll">
       <div class="filters filters-hoso" style="margin-bottom:14px;align-items:center">
-        <select id="fHsDoiTac" onchange="renderHoSo()"><option value="">Tất cả đại lý</option></select>
+        <h2 style="margin:0">Quản lý hồ sơ</h2>
+        <div class="hs-status-filter" id="fHsStatusGroup">
+          <label class="chk-chip chip-dxl is-checked"><input type="checkbox" value="Đang xử lý" checked onchange="onHsStatusChipChange(this)">Đang xử lý</label>
+          <label class="chk-chip chip-dn is-checked"><input type="checkbox" value="Đã nộp" checked onchange="onHsStatusChipChange(this)">Đã nộp</label>
+          <label class="chk-chip chip-dau"><input type="checkbox" value="Đậu" onchange="onHsStatusChipChange(this)">Đậu</label>
+          <label class="chk-chip chip-rot"><input type="checkbox" value="Rớt" onchange="onHsStatusChipChange(this)">Rớt</label>
+          <label class="chk-chip chip-huy"><input type="checkbox" value="Hủy" onchange="onHsStatusChipChange(this)">Hủy</label>
+        </div>
         <input type="search" id="fHsSearch" placeholder="Tìm tên khách..." oninput="renderHoSo()">
         <span class="filters-label">Ngày nộp từ</span>
         <input type="date" id="fHsTuNgay" onchange="renderHoSo()">
@@ -460,7 +471,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     </section>
 
     <!-- ===== TAB THÔNG TIN KHÁCH HÀNG ===== -->
-    <section id="tab-khachhang" class="hidden">
+    <section id="tab-khachhang" class="hidden tab-scroll">
       <div class="panel-head">
         <h2>Thông tin khách hàng</h2>
         <div class="filters">
@@ -478,21 +489,18 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     </section>
 
     <!-- ===== TAB TÀI CHÍNH ===== -->
-    <section id="tab-taichinh" class="hidden">
+    <section id="tab-taichinh" class="hidden tab-scroll">
       <div class="panel-head">
         <h2>Tài chính</h2>
-        <div class="filters" style="align-items:center">
-          <span style="font-weight:600;font-size:14px">Từ ngày</span>
-          <input type="date" id="tcFrom">
-          <span style="font-weight:600;font-size:14px">Đến ngày</span>
-          <input type="date" id="tcTo">
-          <button class="btn btn-p" onclick="loadTaiChinh()">Tìm kiếm</button>
-        </div>
       </div>
-      <div class="filters" style="margin-bottom:14px">
+      <div class="filters filters-hoso" style="margin-bottom:14px;align-items:center">
+        <span class="filters-label">Từ ngày</span>
+        <input type="date" id="tcFrom">
+        <span class="filters-label">Đến ngày</span>
+        <input type="date" id="tcTo">
+        <button class="btn btn-p" onclick="loadTaiChinh()">Tìm kiếm</button>
         <button class="btn btn-g" onclick="tcSetRange('thangnay')">Tháng này</button>
         <button class="btn btn-g" onclick="tcSetRange('thangtruoc')">Tháng trước</button>
-        <button class="btn btn-g" onclick="tcSetRange('quynay')">Quý này</button>
         <button class="btn btn-g" onclick="tcSetRange('namnay')">Năm nay</button>
       </div>
       <div class="stat-row" id="tcStatRow"></div>
@@ -513,7 +521,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     </section>
 
     <!-- ===== TAB ĐẠI LÝ ỦY THÁC ===== -->
-    <section id="tab-doitac" class="hidden">
+    <section id="tab-doitac" class="hidden tab-scroll">
       <div class="panel-head">
         <h2>Đại lý ủy thác</h2>
         <button class="btn btn-p" onclick="openDoiTacModal()">+ Thêm đại lý</button>
@@ -550,7 +558,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     </section>
 
     <!-- ===== TAB POSTS ===== -->
-    <section id="tab-posts" class="hidden">
+    <section id="tab-posts" class="hidden tab-scroll">
       <div class="panel-head">
         <h2>Bài viết</h2>
         <button class="btn btn-p" onclick="openPostModal()">+ Thêm bài viết</button>
@@ -565,7 +573,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     </section>
 
     <!-- ===== TAB CATEGORIES ===== -->
-    <section id="tab-cats" class="hidden">
+    <section id="tab-cats" class="hidden tab-scroll">
       <div class="panel-head">
         <h2>Danh mục bài viết</h2>
         <div class="filters">
@@ -1453,14 +1461,8 @@ function doiTacCellLabel(d){ return d ? `${esc(d.ten_dai_dien||d.ten_cong_ty)} (
 async function loadDoiTac(){
   try{
     DOI_TAC = await api('doi_tac?select=*&order=ten_cong_ty') || [];
-    fillDoiTacSelects();
     renderDoiTac();
   }catch(e){ if(e.message!=='401') toast('Lỗi tải đại lý ủy thác: '+e.message,'err'); }
-}
-function fillDoiTacSelects(){
-  const curFD=$('fHsDoiTac').value;
-  $('fHsDoiTac').innerHTML = '<option value="">Tất cả đại lý</option>'+DOI_TAC.map(d=>`<option value="${d.id}">${esc(doiTacLabel(d))}</option>`).join('');
-  $('fHsDoiTac').value=curFD;
 }
 /* Dropdown "Đại lý ủy thác" trong dialog Hồ sơ — CHỈ hiện đại lý "Đang hợp tác" (Phase 4, mục 5.2),
    trừ khi đang sửa 1 hồ sơ cũ đã gán sẵn 1 đại lý nay đã "Ngừng hợp tác" (vẫn hiện để không mất
@@ -1689,12 +1691,11 @@ function checkedHsStatuses(){
   return [...document.querySelectorAll('#fHsStatusGroup input:checked')].map(cb=>cb.value);
 }
 function renderHoSo(){
-  const checkedSt=checkedHsStatuses(), dtId=$('fHsDoiTac').value, q=vnNorm($('fHsSearch').value.trim());
+  const checkedSt=checkedHsStatuses(), q=vnNorm($('fHsSearch').value.trim());
   const tuNgay=$('fHsTuNgay').value, denNgay=$('fHsDenNgay').value;
   const todayStr = new Date().toISOString().slice(0,10);
   const rows = HO_SO.filter(h=>
     checkedSt.includes(h.trang_thai) &&
-    (!dtId||String(h.doi_tac_id)===dtId) &&
     (!q||vnNorm(h.ten_khach).includes(q)) &&
     (!tuNgay||(h.ngay_nop&&h.ngay_nop>=tuNgay)) &&
     (!denNgay||(h.ngay_nop&&h.ngay_nop<=denNgay))
@@ -1727,7 +1728,6 @@ function resetHoSoFilters(){
     cb.checked = isDefault;
     cb.closest('.chk-chip').classList.toggle('is-checked', isDefault);
   });
-  $('fHsDoiTac').value='';
   $('fHsTuNgay').value=''; $('fHsDenNgay').value=''; $('fHsSearch').value='';
   renderHoSo();
 }
@@ -2129,7 +2129,6 @@ function tcSetRange(type){
   let from, to;
   if(type==='thangnay'){ from=fmt(new Date(now.getFullYear(),now.getMonth(),1)); to=fmt(now); }
   else if(type==='thangtruoc'){ from=fmt(new Date(now.getFullYear(),now.getMonth()-1,1)); to=fmt(new Date(now.getFullYear(),now.getMonth(),0)); }
-  else if(type==='quynay'){ const q=Math.floor(now.getMonth()/3); from=fmt(new Date(now.getFullYear(),q*3,1)); to=fmt(now); }
   else if(type==='namnay'){ from=fmt(new Date(now.getFullYear(),0,1)); to=fmt(now); }
   else return;
   $('tcFrom').value=from; $('tcTo').value=to;

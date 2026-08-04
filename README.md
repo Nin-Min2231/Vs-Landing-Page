@@ -100,7 +100,11 @@ sửa lại thống kê "Hồ sơ đang xử lý" (trước đó gộp nhầm c�
 kê mới "Hồ sơ đang nộp" + "Hồ sơ đang tư vấn"; bộ lọc "Trạng thái" màn Hồ sơ đổi từ dropdown sang
 chip checkbox nhiều lựa chọn, mặc định "Đang xử lý" + "Đã nộp" (xem `CLAUDE.md` mục 16); **gộp tab
 "Tư vấn" + "Khách đăng ký" thành 1 tab "Tư vấn" duy nhất**, thêm cột phân loại nguồn "Từ Web"/"Tự
-tạo" trên bảng `leads` (xem `CLAUDE.md` mục 15).
+tạo" trên bảng `leads` (xem `CLAUDE.md` mục 15); gộp bộ lọc nhanh (Tháng này/Tháng trước/Năm nay —
+bỏ "Quý này") vào chung dòng "Từ ngày...Đến ngày" ở Tài chính; dòng lọc trạng thái + tìm kiếm +
+ngày nộp của Hồ sơ gộp chung với tiêu đề "Quản lý hồ sơ" thành 1 dòng, bỏ luôn bộ lọc "Đại lý";
+**mọi màn hình list giờ khoá cố định phần tiêu đề/lọc/thống kê, chỉ bảng kết quả cuộn riêng** (class
+`tab-scroll`, xem `CLAUDE.md` mục 17 — chuẩn bắt buộc áp dụng cho màn list mới sau này).
 
 - [x] Đã chạy `07_Phase 4_Thong_Tin_Khach_Hang/supabase_setup_phase4.sql` trong Supabase SQL Editor
       (có xóa cột `chi_thu_di`/`chi_thu_ve` trên bảng `ho_so` đang có dữ liệu thật — người dùng xác
