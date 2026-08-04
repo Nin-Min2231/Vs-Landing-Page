@@ -93,6 +93,9 @@ tr:hover td{background:var(--pl)}
 .pill-lost{background:#F1F5F9;color:var(--mut)}
 /* ===== Phase 3 — Tài chính: pill "Chi" (tái dùng token màu --err có sẵn) ===== */
 .pill-chi{background:#FEE2E2;color:var(--err)}
+/* ===== Màn Tư vấn (gộp Khách đăng ký, 2026-08): pill "Nguồn" ===== */
+.pill-nguon-web{background:var(--pl);color:var(--p)}
+.pill-nguon-tutao{background:#F1F5F9;color:var(--mut)}
 td select{width:auto;font-size:13px;padding:5px 8px}
 .empty{text-align:center;color:var(--mut);padding:40px}
 /* nhóm nút "Thao tác" dùng chung cho mọi bảng */
@@ -242,6 +245,19 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .filters-hoso input[type=date]{width:145px}
 .filters-hoso input[type=search]{width:130px}
 @media(max-width:700px){.filters-hoso{flex-wrap:wrap;overflow-x:visible}}
+/* ===== Bộ lọc "Trạng thái" màn Hồ sơ: chip checkbox nhiều lựa chọn thay cho dropdown 1 lựa
+   chọn — mỗi chip dùng đúng màu của pill trạng thái tương ứng để dễ nhận biết. ===== */
+.hs-status-filter{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.chk-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;
+  font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--bd);background:#fff;
+  color:var(--mut);transition:.15s;user-select:none}
+.chk-chip:hover{border-color:var(--p)}
+.chk-chip input{margin:0;width:15px;height:15px;cursor:pointer;accent-color:currentColor}
+.chk-chip.is-checked.chip-dxl{background:var(--pl);color:var(--p);border-color:var(--p)}
+.chk-chip.is-checked.chip-dn{background:#FEF3C7;color:var(--warn);border-color:var(--warn)}
+.chk-chip.is-checked.chip-dau{background:#DCFCE7;color:var(--ok);border-color:var(--ok)}
+.chk-chip.is-checked.chip-rot{background:#FEE2E2;color:var(--err);border-color:var(--err)}
+.chk-chip.is-checked.chip-huy{background:#F1F5F9;color:var(--mut);border-color:var(--mut)}
 
 /* ===== Popup Confirm / Thông báo — dùng chung mọi màn hình (theo thiết kế
    Popup_Confirm.png / Popup_thong_bao.png). Nội dung đổ vào lúc gọi showConfirmPopup()/
@@ -340,7 +356,6 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <button class="tab" data-tab="hoso" onclick="switchTab('hoso')">🗃 Hồ sơ</button>
     <button class="tab" data-tab="khachhang" onclick="switchTab('khachhang')">👥 Thông tin khách hàng</button>
     <button class="tab" data-tab="taichinh" onclick="switchTab('taichinh')">💰 Tài chính</button>
-    <button class="tab" data-tab="leads" onclick="switchTab('leads')">📋 Khách đăng ký</button>
     <button class="tab" data-tab="posts" onclick="switchTab('posts')">📝 Bài viết</button>
     <button class="tab" data-tab="doitac" onclick="switchTab('doitac')">🤝 Đại lý ủy thác</button>
     <button class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ Cài đặt chung</button>
@@ -385,6 +400,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 
     <!-- ===== TAB TƯ VẤN ===== -->
     <section id="tab-tuvan" class="hidden">
+      <div class="stat-row" id="tvStatRow"></div>
       <div class="panel-head">
         <h2>Tư vấn khách hàng</h2>
         <div class="filters">
@@ -392,13 +408,20 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
             <option value="">Tất cả trạng thái</option>
             <option>Mới</option><option>Đang tư vấn</option><option>Chốt</option><option>Hủy</option>
           </select>
+          <select id="fTvNguon" onchange="renderTuVan()">
+            <option value="">Tất cả nguồn</option>
+            <option>Từ Web</option><option>Tự tạo</option>
+          </select>
+          <select id="fTvCountry" onchange="renderTuVan()"><option value="">Tất cả quốc gia</option></select>
           <input type="search" id="fTvSearch" placeholder="Tìm tên / SĐT..." oninput="renderTuVan()" style="width:170px">
+          <button class="btn btn-ok" onclick="exportTuVanCSV()">⬇ Xuất CSV</button>
+          <button class="btn btn-g" onclick="loadLeads()">↻ Tải lại</button>
           <button class="btn btn-p" onclick="openTvModal()">+ Thêm tư vấn</button>
         </div>
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Ngày</th><th>Tên</th><th>SĐT</th><th>Nước đến</th><th>Mục đích</th><th>Trạng thái</th><th>Nhắc lại</th><th class="th-center">Thao tác</th></tr></thead>
+          <thead><tr><th>#</th><th>Ngày</th><th>Tên</th><th>SĐT</th><th>Nước đến</th><th>Mục đích</th><th>Nguồn</th><th>Trạng thái</th><th>Nhắc lại</th><th class="th-center">Thao tác</th></tr></thead>
           <tbody id="tvBody"></tbody>
         </table>
         <div class="empty hidden" id="tvEmpty">Chưa có dữ liệu tư vấn</div>
@@ -410,11 +433,14 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       <div class="panel-head">
         <h2>Quản lý hồ sơ</h2>
       </div>
+      <div class="hs-status-filter" id="fHsStatusGroup">
+        <label class="chk-chip chip-dxl is-checked"><input type="checkbox" value="Đang xử lý" checked onchange="onHsStatusChipChange(this)">Đang xử lý</label>
+        <label class="chk-chip chip-dn is-checked"><input type="checkbox" value="Đã nộp" checked onchange="onHsStatusChipChange(this)">Đã nộp</label>
+        <label class="chk-chip chip-dau"><input type="checkbox" value="Đậu" onchange="onHsStatusChipChange(this)">Đậu</label>
+        <label class="chk-chip chip-rot"><input type="checkbox" value="Rớt" onchange="onHsStatusChipChange(this)">Rớt</label>
+        <label class="chk-chip chip-huy"><input type="checkbox" value="Hủy" onchange="onHsStatusChipChange(this)">Hủy</label>
+      </div>
       <div class="filters filters-hoso" style="margin-bottom:14px;align-items:center">
-        <select id="fHsStatus" onchange="renderHoSo()">
-          <option value="">Tất cả trạng thái</option>
-          <option>Đang xử lý</option><option>Đã nộp</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
-        </select>
         <select id="fHsDoiTac" onchange="renderHoSo()"><option value="">Tất cả đại lý</option></select>
         <input type="search" id="fHsSearch" placeholder="Tìm tên khách..." oninput="renderHoSo()">
         <span class="filters-label">Ngày nộp từ</span>
@@ -520,31 +546,6 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div class="cat-add-row"><input type="text" id="newTruongNhom" placeholder="Tên đối tác mới"><button class="btn btn-p" onclick="addDanhMuc('truongnhom')">+ Thêm</button></div>
           <div id="listTruongNhom" class="cat-list"></div>
         </div>
-      </div>
-    </section>
-
-    <!-- ===== TAB LEADS ===== -->
-    <section id="tab-leads" class="hidden">
-      <div class="stat-row" id="statRow"></div>
-      <div class="panel-head">
-        <h2>Danh sách khách đăng ký</h2>
-        <div class="filters">
-          <select id="fStatus" onchange="renderLeads()">
-            <option value="">Tất cả trạng thái</option>
-            <option>Mới</option><option>Đang tư vấn</option><option>Chốt</option><option>Hủy</option>
-          </select>
-          <select id="fCountry" onchange="renderLeads()"><option value="">Tất cả quốc gia</option></select>
-          <input type="search" id="fSearch" placeholder="Tìm tên / SĐT..." oninput="renderLeads()" style="width:170px">
-          <button class="btn btn-ok" onclick="exportCSV()">⬇ Xuất CSV</button>
-          <button class="btn btn-g" onclick="loadLeads()">↻ Tải lại</button>
-        </div>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Thời gian</th><th>Họ tên</th><th>SĐT</th><th>Quốc gia</th><th>Ghi chú</th><th>Trạng thái</th></tr></thead>
-          <tbody id="leadsBody"></tbody>
-        </table>
-        <div class="empty hidden" id="leadsEmpty">Chưa có khách đăng ký nào</div>
       </div>
     </section>
 
@@ -1019,7 +1020,7 @@ const REMEMBER_KEY = 'tv_admin_refresh_token';
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ==== Tìm kiếm free-text KHÔNG phân biệt dấu tiếng Việt — dùng chung cho MỌI ô tìm kiếm
-   (fHsSearch, fKhSearch, fTvSearch, fSearch, khPickSearch...). Gõ "a" phải ra được cả
+   (fHsSearch, fKhSearch, fTvSearch, khPickSearch...). Gõ "a" phải ra được cả
    "á/à/ả/ã/ạ/â/ầ/ấ/ẩ/ẫ/ậ/ă/ằ/ắ/ẳ/ẵ/ặ", gõ "e" ra "e/ê", gõ "o" ra "o/ô/ơ", "d" ra "d/đ"...
    Cách làm: NFD tách chữ cái ra khỏi dấu thanh/dấu mũ rồi bỏ hết dấu (̀-ͯ gồm cả
    dấu mũ ^, dấu trăng ˘, dấu móc horn), riêng "đ" không tách được bằng NFD nên xử lý tay.
@@ -1217,7 +1218,7 @@ if('serviceWorker' in navigator){
 /* ==================== TAB ==================== */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
-  ['dash','tuvan','hoso','khachhang','taichinh','doitac','settings','leads','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
+  ['dash','tuvan','hoso','khachhang','taichinh','doitac','settings','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
   if(name==='dash') loadDashboard();
   if(name==='taichinh') loadTaiChinh();
 }
@@ -1227,68 +1228,28 @@ async function loadLeads(){
   try{
     LEADS = await api('leads?select=*&order=created_at.desc') || [];
     // nạp bộ lọc quốc gia
-    const sel=$('fCountry'), cur=sel.value;
+    const sel=$('fTvCountry'), cur=sel.value;
     sel.innerHTML='<option value="">Tất cả quốc gia</option>'+
       [...new Set(LEADS.map(l=>l.country).filter(Boolean))].map(c=>`<option>${esc(c)}</option>`).join('');
     sel.value=cur;
-    renderLeads();
     renderTuVan();
   }catch(e){ if(e.message!=='401') toast('Lỗi tải danh sách: '+e.message,'err'); }
 }
 function pillClass(s){ return {'Mới':'pill-new','Đang tư vấn':'pill-called','Chốt':'pill-won','Hủy':'pill-lost'}[s]||'pill-new'; }
-function renderLeads(){
-  const st=$('fStatus').value, ct=$('fCountry').value, q=vnNorm($('fSearch').value.trim());
-  const rows = LEADS.filter(l=>
-    (!st||l.status===st) && (!ct||l.country===ct) &&
-    (!q||vnNorm(l.name).includes(q)||vnNorm(l.phone).includes(q))
-  );
-  // thống kê
-  const cnt = s => LEADS.filter(l=>l.status===s).length;
-  $('statRow').innerHTML = `
-    <div class="stat"><div class="n">${LEADS.length}</div><div class="l">Tổng lead</div></div>
-    <div class="stat"><div class="n">${cnt('Mới')}</div><div class="l">Chưa gọi</div></div>
-    <div class="stat"><div class="n">${cnt('Đang tư vấn')}</div><div class="l">Đang tư vấn</div></div>
-    <div class="stat"><div class="n">${cnt('Chốt')}</div><div class="l">Đã chốt</div></div>`;
-  $('leadsEmpty').classList.toggle('hidden', rows.length>0);
-  $('leadsBody').innerHTML = rows.map((l,i)=>`
-    <tr>
-      <td>${i+1}</td>
-      <td>${fmtTime(l.created_at)}</td>
-      <td><b>${esc(l.name)}</b></td>
-      <td><a href="tel:${esc(l.phone)}">${esc(l.phone)}</a></td>
-      <td>${esc(l.country||'–')}</td>
-      <td style="max-width:220px">${esc(l.note||'–')}</td>
-      <td>
-        <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="pill stt-tuvan ${pillClass(l.status)}">${esc(l.status)}</span>
-          <select onchange="updateLeadStatus(${l.id},this.value)" class="stt-tuvan">
-            ${['Mới','Đang tư vấn','Chốt','Hủy'].map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('')}
-          </select>
-        </span>
-      </td>
-    </tr>`).join('');
-  applyRowLabels('leadsBody');
-}
-async function updateLeadStatus(id,status){
-  try{
-    await api('leads?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status}),prefer:'return=minimal'});
-    const l=LEADS.find(x=>x.id===id); if(l) l.status=status;
-    renderLeads(); renderTuVan(); toast('Đã cập nhật trạng thái');
-  }catch(e){ toast('Lỗi cập nhật: '+e.message,'err'); }
-}
-function exportCSV(){
+function nguonPillClass(n){ return n==='Tự tạo' ? 'pill-nguon-tutao' : 'pill-nguon-web'; }
+function exportTuVanCSV(){
   if(!LEADS.length){ toast('Chưa có dữ liệu để xuất','err'); return; }
-  const head=['ID','Thời gian','Họ tên','SĐT','Quốc gia','Ghi chú','Trạng thái'];
+  const head=['ID','Thời gian','Họ tên','SĐT','Quốc gia','Mục đích','Nguồn','Ghi chú','Trạng thái'];
   const csvCell = v => '"'+(v??'').toString().replace(/"/g,'""')+'"';
   const lines=[head.join(',')].concat(LEADS.map(l=>
-    [l.id,fmtTime(l.created_at),l.name,l.phone,l.country,l.note,l.status].map(csvCell).join(',')));
+    [l.id,fmtTime(l.created_at),l.name,l.phone,l.country,l.muc_dich,l.nguon,l.note,l.status].map(csvCell).join(',')));
   // BOM UTF-8 để Excel mở đúng tiếng Việt
   const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='leads_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download='tu_van_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click(); URL.revokeObjectURL(a.href);
-  toast('Đã xuất '+LEADS.length+' lead ra CSV');
+  toast('Đã xuất '+LEADS.length+' dòng ra CSV');
 }
 
 /* ==================== CATEGORIES (Danh mục bài viết — giữ nguyên) ==================== */
@@ -1617,9 +1578,24 @@ async function addDoiTacPhi(){
 }
 
 /* ==================== PHASE 2: TƯ VẤN (mở rộng bảng leads) ==================== */
+/* Màn "Tư vấn" (gộp với "Khách đăng ký" cũ, 2026-08) — cùng 1 bảng leads, thêm cột/lọc
+   "Nguồn": "Từ Web" (form công khai index.html, tự gán qua default cột nguon) / "Tự tạo"
+   (nhân viên tự thêm qua dialog "Thêm tư vấn", xem saveTuVan()). */
 function renderTuVan(){
-  const st=$('fTvStatus').value, q=vnNorm($('fTvSearch').value.trim());
-  const rows = LEADS.filter(l=>(!st||l.status===st)&&(!q||vnNorm(l.name).includes(q)||vnNorm(l.phone).includes(q)));
+  const st=$('fTvStatus').value, ng=$('fTvNguon').value, ct=$('fTvCountry').value, q=vnNorm($('fTvSearch').value.trim());
+  const rows = LEADS.filter(l=>
+    (!st||l.status===st) && (!ng||l.nguon===ng) && (!ct||l.country===ct) &&
+    (!q||vnNorm(l.name).includes(q)||vnNorm(l.phone).includes(q))
+  );
+  const cnt = s => LEADS.filter(l=>l.status===s).length;
+  const cntNg = n => LEADS.filter(l=>l.nguon===n).length;
+  $('tvStatRow').innerHTML = `
+    <div class="stat"><div class="n">${LEADS.length}</div><div class="l">Tổng lead</div></div>
+    <div class="stat"><div class="n">${cnt('Mới')}</div><div class="l">Chưa gọi</div></div>
+    <div class="stat"><div class="n">${cnt('Đang tư vấn')}</div><div class="l">Đang tư vấn</div></div>
+    <div class="stat"><div class="n">${cnt('Chốt')}</div><div class="l">Đã chốt</div></div>
+    <div class="stat"><div class="n">${cntNg('Từ Web')}</div><div class="l">Từ Web</div></div>
+    <div class="stat"><div class="n">${cntNg('Tự tạo')}</div><div class="l">Tự tạo</div></div>`;
   $('tvEmpty').classList.toggle('hidden', rows.length>0);
   $('tvBody').innerHTML = rows.map((l,i)=>`
     <tr>
@@ -1629,6 +1605,7 @@ function renderTuVan(){
       <td>${l.phone?`<a href="tel:${esc(l.phone)}">${esc(l.phone)}</a>`:'–'}</td>
       <td>${esc(l.country||'–')}</td>
       <td>${esc(l.muc_dich||'–')}</td>
+      <td><span class="pill ${nguonPillClass(l.nguon)}">${esc(l.nguon||'Từ Web')}</span></td>
       <td><span class="pill stt-tuvan ${pillClass(l.status)}">${esc(l.status)}</span></td>
       <td>${fmtDate(l.ngay_nhac_lai)}</td>
       <td class="td-actions"><button class="btn btn-p" onclick="openTvModal(${l.id})">Sửa</button></td>
@@ -1664,6 +1641,9 @@ async function saveTuVan(){
     ngay_nhac_lai: $('tvNgayNhacLai').value||null
   };
   const id=$('tvId').value;
+  // "Nguồn" chỉ gán khi TẠO MỚI (nhân viên tự thêm ở đây = "Tự tạo") — sửa 1 dòng có sẵn
+  // không được đổi lại nguồn gốc thật của nó (vd 1 lead "Từ Web" sửa xong vẫn phải là "Từ Web").
+  if(!id) body.nguon = 'Tự tạo';
   const btn=$('tvSaveBtn'); btn.disabled=true;
   try{
     let saved;
@@ -1699,12 +1679,21 @@ async function loadHoSo(){
 function hsPillClass(s){
   return {'Đang xử lý':'pill-hs-dxl','Đã nộp':'pill-hs-dn','Đậu':'pill-hs-dau','Rớt':'pill-hs-rot','Hủy':'pill-hs-huy'}[s]||'pill-hs-dxl';
 }
+/* Chip checkbox "Trạng thái" (nhiều lựa chọn) — bấm 1 chip thì đổi màu (class is-checked)
+   theo đúng màu pill trạng thái tương ứng rồi lọc lại danh sách. */
+function onHsStatusChipChange(cb){
+  cb.closest('.chk-chip').classList.toggle('is-checked', cb.checked);
+  renderHoSo();
+}
+function checkedHsStatuses(){
+  return [...document.querySelectorAll('#fHsStatusGroup input:checked')].map(cb=>cb.value);
+}
 function renderHoSo(){
-  const st=$('fHsStatus').value, dtId=$('fHsDoiTac').value, q=vnNorm($('fHsSearch').value.trim());
+  const checkedSt=checkedHsStatuses(), dtId=$('fHsDoiTac').value, q=vnNorm($('fHsSearch').value.trim());
   const tuNgay=$('fHsTuNgay').value, denNgay=$('fHsDenNgay').value;
   const todayStr = new Date().toISOString().slice(0,10);
   const rows = HO_SO.filter(h=>
-    (!st||h.trang_thai===st) &&
+    checkedSt.includes(h.trang_thai) &&
     (!dtId||String(h.doi_tac_id)===dtId) &&
     (!q||vnNorm(h.ten_khach).includes(q)) &&
     (!tuNgay||(h.ngay_nop&&h.ngay_nop>=tuNgay)) &&
@@ -1733,7 +1722,12 @@ function renderHoSo(){
   applyRowLabels('hsBody');
 }
 function resetHoSoFilters(){
-  $('fHsStatus').value=''; $('fHsDoiTac').value='';
+  document.querySelectorAll('#fHsStatusGroup input').forEach(cb=>{
+    const isDefault = cb.value==='Đang xử lý' || cb.value==='Đã nộp';
+    cb.checked = isDefault;
+    cb.closest('.chk-chip').classList.toggle('is-checked', isDefault);
+  });
+  $('fHsDoiTac').value='';
   $('fHsTuNgay').value=''; $('fHsDenNgay').value=''; $('fHsSearch').value='';
   renderHoSo();
 }

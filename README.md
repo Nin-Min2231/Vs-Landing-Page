@@ -97,11 +97,17 @@ Bổ sung sau đó (2026-08): tìm kiếm không phân biệt dấu tiếng Vi�
 dùng chung `vnNorm()`, xem `CLAUDE.md` mục 13); chặn xóa "Thông tin khách hàng"/"Đại lý ủy thác"
 nếu đã có hồ sơ tham chiếu (hàm dùng chung `isRecordInUse()`, xem `CLAUDE.md` mục 14); Dashboard
 sửa lại thống kê "Hồ sơ đang xử lý" (trước đó gộp nhầm cả "Đang xử lý" + "Đã nộp") và thêm 2 thống
-kê mới "Hồ sơ đang nộp" + "Hồ sơ đang tư vấn".
+kê mới "Hồ sơ đang nộp" + "Hồ sơ đang tư vấn"; bộ lọc "Trạng thái" màn Hồ sơ đổi từ dropdown sang
+chip checkbox nhiều lựa chọn, mặc định "Đang xử lý" + "Đã nộp" (xem `CLAUDE.md` mục 16); **gộp tab
+"Tư vấn" + "Khách đăng ký" thành 1 tab "Tư vấn" duy nhất**, thêm cột phân loại nguồn "Từ Web"/"Tự
+tạo" trên bảng `leads` (xem `CLAUDE.md` mục 15).
 
 - [x] Đã chạy `07_Phase 4_Thong_Tin_Khach_Hang/supabase_setup_phase4.sql` trong Supabase SQL Editor
       (có xóa cột `chi_thu_di`/`chi_thu_ve` trên bảng `ho_so` đang có dữ liệu thật — người dùng xác
       nhận đã chạy thành công).
+- [ ] **Cần chạy lại `04_Phase 2/supabase_setup_phase2.sql` trong Supabase SQL Editor** (đã cập
+      nhật thêm cột `leads.nguon` — file vẫn idempotent, chạy lại toàn bộ không lỗi/không ảnh hưởng
+      dữ liệu đã có, chỉ phần thêm cột mới này sẽ chạy vì dùng DO block tự kiểm tra cột chưa có).
 - [ ] Test theo checklist mục 11 trong file bàn giao trên với dữ liệu thật (đã tự kiểm tra được phần
       không cần đăng nhập qua DOM: autocomplete, mặc định Nước đến=Nhật Bản, lọc Đại lý ủy thác chỉ
       hiện Đang hợp tác, tô đỏ Ngày trả KQ đúng 3 trường hợp, tính lại Tổng chi với Phí ship, Reset

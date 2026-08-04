@@ -241,6 +241,24 @@ alter table public.leads add column if not exists ngay_nhac_lai  date;
 -- ở đây kẻo gãy insert từ index.html). "Bắt buộc" chỉ là validate ở JS phía admin.html khi nhân
 -- viên tạo/sửa 1 dòng Tư vấn thủ công.
 
+-- (2026-08) Gộp màn "Tư vấn" + "Khách đăng ký" thành 1 màn hình duy nhất — thêm cột phân loại
+-- nguồn để phân biệt lead đến từ đâu: "Từ Web" (form công khai index.html — KHÔNG cần sửa gì ở
+-- index.html vì cột có default sẵn) / "Tự tạo" (nhân viên tự thêm qua dialog "Thêm tư vấn" của
+-- admin.html, xem saveTuVan()). Dữ liệu CŨ (trước khi có cột này) không có cách nào suy luận
+-- chính xác nguồn gốc — theo yêu cầu người dùng, TẤT CẢ dữ liệu cũ được gán "Tự tạo". Bọc trong
+-- DO block để chỉ backfill 1 LẦN DUY NHẤT lúc thêm cột (idempotent — chạy lại sau này không backfill
+-- nhầm lên các dòng "Từ Web" mới được tạo thật sau đó).
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='leads' and column_name='nguon'
+  ) then
+    alter table public.leads add column nguon text not null default 'Từ Web';
+    update public.leads set nguon = 'Tự tạo';
+  end if;
+end $$;
+
 -- ĐỀ XUẤT THÊM (không bắt buộc, cần PM xác nhận): cột liên kết ngược để biết 1 Hồ sơ được tạo
 -- từ dòng Tư vấn nào, phục vụ tính năng "chốt Tư vấn → tạo Hồ sơ" ở mục G bên dưới.
 alter table public.ho_so add column if not exists nguon_tu_van_id bigint references public.leads(id) on delete set null;
