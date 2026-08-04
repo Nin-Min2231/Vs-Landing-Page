@@ -34,6 +34,46 @@ dùng `javascript_tool` gọi hàm/đọc DOM trực tiếp), và deploy thành 
 + `https://topvisa.nguyennc1357.workers.dev`.** Việc gom SQL (mục 10) là thay đổi **mới nhất, chưa
 commit tại thời điểm viết file này** — xem mục 1 để biết trạng thái chính xác lúc bạn đọc.
 
+## 0. ⭐ CẬP NHẬT MỚI NHẤT — Phase 5: Bảng phí đại lý + tự động điền phí Hồ sơ + đổi lại ngày dd/mm/yyyy (2026-08-04, sau bản trên)
+
+Ngay sau khi viết xong bản handover ở dưới, cùng session đã làm thêm 1 việc lớn nữa (nhánh
+`claude/fee-table-dialog-agent-4f5717`) — đọc chi tiết đầy đủ ở `CLAUDE.md` mục 18 (Bảng phí đại lý
++ tự động điền phí Hồ sơ) và mục 19 (đảo lại quyết định định dạng ngày). Tóm tắt:
+
+1. Dialog "Bảng phí đại lý" (`#dtFeeOverlay`): "Nơi nộp" đổi sang droplist cố định 3 giá trị; thêm
+   "Đất nước" + đổi "Diện visa" sang droplist lấy từ Cài đặt chung (cả 2 bắt buộc); "Mức phí" đổi
+   tên "Phí ủy thác", thêm mới "Phí lãnh sự" (cả 2 định dạng tiền dấu chấm).
+2. Dialog "Đăng ký hồ sơ": chọn đủ Nước đến + Mục đích + Đại lý ủy thác → tự tra bảng phí, điền
+   "Lệ phí lãnh sự"/"Đại lý-CTV" (vẫn sửa tay được, chọn lại 1 trong 3 field thì lấy lại).
+3. **Đảo lại định dạng ngày lần 2**: bỏ `<input type="date">` (quyết định Phase 4), quay về mask
+   chữ `dd/mm/yyyy` (như trước Phase 4) cho TOÀN BỘ 12 field ngày trong `admin.html` — PM xác nhận
+   rõ muốn vậy để hiện đúng dd/mm/yyyy trên mọi máy bất kể locale. Đã cố tránh lặp lại bug cũ: mọi
+   `saveXxx()`/`addXxx()` giờ báo lỗi rõ ràng (toast + chặn lưu) khi ngày gõ sai/gõ dở, KHÔNG còn
+   nơi nào âm thầm thay bằng ngày hôm nay.
+
+**Đã làm:** code xong cả 3 việc trên trong `02_Source/admin.html`; viết migration
+`05_Database/05_supabase_setup_phase5.sql`; test kỹ qua Claude Browser bằng cách mock hàm `api()`
+(không có tài khoản admin thật để test đăng nhập) — đã xác nhận: helper `toISODate`/`fromISODate`/
+`onDateInput` xử lý đúng mọi ca biên (năm nhuận, ngày không tồn tại, để trống, gõ dở), gõ ngày thật
+qua bàn phím trong dialog Hồ sơ hoạt động đúng, `lookupDoiTacPhi()` tra đúng/điền đúng/ghi đè đúng/
+xóa trắng khi không khớp, `addDoiTacPhi()` validate đúng 2 field bắt buộc + ngày sai, `loadDoiTacPhi()`
+hiển thị đúng cho cả dòng phí mới và dòng cũ (fallback "–"/`dien_visa` text). **Riêng việc bấm phím
+Backspace/xóa ký tự thật trong ô ngày KHÔNG test được** — công cụ browser tự động ở đây không mô
+phỏng được sự kiện Backspace thật (đã kiểm chứng: kể cả trên 1 `<input>` trắng thường cũng không
+xóa được ký tự nào), không phải do code — đã đọc lại kỹ thuật toán `onDateInput()` bằng tay và tin
+tưởng nó xử lý đúng khi xóa (thuật toán chỉ đọc lại toàn bộ số hiện có trong ô mỗi lần gõ/xóa rồi
+định dạng lại, không có nhánh riêng cho xóa nên không có lý do khác biệt) — **nhưng nên tự tay gõ
+thử xóa/sửa lại vài ô ngày trên trình duyệt thật của bạn để chắc chắn 100%** trước khi coi là xong.
+
+**Còn thiếu / cần làm tiếp:**
+1. **Chạy `05_Database/05_supabase_setup_phase5.sql`** trong Supabase SQL Editor (thêm cột
+   `nuoc_id`/`muc_dich_id`/`phi_lanh_su`, đổi tên `muc_phi`→`phi_uy_thac` trên bảng `doi_tac_phi`)
+   — chưa chạy thì dialog "Bảng phí"/tự động điền phí ở Hồ sơ sẽ lỗi khi dùng thật.
+2. Test với đăng nhập admin thật: thêm 1 dòng phí đủ field, tạo Hồ sơ với tổ hợp đã có phí để xem
+   tự điền, và tự tay gõ/xóa thử vài ô ngày (xem ghi chú Backspace ở trên).
+3. Nhánh này (`claude/fee-table-dialog-agent-4f5717`) **CHƯA merge/push lên `main`** tại thời điểm
+   viết mục này — kiểm tra lại nếu đọc file này ở phiên sau.
+
 ## 1. Việc CẦN LÀM NGAY / cần hỏi lại người dùng
 
 1. **⚠️ QUAN TRỌNG NHẤT — chạy lại SQL migration:** người dùng cần chạy lại

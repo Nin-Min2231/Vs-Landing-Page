@@ -17,6 +17,8 @@
 3. `03_supabase_setup_phase3.sql` — Phase 3: bảng `khoan_chi` (Tài chính).
 4. `04_supabase_setup_phase4.sql` — Phase 4: bảng `khach_hang` + đổi cột `chi_thu_di`/`chi_thu_ve`
    trên `ho_so` thành `chi_phi_ship`.
+5. `05_supabase_setup_phase5.sql` — Phase 5: `doi_tac_phi` thêm `nuoc_id`/`muc_dich_id` (droplist
+   Nước đến/Mục đích), thêm `phi_lanh_su`, đổi tên `muc_phi` -> `phi_uy_thac`.
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
 project đang dùng đã qua đủ cả 4 phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy

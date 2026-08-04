@@ -129,7 +129,7 @@ Xem hàm `hsStatusSelectClass()`/`updateHoSoStatusColor()` trong `admin.html` l�
 | Đăng ký hồ sơ mới | `#hoOverlay` | 6 nhóm (Thông tin khách, Thông tin nộp hồ sơ, Thu/Chi, Thành viên nhóm, Xử lý phát sinh, Ghi chú) | Dialog gốc, tham chiếu đầy đủ nhất — có field tiền (`money-input`), select đổi màu theo trạng thái (`status-select`), field Số lượng cho sửa tay |
 | Tư vấn | `#tvOverlay` | 2 nhóm (Thông tin khách hàng, Chi tiết tư vấn) | modal-lg |
 | Đại lý ủy thác | `#dtOverlay` | 2 nhóm (Thông tin đại lý ủy thác, Ghi chú) | modal-lg |
-| Bảng phí đại lý | `#dtFeeOverlay` | 2 nhóm (Các mức phí đã có, Thêm mức phí mới) | modal-xl, chỉ có nút "Đóng lại" (không có nút Lưu — mỗi dòng phí lưu ngay khi bấm "+ Thêm") |
+| Bảng phí đại lý | `#dtFeeOverlay` | 2 nhóm (Các mức phí đã có, Thêm mức phí mới) | modal-xl, chỉ có nút "Đóng lại" (không có nút Lưu — mỗi dòng phí lưu ngay khi bấm "+ Thêm mức phí"). Nhóm "Thêm mức phí mới" (2026-08, Phase 5): Nơi nộp = droplist cố định 3 giá trị (Đà Nẵng/Hà Nội/TP Hồ Chí Minh, không phải danh mục Cài đặt chung); Đất nước/Diện visa = droplist danh_muc_nuoc/danh_muc_muc_dich, bắt buộc; Phí ủy thác/Phí lãnh sự = `money-input`; Áp dụng từ = ô mask dd/mm/yyyy (mục 9) |
 | Bài viết | `#postOverlay` | 2 nhóm (Thông tin bài viết, Nội dung) | modal-lg, textarea nội dung dài (8 dòng) nằm trong `.dlg-body` nên cuộn được khi bài dài |
 | Sửa tên danh mục | `#renameOverlay` | Không chia section (chỉ 1 field) | Dialog nhỏ nhất — vẫn dùng `dlg-standard`/`dlg-head`/`dlg-foot` để đồng bộ màu/nút, nhưng field đặt trực tiếp trong `.dlg-body`, không bọc `.dlg-section` |
 | Khoản chi (Tài chính, Phase 3) | `#chiOverlay` | 1 nhóm (Thông tin khoản chi) | modal-lg, field Ngày dùng `type="date"` (xem mục 9) |
@@ -137,26 +137,51 @@ Xem hàm `hsStatusSelectClass()`/`updateHoSoStatusColor()` trong `admin.html` l�
 
 Khi tạo dialog mới trong tương lai, thêm 1 dòng vào bảng này để danh sách luôn cập nhật.
 
-## 9. Định dạng ngày — dùng `type="date"` chuẩn HTML5 (đã đổi lại ở Phase 4, 2026-08)
+## 9. Định dạng ngày — ô nhập chữ mask `dd/mm/yyyy` (đổi lại lần 2 ở Phase 5, 2026-08)
 
-⚠️ **Lịch sử đổi qua đổi lại — đọc kỹ để không đổi nhầm hướng:**
-- Có giai đoạn ngắn (giữa Phase 3) toàn bộ field ngày đổi sang ô nhập chữ có mask `dd/mm/yyyy`
-  (hàm `onDateInput()`/`fromISODate()`/`toISODate()`) vì lo `<input type="date">` hiển thị theo
-  locale trình duyệt (có thể ra `mm/dd/yyyy` nếu máy đặt tiếng Anh).
-- **Phase 4 (2026-08) đã đổi lại `type="date"` chuẩn HTML5 cho TOÀN BỘ field ngày** — PM yêu cầu
-  có icon lịch (calendar picker) toàn hệ thống + phát hiện mask cũ gây lỗi nhập liệu ("Ngày nộp
-  chỉ nhận dd/mm"). Vì giá trị thật của `<input type="date">` luôn là ISO `yyyy-mm-dd` bất kể
-  hiển thị theo locale nào, không ảnh hưởng dữ liệu lưu — chỉ là hiển thị có thể khác chút theo
-  máy người dùng, chấp nhận được để đổi lấy icon lịch + input ổn định hơn.
-- **3 hàm `onDateInput()`/`fromISODate()`/`toISODate()` đã bị XÓA khỏi `admin.html`** — không còn
-  tồn tại trong code. **Không tự ý viết lại mask ngày nữa** trừ khi PM yêu cầu rõ ràng.
+⚠️ **Lịch sử đổi qua đổi lại 2 LẦN — đọc kỹ để không đổi nhầm hướng lần thứ 3:**
+- **Giai đoạn 1** (giữa Phase 3): toàn bộ field ngày là ô nhập chữ có mask `dd/mm/yyyy` (hàm
+  `onDateInput()`/`fromISODate()`/`toISODate()`) vì lo `<input type="date">` hiển thị theo locale
+  trình duyệt (có thể ra `mm/dd/yyyy` nếu máy đặt tiếng Anh).
+- **Giai đoạn 2 = Phase 4** (2026-08): đổi lại `type="date"` chuẩn HTML5 cho TOÀN BỘ field ngày —
+  lúc đó cho rằng mask cũ gây lỗi nhập liệu ("Ngày nộp chỉ nhận dd/mm") và muốn có icon lịch toàn
+  hệ thống. 3 hàm `onDateInput()`/`fromISODate()`/`toISODate()` bị xóa khỏi `admin.html`.
+- **Giai đoạn 3 = Phase 5** (2026-08-04, HIỆN TẠI): PM yêu cầu quay lại mask `dd/mm/yyyy` — lý do:
+  `type="date"` tuy giá trị lưu luôn là ISO, nhưng **hiển thị** phụ thuộc hoàn toàn vào locale máy
+  người dùng (không ép được từ code), máy đặt tiếng Anh vẫn ra `mm/dd/yyyy`; PM xác nhận muốn hiện
+  đúng dd/mm/yyyy trên MỌI máy, chấp nhận đánh đổi mất icon lịch có sẵn của trình duyệt. 3 hàm
+  `onDateInput()`/`fromISODate()`/`toISODate()` đã được viết lại trong `admin.html` (khu vực ngay
+  sau `fmtVND()`).
+  **Khác bản Giai đoạn 1 ở 1 điểm quan trọng** (để không lặp lại lỗi "chỉ nhận dd/mm" nghi ngờ do
+  bug cũ): `toISODate()` trả về `null` khi chuỗi rỗng HOẶC sai định dạng/ngày không tồn tại (vd
+  31/02) — nơi gọi (mọi hàm `saveXxx()`/`addXxx()`) **BẮT BUỘC** tự kiểm tra `.value.trim()` để
+  phân biệt "để trống" (field không bắt buộc → cho qua, gửi `null`) với "có gõ nhưng sai/gõ dở"
+  (→ `toast(...,'err')` báo lỗi rõ ràng + `return` chặn lưu). **TUYỆT ĐỐI không được** âm thầm
+  thay bằng ngày hôm nay hoặc bỏ qua khi ngày không hợp lệ — xem các hàm `saveHoSo()`/`saveChi()`/
+  `addDoiTacPhi()`/`addXlps()`/`saveTuVan()`/`saveKhachHang()`/`loadTaiChinh()` làm ví dụ mẫu.
+- **Không tự ý đổi sang `type="date"` lại lần nữa** trừ khi PM yêu cầu rõ ràng — đã đổi 2 lần vì 2
+  lý do khác nhau (bug nhập liệu vs. locale hiển thị), lần sau nếu đổi phải hỏi lại PM đã cân nhắc
+  đủ 2 rủi ro này chưa, đừng lặp lại y hệt 1 trong 2 giai đoạn trước mà không có gì mới.
 
 Mẫu chuẩn hiện tại cho mọi field ngày:
 ```html
-<input type="date" id="xxxNgay">
+<input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="xxxNgay" oninput="onDateInput(this)">
 ```
-Đọc/ghi trực tiếp `.value` (đã là ISO `yyyy-mm-dd`), không cần chuyển đổi:
+Giá trị hiển thị trong ô LUÔN là `dd/mm/yyyy` (chuỗi), phải tự chuyển đổi qua `fromISODate()`/
+`toISODate()` ở mọi nơi đọc/ghi — không còn là ISO trực tiếp như `type="date"` nữa:
 ```js
-$('xxxNgay').value = data?.ngay || '';   // lúc mở dialog
-ngay: $('xxxNgay').value || null          // lúc lưu
+$('xxxNgay').value = fromISODate(data?.ngay);          // lúc mở dialog (ISO -> dd/mm/yyyy)
+// lúc lưu — field KHÔNG bắt buộc:
+const raw = $('xxxNgay').value.trim();
+const iso = toISODate(raw);
+if(raw && !iso){ toast('Ngày ... không hợp lệ, vui lòng nhập đúng dd/mm/yyyy','err'); return; }
+// body: ngay: iso||null
+
+// lúc lưu — field BẮT BUỘC:
+if(!raw){ toast('Vui lòng nhập Ngày ...','err'); return; }
+if(!iso){ toast('Ngày ... không hợp lệ, vui lòng nhập đúng dd/mm/yyyy','err'); return; }
+// body: ngay: iso
 ```
+12 field ngày hiện có trong `admin.html` dùng đúng mẫu này: `fHsTuNgay`, `fHsDenNgay`, `tcFrom`,
+`tcTo`, `tvNgayNhacLai`, `hoNgay`, `hoNgayNop`, `hoNgayTraKq`, `xlpsHanChot`, `feeNgayApDung`,
+`chiNgay`, `khNgaySinh`.

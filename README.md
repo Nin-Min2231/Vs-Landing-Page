@@ -135,6 +135,30 @@ Test thật trên khổ điện thoại ~412×915 phát hiện 3 vấn đề, đ
 - Nút "+ Thêm..." (đăng ký mới) trên các màn list giờ nổi cố định góc phải màn hình điện thoại khi
   cuộn, để luôn bấm được mà không cần cuộn lên lại.
 
+## Phase 5 — Bảng phí đại lý nâng cấp + tự động điền phí khi tạo Hồ sơ (2026-08-04)
+
+Dialog "Bảng phí" (màn Đại lý ủy thác) nâng cấp: "Nơi nộp" đổi sang droplist cố định (Đà Nẵng/Hà
+Nội/TP Hồ Chí Minh); thêm "Đất nước" + đổi "Diện visa" sang droplist lấy từ Cài đặt chung (Nước
+đến/Mục đích, cả 2 bắt buộc); "Mức phí" đổi tên thành "Phí ủy thác", thêm "Phí lãnh sự" tách riêng
+(cả 2 định dạng tiền có dấu chấm ngăn cách nghìn) — xem `CLAUDE.md` mục 18.
+
+Dialog "Đăng ký hồ sơ": khi chọn đủ Nước đến + Mục đích + Đại lý ủy thác, tự tra "Bảng phí đại lý"
+và điền "Lệ phí lãnh sự"/"Đại lý-CTV" (vẫn sửa tay được, chọn lại 1 trong 3 field thì lấy lại).
+
+**Đổi lại định dạng ngày:** toàn bộ ô ngày trong `admin.html` (12 field) đổi từ `<input
+type="date">` (Phase 4) sang **ô nhập chữ có mask dd/mm/yyyy** (như trước Phase 4) — PM xác nhận
+muốn vậy để hiện đúng dd/mm/yyyy trên MỌI máy bất kể locale, chấp nhận đánh đổi mất icon lịch có
+sẵn của trình duyệt. Đã cố gắng tránh lặp lại lỗi cũ (Phase 3, "chỉ nhận dd/mm"): không còn nơi nào
+âm thầm thay ngày không hợp lệ bằng ngày hôm nay — nhập sai/nhập dở đều báo lỗi rõ ràng và chặn lưu.
+Xem `01_Docs/10_Chuan_Dialog_Chung.md` mục 9 (đã viết lại toàn bộ).
+
+- [ ] **Cần chạy `05_Database/05_supabase_setup_phase5.sql` trong Supabase SQL Editor** (thêm cột
+      `nuoc_id`/`muc_dich_id`/`phi_lanh_su` + đổi tên `muc_phi`→`phi_uy_thac` trên bảng
+      `doi_tac_phi`) — chưa chạy thì dialog "Bảng phí"/tự động điền phí ở Hồ sơ sẽ lỗi.
+- [ ] Test với đăng nhập admin thật: thêm 1 dòng phí mới đủ field, tạo Hồ sơ chọn đúng tổ hợp
+      Nước đến/Mục đích/Đại lý ủy thác đã có phí để kiểm tra tự điền, gõ thử vài ô ngày (kể cả
+      trường hợp gõ sai/gõ dở) ở nhiều dialog khác nhau.
+
 Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 17.
 
 - [ ] **Cần bạn tự kiểm tra trên điện thoại thật** (Claude Code không có màn hình điện thoại thật để
