@@ -92,6 +92,17 @@ main{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;
 .tab-scroll{display:flex;flex-direction:column;flex:1;min-height:0}
 .tab-scroll>*{flex-shrink:0}
 .tab-scroll>.tbl-wrap{flex:1;min-height:0;overflow-y:auto}
+/* ===== Trên điện thoại (≤700px): TẮT hẳn cơ chế trên — màn hình quá hẹp, nếu ép thống kê +
+   bộ lọc đứng yên (nhất là màn có nhiều ô như Tư vấn: 6 ô thống kê + 4 bộ lọc + 3 nút) sẽ
+   chiếm gần hết chiều cao, chỉ còn 1 khe rất nhỏ để xem list. Trả về cuộn nguyên trang bình
+   thường (tiêu đề/thống kê/lọc cuộn cùng list) — header/tabs vẫn dính (position:sticky) khi
+   cuộn trang, y hệt hành vi trước khi có "tab-scroll". Ưu tiên test đúng ở khổ ~412×915. */
+@media(max-width:700px){
+  #appView{height:auto;overflow:visible;display:block}
+  main{overflow-y:visible;display:block}
+  .tab-scroll{display:block}
+  .tab-scroll>.tbl-wrap{overflow-y:visible}
+}
 
 /* table */
 .tbl-wrap{background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(15,30,61,.08);overflow-x:auto}
@@ -251,14 +262,15 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .addr-trunc{display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap;vertical-align:bottom}
 @media(max-width:700px){.addr-trunc{max-width:60vw}}
-/* ===== Thanh điều kiện search "Quản lý hồ sơ": ép 1 dòng trên desktop, cuộn ngang nếu chật ===== */
-.filters-hoso{gap:10px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+/* ===== Thanh điều kiện search "Quản lý hồ sơ" / "Tài chính": ưu tiên 1 dòng nếu đủ chỗ,
+   KHÔNG bọc scroll ngang — màn hình hẹp hơn thì tự xuống dòng bình thường (2026-08, đổi lại
+   từ nowrap+cuộn ngang trước đó, theo yêu cầu không muốn cuộn ngang phần search). ===== */
+.filters-hoso{gap:10px;flex-wrap:wrap}
 .filters-hoso>*{flex-shrink:0}
 .filters-hoso .filters-label{font-weight:600;font-size:13px;white-space:nowrap}
 .filters-hoso h2{font-size:19px;white-space:nowrap}
 .filters-hoso input[type=date]{width:145px}
 .filters-hoso input[type=search]{width:130px}
-@media(max-width:700px){.filters-hoso{flex-wrap:wrap;overflow-x:visible}}
 /* ===== Bộ lọc "Trạng thái" màn Hồ sơ: chip checkbox nhiều lựa chọn thay cho dropdown 1 lựa
    chọn — mỗi chip dùng đúng màu của pill trạng thái tương ứng để dễ nhận biết. ===== */
 .hs-status-filter{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex-shrink:0}
