@@ -137,21 +137,55 @@ create table if not exists public.ho_so (
 alter table public.ho_so add column if not exists so_luong integer not null default 1;
 alter table public.ho_so add column if not exists thu_khach_tip numeric not null default 0;
 
--- tong_thu/loi_nhuan được view v_dashboard_theo_thang tham chiếu (sum(...)) → phải xoá view
--- trước khi đổi cột, mục F bên dưới sẽ tạo lại view này nên không mất dữ liệu/định nghĩa.
-drop view if exists public.v_dashboard_theo_thang;
-
-alter table public.ho_so drop column if exists tong_thu;
-alter table public.ho_so drop column if exists tong_chi;
-alter table public.ho_so drop column if exists loi_nhuan;
-
-alter table public.ho_so add column tong_thu numeric generated always as
-  (thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip) stored;
-alter table public.ho_so add column tong_chi numeric generated always as
-  ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac) stored;
-alter table public.ho_so add column loi_nhuan numeric generated always as
-  ((thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip)
-   - ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac)) stored;
+-- (2026-08, sửa lỗi) Khối dưới đây (đổi công thức tong_chi/loi_nhuan để thêm so_luong/
+-- thu_khach_tip) viết TỪ TRƯỚC Phase 4 — công thức gốc dùng chi_thu_di + chi_thu_ve, 2 cột đã
+-- bị Phase 4 (07_Phase 4_Thong_Tin_Khach_Hang/supabase_setup_phase4.sql — file này KHÔNG có
+-- trong git, chỉ ở thư mục gốc dự án) XÓA HẲN và thay bằng chi_phi_ship. Chạy lại file này trên
+-- 1 database ĐÃ qua Phase 4 sẽ lỗi "column chi_thu_di does not exist" (42703) vì cột không còn
+-- tồn tại. Bọc trong guard kiểm tra chi_phi_ship: nếu cột đó ĐÃ CÓ (đã qua Phase 4) thì bỏ qua
+-- hẳn khối này (Phase 4 lo phần này rồi, không cần làm lại) — chỉ chạy công thức chi_thu_di cũ
+-- nếu database CHƯA từng qua Phase 4 (trường hợp hiếm, gần như không còn xảy ra trong thực tế).
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='ho_so' and column_name='chi_phi_ship'
+  ) then
+    -- Đã qua Phase 4 — đảm bảo tong_thu/tong_chi/loi_nhuan tồn tại đúng công thức mới nhất
+    -- (chi_phi_ship thay vì chi_thu_di+chi_thu_ve), KHÔNG đụng gì nếu đã có sẵn đúng rồi.
+    if not exists (select 1 from information_schema.columns
+                   where table_schema='public' and table_name='ho_so' and column_name='tong_thu') then
+      alter table public.ho_so add column tong_thu numeric generated always as
+        (thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip) stored;
+    end if;
+    if not exists (select 1 from information_schema.columns
+                   where table_schema='public' and table_name='ho_so' and column_name='tong_chi') then
+      alter table public.ho_so add column tong_chi numeric generated always as
+        ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_phi_ship + chi_phi_khac) stored;
+    end if;
+    if not exists (select 1 from information_schema.columns
+                   where table_schema='public' and table_name='ho_so' and column_name='loi_nhuan') then
+      alter table public.ho_so add column loi_nhuan numeric generated always as
+        ((thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip)
+         - ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_phi_ship + chi_phi_khac)) stored;
+    end if;
+  else
+    -- CHƯA qua Phase 4 — vẫn còn chi_thu_di/chi_thu_ve, chạy đúng như migration gốc lúc viết.
+    -- tong_thu/loi_nhuan được view v_dashboard_theo_thang tham chiếu (sum(...)) → phải xoá view
+    -- trước khi đổi cột, mục F bên dưới sẽ tạo lại view này nên không mất dữ liệu/định nghĩa.
+    drop view if exists public.v_dashboard_theo_thang;
+    alter table public.ho_so drop column if exists tong_thu;
+    alter table public.ho_so drop column if exists tong_chi;
+    alter table public.ho_so drop column if exists loi_nhuan;
+    alter table public.ho_so add column tong_thu numeric generated always as
+      (thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip) stored;
+    alter table public.ho_so add column tong_chi numeric generated always as
+      ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac) stored;
+    alter table public.ho_so add column loi_nhuan numeric generated always as
+      ((thu_le_phi + thu_in_anh + thu_ho_tro_khac + thu_khach_tip)
+       - ((chi_le_phi_lanh_su + chi_doi_tac_ctv) * so_luong + chi_thu_di + chi_thu_ve + chi_phi_khac)) stored;
+  end if;
+end $$;
 
 -- (2026-08) Đổi 3 khoá ngoại nuoc_id/muc_dich_id/truong_nhom_id từ "on delete set null" sang
 -- "on delete restrict" — màn Cài đặt chung giờ cho xoá hẳn 1 mục danh mục nếu không còn hồ sơ
