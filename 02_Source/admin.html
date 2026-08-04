@@ -267,13 +267,16 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .kh-pick-btn{flex-shrink:0;width:44px;border:1.5px solid rgba(0,64,133,.5);border-radius:8px;
   background:#fff;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
 .kh-pick-btn:hover{background:var(--pl)}
-/* ===== Icon lịch tùy chỉnh cho MỌI ô ngày mask dd/mm/yyyy (2026-08) — bọc quanh input bằng JS
-   lúc tải trang (initDatePickers()), không sửa từng input trong HTML, xem CLAUDE.md mục 20.
-   Cùng cơ chế flex input+nút như .kh-pick-wrap/.kh-pick-btn ở trên để đồng bộ giao diện. ===== */
-.date-mask-wrap{display:flex;gap:6px}
-.date-mask-wrap input{flex:1;min-width:0}
-.date-pick-btn{flex-shrink:0;width:40px;border:1.5px solid rgba(0,64,133,.5);border-radius:8px;
-  background:#fff;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+/* ===== Icon lịch tùy chỉnh cho MỌI ô ngày mask dd/mm/yyyy (2026-08, sửa lại cho gọn) — bọc
+   quanh input bằng JS lúc tải trang (initDatePickers()), không sửa từng input trong HTML, xem
+   CLAUDE.md mục 20. Icon nằm LỒNG BÊN TRONG ô input (position:absolute, giống icon lịch mặc định
+   của trình duyệt) — không chiếm thêm diện tích ngang như bản nút rời cũ, input vẫn giữ đủ chỗ
+   hiện trọn "dd/mm/yyyy" (chỉ chừa lại đúng khoảng trống cho icon qua padding-right). ===== */
+.date-mask-wrap{position:relative}
+.date-mask-wrap input{width:100%;padding-right:30px}
+.date-pick-btn{position:absolute;right:3px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:transparent;border-radius:6px;
+  cursor:pointer;font-size:14px;color:var(--mut);display:flex;align-items:center;justify-content:center}
 .date-pick-btn:hover{background:var(--pl)}
 .date-picker-popup{position:fixed;z-index:200;background:#fff;border:1px solid var(--bd);
   border-radius:10px;box-shadow:var(--sh);padding:12px;width:258px}
@@ -306,7 +309,6 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .filters-hoso>*{flex-shrink:0}
 .filters-hoso .filters-label{font-weight:600;font-size:13px;white-space:nowrap}
 .filters-hoso h2{font-size:19px;white-space:nowrap}
-.filters-hoso input[type=date]{width:145px}
 .filters-hoso input[type=search]{width:130px}
 /* ===== Bộ lọc "Trạng thái" màn Hồ sơ: chip checkbox nhiều lựa chọn thay cho dropdown 1 lựa
    chọn — mỗi chip dùng đúng màu của pill trạng thái tương ứng để dễ nhận biết. ===== */
@@ -504,9 +506,9 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         </div>
         <input type="search" id="fHsSearch" placeholder="Tìm tên khách..." oninput="renderHoSo()">
         <span class="filters-label">Ngày nộp từ</span>
-        <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="fHsTuNgay" oninput="onDateInput(this)" onchange="renderHoSo()" style="width:110px">
+        <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="fHsTuNgay" oninput="onDateInput(this)" onchange="renderHoSo()" style="width:135px">
         <span class="filters-label">đến</span>
-        <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="fHsDenNgay" oninput="onDateInput(this)" onchange="renderHoSo()" style="width:110px">
+        <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="fHsDenNgay" oninput="onDateInput(this)" onchange="renderHoSo()" style="width:135px">
         <button class="btn btn-g" onclick="resetHoSoFilters()">Reset</button>
         <button class="btn btn-p btn-add-fab" onclick="openHoSoModal()">+ Thêm hồ sơ</button>
       </div>
@@ -544,9 +546,9 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
       <div class="filters filters-hoso" style="margin-bottom:14px;align-items:center">
         <span class="filters-label">Từ ngày</span>
-        <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="tcFrom" oninput="onDateInput(this)" style="width:110px">
+        <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="tcFrom" oninput="onDateInput(this)" style="width:135px">
         <span class="filters-label">Đến ngày</span>
-        <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="tcTo" oninput="onDateInput(this)" style="width:110px">
+        <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="tcTo" oninput="onDateInput(this)" style="width:135px">
         <button class="btn btn-p" onclick="loadTaiChinh()">Tìm kiếm</button>
         <button class="btn btn-g" onclick="tcSetRange('thangnay')">Tháng này</button>
         <button class="btn btn-g" onclick="tcSetRange('thangtruoc')">Tháng trước</button>

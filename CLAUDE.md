@@ -484,8 +484,19 @@ thư viện ngoài — đúng triết lý dự án) để vừa gõ tay được
 - `initDatePickers()` (gọi 1 lần lúc script chạy, gần `initTaiChinhFilters()`) tự tìm MỌI
   `<input oninput="onDateInput(this)">` có sẵn trong trang — đây là dấu hiệu nhận biết 1 field là
   "ô ngày mask", đúng theo mẫu chuẩn ở mục 9 — rồi tự bọc thêm 1 `<div class="date-mask-wrap">`
-  quanh input + thêm 1 `<button class="date-pick-btn">📅</button>` bên cạnh (giống cơ chế
-  `.kh-pick-wrap`/`.kh-pick-btn` của ô "Tên khách hàng").
+  quanh input + thêm 1 `<button class="date-pick-btn">📅</button>` bên cạnh.
+  ⚠️ **Sửa lại 2026-08-04 (cùng ngày, theo phản hồi PM):** icon 📅 ban đầu làm dạng nút RIÊNG đứng
+  cạnh ô nhập (giống `.kh-pick-wrap`/`.kh-pick-btn` của ô "Tên khách hàng") — PM phản hồi nút quá
+  to, đứng ngoài ô nhìn thô, làm ô ngày mất chỗ hiển thị nên bị cắt mất phần năm. Đã đổi
+  `.date-mask-wrap` sang `position:relative` + icon `position:absolute` LỒNG BÊN TRONG ô input
+  (giống icon lịch mặc định của trình duyệt), input dùng `padding-right:30px` chừa chỗ cho icon
+  24×24px, không còn chiếm thêm bề ngang. **Bug đi kèm phát hiện lúc sửa:** input lúc đó bị co lại
+  ~212px thay vì đúng 135px do dính đè bởi rule cũ `.filters input,.filters select{width:auto}`
+  (mục "filters" — dùng cho MỌI ô trong thanh lọc, độ ưu tiên cao hơn rule chung
+  `input{width:100%}`) — đã thêm `width:100%` tường minh vào `.date-mask-wrap input` để thắng rule
+  đó. Cũng xóa luôn rule chết `.filters-hoso input[type=date]{width:145px}` (không còn input nào
+  `type=date` để khớp từ khi đổi qua mask ở mục 19). 4 field lọc (`fHsTuNgay`/`fHsDenNgay`/
+  `tcFrom`/`tcTo`) tăng width từ 110px → 135px để chữ "dd/mm/yyyy" đủ chỗ hiện cùng icon.
 - **Field ngày MỚI thêm sau này** (đúng mẫu HTML ở mục 9: `oninput="onDateInput(this)"`) sẽ
   **TỰ ĐỘNG có icon lịch**, không cần đụng gì thêm ở đây — nếu field ngày mới KHÔNG tự có icon,
   kiểm tra lại đã copy đúng `oninput="onDateInput(this)"` (đúng y nguyên chuỗi, không thêm tham số
