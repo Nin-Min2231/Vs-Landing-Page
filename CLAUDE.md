@@ -16,7 +16,7 @@ Toàn bộ tài liệu thiết kế (yêu cầu, sitemap, wireframe, design syst
 | 2. Thiết kế (sitemap/wireframe/design system) | ✅ Xong |
 | 3. Front-end landing page (`index.html`) | ✅ Xong, đã gắn thông tin thật (logo, hotline, Zalo, Facebook, địa chỉ) + USP + slider đánh giá thật + section Tin tức + SEO (canonical/OG/JSON-LD/robots.txt/sitemap.xml, xem mục 12) |
 | 4. Back-end (Supabase) | ✅ **Đã chạy thật** — `SUPABASE_URL`/`SUPABASE_ANON_KEY` đã điền giá trị thật trong cả 2 file HTML |
-| 5. Admin CRM (`admin.html`) | ✅ Xong nhiều đợt (Phase 2→5, xem README.md) — Dashboard, Tư vấn (đã gộp "Khách đăng ký"), Hồ sơ, Thông tin khách hàng, Tài chính, Đại lý ủy thác, Cài đặt chung, Danh mục bài viết |
+| 5. Admin CRM (`admin.html`) | ✅ Xong nhiều đợt (Phase 2→6, xem README.md) — Dashboard, Tư vấn (đã gộp "Khách đăng ký"), Hồ sơ, Thông tin khách hàng (có phân trang), Tài chính, Đại lý ủy thác, Cài đặt chung (Nước đến mở rộng), Danh mục bài viết |
 | 6. Kiểm thử | 🟡 Một phần — đã test thủ công + qua DOM (Claude Browser), **chưa test đủ với đăng nhập admin thật** trên tất cả tính năng mới, xem `Handover_Phien_Moi.md` mục "Việc cần làm ngay" |
 | 7. Deploy | ✅ **Đã lên Internet** — qua Cloudflare Workers, domain riêng **`https://topvisa5s.com`** (đã trỏ, 2026-08) — vẫn còn chạy song song ở `https://topvisa.nguyennc1357.workers.dev` (cùng 1 bản deploy) |
 
@@ -55,7 +55,8 @@ Visa-Landing-Page/
 │   ├── 02_supabase_setup_phase2.sql ← Phase 2: ho_so/danh_muc_*/doi_tac* + mở rộng leads (nguon...)
 │   ├── 03_supabase_setup_phase3.sql ← Phase 3: khoan_chi (Tài chính)
 │   ├── 04_supabase_setup_phase4.sql ← Phase 4: khach_hang + đổi chi_thu_di/chi_thu_ve → chi_phi_ship
-│   └── 05_supabase_setup_phase5.sql ← Phase 5: doi_tac_phi thêm nuoc_id/muc_dich_id/phi_lanh_su, đổi tên muc_phi→phi_uy_thac
+│   ├── 05_supabase_setup_phase5.sql ← Phase 5: doi_tac_phi thêm nuoc_id/muc_dich_id/phi_lanh_su, đổi tên muc_phi→phi_uy_thac
+│   └── 06_supabase_setup_phase6.sql ← Phase 6: danh_muc_nuoc thêm le_phi/thoi_gian_xet_duyet/checklist/ghi_chu
 └── Handover_Phien_Moi.md           ← ⭐ ĐỌC FILE NÀY TRƯỚC — tóm tắt phiên gần nhất, việc dở dang
 ```
 
@@ -544,3 +545,133 @@ xác Hồ sơ cũ đã dùng đúng dòng giá nào tại thời điểm tạo) 
 giản hóa, giống cách các nơi khác trong hệ thống cũng chặn rộng hơn mức cần thiết một chút để đổi
 lấy an toàn dữ liệu (xem mục 14). Không có fallback bắt lỗi FK ở `catch` như mẫu `isRecordInUse()`
 (mục 14) vì không có ràng buộc FK thật nào để CSDL trả lỗi — pre-check là lớp chặn DUY NHẤT.
+
+## 22. Mở rộng danh mục "Nước đến" — dialog riêng + bảng full-width (Phase 6, 2026-08)
+
+**Bối cảnh:** "Nước đến" cần thêm 4 field (Lệ phí, Thời gian xét duyệt, Checklist, Ghi chú) nên
+không còn phù hợp với list tên đơn giản (`cat-item`) + `renameOverlay` dùng chung cho 3 danh mục
+như trước — đã tách riêng thành 1 khối full-width (`.cat-block-full`, class CSS mới) đứng TRÊN
+`.cat-grid` (Mục đích + Đối tác vẫn giữ nguyên list đơn giản, xếp cạnh nhau như cũ bên dưới).
+
+**Schema:** `05_Database/06_supabase_setup_phase6.sql` — thêm 4 cột nullable vào `danh_muc_nuoc`:
+`le_phi` (numeric), `thoi_gian_xet_duyet` (text), `checklist` (text, giới hạn 1000 ký tự ở UI qua
+`maxlength`, không ép ở DB), `ghi_chu` (text, giới hạn 500 ký tự tương tự).
+
+**Dialog riêng `#nuocOverlay`** (`openNuocModal()`/`closeNuocModal()`/`saveNuocModal()`, hàm hiển
+thị bảng `renderNuocTable()`) theo đúng chuẩn `dlg-*`. **Quyết định UX quan trọng:** nút mở dialog
+trong bảng list đặt tên **"Chi tiết"** (không phải "Sửa") — vì đây là 1 dialog DÙNG CHUNG cho cả
+xem lẫn sửa (xem đủ nội dung Checklist/Ghi chú dù bị cắt "..." ở list, sửa được luôn nếu cần),
+không tạo thêm 1 dialog xem-riêng chỉ đọc nào khác — quyết định này chưa hỏi lại người dùng trước
+khi làm, nếu muốn tách riêng "xem" và "sửa" thành 2 luồng khác nhau thì cần yêu cầu rõ.
+
+**Truncate text dài trong list:** class dùng chung mới `.text-trunc` (giống hệt `.addr-trunc` đã
+có cho cột Địa chỉ, chỉ đổi tên cho tổng quát hơn — không dùng lại `.addr-trunc` vì tên gợi ý riêng
+cho địa chỉ) — `max-width` cố định + `text-overflow:ellipsis`, hiện đủ khi hover qua `title="..."`.
+
+**Nút Xóa** vẫn dùng lại `deleteDanhMuc('nuoc', id)` + `isDanhMucInUse('nuoc', item)` có sẵn từ
+trước (mục 14) — không đổi gì, vẫn chặn xóa nếu `ho_so.nuoc_id` hoặc `leads.country` đang tham
+chiếu tới nước đó.
+
+## 23. Cảnh báo "dữ liệu chưa lưu" khi đóng dialog — cơ chế dùng chung cho MỌI dialog (Phase 6, 2026-08)
+
+**Yêu cầu:** mở 1 dialog bất kỳ, nếu có sửa dữ liệu rồi bấm "Đóng lại" hoặc nút X mà CHƯA bấm Lưu,
+phải hiện popup xác nhận: *"Dữ liệu đã thay đổi nhưng chưa lưu. Bạn muốn thoát mà không lưu lại
+không?"* — nút **"Đồng ý"** (đóng luôn, không lưu) và **"Không thoát"** (giữ dialog, cho nhập tiếp).
+
+**Cách hoạt động — 3 hàm dùng chung** (định nghĩa trong `admin.html`, ngay sau `showNotifyPopup()`):
+```js
+snapshotDialog(overlayId)      // chụp lại giá trị TOÀN BỘ input/select/textarea trong overlay đó
+isDialogDirty(overlayId)       // so sánh giá trị hiện tại với bản đã chụp — true nếu có khác biệt
+confirmCloseDialog(overlayId, doClose)  // nếu dirty thì hỏi xác nhận, "Không thoát" thì KHÔNG gọi doClose
+```
+`dialogSnapshotValue()` (hàm nội bộ) tự nối toàn bộ `.value` (hoặc `.checked` với checkbox/radio)
+của mọi input/select/textarea NẰM TRONG overlay đó thành 1 chuỗi để so sánh — không cần khai báo
+tay từng field, tự động bắt được MỌI field kể cả field ẩn (`type="hidden"`) hay sub-form lồng bên
+trong (vd ô "+ Thêm thành viên" trong dialog Hồ sơ).
+
+**Cách áp dụng cho 1 dialog (BẮT BUỘC cho dialog mới sau này, xem `01_Docs/10_Chuan_Dialog_Chung.md`
+mục 9.1):**
+1. Cuối hàm `openXxxModal()` (SAU KHI đã gán xong `.value` cho mọi field): gọi `snapshotDialog('xxxOverlay')`.
+2. Hàm `closeXxxModal()` đổi từ tự đóng trực tiếp sang gọi `confirmCloseDialog('xxxOverlay', ()=>{...code đóng gốc...})`.
+3. Trong hàm `saveXxx()` — **NGAY SAU KHI lưu API thành công, TRƯỚC KHI gọi `closeXxxModal()`** —
+   gọi lại `snapshotDialog('xxxOverlay')` để cập nhật baseline = dữ liệu vừa lưu. **Bước này BẮT
+   BUỘC không được quên** — nếu bỏ qua, đóng dialog ngay sau khi lưu thành công sẽ bị hiểu nhầm là
+   "còn thay đổi chưa lưu" (vì dữ liệu hiện tại luôn khác baseline lúc MỞ dialog) và hiện cảnh báo
+   thừa ngay sau khi vừa lưu xong — đã tự kiểm chứng lỗi này lúc code rồi sửa đúng.
+4. Với dialog có thao tác lưu NGAY không qua nút Lưu chung của dialog (vd "+ Thêm mức phí" ở Bảng
+   phí đại lý, hay "+ Thêm"/Xóa/đổi trạng thái ở Thành viên nhóm/Xử lý phát sinh trong dialog Hồ
+   sơ) — cũng phải gọi lại `snapshotDialog()` ngay sau khi thao tác đó lưu thành công, cùng lý do.
+
+**9 dialog đã áp dụng đầy đủ:** `tvOverlay`, `hoOverlay` (+ 5 hàm con: `addThanhVien`/`delThanhVien`/
+`addXlps`/`delXlps`/`updateXlpsStatus`), `dtOverlay`, `dtFeeOverlay` (+ `addDoiTacPhi`/`delDoiTacPhi`),
+`postOverlay`, `renameOverlay`, `chiOverlay`, `khOverlay`, `nuocOverlay`.
+
+**KHÔNG áp dụng** cho `khPickOverlay` (dialog "Chọn khách hàng" — chỉ tìm kiếm/chọn 1 dòng có sẵn,
+không phải form nhập liệu cần lưu) và các popup `confirmOverlay`/`notifyOverlay`/`datePickerPopup`
+(bản thân chúng đã là popup xác nhận/tiện ích, không phải dialog dữ liệu).
+
+**Đã test kỹ qua Claude Browser** (giả lập DOM, không cần đăng nhập thật): mở dialog không sửa gì
+rồi đóng → đóng thẳng không hỏi; sửa 1 field rồi đóng → hiện đúng popup với đúng 2 nút; bấm "Không
+thoát" → dialog giữ nguyên, dữ liệu đã gõ không mất; bấm "Đồng ý" → đóng, dữ liệu KHÔNG được lưu;
+lưu thành công rồi tự đóng → KHÔNG hiện cảnh báo thừa (đã test cả `nuocOverlay` lẫn `hoOverlay`).
+
+## 24. Dashboard mở rộng — 7 thống kê + "Hồ sơ trả kết quả tuần này" + đổi thứ tự (Phase 6, 2026-08)
+
+**Thứ tự hiển thị MỚI** (từ trên xuống, đây là chuẩn bắt buộc nếu sau này thêm/bớt khối Dashboard):
+1. Hàng 7 thẻ thống kê (`dashStatRow`)
+2. ⚠️ Xử lý phát sinh cần chú ý
+3. 📆 Hồ sơ trả kết quả tuần này (MỚI)
+4. 📅 Khách tư vấn cần nhắc lại
+5. Biểu đồ Doanh thu & Lợi nhuận theo tháng
+6. Biểu đồ Số lượng hồ sơ theo tháng
+
+**7 thẻ thống kê** (thêm mới thẻ thứ 7 "Trả KQ hôm nay" — đếm `HO_SO` có `ngay_tra_kq` = hôm nay,
+tính trực tiếp từ `HO_SO` đã nạp sẵn, không cần view SQL riêng, cùng cách làm với 3 thống kê Hồ
+sơ/Tư vấn có sẵn). Đổi `.stat-row` từ `repeat(4,1fr)` cố định sang
+`repeat(auto-fit,minmax(165px,1fr))` + giảm nhẹ font (13px→12px)/padding để nhãn dài nhất ("Cần
+nhắc lại (7 ngày)") luôn nằm gọn 1 dòng ở mọi độ rộng màn hình — đã đo bằng `canvas.measureText()`
+xác nhận không tràn ở ngưỡng hẹp nhất (165px/thẻ).
+
+**"Hồ sơ trả kết quả tuần này"** — lấy trực tiếp từ `HO_SO` đã nạp sẵn lúc đăng nhập (không cần
+view SQL riêng, xem hàm `renderDashTraKqTuan()`): lọc `ngay_tra_kq` trong khoảng [hôm nay, hôm
+nay+6 ngày] (dùng hàm mới `addDaysIso()`), sort tăng dần (gần nhất trước), tô đỏ nếu đúng hôm nay.
+Cột hiển thị: Tên khách hàng/Nước đến/Mục đích/Đại lý ủy thác/Ngày nộp/Ngày trả KQ + nút "Chi tiết"
+gọi thẳng `openHoSoModal(id)` (dùng lại đúng dialog Hồ sơ, giống cách "Chi tiết" ở Tài chính làm).
+**Lưu ý:** không lọc theo trạng thái hồ sơ (không giới hạn chỉ "Đã nộp") — hiển thị TẤT CẢ hồ sơ có
+`ngay_tra_kq` khớp khoảng ngày trên bất kể trạng thái, đúng theo yêu cầu gốc không nhắc tới lọc
+trạng thái. Nếu cần lọc thêm theo trạng thái sau này, phải hỏi lại người dùng trước khi đổi.
+
+**Chống cuộn ngang cho "Xử lý phát sinh cần chú ý" + "Khách tư vấn cần nhắc lại":** nguyên nhân gốc
+là `table{min-width:720px}` (rule chung cho MỌI bảng) ép bảng ít cột (chỉ 3 cột) vẫn phải rộng tối
+thiểu 720px dù đứng trong khối hẹp — đã xử lý bằng 2 cách cộng lại: (1) đổi `.dash-tables` từ lưới
+2 cột `1.3fr 1fr` sang xếp DỌC từng khối full-width (khớp luôn với thứ tự mới ở trên, mỗi bảng có
+trọn bề ngang màn hình), (2) thêm class `.tbl-compact{min-width:0}` gắn vào 2 bảng này để bỏ hẳn
+sàn 720px, chỉ rộng đúng theo nội dung thật cần. Đã test xác nhận `scrollWidth===clientWidth` (hết
+cuộn ngang) ở độ rộng 1280px.
+
+## 25. Phân trang màn "Thông tin khách hàng" (Phase 6, 2026-08)
+
+25 record/trang (`KH_PAGE_SIZE`), biến `khCurrentPage` giữ trang hiện tại. Thanh phân trang
+(`#khPagination`, đặt NGAY SAU `<table>`, vẫn BÊN TRONG `.tbl-wrap` — bắt buộc theo quy tắc "tbl-wrap
+phải là phần tử con cuối cùng" của cơ chế "tab cuộn cố định", mục 17 — không đặt ngoài `.tbl-wrap`)
+hiện "Hiển thị X-Y trong tổng Z khách hàng" + nút Trước/Sau/số trang, nút trang hiện tại tô đậm
+(`btn-p`), Trước/Sau tự `disabled` ở trang đầu/cuối.
+
+**Reset về trang 1 khi đổi từ khóa tìm kiếm** (`#fKhSearch` oninput gọi `khCurrentPage=1;
+renderKhachHang()`) nhưng **giữ nguyên trang** khi chỉ tải lại/thêm/sửa/xóa 1 khách hàng (các hàm
+đó gọi `loadKhachHang()`→`renderKhachHang()` không đụng tới `khCurrentPage`) — tránh nhảy về trang 1
+khó chịu mỗi lần sửa xong 1 khách hàng ở trang giữa danh sách.
+
+**Nếu cần thêm phân trang cho màn list khác sau này:** copy đúng mẫu `KH_PAGE_SIZE`/`khCurrentPage`/
+`renderKhPagination()`/`goKhPage()`, dùng lại class CSS `.pagination`/`.pagination-info`/
+`.pagination-btns` đã có sẵn (không tự bịa CSS mới), nhớ đặt bên trong `.tbl-wrap` nếu section đó
+có `tab-scroll`.
+
+## 26. Zebra-stripe cho thẻ (card) list trên điện thoại (Phase 6, 2026-08)
+
+Quy tắc CHUNG cho MỌI màn list khi xem trên điện thoại (≤700px, lúc bảng chuyển thành thẻ theo cơ
+chế đã có ở mục 17/mobile card): dòng CHẴN có nền xanh nhạt (`var(--pl)`, `#E8F1FE`), dòng LẺ giữ
+nguyên nền trắng — chỉ 1 dòng CSS `tr:nth-child(even){background:var(--pl)}` bên trong khối
+`@media(max-width:700px)` hiện có, áp dụng tự động cho TẤT CẢ bảng trong `admin.html` (không cần
+thêm class riêng cho từng bảng, không cần sửa gì ở HTML) vì mọi `<tr>` đều đi qua đúng 1 khối CSS
+chuyển bảng→thẻ duy nhất. Đã test xác nhận đúng màu ở viewport thật 375px.

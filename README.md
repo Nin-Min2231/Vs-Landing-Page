@@ -186,6 +186,26 @@ trên): 4 file SQL trước đây nằm rải rác ở `02_Source/supabase_setup
 - Các thư mục `04_Phase 2/`, `06_Phase 3_Tai_Chinh/`, `07_Phase 4_Thong_Tin_Khach_Hang/` vẫn còn
   giữ tài liệu bàn giao/ảnh thiết kế (không phải SQL) như cũ, không bị xóa.
 
+## Phase 6 — Dashboard mở rộng, Nước đến mở rộng, cảnh báo chưa lưu, phân trang (2026-08-04)
+
+- **Dashboard**: thêm thống kê "Trả KQ hôm nay" (7 thẻ tổng cộng), thêm khối mới "Hồ sơ trả kết quả
+  tuần này" (7 ngày tới, đỏ nếu đúng hôm nay, nút Chi tiết mở lại dialog Hồ sơ), đổi thứ tự hiển thị
+  các khối, hết cuộn ngang ở 2 bảng "Xử lý phát sinh"/"Nhắc lại".
+- **"Nước đến"** (Cài đặt chung): thêm Lệ phí/Thời gian xét duyệt/Checklist/Ghi chú, đổi sang bảng
+  full-width + dialog riêng, danh sách dài tự cắt "..." (xem đủ khi bấm "Chi tiết").
+- **Cảnh báo "dữ liệu chưa lưu"**: mọi dialog nhập liệu trong hệ thống giờ tự hỏi xác nhận nếu đóng
+  lúc còn thay đổi chưa lưu — áp dụng cho toàn bộ 9 dialog hiện có.
+- **Phân trang** "Thông tin khách hàng": 25 khách/trang.
+- **Zebra-stripe** cho thẻ list trên điện thoại: dòng chẵn nền xanh nhạt, dòng lẻ giữ nguyên.
+
+Chi tiết đầy đủ: `CLAUDE.md` mục 22-26.
+
+- [ ] **Cần chạy `05_Database/06_supabase_setup_phase6.sql` trong Supabase SQL Editor** (thêm 4 cột
+      mới cho bảng `danh_muc_nuoc`) — chưa chạy thì dialog "Nước đến" mới sẽ lỗi khi lưu.
+- [ ] Test với đăng nhập admin thật: thử sửa dở 1 dialog bất kỳ rồi bấm Đóng/X xem có hỏi xác nhận
+      đúng không; thử phân trang Khách hàng nếu có ≥26 khách hàng; xem Dashboard có đúng 7 thẻ +
+      khối "Hồ sơ trả kết quả tuần này" không.
+
 ## Muốn sửa nội dung?
 
 Gửi file cho Claude kèm yêu cầu, ví dụ: "Đổi giá visa Nhật thành 1.800.000đ", "Thêm quốc gia Singapore", "Đổi màu chủ đạo sang xanh lá" — sau đó deploy lại theo Bước 5 trong hướng dẫn.

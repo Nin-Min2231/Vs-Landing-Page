@@ -89,6 +89,49 @@ trả `window.innerWidth`/`innerHeight` = 0 (không compositing khung nhìn th�
 giới hạn công cụ chứ không phải bug code (đọc lại thuật toán định vị bằng tay, chuẩn). Nên tự tay
 kiểm tra trên trình duyệt thật, đặc biệt field gần mép dưới/phải màn hình.
 
+⚠️ **ĐÍNH CHÍNH (phiên sau, cùng ngày 2026-08-04):** giới hạn "window.innerWidth=0" ở trên **CHỈ
+xảy ra khi dùng viewport mặc định** của tab do `preview_start`/`navigate` tạo ra — nếu chủ động gọi
+tool `resize_window` với **width/height tường minh** (không chỉ preset tên suông) thì viewport thật
+được thiết lập đúng (đã test lại xác nhận `window.innerWidth` trả đúng 375 rồi 1280 sau khi gọi
+`resize_window({width:375,height:812})` rồi `resize_window({width:1280,height:800})`) — từ đó đo
+được chính xác `scrollWidth`/`clientWidth`/`getBoundingClientRect()` để verify layout/cuộn ngang/
+zebra-stripe mobile mà KHÔNG cần chờ người dùng tự test tay. Phiên sau nếu cần verify layout bằng
+số đo thật, nhớ gọi `resize_window` với số cụ thể trước, đừng vội kết luận "không đo được" như ghi
+chú cũ ở trên.
+
+## 0.2 Cập nhật MỚI NHẤT — Phase 6: Dashboard mở rộng + Nước đến mở rộng + cảnh báo chưa lưu +
+phân trang + zebra-stripe mobile (2026-08-04, sau 2 bản cập nhật trên)
+
+Người dùng yêu cầu 1 loạt lớn 5 việc trong 1 lần, tất cả đã code + test xong qua Claude Browser
+(dùng `resize_window` số cụ thể để đo layout thật, xem đính chính ở mục 0.1 ngay trên). Xem chi
+tiết đầy đủ ở `CLAUDE.md` mục 22-26:
+
+1. **Dashboard**: thêm thống kê "Trả KQ hôm nay" (7 thẻ), thêm khối "Hồ sơ trả kết quả tuần này"
+   (7 ngày tới, đỏ nếu hôm nay, nút Chi tiết → `openHoSoModal()`), đổi thứ tự khối theo đúng yêu
+   cầu, hết cuộn ngang 2 bảng "Xử lý phát sinh"/"Nhắc lại" (đổi `.dash-tables` sang xếp dọc +
+   `.tbl-compact{min-width:0}`), giảm nhẹ font/tăng minmax `.stat-row` để nhãn dài nhất không tràn.
+2. **"Nước đến"** (Cài đặt chung): thêm Lệ phí/Thời gian xét duyệt/Checklist(1000 ký tự)/Ghi chú
+   (500 ký tự), tách thành bảng full-width riêng + dialog `#nuocOverlay` chuẩn `dlg-*`, danh sách
+   dài cắt "..." (class mới `.text-trunc`). **Quyết định UX tự đưa ra, CHƯA hỏi lại người dùng:**
+   nút mở dialog đặt tên "Chi tiết" (dùng chung xem+sửa) thay vì tách riêng "Sửa" + "Xem chi tiết"
+   thành 2 luồng khác nhau — nếu người dùng muốn tách riêng, cần sửa lại.
+3. **Cảnh báo "dữ liệu chưa lưu"**: 3 hàm dùng chung `snapshotDialog()`/`isDialogDirty()`/
+   `confirmCloseDialog()`, áp dụng cho ĐỦ 9 dialog nhập liệu hiện có (không áp dụng dialog "Chọn
+   khách hàng" chỉ tìm kiếm). **QUY TẮC BẮT BUỘC cho dialog mới sau này** — xem
+   `01_Docs/10_Chuan_Dialog_Chung.md` mục 9.1 + `CLAUDE.md` mục 23 trước khi tạo dialog mới.
+4. **Phân trang** "Thông tin khách hàng": 25/trang, đặt trong `.tbl-wrap` (không phá quy tắc "tab
+   cuộn cố định" mục 17).
+5. **Zebra-stripe** thẻ mobile: `tr:nth-child(even){background:var(--pl)}` trong khối
+   `@media(max-width:700px)` có sẵn — áp dụng tự động cho MỌI bảng, không cần sửa gì thêm.
+
+**Còn thiếu / cần làm tiếp:**
+1. **Chạy `05_Database/06_supabase_setup_phase6.sql`** trong Supabase SQL Editor (thêm 4 cột cho
+   `danh_muc_nuoc`) — chưa chạy thì dialog "Nước đến" mới sẽ lỗi khi lưu.
+2. Test với đăng nhập admin thật: thử sửa dở 1 dialog rồi đóng xem có hỏi xác nhận đúng không (đặc
+   biệt các dialog có sub-form lồng bên trong như Hồ sơ/Bảng phí — đã test kỹ qua giả lập nhưng nên
+   xác nhận lại với dữ liệu thật), thử phân trang Khách hàng nếu có ≥26 khách hàng thật.
+3. Nhánh code cần kiểm tra đã push/deploy đúng chưa khi đọc file này ở phiên sau (xem git log).
+
 ## 1. Việc CẦN LÀM NGAY / cần hỏi lại người dùng
 
 1. **⚠️ QUAN TRỌNG NHẤT — chạy lại SQL migration:** người dùng cần chạy lại

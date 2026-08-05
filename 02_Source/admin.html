@@ -133,6 +133,15 @@ tr:hover td{background:var(--pl)}
 .pill-nguon-tutao{background:#F1F5F9;color:var(--mut)}
 td select{width:auto;font-size:13px;padding:5px 8px}
 .empty{text-align:center;color:var(--mut);padding:40px}
+/* Phân trang (2026-08, mục 4 — màn "Thông tin khách hàng") — dùng chung cho bất kỳ bảng nào cần
+   phân trang sau này, đặt trong .tbl-wrap ngay sau <table> để không phá quy tắc "tbl-wrap là
+   phần tử con cuối cùng" của cơ chế "tab cuộn cố định" (CLAUDE.md mục 17). */
+.pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:12px 16px;border-top:1px solid var(--bd)}
+.pagination-info{font-size:13px;color:var(--mut);white-space:nowrap}
+.pagination-btns{display:flex;gap:6px;flex-wrap:wrap}
+.pagination-btns .btn{padding:6px 12px;font-size:13px;min-width:36px}
+.pagination-btns .btn:disabled{opacity:.4;cursor:not-allowed}
 /* nhóm nút "Thao tác" dùng chung cho mọi bảng */
 .th-center{text-align:center}
 .td-actions{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
@@ -145,6 +154,10 @@ td select{width:auto;font-size:13px;padding:5px 8px}
   tbody{display:block}
   tr{display:block;background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(15,30,61,.08);
     border:1px solid var(--bd);margin-bottom:12px;padding:12px 14px}
+  /* Zebra-stripe CHUNG cho mọi thẻ list trên điện thoại (mục 5, 2026-08): dòng chẵn nền xanh
+     nhạt để dễ phân biệt, dòng lẻ giữ nguyên nền trắng như cũ. Áp dụng tự động cho MỌI bảng
+     (không cần thêm class riêng) vì mọi <tr> đều chuyển thành thẻ qua khối @media này. */
+  tr:nth-child(even){background:var(--pl)}
   tr:hover td{background:none}
   td{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:none;padding:6px 0;
     border-bottom:1px dashed var(--bd);font-size:14px}
@@ -177,11 +190,14 @@ td select{width:auto;font-size:13px;padding:5px 8px}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.ok{background:var(--ok)}.toast.err{background:var(--err)}.toast.warn{background:var(--warn)}
 
-.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.stat{background:#fff;border-radius:var(--r);padding:14px 18px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
-.stat .n{font-size:24px;font-weight:800;color:var(--p)}
-.stat .l{font-size:13px;color:var(--mut)}
-@media(max-width:700px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+/* Dashboard giờ có 7 thẻ thống kê (mục 1.1+1.2, 2026-08) — đổi grid sang auto-fit theo bề ngang
+   thật có, thu nhỏ 1 chút padding/font để nhãn (vd "Doanh thu tháng này") luôn nằm gọn 1 dòng
+   thay vì xuống dòng khi 7 thẻ chia đều trên 1 hàng. */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:#fff;border-radius:var(--r);padding:12px 14px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
+.stat .n{font-size:22px;font-weight:800;color:var(--p);white-space:nowrap}
+.stat .l{font-size:12px;color:var(--mut);white-space:nowrap}
+@media(max-width:700px){.stat-row{grid-template-columns:repeat(2,1fr)}.stat .l{white-space:normal}}
 
 /* ===== Phase 2 ===== */
 .modal-lg{max-width:920px}
@@ -359,8 +375,6 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 
 .cat-block{background:#fff;border-radius:var(--r);border-top:4px solid var(--bd);padding:16px 18px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
 .cat-block h3{font-size:16px;margin-bottom:10px}
-.cat-block.c-nuoc{border-top-color:var(--p)}
-.cat-block.c-nuoc h3{color:var(--pd)}
 .cat-block.c-mucdich{border-top-color:var(--acc)}
 .cat-block.c-mucdich h3{color:var(--acc)}
 .cat-block.c-truongnhom{border-top-color:var(--ok)}
@@ -372,16 +386,30 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .cat-item:last-child{border-bottom:none}
 .cat-item.inactive{opacity:.5}
 .cat-item-actions{display:flex;gap:20px;flex-shrink:0}
-/* auto-fit tự chia 4/3/2/1 cột theo chiều rộng màn hình, không cần media query riêng */
+/* auto-fit tự chia cột theo chiều rộng màn hình, không cần media query riêng */
 .cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+/* "Nước đến" (2026-08, Phase 6) — khối riêng rộng full màn hình, đứng TRÊN .cat-grid (Mục
+   đích + Đối tác), vì giờ có bảng nhiều cột thay vì list tên đơn giản. */
+.cat-block-full{background:#fff;border-radius:var(--r);border-top:4px solid var(--p);
+  padding:16px 18px;box-shadow:0 1px 3px rgba(15,30,61,.08);margin-bottom:14px}
+.cat-block-full-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cat-block-full-head h3{font-size:16px;color:var(--pd);margin:0}
+/* Cắt ngắn 1 dòng cho cột dài (Checklist/Ghi chú) — dùng chung với .addr-trunc (mục "Địa chỉ") */
+.text-trunc{display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;vertical-align:bottom}
+@media(max-width:700px){.text-trunc{max-width:60vw}}
 
 .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
 @media(max-width:900px){.chart-row{grid-template-columns:1fr}}
 .chart-card{background:#fff;border-radius:var(--r);padding:16px;box-shadow:0 1px 3px rgba(15,30,61,.08)}
 .chart-card h3{font-size:15px;margin-bottom:10px}
 .dash-table-title{font-size:15px;margin-bottom:10px}
-.dash-tables{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
-@media(max-width:900px){.dash-tables{grid-template-columns:1fr}}
+/* 2026-08: đổi từ lưới 2 cột (1.3fr 1fr) sang xếp dọc từng khối full-width (mục 1.4/1.5) — lý do
+   khối 2 cột trước đây ép bảng chỉ có 3 cột (Khách hàng/Nội dung/Hạn chốt...) vào 1 nửa bề ngang
+   trong khi table{min-width:720px} mặc định luôn đòi tối thiểu 720px, gây cuộn ngang không cần
+   thiết. Xếp full-width + dùng .tbl-compact hạ min-width cho 2 bảng ít cột là đủ, không cần cuộn. */
+.dash-tables{display:flex;flex-direction:column;gap:16px;margin-bottom:16px}
+.dash-tables .tbl-compact{min-width:0}
 </style>
 </head>
 <body>
@@ -435,15 +463,11 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <button class="btn btn-g" onclick="loadDashboard()">↻ Tải lại</button>
       </div>
       <div class="stat-row" id="dashStatRow"></div>
-      <div class="chart-row">
-        <div class="chart-card"><h3>Doanh thu &amp; Lợi nhuận theo tháng</h3><canvas id="chartDoanhThu" height="180"></canvas></div>
-        <div class="chart-card"><h3>Số lượng hồ sơ theo tháng</h3><canvas id="chartSoLuong" height="180"></canvas></div>
-      </div>
       <div class="dash-tables">
         <div>
           <h3 class="dash-table-title">⚠️ Xử lý phát sinh cần chú ý</h3>
           <div class="tbl-wrap">
-            <table>
+            <table class="tbl-compact">
               <thead><tr><th>Khách hàng</th><th>Nội dung</th><th>Hạn chốt</th></tr></thead>
               <tbody id="dashXlpsBody"></tbody>
             </table>
@@ -451,15 +475,29 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           </div>
         </div>
         <div>
-          <h3 class="dash-table-title">📅 Khách tư vấn cần nhắc lại</h3>
+          <h3 class="dash-table-title">📆 Hồ sơ trả kết quả tuần này</h3>
           <div class="tbl-wrap">
             <table>
+              <thead><tr><th>Tên khách hàng</th><th>Nước đến</th><th>Mục đích</th><th>Đại lý ủy thác</th><th>Ngày nộp</th><th>Ngày trả KQ</th><th class="th-center">Thao tác</th></tr></thead>
+              <tbody id="dashTraKqTuanBody"></tbody>
+            </table>
+            <div class="empty hidden" id="dashTraKqTuanEmpty">Không có hồ sơ nào trả kết quả trong tuần này</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="dash-table-title">📅 Khách tư vấn cần nhắc lại</h3>
+          <div class="tbl-wrap">
+            <table class="tbl-compact">
               <thead><tr><th>Khách hàng</th><th>SĐT</th><th>Ngày nhắc lại</th></tr></thead>
               <tbody id="dashNhacLaiBody"></tbody>
             </table>
             <div class="empty hidden" id="dashNhacLaiEmpty">Không có khách nào cần nhắc lại</div>
           </div>
         </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-card"><h3>Doanh thu &amp; Lợi nhuận theo tháng</h3><canvas id="chartDoanhThu" height="180"></canvas></div>
+        <div class="chart-card"><h3>Số lượng hồ sơ theo tháng</h3><canvas id="chartSoLuong" height="180"></canvas></div>
       </div>
     </section>
 
@@ -526,7 +564,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       <div class="panel-head">
         <h2>Thông tin khách hàng</h2>
         <div class="filters">
-          <input type="search" id="fKhSearch" placeholder="Tìm họ tên / SĐT..." oninput="renderKhachHang()" style="width:180px">
+          <input type="search" id="fKhSearch" placeholder="Tìm họ tên / SĐT..." oninput="khCurrentPage=1;renderKhachHang()" style="width:180px">
           <button class="btn btn-p btn-add-fab" onclick="openKhachHangModal()">+ Thêm khách hàng</button>
         </div>
       </div>
@@ -536,6 +574,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <tbody id="khBody"></tbody>
         </table>
         <div class="empty hidden" id="khEmpty">Chưa có khách hàng nào</div>
+        <div class="pagination" id="khPagination"></div>
       </div>
     </section>
 
@@ -589,12 +628,23 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <!-- ===== TAB CÀI ĐẶT CHUNG ===== -->
     <section id="tab-settings" class="hidden">
       <div class="panel-head"><h2>Cài đặt chung</h2></div>
-      <div class="cat-grid">
-        <div class="cat-block c-nuoc">
+      <!-- "Nước đến" (2026-08, Phase 6) — mở rộng thêm Lệ phí/Thời gian xét duyệt/Checklist/
+           Ghi chú nên đổi từ list đơn giản sang bảng full-width, dùng dialog chuẩn dlg-* riêng
+           (#nuocOverlay) thay vì ô nhập tên nhanh + renameOverlay như trước. -->
+      <div class="cat-block-full c-nuoc">
+        <div class="cat-block-full-head">
           <h3>🌍 Nước đến</h3>
-          <div class="cat-add-row"><input type="text" id="newNuoc" placeholder="Tên nước mới"><button class="btn btn-p" onclick="addDanhMuc('nuoc')">+ Thêm</button></div>
-          <div id="listNuoc" class="cat-list"></div>
+          <button class="btn btn-p" onclick="openNuocModal()">+ Thêm nước đến</button>
         </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Tên</th><th>Lệ phí</th><th>Thời gian xét duyệt</th><th>Checklist</th><th>Ghi chú</th><th class="th-center">Thao tác</th></tr></thead>
+            <tbody id="nuocBody"></tbody>
+          </table>
+          <div class="empty hidden" id="nuocEmpty">Chưa có nước đến nào</div>
+        </div>
+      </div>
+      <div class="cat-grid">
         <div class="cat-block c-mucdich">
           <h3>🎯 Mục đích</h3>
           <div class="cat-add-row"><input type="text" id="newMucDich" placeholder="Mục đích mới"><button class="btn btn-p" onclick="addDanhMuc('mucdich')">+ Thêm</button></div>
@@ -957,6 +1007,37 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <div class="modal-actions dlg-foot">
       <button class="btn btn-g" onclick="closeRenameModal()">Đóng lại</button>
       <button class="btn btn-p" onclick="saveRename()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL "NƯỚC ĐẾN" (Cài đặt chung, Phase 6) ============ -->
+<div class="overlay hidden" id="nuocOverlay">
+  <div class="modal modal-lg dlg-standard">
+    <div class="dlg-head">
+      <h3 id="nuocModalTitle">Thêm nước đến</h3>
+      <button type="button" class="modal-x" onclick="closeNuocModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="dlg-body">
+      <input type="hidden" id="nuocId">
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin nước đến</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Tên <span class="req-badge">Bắt buộc</span></label><input type="text" id="nuocTen"></div>
+          <div class="dlg-field"><label>Lệ phí</label><input type="text" inputmode="numeric" class="money-input" id="nuocLePhi" placeholder="Vui lòng nhập" oninput="onMoneyInput(this)"></div>
+          <div class="dlg-field"><label>Thời gian xét duyệt</label><input type="text" id="nuocThoiGian" placeholder="VD: 7-10 ngày làm việc"></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide"><label>Checklist</label><textarea id="nuocChecklist" rows="4" maxlength="1000" style="width:100%" placeholder="Danh sách giấy tờ cần chuẩn bị..."></textarea></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide"><label>Ghi chú</label><textarea id="nuocGhiChu" rows="3" maxlength="500" style="width:100%"></textarea></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeNuocModal()">Đóng lại</button>
+      <button class="btn btn-p" id="nuocSaveBtn" onclick="saveNuocModal()">Lưu</button>
     </div>
   </div>
 </div>
@@ -1352,6 +1433,42 @@ function showNotifyPopup({title='Thông báo', message='', type='error'}={}){
   });
 }
 
+/* ==== Cảnh báo "dữ liệu chưa lưu" khi đóng dialog — dùng CHUNG cho MỌI dialog nhập liệu trong
+   hệ thống (2026-08, mục 3 yêu cầu). Cách áp dụng cho 1 dialog mới:
+   1) Cuối hàm openXxxModal() (SAU KHI đã gán xong .value cho toàn bộ field): gọi
+      snapshotDialog('xxxOverlay') để chụp lại baseline lúc mới mở (dù thêm mới hay sửa).
+   2) Hàm closeXxxModal() gọi confirmCloseDialog('xxxOverlay', ()=>{ ...code đóng gốc... }) thay vì
+      tự đóng trực tiếp.
+   3) Trong hàm saveXxx() — NGAY SAU KHI lưu API thành công, TRƯỚC khi đóng dialog — gọi lại
+      snapshotDialog('xxxOverlay') để cập nhật baseline = dữ liệu vừa lưu. Nếu bỏ qua bước này,
+      đóng dialog ngay sau khi lưu thành công sẽ bị hiểu nhầm là "còn thay đổi chưa lưu" (vì dữ
+      liệu hiện tại luôn khác baseline lúc MỞ dialog) và hiện cảnh báo thừa.
+   4) Với dialog có thao tác lưu NGAY (không qua nút Lưu chung, vd "+ Thêm mức phí" ở Bảng phí đại
+      lý, hay "+ Thêm"/Xóa ở Thành viên nhóm/Xử lý phát sinh trong dialog Hồ sơ): cũng gọi lại
+      snapshotDialog() ngay sau khi thao tác đó lưu thành công, cùng lý do ở bước 3.
+   KHÔNG áp dụng cho dialog "Chọn khách hàng" (khPickOverlay — chỉ tìm kiếm/chọn, không phải form
+   lưu dữ liệu) và các popup confirm/notify (đã tự có xác nhận riêng, không phải form nhập liệu). */
+let DIALOG_SNAPSHOTS = {};
+function dialogSnapshotValue(overlayId){
+  const el = $(overlayId);
+  if(!el) return '';
+  return [...el.querySelectorAll('input,select,textarea')]
+    .map(f=> (f.type==='checkbox'||f.type==='radio') ? (f.checked?'1':'0') : f.value)
+    .join('');
+}
+function snapshotDialog(overlayId){ DIALOG_SNAPSHOTS[overlayId] = dialogSnapshotValue(overlayId); }
+function isDialogDirty(overlayId){ return DIALOG_SNAPSHOTS[overlayId] !== dialogSnapshotValue(overlayId); }
+async function confirmCloseDialog(overlayId, doClose){
+  if(isDialogDirty(overlayId)){
+    const ok = await showConfirmPopup({
+      message:'Dữ liệu đã thay đổi nhưng chưa lưu. Bạn muốn thoát mà không lưu lại không?',
+      confirmText:'Đồng ý', cancelText:'Không thoát'
+    });
+    if(!ok) return;
+  }
+  doClose();
+}
+
 async function api(path, opts={}){
   const res = await fetch(SUPABASE_URL+'/rest/v1/'+path, {
     ...opts,
@@ -1530,8 +1647,9 @@ function openPostModal(id){
   $('postContent').value = p?.content||'';
   $('postPublished').checked = p ? p.published : true;
   $('postOverlay').classList.remove('hidden');
+  snapshotDialog('postOverlay');
 }
-function closePostModal(){ $('postOverlay').classList.add('hidden'); }
+function closePostModal(){ confirmCloseDialog('postOverlay', ()=>$('postOverlay').classList.add('hidden')); }
 async function savePost(){
   const title=$('postTitle').value.trim();
   if(!title){ toast('Nhập tiêu đề bài viết','err'); return; }
@@ -1547,6 +1665,7 @@ async function savePost(){
   try{
     if(id) await api('posts?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
     else await api('posts',{method:'POST',body:JSON.stringify(body)});
+    snapshotDialog('postOverlay');
     closePostModal(); loadPosts(); toast(id?'Đã cập nhật bài viết':'Đã thêm bài viết');
   }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
   finally{ btn.disabled=false; }
@@ -1570,6 +1689,7 @@ async function loadDanhMuc(){
     ]);
     fillDanhMucSelects();
     renderSettings();
+    renderNuocTable();
   }catch(e){ if(e.message!=='401') toast('Lỗi tải danh mục Phase 2: '+e.message,'err'); }
 }
 function optsFromDanhMuc(arr){
@@ -1589,7 +1709,7 @@ function fillDanhMucSelects(){
   $('feeMucDich').innerHTML = optsFromDanhMuc(DANH_MUC_MUC_DICH);
 }
 function renderSettings(){
-  const blocks=[['listNuoc','nuoc'],['listMucDich','mucdich'],['listTruongNhom','truongnhom']];
+  const blocks=[['listMucDich','mucdich'],['listTruongNhom','truongnhom']];
   blocks.forEach(([elId,type])=>{
     const arr=danhMucArr(type);
     $(elId).innerHTML = arr.length ? arr.map(x=>`
@@ -1603,13 +1723,67 @@ function renderSettings(){
   });
 }
 async function addDanhMuc(type){
-  const inputId={nuoc:'newNuoc',mucdich:'newMucDich',truongnhom:'newTruongNhom'}[type];
+  const inputId={mucdich:'newMucDich',truongnhom:'newTruongNhom'}[type];
   const ten=$(inputId).value.trim();
   if(!ten){ toast('Nhập tên','err'); return; }
   try{
     await api(danhMucTable(type),{method:'POST',body:JSON.stringify({ten})});
     $(inputId).value=''; loadDanhMuc(); toast('Đã thêm');
   }catch(e){ toast(e.message.includes('duplicate')?'Mục này đã tồn tại':'Lỗi: '+e.message,'err'); }
+}
+/* ==== "Nước đến" (Cài đặt chung, Phase 6, 2026-08) — mở rộng thêm Lệ phí/Thời gian xét duyệt/
+   Checklist/Ghi chú nên tách riêng khỏi renderSettings() (dùng bảng full-width thay vì list tên
+   đơn giản), dialog riêng #nuocOverlay theo chuẩn dlg-*. Nút "Chi tiết" mở lại đúng dialog này
+   (dùng chung cho xem lẫn sửa — xem đủ nội dung Checklist/Ghi chú dù ở list bị cắt "..."). ==== */
+function renderNuocTable(){
+  const arr = DANH_MUC_NUOC;
+  $('nuocEmpty').classList.toggle('hidden', arr.length>0);
+  $('nuocBody').innerHTML = arr.map(x=>`
+    <tr>
+      <td>${esc(x.ten)}${x.active?'':' (đã ẩn)'}</td>
+      <td>${x.le_phi!=null?fmtVND(x.le_phi):'–'}</td>
+      <td>${esc(x.thoi_gian_xet_duyet||'–')}</td>
+      <td>${x.checklist?`<span class="text-trunc" title="${esc(x.checklist)}">${esc(x.checklist)}</span>`:'–'}</td>
+      <td>${x.ghi_chu?`<span class="text-trunc" title="${esc(x.ghi_chu)}">${esc(x.ghi_chu)}</span>`:'–'}</td>
+      <td class="td-actions">
+        <button class="btn btn-p" onclick="openNuocModal(${x.id})">Chi tiết</button>
+        <button class="btn btn-d" onclick="deleteDanhMuc('nuoc',${x.id})">Xóa</button>
+      </td>
+    </tr>`).join('');
+  applyRowLabels('nuocBody');
+}
+function openNuocModal(id){
+  const n = id ? DANH_MUC_NUOC.find(x=>x.id===id) : null;
+  $('nuocModalTitle').textContent = n ? 'Chi tiết nước đến' : 'Thêm nước đến';
+  $('nuocId').value = n?.id||'';
+  $('nuocTen').value = n?.ten||'';
+  $('nuocLePhi').value = formatMoney(n?.le_phi);
+  $('nuocThoiGian').value = n?.thoi_gian_xet_duyet||'';
+  $('nuocChecklist').value = n?.checklist||'';
+  $('nuocGhiChu').value = n?.ghi_chu||'';
+  $('nuocOverlay').classList.remove('hidden');
+  snapshotDialog('nuocOverlay');
+}
+function closeNuocModal(){ confirmCloseDialog('nuocOverlay', ()=>$('nuocOverlay').classList.add('hidden')); }
+async function saveNuocModal(){
+  const ten = $('nuocTen').value.trim();
+  if(!ten){ toast('Nhập tên','err'); return; }
+  const body = {
+    ten,
+    le_phi: $('nuocLePhi').value.trim()?unformatMoney($('nuocLePhi').value):null,
+    thoi_gian_xet_duyet: $('nuocThoiGian').value.trim()||null,
+    checklist: $('nuocChecklist').value.trim()||null,
+    ghi_chu: $('nuocGhiChu').value.trim()||null
+  };
+  const id = $('nuocId').value;
+  const btn = $('nuocSaveBtn'); btn.disabled = true;
+  try{
+    if(id) await api('danh_muc_nuoc?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
+    else await api('danh_muc_nuoc',{method:'POST',body:JSON.stringify(body)});
+    snapshotDialog('nuocOverlay');
+    closeNuocModal(); loadDanhMuc(); toast(id?'Đã cập nhật':'Đã thêm');
+  }catch(e){ toast(e.message.includes('duplicate')?'Tên này đã tồn tại':'Lỗi: '+e.message,'err'); }
+  finally{ btn.disabled=false; }
 }
 /* ==== Kiểm tra ràng buộc TRƯỚC KHI XÓA — dùng chung cho MỌI màn hình có nút "Xóa" trên dữ
    liệu có thể đang được tham chiếu ở nơi khác (Hồ sơ, Tư vấn, Bảng phí đại lý...). Nếu đang
@@ -1656,8 +1830,9 @@ function openRenameModal(type,id){
   $('renameId').value = id;
   $('renameValue').value = cur.ten;
   $('renameOverlay').classList.remove('hidden');
+  snapshotDialog('renameOverlay');
 }
-function closeRenameModal(){ $('renameOverlay').classList.add('hidden'); }
+function closeRenameModal(){ confirmCloseDialog('renameOverlay', ()=>$('renameOverlay').classList.add('hidden')); }
 async function saveRename(){
   const type = $('renameType').value, id = Number($('renameId').value);
   const ten = $('renameValue').value.trim();
@@ -1666,6 +1841,7 @@ async function saveRename(){
   if(cur && ten===cur.ten){ closeRenameModal(); return; }
   try{
     await api(danhMucTable(type)+'?id=eq.'+id,{method:'PATCH',body:JSON.stringify({ten}),prefer:'return=minimal'});
+    snapshotDialog('renameOverlay');
     closeRenameModal(); loadDanhMuc(); toast('Đã cập nhật');
   }catch(e){ toast('Lỗi: '+e.message,'err'); }
 }
@@ -1715,8 +1891,9 @@ function openDoiTacModal(id){
   $('dtTrangThai').value = d?.trang_thai||'Đang hợp tác';
   $('dtGhiChu').value = d?.ghi_chu||'';
   $('dtOverlay').classList.remove('hidden');
+  snapshotDialog('dtOverlay');
 }
-function closeDoiTacModal(){ $('dtOverlay').classList.add('hidden'); }
+function closeDoiTacModal(){ confirmCloseDialog('dtOverlay', ()=>$('dtOverlay').classList.add('hidden')); }
 async function saveDoiTac(){
   const ten_cong_ty=$('dtTenCongTy').value.trim();
   if(!ten_cong_ty){ toast('Nhập tên công ty','err'); return; }
@@ -1733,6 +1910,7 @@ async function saveDoiTac(){
   try{
     if(id) await api('doi_tac?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
     else await api('doi_tac',{method:'POST',body:JSON.stringify(body)});
+    snapshotDialog('dtOverlay');
     closeDoiTacModal(); loadDoiTac(); toast(id?'Đã cập nhật đại lý':'Đã thêm đại lý');
   }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
   finally{ btn.disabled=false; }
@@ -1764,8 +1942,9 @@ async function openDoiTacFeeModal(id){
   $('feeNgayApDung').value = fromISODate(new Date().toISOString().slice(0,10));
   $('dtFeeOverlay').classList.remove('hidden');
   await loadDoiTacPhi(id);
+  snapshotDialog('dtFeeOverlay');
 }
-function closeDoiTacFeeModal(){ $('dtFeeOverlay').classList.add('hidden'); CUR_FEE_DOITAC=null; }
+function closeDoiTacFeeModal(){ confirmCloseDialog('dtFeeOverlay', ()=>{ $('dtFeeOverlay').classList.add('hidden'); CUR_FEE_DOITAC=null; }); }
 async function loadDoiTacPhi(id){
   try{
     const rows = await api('doi_tac_phi?doi_tac_id=eq.'+id+'&select=*,danh_muc_nuoc(ten),danh_muc_muc_dich(ten)&order=ngay_ap_dung_tu.desc') || [];
@@ -1804,6 +1983,7 @@ async function delDoiTacPhi(id){
     }
     await api('doi_tac_phi?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadDoiTacPhi(CUR_FEE_DOITAC); toast('Đã xóa mức phí');
+    snapshotDialog('dtFeeOverlay');
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 async function addDoiTacPhi(){
@@ -1830,6 +2010,7 @@ async function addDoiTacPhi(){
     $('feePhiUyThac').value=''; $('feePhiLanhSu').value=''; $('feeGhiChu').value='';
     $('feeNgayApDung').value = fromISODate(new Date().toISOString().slice(0,10));
     loadDoiTacPhi(CUR_FEE_DOITAC); toast('Đã thêm mức phí mới');
+    snapshotDialog('dtFeeOverlay');
   }catch(e){ toast('Lỗi thêm phí: '+e.message,'err'); }
 }
 
@@ -1882,8 +2063,9 @@ function openTvModal(id){
   $('tvStatus').value = l?.status||'Mới';
   $('tvNgayNhacLai').value = fromISODate(l?.ngay_nhac_lai);
   $('tvOverlay').classList.remove('hidden');
+  snapshotDialog('tvOverlay');
 }
-function closeTvModal(){ $('tvOverlay').classList.add('hidden'); }
+function closeTvModal(){ confirmCloseDialog('tvOverlay', ()=>$('tvOverlay').classList.add('hidden')); }
 async function saveTuVan(){
   const name=$('tvName').value.trim(), phone=$('tvPhone').value.trim();
   const country=$('tvCountry').value, muc_dich=$('tvMucDich').value;
@@ -1909,6 +2091,7 @@ async function saveTuVan(){
     if(id) saved = await api('leads?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body)});
     else saved = await api('leads',{method:'POST',body:JSON.stringify(body)});
     const savedRow = Array.isArray(saved)?saved[0]:saved;
+    snapshotDialog('tvOverlay');
     closeTvModal();
     await loadLeads();
     toast(id?'Đã cập nhật tư vấn':'Đã thêm tư vấn');
@@ -2047,8 +2230,9 @@ function openHoSoModal(id, prefill){
   $('hoOverlay').classList.remove('hidden');
   const body = $('hoOverlay').querySelector('.dlg-body');
   if(body) body.scrollTop = 0;
+  snapshotDialog('hoOverlay');
 }
-function closeHoSoModal(){ $('hoOverlay').classList.add('hidden'); }
+function closeHoSoModal(){ confirmCloseDialog('hoOverlay', ()=>$('hoOverlay').classList.add('hidden')); }
 function updateHoSoTotals(){
   const m=id=>unformatMoney($(id).value);
   let soLuong = parseInt($('hoSoLuong').value,10)||1;
@@ -2119,6 +2303,7 @@ async function saveHoSo(){
   try{
     if(id) await api('ho_so?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
     else await api('ho_so',{method:'POST',body:JSON.stringify(body)});
+    snapshotDialog('hoOverlay');
     closeHoSoModal(); loadHoSo(); toast(id?'Đã cập nhật hồ sơ':'Đã thêm hồ sơ');
     // Sửa hồ sơ có thể đổi Lợi nhuận/Ngày trả KQ -> làm mới luôn tab Tài chính nếu đang mở
     if(!$('tab-taichinh').classList.contains('hidden')) loadTaiChinh();
@@ -2169,13 +2354,23 @@ async function loadKhachHang(){
     renderKhachHang();
   }catch(e){ if(e.message!=='401') toast('Lỗi tải khách hàng: '+e.message,'err'); }
 }
+/* ==== Phân trang "Thông tin khách hàng" (2026-08, mục 4) — 25 record/trang. khCurrentPage reset
+   về 1 khi đổi từ khóa tìm kiếm (xem oninput của #fKhSearch), giữ nguyên khi chỉ tải lại/thêm/sửa
+   (loadKhachHang() gọi lại renderKhachHang() không đổi khCurrentPage). ==== */
+let khCurrentPage = 1;
+const KH_PAGE_SIZE = 25;
 function renderKhachHang(){
   const q = vnNorm($('fKhSearch').value.trim());
   const rows = KHACH_HANG.filter(k=>!q||vnNorm(k.ho_ten).includes(q)||vnNorm(k.so_dt).includes(q));
+  const totalPages = Math.max(1, Math.ceil(rows.length/KH_PAGE_SIZE));
+  if(khCurrentPage>totalPages) khCurrentPage = totalPages;
+  if(khCurrentPage<1) khCurrentPage = 1;
+  const startIdx = (khCurrentPage-1)*KH_PAGE_SIZE;
+  const pageRows = rows.slice(startIdx, startIdx+KH_PAGE_SIZE);
   $('khEmpty').classList.toggle('hidden', rows.length>0);
-  $('khBody').innerHTML = rows.map((k,i)=>`
+  $('khBody').innerHTML = pageRows.map((k,i)=>`
     <tr>
-      <td>${i+1}</td>
+      <td>${startIdx+i+1}</td>
       <td><b>${esc(k.ho_ten)}</b></td>
       <td>${k.so_dt?`<a href="tel:${esc(k.so_dt)}">${esc(k.so_dt)}</a>`:'–'}</td>
       <td>${fmtDate(k.ngay_sinh)}</td>
@@ -2188,7 +2383,26 @@ function renderKhachHang(){
       </td>
     </tr>`).join('');
   applyRowLabels('khBody');
+  renderKhPagination(rows.length, totalPages, startIdx);
 }
+function renderKhPagination(total, totalPages, startIdx){
+  const el = $('khPagination');
+  el.classList.toggle('hidden', total===0);
+  if(total===0){ el.innerHTML=''; return; }
+  const from = startIdx+1, to = Math.min(startIdx+KH_PAGE_SIZE, total);
+  let pageBtns = '';
+  for(let p=1; p<=totalPages; p++){
+    pageBtns += `<button class="btn ${p===khCurrentPage?'btn-p':'btn-g'}" onclick="goKhPage(${p})">${p}</button>`;
+  }
+  el.innerHTML = `
+    <span class="pagination-info">Hiển thị ${from}-${to} trong tổng ${total} khách hàng</span>
+    <div class="pagination-btns">
+      <button class="btn btn-g" onclick="goKhPage(${khCurrentPage-1})" ${khCurrentPage<=1?'disabled':''}>‹ Trước</button>
+      ${pageBtns}
+      <button class="btn btn-g" onclick="goKhPage(${khCurrentPage+1})" ${khCurrentPage>=totalPages?'disabled':''}>Sau ›</button>
+    </div>`;
+}
+function goKhPage(p){ khCurrentPage=p; renderKhachHang(); }
 function openKhachHangModal(id){
   const k = id ? KHACH_HANG.find(x=>x.id===id) : null;
   $('khModalTitle').textContent = k ? 'Sửa khách hàng' : 'Thêm khách hàng';
@@ -2201,8 +2415,9 @@ function openKhachHangModal(id){
   $('khEmail').value = k?.email||'';
   $('khGhiChu').value = k?.ghi_chu||'';
   $('khOverlay').classList.remove('hidden');
+  snapshotDialog('khOverlay');
 }
-function closeKhachHangModal(){ $('khOverlay').classList.add('hidden'); }
+function closeKhachHangModal(){ confirmCloseDialog('khOverlay', ()=>$('khOverlay').classList.add('hidden')); }
 async function saveKhachHang(){
   const ho_ten=$('khHoTen').value.trim();
   if(!ho_ten){ toast('Nhập họ và tên','err'); return; }
@@ -2222,6 +2437,7 @@ async function saveKhachHang(){
   try{
     if(id) await api('khach_hang?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
     else await api('khach_hang',{method:'POST',body:JSON.stringify(body)});
+    snapshotDialog('khOverlay');
     closeKhachHangModal(); loadKhachHang();
     toast(trung ? 'Đã lưu — lưu ý SĐT này đã tồn tại ở 1 khách hàng khác' : (id?'Đã cập nhật khách hàng':'Đã thêm khách hàng'), trung?'warn':'ok');
   }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
@@ -2278,6 +2494,7 @@ async function addXlps(){
     })});
     $('xlpsNoiDung').value=''; $('xlpsHanChot').value=''; $('xlpsGhiChu').value=''; $('xlpsTrangThai').value='Đang xử lý';
     loadXlps(hoId); toast('Đã thêm dòng xử lý phát sinh');
+    snapshotDialog('hoOverlay');
   }catch(e){ toast('Lỗi thêm: '+e.message,'err'); }
 }
 async function updateXlpsStatus(id,trang_thai){
@@ -2285,6 +2502,7 @@ async function updateXlpsStatus(id,trang_thai){
     await api('ho_so_xu_ly_phat_sinh?id=eq.'+id,{method:'PATCH',body:JSON.stringify({trang_thai}),prefer:'return=minimal'});
     const x=CUR_HOSO_XLPS.find(r=>r.id===id); if(x) x.trang_thai=trang_thai;
     toast('Đã cập nhật trạng thái');
+    snapshotDialog('hoOverlay');
   }catch(e){ toast('Lỗi: '+e.message,'err'); }
 }
 async function delXlps(id){
@@ -2292,6 +2510,7 @@ async function delXlps(id){
   try{
     await api('ho_so_xu_ly_phat_sinh?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadXlps($('hoId').value); toast('Đã xóa');
+    snapshotDialog('hoOverlay');
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 
@@ -2335,6 +2554,7 @@ async function addThanhVien(){
     await loadThanhVien(hoId);
     await refreshSoLuong(hoId);
     toast('Đã thêm thành viên nhóm');
+    snapshotDialog('hoOverlay');
   }catch(e){ toast('Lỗi thêm: '+e.message,'err'); }
 }
 async function delThanhVien(id){
@@ -2345,6 +2565,7 @@ async function delThanhVien(id){
     await loadThanhVien(hoId);
     await refreshSoLuong(hoId);
     toast('Đã xóa thành viên');
+    snapshotDialog('hoOverlay');
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 
@@ -2369,12 +2590,15 @@ function renderDashboard(byMonth, nhacLai, xlps7){
   const hsDangXuLy = HO_SO.filter(h=>h.trang_thai==='Đang xử lý').length;
   const hsDaNop = HO_SO.filter(h=>h.trang_thai==='Đã nộp').length;
   const hsDangTuVan = LEADS.filter(l=>l.status==='Đang tư vấn').length;
+  const todayIso = tcToday();
+  const hsTraKqHomNay = HO_SO.filter(h=>h.ngay_tra_kq===todayIso).length;
   $('dashStatRow').innerHTML = `
     <div class="stat"><div class="n">${fmtVND(curRow?.doanh_thu)}</div><div class="l">Doanh thu tháng này</div></div>
     <div class="stat"><div class="n">${fmtVND(curRow?.loi_nhuan)}</div><div class="l">Lợi nhuận tháng này</div></div>
     <div class="stat"><div class="n">${hsDangXuLy}</div><div class="l">Hồ sơ đang xử lý</div></div>
     <div class="stat"><div class="n">${hsDaNop}</div><div class="l">Hồ sơ đang nộp</div></div>
     <div class="stat"><div class="n">${hsDangTuVan}</div><div class="l">Hồ sơ đang tư vấn</div></div>
+    <div class="stat"><div class="n">${hsTraKqHomNay}</div><div class="l">Trả KQ hôm nay</div></div>
     <div class="stat"><div class="n">${nhacLai.length}</div><div class="l">Cần nhắc lại (7 ngày)</div></div>`;
 
   const labels = byMonth.map(r=>{ const d=new Date(r.thang); return (d.getMonth()+1)+'/'+d.getFullYear(); });
@@ -2399,11 +2623,37 @@ function renderDashboard(byMonth, nhacLai, xlps7){
     </tr>`).join('');
   applyRowLabels('dashXlpsBody');
 
+  renderDashTraKqTuan(todayIso);
+
   $('dashNhacLaiEmpty').classList.toggle('hidden', nhacLai.length>0);
   $('dashNhacLaiBody').innerHTML = nhacLai.map(n=>`
     <tr><td>${esc(n.ten_khach)}</td><td>${n.sdt_khach?`<a href="tel:${esc(n.sdt_khach)}">${esc(n.sdt_khach)}</a>`:'–'}</td>
     <td>${fmtDate(n.ngay_nhac_lai)}</td></tr>`).join('');
   applyRowLabels('dashNhacLaiBody');
+}
+function addDaysIso(iso, days){
+  const d = new Date(iso+'T00:00:00'); d.setDate(d.getDate()+days);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+/* ==== "Hồ sơ trả kết quả tuần này" (Dashboard, 2026-08) — lấy trực tiếp từ HO_SO đã nạp sẵn lúc
+   đăng nhập (không cần view SQL riêng), lọc ngay_tra_kq trong [hôm nay, hôm nay+6], sort tăng dần
+   (gần nhất trước), tô đỏ nếu đúng là hôm nay. ==== */
+function renderDashTraKqTuan(todayIso){
+  const endIso = addDaysIso(todayIso, 6);
+  const rows = HO_SO.filter(h=>h.ngay_tra_kq && h.ngay_tra_kq>=todayIso && h.ngay_tra_kq<=endIso)
+    .sort((a,b)=>a.ngay_tra_kq.localeCompare(b.ngay_tra_kq));
+  $('dashTraKqTuanEmpty').classList.toggle('hidden', rows.length>0);
+  $('dashTraKqTuanBody').innerHTML = rows.map(h=>`
+    <tr>
+      <td><b>${esc(h.ten_khach)}</b></td>
+      <td>${esc(h.danh_muc_nuoc?.ten||'–')}</td>
+      <td>${esc(h.danh_muc_muc_dich?.ten||'–')}</td>
+      <td>${doiTacCellLabel(h.doi_tac)}</td>
+      <td>${fmtDate(h.ngay_nop)}</td>
+      <td>${h.ngay_tra_kq===todayIso?`<span style="color:var(--err);font-weight:700">${fmtDate(h.ngay_tra_kq)}</span>`:fmtDate(h.ngay_tra_kq)}</td>
+      <td class="td-actions"><button class="btn btn-p" onclick="openHoSoModal(${h.id})">Chi tiết</button></td>
+    </tr>`).join('');
+  applyRowLabels('dashTraKqTuanBody');
 }
 
 /* ==================== PHASE 3: TÀI CHÍNH ====================
@@ -2473,8 +2723,9 @@ function openChiModal(id){
   $('chiSoTien').value = formatMoney(c?.so_tien);
   $('chiGhiChu').value = c?.ghi_chu||'';
   $('chiOverlay').classList.remove('hidden');
+  snapshotDialog('chiOverlay');
 }
-function closeChiModal(){ $('chiOverlay').classList.add('hidden'); }
+function closeChiModal(){ confirmCloseDialog('chiOverlay', ()=>$('chiOverlay').classList.add('hidden')); }
 async function saveChi(){
   const ngayRaw=$('chiNgay').value.trim(), noi_dung=$('chiNoiDung').value.trim();
   const so_tien=unformatMoney($('chiSoTien').value);
@@ -2489,6 +2740,7 @@ async function saveChi(){
   try{
     if(id) await api('khoan_chi?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
     else await api('khoan_chi',{method:'POST',body:JSON.stringify(body)});
+    snapshotDialog('chiOverlay');
     closeChiModal(); loadTaiChinh(); toast(id?'Đã cập nhật khoản chi':'Đã thêm khoản chi');
   }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
   finally{ btn.disabled=false; }

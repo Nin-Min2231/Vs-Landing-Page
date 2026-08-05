@@ -19,6 +19,8 @@
    trên `ho_so` thành `chi_phi_ship`.
 5. `05_supabase_setup_phase5.sql` — Phase 5: `doi_tac_phi` thêm `nuoc_id`/`muc_dich_id` (droplist
    Nước đến/Mục đích), thêm `phi_lanh_su`, đổi tên `muc_phi` -> `phi_uy_thac`.
+6. `06_supabase_setup_phase6.sql` — Phase 6: `danh_muc_nuoc` thêm `le_phi`/`thoi_gian_xet_duyet`/
+   `checklist`/`ghi_chu` (dialog "Nước đến" mở rộng, Cài đặt chung).
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
 project đang dùng đã qua đủ cả 4 phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy

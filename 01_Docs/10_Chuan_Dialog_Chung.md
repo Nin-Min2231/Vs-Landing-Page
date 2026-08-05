@@ -122,7 +122,7 @@ Xem hàm `hsStatusSelectClass()`/`updateHoSoStatusColor()` trong `admin.html` l�
 - Bảng con (Thành viên nhóm, Xử lý phát sinh...) tự chuyển từ dạng bảng sang dạng thẻ (card) trên màn hình <700px — quy tắc này áp dụng chung cho MỌI bảng `.tbl-wrap` + `<table>` trong toàn bộ `admin.html`, không riêng gì dialog — nhớ gọi `applyRowLabels('xxxBody')` sau khi render bảng con để dòng thẻ hiện đúng tên field.
 - Đã test thật trên khung hình điện thoại 375px — không tràn ngang, nút X đủ lớn để bấm, nút Đóng/Lưu không bị vỡ layout.
 
-## 8. Danh sách dialog đã áp dụng mẫu này (2026-08 — cả 6/6 dialog trong `admin.html`)
+## 8. Danh sách dialog đã áp dụng mẫu này
 
 | Dialog | ID overlay | Số nhóm field (`.dlg-section`) | Ghi chú riêng |
 |---|---|---|---|
@@ -131,11 +131,20 @@ Xem hàm `hsStatusSelectClass()`/`updateHoSoStatusColor()` trong `admin.html` l�
 | Đại lý ủy thác | `#dtOverlay` | 2 nhóm (Thông tin đại lý ủy thác, Ghi chú) | modal-lg |
 | Bảng phí đại lý | `#dtFeeOverlay` | 2 nhóm (Các mức phí đã có, Thêm mức phí mới) | modal-xl, chỉ có nút "Đóng lại" (không có nút Lưu — mỗi dòng phí lưu ngay khi bấm "+ Thêm mức phí"). Nhóm "Thêm mức phí mới" (2026-08, Phase 5): Nơi nộp = droplist cố định 3 giá trị (Đà Nẵng/Hà Nội/TP Hồ Chí Minh, không phải danh mục Cài đặt chung); Đất nước/Diện visa = droplist danh_muc_nuoc/danh_muc_muc_dich, bắt buộc; Phí ủy thác/Phí lãnh sự = `money-input`; Áp dụng từ = ô mask dd/mm/yyyy (mục 9). Bảng "Các mức phí đã có" có thêm cột "Thao tác" + nút Xóa từng dòng (`delDoiTacPhi()`, chặn xóa nếu đã có Hồ sơ khớp — xem CLAUDE.md mục 21) |
 | Bài viết | `#postOverlay` | 2 nhóm (Thông tin bài viết, Nội dung) | modal-lg, textarea nội dung dài (8 dòng) nằm trong `.dlg-body` nên cuộn được khi bài dài |
-| Sửa tên danh mục | `#renameOverlay` | Không chia section (chỉ 1 field) | Dialog nhỏ nhất — vẫn dùng `dlg-standard`/`dlg-head`/`dlg-foot` để đồng bộ màu/nút, nhưng field đặt trực tiếp trong `.dlg-body`, không bọc `.dlg-section` |
-| Khoản chi (Tài chính, Phase 3) | `#chiOverlay` | 1 nhóm (Thông tin khoản chi) | modal-lg, field Ngày dùng `type="date"` (xem mục 9) |
+| Sửa tên danh mục (Mục đích/Đối tác) | `#renameOverlay` | Không chia section (chỉ 1 field) | Dialog nhỏ nhất — vẫn dùng `dlg-standard`/`dlg-head`/`dlg-foot` để đồng bộ màu/nút, nhưng field đặt trực tiếp trong `.dlg-body`, không bọc `.dlg-section`. Từ Phase 6 (2026-08) chỉ còn dùng cho Mục đích/Đối tác — Nước đến có dialog riêng (`#nuocOverlay`) vì đã có thêm 4 field |
+| Khoản chi (Tài chính, Phase 3) | `#chiOverlay` | 1 nhóm (Thông tin khoản chi) | modal-lg, field Ngày dùng mask `dd/mm/yyyy` (đã đổi lại ở Phase 5, xem mục 9 — KHÔNG còn `type="date"` như ghi chú cũ) |
 | Khách hàng (Thông tin khách hàng, Phase 4) | `#khOverlay` | 1 nhóm (Thông tin khách hàng) | modal-lg, ít field nên chỉ 1 section |
+| Nước đến (Cài đặt chung, Phase 6, 2026-08) | `#nuocOverlay` | 1 nhóm (Thông tin nước đến) | modal-lg, có `money-input` (Lệ phí) + 2 textarea giới hạn ký tự (`maxlength`) cho Checklist (1000)/Ghi chú (500). Nút mở dialog trong list gọi là "Chi tiết" (không phải "Sửa") — dùng chung cho cả xem lẫn sửa, xem CLAUDE.md mục 22 |
 
 Khi tạo dialog mới trong tương lai, thêm 1 dòng vào bảng này để danh sách luôn cập nhật.
+
+## 9.1 Cảnh báo "dữ liệu chưa lưu" khi đóng dialog — BẮT BUỘC cho MỌI dialog mới (2026-08)
+
+Từ Phase 6, mọi dialog nhập liệu (bao gồm dialog mới thêm sau này) **PHẢI** áp dụng cơ chế cảnh
+báo chưa lưu dùng chung — xem `CLAUDE.md` mục 23 để biết cách áp dụng đầy đủ (3 bước: gọi
+`snapshotDialog()` cuối hàm `openXxxModal()`, đổi `closeXxxModal()` sang gọi `confirmCloseDialog()`,
+gọi lại `snapshotDialog()` ngay sau khi lưu API thành công TRƯỚC khi đóng). Không áp dụng cho dialog
+chỉ tìm kiếm/chọn (như `#khPickOverlay`) và các popup confirm/notify.
 
 ## 9. Định dạng ngày — ô nhập chữ mask `dd/mm/yyyy` (đổi lại lần 2 ở Phase 5, 2026-08)
 
