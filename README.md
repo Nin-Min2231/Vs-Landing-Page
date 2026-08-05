@@ -203,8 +203,14 @@ Chi tiết đầy đủ: `CLAUDE.md` mục 22-26.
 - [ ] **Cần chạy `05_Database/06_supabase_setup_phase6.sql` trong Supabase SQL Editor** (thêm 4 cột
       mới cho bảng `danh_muc_nuoc`) — chưa chạy thì dialog "Nước đến" mới sẽ lỗi khi lưu.
 - [ ] Test với đăng nhập admin thật: thử sửa dở 1 dialog bất kỳ rồi bấm Đóng/X xem có hỏi xác nhận
-      đúng không; thử phân trang Khách hàng nếu có ≥26 khách hàng; xem Dashboard có đúng 7 thẻ +
+      đúng không; thử phân trang Khách hàng nếu có ≥26 khách hàng; xem Dashboard có đúng 6 thẻ +
       khối "Hồ sơ trả kết quả tuần này" không.
+
+**Bổ sung thêm cùng ngày (đợt 2):** bỏ thẻ "Doanh thu tháng này" (còn 6 thẻ), tính lại "Lợi nhuận
+tháng này" đúng công thức màn Tài chính; màn "Hồ sơ" sort lại theo Trạng thái (Đang xử lý → Đã nộp
+→ Đậu → Rớt → Hủy) rồi Ngày tạo cũ nhất; dòng tiêu đề cột (thead) đứng yên khi cuộn cho 7 màn list
+(Tư vấn/Hồ sơ/Thông tin khách hàng/Tài chính/Đại lý ủy thác/Bài viết/Danh mục bài viết). Chi tiết:
+`CLAUDE.md` mục 27-29. Không có migration SQL mới đợt này.
 
 ## Muốn sửa nội dung?
 

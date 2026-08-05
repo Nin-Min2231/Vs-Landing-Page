@@ -117,10 +117,21 @@ main{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;
 
 /* table */
 .tbl-wrap{background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(15,30,61,.08);overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:720px}
+/* border-collapse:separate + border-spacing:0 (đổi từ collapse, 2026-08) — cần thiết để
+   position:sticky trên <th> hoạt động ổn định (mục dưới) — collapse phá vỡ ngữ cảnh sticky của
+   ô bảng ở nhiều trình duyệt. Không đổi giao diện (bảng vốn không có viền dọc/ngang giữa ô, chỉ
+   border-bottom trên td, nên separate+spacing:0 hiển thị giống hệt collapse trước đây). */
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:720px}
 th{background:var(--dark);color:#fff;text-align:left;padding:11px 12px;font-size:13px;white-space:nowrap}
 td{padding:10px 12px;border-bottom:1px solid var(--bd);font-size:14px;vertical-align:middle}
 tr:hover td{background:var(--pl)}
+/* Dòng tiêu đề cột dính cứng khi cuộn (2026-08) — CHỈ áp dụng cho bảng CHÍNH của 7 màn list đã có
+   "tab cuộn cố định" (mục 17 cũ): Tư vấn/Hồ sơ/Thông tin khách hàng/Tài chính/Đại lý ủy thác/
+   Bài viết/Danh mục bài viết. Chọn đúng qua selector ".tab-scroll>.tbl-wrap" (chỉ khớp .tbl-wrap
+   là con trực tiếp của section .tab-scroll) — tự động KHÔNG áp dụng cho Dashboard/Cài đặt chung
+   (không có class tab-scroll) hay bảng con trong dialog (nằm trong .dlg-body, không phải con trực
+   tiếp của .tab-scroll). */
+.tab-scroll>.tbl-wrap thead th{position:sticky;top:0;z-index:2}
 .pill{padding:3px 12px;border-radius:999px;font-size:12px;font-weight:700;display:inline-block}
 .pill-new{background:var(--pl);color:var(--p)}
 .pill-called{background:#FEF3C7;color:var(--warn)}
@@ -2130,6 +2141,8 @@ function onHsStatusChipChange(cb){
 function checkedHsStatuses(){
   return [...document.querySelectorAll('#fHsStatusGroup input:checked')].map(cb=>cb.value);
 }
+/* Thứ tự ưu tiên trạng thái khi sort list Hồ sơ (2026-08) — số nhỏ hơn hiện trước. */
+const HS_STATUS_ORDER = {'Đang xử lý':1,'Đã nộp':2,'Đậu':3,'Rớt':4,'Hủy':5};
 function renderHoSo(){
   const checkedSt=checkedHsStatuses(), q=vnNorm($('fHsSearch').value.trim());
   const tuNgay=toISODate($('fHsTuNgay').value), denNgay=toISODate($('fHsDenNgay').value);
@@ -2140,6 +2153,13 @@ function renderHoSo(){
     (!tuNgay||(h.ngay_nop&&h.ngay_nop>=tuNgay)) &&
     (!denNgay||(h.ngay_nop&&h.ngay_nop<=denNgay))
   );
+  /* Sort: Ưu tiên 1 - trạng thái (Đang xử lý -> Đã nộp -> Đậu -> Rớt -> Hủy); Ưu tiên 2 - cùng
+     trạng thái thì Ngày tạo cũ nhất lên trước. */
+  rows.sort((a,b)=>{
+    const oa=HS_STATUS_ORDER[a.trang_thai]||99, ob=HS_STATUS_ORDER[b.trang_thai]||99;
+    if(oa!==ob) return oa-ob;
+    return (a.ngay||'').localeCompare(b.ngay||'');
+  });
   $('hsEmpty').classList.toggle('hidden', rows.length>0);
   $('hsBody').innerHTML = rows.map((h,i)=>{
     // Chỉ tô đỏ Ngày trả KQ khi Trạng thái = "Đã nộp" và ngày đó đã tới/quá hạn (PM xác nhận, Phase 4 mục 4)
@@ -2572,18 +2592,17 @@ async function delThanhVien(id){
 /* ==================== PHASE 2: DASHBOARD ==================== */
 async function loadDashboard(){
   try{
-    const [byMonth, nhacLai, xlps7] = await Promise.all([
+    const from = tcDefaultFrom(), to = tcToday();
+    const [byMonth, nhacLai, xlps7, chiThangNay] = await Promise.all([
       api('v_dashboard_theo_thang?select=*&order=thang'),
       api('v_tu_van_can_nhac_lai?select=*&order=ngay_nhac_lai'),
-      api('v_xu_ly_phat_sinh_7_ngay?select=*&order=han_chot')
+      api('v_xu_ly_phat_sinh_7_ngay?select=*&order=han_chot'),
+      api('khoan_chi?select=so_tien&ngay=gte.'+from+'&ngay=lte.'+to)
     ]);
-    renderDashboard(byMonth||[], nhacLai||[], xlps7||[]);
+    renderDashboard(byMonth||[], nhacLai||[], xlps7||[], chiThangNay||[]);
   }catch(e){ if(e.message!=='401') toast('Lỗi tải Dashboard: '+e.message,'err'); }
 }
-function renderDashboard(byMonth, nhacLai, xlps7){
-  const now = new Date();
-  const curKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  const curRow = byMonth.find(r=>r.thang && r.thang.slice(0,7)===curKey);
+function renderDashboard(byMonth, nhacLai, xlps7, chiThangNay){
   // 3 thống kê Hồ sơ/Tư vấn: đếm trực tiếp từ HO_SO/LEADS đã nạp sẵn (khớp đúng với dữ liệu
   // đang hiển thị ở màn "Hồ sơ"/"Tư vấn", không dùng view riêng để tránh lệch số liệu — trước
   // đây view v_ho_so_dang_xu_ly gộp nhầm cả "Đang xử lý" lẫn "Đã nộp" vào chung 1 số).
@@ -2592,9 +2611,19 @@ function renderDashboard(byMonth, nhacLai, xlps7){
   const hsDangTuVan = LEADS.filter(l=>l.status==='Đang tư vấn').length;
   const todayIso = tcToday();
   const hsTraKqHomNay = HO_SO.filter(h=>h.ngay_tra_kq===todayIso).length;
+  /* "Lợi nhuận tháng này" (2026-08) — bỏ thẻ "Doanh thu tháng này", tính lại đúng công thức của
+     màn "Tài chính" (mục "Lợi nhuận" ở đó): Khoản thu = tổng loi_nhuan của Hồ sơ "Đậu" có
+     Ngày trả KQ trong tháng này (đầu tháng -> hôm nay, xem tcDefaultFrom()/tcToday()); Khoản chi =
+     tổng khoan_chi trong cùng khoảng — KHÔNG dùng cột doanh_thu/loi_nhuan có sẵn của view
+     v_dashboard_theo_thang nữa (view đó tính theo ngay_nop, khác cách Tài chính tính theo
+     ngay_tra_kq, nên số liệu 2 màn từng có thể lệch nhau). */
+  const monthFrom = tcDefaultFrom(), monthTo = tcToday();
+  const thuThangNay = HO_SO.filter(h=>h.trang_thai==='Đậu' && h.ngay_tra_kq && h.ngay_tra_kq>=monthFrom && h.ngay_tra_kq<=monthTo)
+    .reduce((s,h)=>s+Number(h.loi_nhuan||0),0);
+  const chiThangNaySum = chiThangNay.reduce((s,c)=>s+Number(c.so_tien||0),0);
+  const loiNhuanThangNay = thuThangNay - chiThangNaySum;
   $('dashStatRow').innerHTML = `
-    <div class="stat"><div class="n">${fmtVND(curRow?.doanh_thu)}</div><div class="l">Doanh thu tháng này</div></div>
-    <div class="stat"><div class="n">${fmtVND(curRow?.loi_nhuan)}</div><div class="l">Lợi nhuận tháng này</div></div>
+    <div class="stat"><div class="n" style="color:${loiNhuanThangNay>=0?'var(--ok)':'var(--err)'}">${fmtVND(loiNhuanThangNay)}</div><div class="l">Lợi nhuận tháng này</div></div>
     <div class="stat"><div class="n">${hsDangXuLy}</div><div class="l">Hồ sơ đang xử lý</div></div>
     <div class="stat"><div class="n">${hsDaNop}</div><div class="l">Hồ sơ đang nộp</div></div>
     <div class="stat"><div class="n">${hsDangTuVan}</div><div class="l">Hồ sơ đang tư vấn</div></div>

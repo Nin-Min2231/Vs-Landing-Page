@@ -615,22 +615,23 @@ rồi đóng → đóng thẳng không hỏi; sửa 1 field rồi đóng → hi�
 thoát" → dialog giữ nguyên, dữ liệu đã gõ không mất; bấm "Đồng ý" → đóng, dữ liệu KHÔNG được lưu;
 lưu thành công rồi tự đóng → KHÔNG hiện cảnh báo thừa (đã test cả `nuocOverlay` lẫn `hoOverlay`).
 
-## 24. Dashboard mở rộng — 7 thống kê + "Hồ sơ trả kết quả tuần này" + đổi thứ tự (Phase 6, 2026-08)
+## 24. Dashboard mở rộng — thống kê + "Hồ sơ trả kết quả tuần này" + đổi thứ tự (Phase 6, 2026-08)
 
 **Thứ tự hiển thị MỚI** (từ trên xuống, đây là chuẩn bắt buộc nếu sau này thêm/bớt khối Dashboard):
-1. Hàng 7 thẻ thống kê (`dashStatRow`)
+1. Hàng thẻ thống kê (`dashStatRow`)
 2. ⚠️ Xử lý phát sinh cần chú ý
 3. 📆 Hồ sơ trả kết quả tuần này (MỚI)
 4. 📅 Khách tư vấn cần nhắc lại
 5. Biểu đồ Doanh thu & Lợi nhuận theo tháng
 6. Biểu đồ Số lượng hồ sơ theo tháng
 
-**7 thẻ thống kê** (thêm mới thẻ thứ 7 "Trả KQ hôm nay" — đếm `HO_SO` có `ngay_tra_kq` = hôm nay,
-tính trực tiếp từ `HO_SO` đã nạp sẵn, không cần view SQL riêng, cùng cách làm với 3 thống kê Hồ
-sơ/Tư vấn có sẵn). Đổi `.stat-row` từ `repeat(4,1fr)` cố định sang
-`repeat(auto-fit,minmax(165px,1fr))` + giảm nhẹ font (13px→12px)/padding để nhãn dài nhất ("Cần
-nhắc lại (7 ngày)") luôn nằm gọn 1 dòng ở mọi độ rộng màn hình — đã đo bằng `canvas.measureText()`
-xác nhận không tràn ở ngưỡng hẹp nhất (165px/thẻ).
+**Thẻ thống kê** (thêm mới "Trả KQ hôm nay" — đếm `HO_SO` có `ngay_tra_kq` = hôm nay, tính trực
+tiếp từ `HO_SO` đã nạp sẵn, không cần view SQL riêng, cùng cách làm với 3 thống kê Hồ sơ/Tư vấn có
+sẵn). Đổi `.stat-row` từ `repeat(4,1fr)` cố định sang `repeat(auto-fit,minmax(165px,1fr))` + giảm
+nhẹ font (13px→12px)/padding để nhãn dài nhất ("Cần nhắc lại (7 ngày)") luôn nằm gọn 1 dòng ở mọi
+độ rộng màn hình — đã đo bằng `canvas.measureText()` xác nhận không tràn ở ngưỡng hẹp nhất
+(165px/thẻ). ⚠️ **Đã bỏ thẻ "Doanh thu tháng này" và đổi công thức "Lợi nhuận tháng này" ở phiên
+sau (2026-08, cùng ngày) — xem mục 27, còn lại 6 thẻ (không phải 7 như số cũ ghi ở đây).**
 
 **"Hồ sơ trả kết quả tuần này"** — lấy trực tiếp từ `HO_SO` đã nạp sẵn lúc đăng nhập (không cần
 view SQL riêng, xem hàm `renderDashTraKqTuan()`): lọc `ngay_tra_kq` trong khoảng [hôm nay, hôm
@@ -675,3 +676,74 @@ nguyên nền trắng — chỉ 1 dòng CSS `tr:nth-child(even){background:var(-
 `@media(max-width:700px)` hiện có, áp dụng tự động cho TẤT CẢ bảng trong `admin.html` (không cần
 thêm class riêng cho từng bảng, không cần sửa gì ở HTML) vì mọi `<tr>` đều đi qua đúng 1 khối CSS
 chuyển bảng→thẻ duy nhất. Đã test xác nhận đúng màu ở viewport thật 375px.
+
+## 27. Dashboard: bỏ "Doanh thu tháng này", tính lại "Lợi nhuận tháng này" theo đúng Tài chính (2026-08)
+
+**Lý do đổi:** thẻ "Lợi nhuận tháng này" trước đây đọc thẳng cột `loi_nhuan` của view
+`v_dashboard_theo_thang` (nhóm theo `ngay_nop`), trong khi màn "Tài chính" tính "Lợi nhuận" theo
+cách khác hẳn (nhóm theo `ngay_tra_kq`, chỉ tính hồ sơ `trang_thai='Đậu'`, trừ thêm `khoan_chi`) —
+2 số có thể lệch nhau, gây khó hiểu khi người dùng so sánh Dashboard với Tài chính. PM yêu cầu bỏ
+hẳn "Doanh thu tháng này" và bắt "Lợi nhuận tháng này" tính ĐÚNG công thức của Tài chính.
+
+**Công thức mới** (hàm `renderDashboard()`, biến `monthFrom`/`monthTo` = `tcDefaultFrom()`/
+`tcToday()` — tức đầu tháng hiện tại đến hôm nay, giống hệt khoảng mặc định của bộ lọc Tài chính):
+- Khoản thu = tổng `loi_nhuan` của các `HO_SO` có `trang_thai==='Đậu'` VÀ `ngay_tra_kq` trong
+  `[monthFrom, monthTo]` — tính trực tiếp từ `HO_SO` đã nạp sẵn (không gọi API riêng, giống các
+  thống kê Hồ sơ/Tư vấn khác của Dashboard).
+- Khoản chi = tổng `so_tien` của `khoan_chi` trong cùng khoảng — **phải gọi API riêng** vì
+  `KHOAN_CHI` chỉ được nạp khi người dùng đã từng mở tab "Tài chính" (không nạp sẵn lúc đăng nhập
+  như `HO_SO`), nên `loadDashboard()` giờ có thêm 1 lệnh gọi song song
+  `api('khoan_chi?select=so_tien&ngay=gte.{monthFrom}&ngay=lte.{monthTo}')`, độc lập với state
+  `tcFrom`/`tcTo` hiện tại của tab Tài chính (Dashboard luôn cố định xem "tháng này", bất kể người
+  dùng đang lọc Tài chính theo khoảng ngày nào khác).
+- Lợi nhuận tháng này = Khoản thu − Khoản chi (giống hệt cách trừ ở Tài chính), tô xanh nếu ≥0,
+  đỏ nếu âm — cùng quy ước màu với ô "Lợi nhuận" bên Tài chính.
+
+Cột `doanh_thu`/`loi_nhuan` của view `v_dashboard_theo_thang` VẪN được giữ và dùng cho 2 biểu đồ
+("Doanh thu & Lợi nhuận theo tháng", "Số lượng hồ sơ theo tháng") — chỉ KHÔNG dùng nữa cho riêng
+thẻ thống kê tháng hiện tại. Còn lại **6 thẻ thống kê** (đã bỏ "Doanh thu tháng này").
+
+## 28. Sort màn "Hồ sơ" theo Trạng thái rồi Ngày tạo (2026-08)
+
+**Quy tắc bắt buộc** (hàm `renderHoSo()`, biến `HS_STATUS_ORDER`): sort 2 cấp —
+1. Ưu tiên 1 — Trạng thái theo đúng thứ tự: Đang xử lý → Đã nộp → Đậu → Rớt → Hủy.
+2. Ưu tiên 2 — Cùng trạng thái thì `ngay` (Ngày tạo) CŨ NHẤT lên trước (tăng dần).
+
+Áp dụng SAU bước lọc theo bộ lọc trạng thái/tìm kiếm/ngày nộp hiện có, TRƯỚC khi render — cột "#"
+(STT) đánh số lại theo đúng thứ tự mới sau khi sort (không giữ số thứ tự gốc từ `HO_SO`). Không
+đổi `order=created_at.desc` ở query `loadHoSo()` (chỉ ảnh hưởng thứ tự nạp ban đầu, không ảnh
+hưởng thứ tự hiển thị cuối cùng vì đã tự sort lại ở `renderHoSo()`).
+
+**Nếu cần đổi thứ tự ưu tiên trạng thái sau này:** chỉ cần sửa object `HS_STATUS_ORDER` (số nhỏ
+hơn hiện trước), không cần sửa logic sort.
+
+## 29. Dòng tiêu đề cột (thead) dính cứng khi cuộn — CHỈ 7 màn list đã có "tab cuộn cố định" (2026-08)
+
+**Bối cảnh:** mục 17 từng ghi nhận "đã thử và KHÔNG áp dụng" sticky `<th>` vì nghi `border-collapse`
+phá vỡ ngữ cảnh sticky. PM yêu cầu thử lại — lần này đổi cách làm và đã chạy đúng, xem chi tiết:
+
+- Đổi `table{border-collapse:collapse}` → `border-collapse:separate;border-spacing:0` (CSS gần
+  đầu `<style>`, khu vực comment `/* table */`) — đây là bước sửa lỗi chính, giao diện KHÔNG đổi
+  gì (bảng vốn chỉ có `border-bottom` trên `td`, không có viền dọc/viền giữa ô nên `separate` với
+  `spacing:0` hiển thị giống hệt `collapse` cũ).
+- Thêm `.tab-scroll>.tbl-wrap thead th{position:sticky;top:0;z-index:2}` — chọn đúng qua selector
+  con trực tiếp (`>`) nên **CHỈ** áp dụng cho bảng CHÍNH của 7 màn đã có class `tab-scroll` (Tư
+  vấn/Hồ sơ/Thông tin khách hàng/Tài chính/Đại lý ủy thác/Bài viết/Danh mục bài viết) — **tự động
+  KHÔNG** áp dụng cho Dashboard/Cài đặt chung (không có `tab-scroll`) hay bảng con trong dialog
+  (Thành viên nhóm/Xử lý phát sinh/Bảng phí đại lý — nằm trong `.dlg-body`, không phải con trực
+  tiếp của `.tab-scroll`) — **đúng theo yêu cầu PM xác nhận, KHÔNG mở rộng thêm phạm vi này**.
+- Nền `<th>` đã có sẵn `background:var(--dark)` (đặc, không trong suốt) nên dòng dữ liệu cuộn qua
+  bị che khuất đúng cách phía sau tiêu đề dính cứng, không bị "lộ" chữ chồng lên nhau.
+
+**Đã test xác nhận qua Claude Browser** (dùng `resize_window` với số cụ thể để có viewport thật,
+xem mục "đính chính" ở `Handover_Phien_Moi.md`): cuộn `.tbl-wrap` (gán `scrollTop`), đo
+`getBoundingClientRect()` của `<th>` trước/sau cuộn — vị trí `<th>` KHÔNG đổi (đứng yên) trong khi
+dòng dữ liệu đầu tiên di chuyển lên trên (chứng minh có cuộn thật), đúng cho cả 5 màn còn lại
+(Tư vấn/Tài chính/Thông tin khách hàng/Đại lý ủy thác/Bài viết) + xác nhận Dashboard/Cài đặt
+chung/dialog con vẫn `position:static` như cũ (không bị ảnh hưởng ngoài ý muốn).
+
+**Nếu sau này phát hiện lỗi hiển thị sticky thead trên 1 trình duyệt/thiết bị cụ thể** (khả năng
+nhỏ nhưng không phải 0 — đây vẫn là 1 kỹ thuật CSS có lịch sử tương thích không đều giữa các trình
+duyệt cũ): kiểm tra lại đúng thiết bị đó trước khi kết luận lỗi chung, không vội bỏ hẳn tính năng
+như lần trước (mục 17) — lần này đã đổi `border-collapse` nên nguyên nhân gốc cũ nhiều khả năng
+đã được xử lý.

@@ -132,6 +132,32 @@ tiết đầy đủ ở `CLAUDE.md` mục 22-26:
    xác nhận lại với dữ liệu thật), thử phân trang Khách hàng nếu có ≥26 khách hàng thật.
 3. Nhánh code cần kiểm tra đã push/deploy đúng chưa khi đọc file này ở phiên sau (xem git log).
 
+## 0.3 Cập nhật MỚI NHẤT — Bỏ Doanh thu tháng này, sort Hồ sơ, sticky thead 7 màn (2026-08-04)
+
+Người dùng yêu cầu tiếp 3 việc, đã code + test xong. Chi tiết đầy đủ: `CLAUDE.md` mục 27-29.
+
+1. **Dashboard**: bỏ hẳn thẻ "Doanh thu tháng này" (còn 6 thẻ); tính lại "Lợi nhuận tháng này"
+   ĐÚNG công thức màn Tài chính (Khoản thu = tổng `loi_nhuan` của Hồ sơ "Đậu" theo `ngay_tra_kq`
+   trong tháng − Khoản chi = tổng `khoan_chi` trong tháng) thay vì đọc thẳng view
+   `v_dashboard_theo_thang` như trước (2 số từng có thể lệch nhau).
+2. **Hồ sơ**: sort lại theo Trạng thái (Đang xử lý→Đã nộp→Đậu→Rớt→Hủy) rồi Ngày tạo cũ nhất trong
+   cùng trạng thái — biến `HS_STATUS_ORDER` trong `renderHoSo()`.
+3. **Sticky thead cho 7 màn** (Tư vấn/Hồ sơ/Thông tin khách hàng/Tài chính/Đại lý ủy thác/Bài
+   viết/Danh mục bài viết) — dòng tiêu đề cột đứng yên, chỉ dữ liệu cuộn. **Đây là lần THỨ 2 thử
+   tính năng này** (lần 1 ở mục 17 cũ đã bỏ vì nghi `border-collapse` phá sticky) — lần này đổi
+   `table` sang `border-collapse:separate;border-spacing:0` trước khi thêm sticky, đã test qua
+   Claude Browser bằng cách cuộn thật (`wrap.scrollTop`) + đo `getBoundingClientRect()` xác nhận
+   `<th>` đứng yên đúng, không lặp lại lỗi cũ. **Đã hỏi lại người dùng trước khi làm** (2 hướng
+   hiểu khác nhau: sticky thead vs mở rộng "tab cuộn cố định" cho Dashboard/Cài đặt chung) — người
+   dùng xác nhận chọn sticky thead, KHÔNG áp dụng cho Dashboard/Cài đặt chung.
+
+⚠️ **Giới hạn browser sandbox ĐÃ TÌM RA CÁCH KHẮC PHỤC** (đính chính ghi chú cũ ở mục 0.1 phía
+trên): gọi `resize_window` với **width/height cụ thể** (không chỉ preset) cho ra viewport thật,
+đo được `scrollWidth`/`clientWidth`/`getBoundingClientRect()` chính xác — không còn bị kẹt ở
+`window.innerWidth=0` như trước. Dùng cách này để verify mọi thứ liên quan layout/scroll từ nay.
+
+**Chưa có SQL migration mới** ở đợt này (chỉ sửa JS/CSS trong `admin.html`).
+
 ## 1. Việc CẦN LÀM NGAY / cần hỏi lại người dùng
 
 1. **⚠️ QUAN TRỌNG NHẤT — chạy lại SQL migration:** người dùng cần chạy lại
