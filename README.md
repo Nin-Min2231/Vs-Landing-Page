@@ -212,6 +212,14 @@ tháng này" đúng công thức màn Tài chính; màn "Hồ sơ" sort lại th
 (Tư vấn/Hồ sơ/Thông tin khách hàng/Tài chính/Đại lý ủy thác/Bài viết/Danh mục bài viết). Chi tiết:
 `CLAUDE.md` mục 27-29. Không có migration SQL mới đợt này.
 
+## Sửa lỗi "phiên đăng nhập hết hạn" khi lưu (2026-08-04)
+
+Trước đây nếu mở `admin.html` liên tục quá ~1 giờ, thao tác lưu tiếp theo (thêm bài viết, hồ sơ...)
+sẽ báo lỗi 401 và bị đăng xuất, dù dữ liệu đang gõ vẫn còn trên form. Đã sửa: hệ thống giờ tự âm
+thầm làm mới phiên đăng nhập và thử lưu lại 1 lần, người dùng không thấy gì bất thường — chỉ khi
+làm mới cũng thất bại (đóng trình duyệt quá lâu) mới thật sự báo lỗi + đăng xuất như cũ. Chi tiết:
+`CLAUDE.md` mục 30.
+
 ## Muốn sửa nội dung?
 
 Gửi file cho Claude kèm yêu cầu, ví dụ: "Đổi giá visa Nhật thành 1.800.000đ", "Thêm quốc gia Singapore", "Đổi màu chủ đạo sang xanh lá" — sau đó deploy lại theo Bước 5 trong hướng dẫn.

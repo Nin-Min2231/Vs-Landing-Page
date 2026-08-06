@@ -747,3 +747,31 @@ nhỏ nhưng không phải 0 — đây vẫn là 1 kỹ thuật CSS có lịch s
 duyệt cũ): kiểm tra lại đúng thiết bị đó trước khi kết luận lỗi chung, không vội bỏ hẳn tính năng
 như lần trước (mục 17) — lần này đã đổi `border-collapse` nên nguyên nhân gốc cũ nhiều khả năng
 đã được xử lý.
+
+## 30. Tự làm mới access token khi hết hạn (401) — không còn phải đăng nhập lại giữa buổi (2026-08)
+
+**Lỗi thật đã gặp:** người dùng đang gõ "Thêm bài viết" (nội dung dài), bấm "Lưu bài viết" → lỗi
+401 (xem Network tab: request `posts` trả 401). Nguyên nhân: access token của Supabase chỉ sống
+mặc định **~1 giờ**; dự án gọi thẳng `fetch()` (không dùng Supabase JS SDK) nên KHÔNG có cơ chế tự
+làm mới token chạy nền như SDK chính thức — `TOKEN` chỉ được gán 1 lần lúc đăng nhập/tự đăng nhập
+lại (`trySilentLogin()`, chạy 1 lần lúc tải trang), không có `setInterval` nào làm mới lại. Mở
+trang quá 1 giờ mà không đăng xuất/vào lại → MỌI hành động lưu tiếp theo đều báo lỗi 401 y như vậy,
+dù dữ liệu đang gõ vẫn còn trên form (dialog không tự đóng khi lỗi).
+
+**Đã sửa — hàm `api()`** (dùng chung cho MỌI lệnh gọi Supabase REST trong `admin.html`): thêm biến
+`REFRESH_TOKEN` giữ trong bộ nhớ (gán ngay sau khi đăng nhập thành công HOẶC tự đăng nhập lại lúc
+tải trang — **luôn gán bất kể có tích "Ghi nhớ đăng nhập" hay không**, ô đó chỉ quyết định có LƯU
+refresh token vào `localStorage` để dùng lại sau khi tắt trình duyệt hay không, không quyết định
+có giữ trong bộ nhớ cho phiên hiện tại). Khi `api()` gặp `401`:
+1. Gọi `refreshAccessToken()` — âm thầm xin access token mới bằng `REFRESH_TOKEN` (endpoint
+   `/auth/v1/token?grant_type=refresh_token`, giống hệt cơ chế `trySilentLogin()` đã có).
+2. Nếu thành công → cập nhật `TOKEN` mới, rồi **tự gọi lại đúng request vừa bị 401** (tham số nội
+   bộ `_retriedAfterRefresh` chặn lặp vô hạn, chỉ thử lại tối đa 1 lần) — người dùng KHÔNG thấy gì
+   bất thường, hành động họ đang làm (lưu bài viết, lưu hồ sơ...) hoàn tất bình thường.
+3. Nếu làm mới CŨNG thất bại (refresh token cũng đã hết hạn/không có) → giữ nguyên hành vi cũ:
+   toast "Phiên đăng nhập hết hạn, vui lòng đăng nhập lại" + `logout()`.
+
+**Đã test qua Claude Browser** (mock `window.fetch` mô phỏng đúng 3 bước: 401 → refresh thành công
+→ gọi lại thành công; và ca refresh cũng thất bại → rơi về đúng hành vi cũ) — cả 2 nhánh đều đúng.
+**Không cần sửa gì ở bất kỳ hàm `saveXxx()` nào khác** — vì tất cả đều gọi qua `api()` chung, tự
+động được hưởng cơ chế này.

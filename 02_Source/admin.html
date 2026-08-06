@@ -1480,7 +1480,36 @@ async function confirmCloseDialog(overlayId, doClose){
   doClose();
 }
 
-async function api(path, opts={}){
+/* ==== Access token của Supabase chỉ sống ~1 giờ (mặc định) — dự án gọi thẳng fetch(), không dùng
+   SDK nên KHÔNG có cơ chế tự làm mới token nền có sẵn (khác Supabase JS SDK). Trước đây hễ mở
+   trang quá 1 giờ, hành động lưu bất kỳ (thêm bài viết, hồ sơ...) đều báo lỗi 401 dù dữ liệu gõ
+   vẫn còn, phải tự đăng xuất/đăng nhập lại mới lưu được — đã sửa (2026-08): khi api() gặp 401, tự
+   âm thầm gọi refreshAccessToken() lấy access token mới bằng REFRESH_TOKEN đang giữ trong bộ nhớ
+   (không cần đã tick "Ghi nhớ đăng nhập" — biến này luôn được gán ngay sau khi đăng nhập/tự đăng
+   nhập lại, xem loginForm submit + trySilentLogin(), CHỈ việc lưu vào localStorage để dùng lại
+   sau khi tắt trình duyệt mới phụ thuộc ô "Ghi nhớ đăng nhập"), rồi TỰ GỌI LẠI đúng request đó 1
+   lần — người dùng không thấy gì bất thường, dữ liệu đang gõ không bị mất. Chỉ khi làm mới token
+   cũng thất bại (refresh_token cũng đã hết hạn/không có) mới thật sự báo lỗi + đăng xuất như cũ. */
+let REFRESH_TOKEN = null;
+async function refreshAccessToken(){
+  if(!REFRESH_TOKEN) return false;
+  try{
+    const res = await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+      body:JSON.stringify({refresh_token: REFRESH_TOKEN})
+    });
+    const data = await res.json();
+    if(!res.ok || !data.access_token) return false;
+    TOKEN = data.access_token;
+    if(data.refresh_token){
+      REFRESH_TOKEN = data.refresh_token;
+      if(localStorage.getItem(REMEMBER_KEY)) localStorage.setItem(REMEMBER_KEY, REFRESH_TOKEN);
+    }
+    return true;
+  }catch(e){ return false; }
+}
+async function api(path, opts={}, _retriedAfterRefresh=false){
   const res = await fetch(SUPABASE_URL+'/rest/v1/'+path, {
     ...opts,
     headers:{
@@ -1491,7 +1520,10 @@ async function api(path, opts={}){
       ...(opts.headers||{})
     }
   });
-  if(res.status===401){ toast('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại','err'); logout(); throw new Error('401'); }
+  if(res.status===401){
+    if(!_retriedAfterRefresh && await refreshAccessToken()) return api(path, opts, true);
+    toast('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại','err'); logout(); throw new Error('401');
+  }
   if(!res.ok) throw new Error('HTTP '+res.status+': '+await res.text());
   const txt = await res.text();
   return txt ? JSON.parse(txt) : null;
@@ -1515,6 +1547,7 @@ $('loginForm').addEventListener('submit', async e=>{
     const data = await res.json();
     if(!res.ok) throw new Error(data.error_description||data.msg||'Sai email hoặc mật khẩu');
     TOKEN = data.access_token;
+    REFRESH_TOKEN = data.refresh_token||null;
     if($('rememberMe').checked && data.refresh_token) localStorage.setItem(REMEMBER_KEY, data.refresh_token);
     else localStorage.removeItem(REMEMBER_KEY);
     $('whoami').textContent = data.user?.email||'';
@@ -1529,7 +1562,7 @@ $('loginForm').addEventListener('submit', async e=>{
     $('loginErr').classList.remove('hidden');
   }finally{ btn.disabled=false; btn.textContent='Đăng nhập'; }
 });
-function logout(){ TOKEN=null; localStorage.removeItem(REMEMBER_KEY);
+function logout(){ TOKEN=null; REFRESH_TOKEN=null; localStorage.removeItem(REMEMBER_KEY);
   $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden');
   $('password').value=''; }
 
@@ -1546,6 +1579,7 @@ async function trySilentLogin(){
     const data = await res.json();
     if(!res.ok) throw new Error('refresh_failed');
     TOKEN = data.access_token;
+    REFRESH_TOKEN = data.refresh_token||rt;
     if(data.refresh_token) localStorage.setItem(REMEMBER_KEY, data.refresh_token);
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
