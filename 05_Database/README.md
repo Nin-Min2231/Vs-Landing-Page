@@ -21,6 +21,9 @@
    Nước đến/Mục đích), thêm `phi_lanh_su`, đổi tên `muc_phi` -> `phi_uy_thac`.
 6. `06_supabase_setup_phase6.sql` — Phase 6: `danh_muc_nuoc` thêm `le_phi`/`thoi_gian_xet_duyet`/
    `checklist`/`ghi_chu` (dialog "Nước đến" mở rộng, Cài đặt chung).
+7. `07_supabase_setup_phase7.sql` — Phase 7: `ho_so.doi_tac_id` bỏ NOT NULL, `posts` thêm
+   `phan_loai`, bảng mới `dich_vu_gia` (giá "Dịch vụ Visa các quốc gia" trên landing page, quản lý
+   qua Cài đặt chung) — có seed 8 dòng giá mặc định theo yêu cầu PM.
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
 project đang dùng đã qua đủ cả 4 phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy

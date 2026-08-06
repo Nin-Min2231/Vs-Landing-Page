@@ -442,7 +442,9 @@ footer a:hover{color:#fff}
       <li><a href="#dich-vu">🧳 Dịch vụ</a></li>
       <li><a href="#loi-ich">⭐ Lợi ích</a></li>
       <li><a href="#danh-gia">💬 Đánh giá</a></li>
-      <li><a href="#tin-tuc">📰 Tin tức</a></li>
+      <!-- Menu "Tin tức"/theo Danh mục bài viết KHÁC được chèn động ngay TRƯỚC link FAQ này —
+           chỉ hiện khi Danh mục đó có ít nhất 1 bài viết công khai, xem script cuối trang
+           (mục "DANH MỤC BÀI VIẾT ĐỘNG"). Không còn link "Tin tức" cứng ở đây (2026-08). -->
       <li><a href="#faq">❓ FAQ</a></li>
       <li><a href="#dang-ky" class="btn btn-cta" style="padding:10px 20px">📝 Đăng ký tư vấn</a></li>
     </ul>
@@ -493,16 +495,19 @@ footer a:hover{color:#fff}
     <h2 class="section-title">Dịch vụ Visa các quốc gia</h2>
     <p class="section-sub">Chọn quốc gia bạn muốn đến — chúng tôi lo phần còn lại</p>
     <div class="grid-services">
-      <div class="card-service"><div class="flag"><img src="assets/flags/jp.svg" alt="Cờ Nhật Bản"></div><h3>Visa Nhật Bản</h3><p>Du lịch, công tác, thăm thân, kỹ năng đặc định</p><div class="price">Từ 1.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Nhật Bản')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/kr.svg" alt="Cờ Hàn Quốc"></div><h3>Visa Hàn Quốc</h3><p>Du lịch, công tác, visa 5 năm nhiều lần</p><div class="price">Từ 1.400.000đ</div><button class="btn btn-outline" onclick="pickCountry('Hàn Quốc')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/tw.svg" alt="Cờ Đài Loan"></div><h3>Visa Đài Loan</h3><p>Du lịch, công tác, e-visa Quan Hồng</p><div class="price">Từ 1.200.000đ</div><button class="btn btn-outline" onclick="pickCountry('Đài Loan')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/cn.svg" alt="Cờ Trung Quốc"></div><h3>Visa Trung Quốc</h3><p>Du lịch, thương mại, nhiều lần nhập cảnh</p><div class="price">Từ 1.800.000đ</div><button class="btn btn-outline" onclick="pickCountry('Trung Quốc')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/eu.svg" alt="Cờ Schengen/Châu Âu"></div><h3>Visa Schengen</h3><p>26 nước châu Âu — Pháp, Đức, Ý, Hà Lan...</p><div class="price">Từ 4.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Schengen (châu Âu)')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/us.svg" alt="Cờ Mỹ"></div><h3>Visa Mỹ</h3><p>Du lịch B1/B2, phỏng vấn, gia hạn</p><div class="price">Từ 5.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Mỹ')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/au.svg" alt="Cờ Úc"></div><h3>Visa Úc</h3><p>Du lịch, thăm thân, công tác online</p><div class="price">Từ 4.000.000đ</div><button class="btn btn-outline" onclick="pickCountry('Úc')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag">🌏</div><h3>Quốc gia khác</h3><p>Canada, Anh, New Zealand, Dubai...</p><div class="price">Liên hệ báo giá</div><button class="btn btn-outline" onclick="pickCountry('Khác')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/jp.svg" alt="Cờ Nhật Bản"></div><h3>Visa Nhật Bản</h3><p>Du lịch, công tác, thăm thân, kỹ năng đặc định</p><div class="price" data-country="Nhật Bản">Từ 1.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Nhật Bản')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/kr.svg" alt="Cờ Hàn Quốc"></div><h3>Visa Hàn Quốc</h3><p>Du lịch, công tác, visa 5 năm nhiều lần</p><div class="price" data-country="Hàn Quốc">Từ 1.400.000đ</div><button class="btn btn-outline" onclick="pickCountry('Hàn Quốc')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/tw.svg" alt="Cờ Đài Loan"></div><h3>Visa Đài Loan</h3><p>Du lịch, công tác, e-visa Quan Hồng</p><div class="price" data-country="Đài Loan">Từ 1.200.000đ</div><button class="btn btn-outline" onclick="pickCountry('Đài Loan')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/cn.svg" alt="Cờ Trung Quốc"></div><h3>Visa Trung Quốc</h3><p>Du lịch, thương mại, nhiều lần nhập cảnh</p><div class="price" data-country="Trung Quốc">Từ 1.800.000đ</div><button class="btn btn-outline" onclick="pickCountry('Trung Quốc')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/eu.svg" alt="Cờ Schengen/Châu Âu"></div><h3>Visa Schengen</h3><p>26 nước châu Âu — Pháp, Đức, Ý, Hà Lan...</p><div class="price" data-country="Schengen (châu Âu)">Từ 4.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Schengen (châu Âu)')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/us.svg" alt="Cờ Mỹ"></div><h3>Visa Mỹ</h3><p>Du lịch B1/B2, phỏng vấn, gia hạn</p><div class="price" data-country="Mỹ">Từ 5.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Mỹ')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/au.svg" alt="Cờ Úc"></div><h3>Visa Úc</h3><p>Du lịch, thăm thân, công tác online</p><div class="price" data-country="Úc">Từ 4.000.000đ</div><button class="btn btn-outline" onclick="pickCountry('Úc')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag">🌏</div><h3>Quốc gia khác</h3><p>Canada, Anh, New Zealand, Dubai...</p><div class="price" data-country="Khác">Liên hệ báo giá</div><button class="btn btn-outline" onclick="pickCountry('Khác')">Tư vấn ngay</button></div>
     </div>
-    <!-- Lưu ý: giá "Từ x đ" là placeholder — [THAY_THẾ] bằng bảng giá thật trước khi chạy quảng cáo -->
+    <!-- Giá "Từ x đ" ở trên chỉ là fallback tĩnh khi chưa tải được dữ liệu — giá THẬT lấy từ bảng
+         "Dịch vụ Visa các quốc gia" (Cài đặt chung, admin.html → bảng dich_vu_gia, Phase 7, 2026-08)
+         qua script tự cập nhật cuối trang (xem data-country ở mỗi .price). Muốn đổi giá: vào
+         admin.html, KHÔNG sửa số ở đây. -->
   </div>
 </section>
 
@@ -596,14 +601,11 @@ footer a:hover{color:#fff}
   </div>
 </section>
 
-<!-- ==================== TIN TỨC ==================== -->
-<section id="tin-tuc" style="display:none">
-  <div class="container">
-    <h2 class="section-title">Tin tức & Kinh nghiệm xin Visa</h2>
-    <p class="section-sub">Cập nhật thông tin mới nhất từ Top Visa</p>
-    <div class="grid-posts" id="postsGrid"></div>
-  </div>
-</section>
+<!-- ==================== BÀI VIẾT — 1 section/menu ĐỘNG cho mỗi Danh mục ====================
+     Rỗng lúc tải trang — script cuối trang tự nạp bài viết từ admin, nhóm theo "Danh mục" rồi
+     chèn 1 <section> (+ 1 menu tương ứng) vào đây cho mỗi Danh mục đang có ít nhất 1 bài viết
+     công khai. Tiêu đề mỗi section lấy từ "Phân loại" của bài viết (xem CLAUDE.md). -->
+<div id="categorySections"></div>
 
 <!-- ==================== FAQ ==================== -->
 <section id="faq">
@@ -754,10 +756,14 @@ footer a:hover{color:#fff}
 /* ==================== MENU MOBILE ==================== */
 const navLinks = document.getElementById('navLinks');
 document.getElementById('hamburger').addEventListener('click',()=>navLinks.classList.toggle('show'));
-navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('show')));
+function closeMobileMenuOnClick(a){ a.addEventListener('click',()=>navLinks.classList.remove('show')); }
+navLinks.querySelectorAll('a').forEach(closeMobileMenuOnClick);
 
-/* ==================== SCROLLSPY MENU (highlight mục đang xem) ==================== */
-(function(){
+/* ==================== SCROLLSPY MENU (highlight mục đang xem) ====================
+   Đóng thành hàm dùng lại được vì menu "Danh mục bài viết" được chèn ĐỘNG sau khi tải xong bài
+   viết (bất đồng bộ) — gọi lại initScrollSpy() sau khi chèn xong menu/section mới để những mục
+   đó cũng được theo dõi cuộn trang, không chỉ các mục tĩnh có sẵn lúc tải trang. */
+function initScrollSpy(){
   const navAnchors = [...navLinks.querySelectorAll('a[href^="#"]')];
   const sections = navAnchors.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
   if(!sections.length) return;
@@ -769,7 +775,8 @@ navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLink
     });
   },{rootMargin:'-40% 0px -55% 0px'});
   sections.forEach(s=>spy.observe(s));
-})();
+}
+initScrollSpy();
 
 /* ==================== SLIDER ĐÁNH GIÁ (Khách hàng nói gì) ==================== */
 (function(){
@@ -834,33 +841,104 @@ navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLink
   restartAutoplay();
 })();
 
-/* ==================== TIN TỨC (BÀI VIẾT TỪ ADMIN) ==================== */
+/* ==================== GIÁ DỊCH VỤ (từ admin.html — Cài đặt chung, Phase 7) ====================
+   Giá "Từ x đ" trong HTML chỉ là fallback tĩnh — cập nhật lại đúng giá thật đang cấu hình ở admin
+   qua bảng dich_vu_gia (anon chỉ SELECT, xem 05_Database/07_supabase_setup_phase7.sql). Lỗi mạng/
+   chưa cấu hình Supabase -> im lặng giữ nguyên giá fallback, không ảnh hưởng phần còn lại trang. */
+(async function(){
+  if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  try{
+    const res = await fetch(SUPABASE_URL+'/rest/v1/dich_vu_gia?select=quoc_gia,gia',{
+      headers:{ 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY }
+    });
+    if(!res.ok) return;
+    const rows = await res.json();
+    const gia = new Map(rows.map(r=>[r.quoc_gia, r.gia]));
+    document.querySelectorAll('.price[data-country]').forEach(el=>{
+      const country = el.dataset.country;
+      if(!gia.has(country)) return; // chưa cấu hình nước này ở admin -> giữ giá fallback trong HTML
+      const g = gia.get(country);
+      el.textContent = (g!=null && Number(g)>0) ? 'Từ '+Number(g).toLocaleString('vi-VN')+'đ' : 'Liên hệ báo giá';
+    });
+  }catch(e){ /* im lặng bỏ qua nếu không tải được, giữ giá fallback trong HTML */ }
+})();
+
+/* ==================== DANH MỤC BÀI VIẾT ĐỘNG (menu + section theo Danh mục) ====================
+   Mỗi "Danh mục" (category_id, quản lý ở admin.html tab "Danh mục bài viết") có ít nhất 1 bài
+   viết công khai (published=true) sẽ tự có 1 menu ("📰 <tên danh mục>") + 1 section riêng ("Phân
+   loại" của bài viết dùng làm tiêu đề H2) — chèn ngay trước link "FAQ". Danh mục không có bài
+   viết nào KHÔNG hiện gì cả (không tạo menu/section rỗng). Bài viết chưa gán Danh mục bị bỏ qua
+   (không thuộc section nào). Sắp xếp theo tên Danh mục (A-Z) để menu ổn định, không đổi chỗ theo
+   bài viết mới nhất. */
+function slugifyCatName(s){
+  return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'muc';
+}
 (async function(){
   if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
   const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   try{
-    const res = await fetch(SUPABASE_URL+'/rest/v1/posts?select=*,categories(name)&published=eq.true&order=created_at.desc&limit=9',{
+    const res = await fetch(SUPABASE_URL+'/rest/v1/posts?select=*,categories(id,name)&published=eq.true&order=created_at.desc',{
       headers:{ 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY }
     });
     if(!res.ok) return;
     const posts = await res.json();
     if(!posts.length) return;
+    posts.forEach((p,i)=>{ p.__idx = i; }); // giữ lại vị trí gốc để openPostDetail(i) tra đúng bài
     window.__POSTS__ = posts;
-    document.getElementById('postsGrid').innerHTML = posts.map((p,i)=>{
-      const excerpt = (p.content||'').slice(0,110);
-      return `
-      <div class="card-post" onclick="openPostDetail(${i})">
-        ${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy">`
-                       : `<div class="thumb-placeholder">📰</div>`}
-        <div class="body">
-          ${p.categories?.name ? `<div class="cat">${esc(p.categories.name)}</div>` : ''}
-          <h3>${esc(p.title)}</h3>
-          <div class="excerpt">${esc(excerpt)}${(p.content||'').length>110?'...':''}</div>
-          <div class="meta"><span>${new Date(p.created_at).toLocaleDateString('vi-VN')}</span><span class="post-readmore">Đọc tiếp →</span></div>
-        </div>
-      </div>`;
-    }).join('');
-    document.getElementById('tin-tuc').style.display='';
+
+    const groups = new Map(); // category_id -> {name, posts:[]}
+    posts.forEach(p=>{
+      if(!p.categories) return; // bài viết chưa gán Danh mục -> không thuộc section nào
+      const cid = p.categories.id;
+      if(!groups.has(cid)) groups.set(cid, {name:p.categories.name, posts:[]});
+      groups.get(cid).posts.push(p);
+    });
+    if(!groups.size) return;
+
+    const orderedGroups = [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,'vi'));
+    const faqLi = document.querySelector('#navLinks a[href="#faq"]')?.closest('li');
+    const sectionsWrap = document.getElementById('categorySections');
+
+    orderedGroups.forEach(group=>{
+      const slug = 'cat-'+slugifyCatName(group.name);
+      const sectionTitle = group.posts[0].phan_loai || group.name;
+
+      // Menu — chèn ngay trước "FAQ"
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#'+slug;
+      a.textContent = '📰 '+group.name;
+      li.appendChild(a);
+      if(faqLi) faqLi.parentNode.insertBefore(li, faqLi); else document.getElementById('navLinks').appendChild(li);
+      closeMobileMenuOnClick(a);
+
+      // Section
+      const section = document.createElement('section');
+      section.id = slug;
+      section.innerHTML = `
+        <div class="container">
+          <h2 class="section-title">${esc(sectionTitle)}</h2>
+          <p class="section-sub">Cập nhật thông tin mới nhất từ Top Visa</p>
+          <div class="grid-posts">${group.posts.map(p=>{
+            const excerpt = (p.content||'').slice(0,110);
+            return `
+            <div class="card-post" onclick="openPostDetail(${p.__idx})">
+              ${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy">`
+                             : `<div class="thumb-placeholder">📰</div>`}
+              <div class="body">
+                <div class="cat">${esc(group.name)}</div>
+                <h3>${esc(p.title)}</h3>
+                <div class="excerpt">${esc(excerpt)}${(p.content||'').length>110?'...':''}</div>
+                <div class="meta"><span>${new Date(p.created_at).toLocaleDateString('vi-VN')}</span><span class="post-readmore">Đọc tiếp →</span></div>
+              </div>
+            </div>`;
+          }).join('')}</div>
+        </div>`;
+      sectionsWrap.appendChild(section);
+    });
+
+    initScrollSpy(); // quét lại để theo dõi cuộn cho menu/section mới chèn vào
   }catch(e){ /* im lặng bỏ qua nếu không tải được, không ảnh hưởng phần còn lại của trang */ }
 })();
 function openPostDetail(i){

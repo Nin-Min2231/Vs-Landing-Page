@@ -42,7 +42,9 @@ Tìm chữ `[THAY_THẾ]` trong `index.html` (Ctrl+F) và thay bằng thông tin
 - [x] Tên công ty: **Top Visa** — cập nhật 2026-07-18 (nguồn: `03_Information/Information.md`)
 - [x] Logo, favicon (từ `logo.jpg`) — cập nhật 2026-07-10
 - [x] Hotline/Zalo 0935 887 922, link Facebook (công ty + tư vấn viên), QR Zalo, địa chỉ 303 Âu Cơ Liên Chiểu Đà Nẵng, email hien.gotravel@gmail.com — cập nhật 2026-07-18
-- [ ] Bảng giá từng quốc gia
+- [x] Bảng giá từng quốc gia — cập nhật 2026-08-06, giờ quản lý qua admin.html ("Cài đặt chung" →
+      "Dịch vụ Visa các quốc gia"), landing page tự lấy giá từ đó (xem Phase 7 bên dưới). PM tự
+      sửa lại giá thật khi có, hiện đang dùng đúng số cũ ("Từ x đ") làm giá trị mặc định.
 - [ ] Số liệu "5000+ hồ sơ / 98% đậu" → số thật (tránh vi phạm quảng cáo)
 - [x] Review khách hàng thật — cập nhật 2026-07-30 (2 review thật lấy từ Facebook công ty)
 - [x] Số GPKD ở footer — đã bỏ dòng này theo yêu cầu (2026-07-31), footer chỉ còn "© 2026 Top Visa."
@@ -219,6 +221,34 @@ sẽ báo lỗi 401 và bị đăng xuất, dù dữ liệu đang gõ vẫn còn
 thầm làm mới phiên đăng nhập và thử lưu lại 1 lần, người dùng không thấy gì bất thường — chỉ khi
 làm mới cũng thất bại (đóng trình duyệt quá lâu) mới thật sự báo lỗi + đăng xuất như cũ. Chi tiết:
 `CLAUDE.md` mục 30.
+
+## Phase 7 — Giá dịch vụ động, Phân loại bài viết + menu động, đại lý không bắt buộc, sort chung (2026-08-06)
+
+- **Dashboard**: khối "Hồ sơ trả kết quả tuần này" chỉ lấy hồ sơ "Đã nộp"/"Đang xử lý"; đổi tên thẻ
+  "Hồ sơ đang nộp" → "Hồ sơ đã nộp".
+- **Danh mục bài viết**: thêm nút "Sửa"; chặn xóa nếu danh mục đang có bài viết dùng (đảo lại quyết
+  định cũ ở Phase 4 vốn cho xóa tự do).
+- **Hồ sơ**: "Đại lý ủy thác" không còn bắt buộc chọn; icon kính lúp ở "Tên khách hàng" chuyển vào
+  lồng trong ô input (gọn hơn, đồng bộ icon lịch).
+- **"Dịch vụ Visa các quốc gia"** (mới, Cài đặt chung): quản lý giá 8 nước đang có trên landing
+  page — landing page (`index.html`) tự lấy giá từ đây thay vì fix cứng trong code.
+- **Bài viết**: thêm field "Phân loại" bắt buộc — quyết định tiêu đề section hiển thị trên landing
+  page. Landing page giờ tự tạo 1 menu + 1 section riêng cho MỖI Danh mục đang có ít nhất 1 bài
+  viết công khai (trước đây chỉ có đúng 1 section "Tin tức" cứng).
+- **Sort theo cột**: mọi màn hình list (Tư vấn/Hồ sơ/Thông tin khách hàng/Tài chính/Đại lý ủy
+  thác/Bài viết/Danh mục bài viết) giờ bấm được vào tiêu đề cột để sắp xếp tăng/giảm.
+
+Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 31.
+
+- [ ] **Cần chạy `05_Database/07_supabase_setup_phase7.sql` trong Supabase SQL Editor** (bỏ bắt
+      buộc `ho_so.doi_tac_id`, thêm `posts.phan_loai` (tự backfill dữ liệu cũ), tạo bảng mới
+      `dich_vu_gia` có sẵn 8 dòng giá mặc định) — chưa chạy thì lưu Bài viết sẽ báo lỗi thiếu cột
+      và giá dịch vụ trên landing page vẫn hiện số cũ viết sẵn trong HTML (không phải lỗi, chỉ là
+      chưa có bảng để lấy giá thật).
+- [ ] Test với đăng nhập admin thật: sửa/xóa 1 danh mục bài viết đang dùng (phải bị chặn), lưu 1
+      Hồ sơ không chọn Đại lý ủy thác, thêm/sửa giá ở "Dịch vụ Visa các quốc gia" rồi F5 lại
+      `index.html` xem giá có đổi theo không, thêm 1 bài viết Danh mục mới xem có tự hiện menu mới
+      trên landing page không, bấm sort thử vài cột ở mỗi màn list.
 
 ## Muốn sửa nội dung?
 

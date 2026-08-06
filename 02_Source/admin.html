@@ -132,6 +132,10 @@ tr:hover td{background:var(--pl)}
    (không có class tab-scroll) hay bảng con trong dialog (nằm trong .dlg-body, không phải con trực
    tiếp của .tab-scroll). */
 .tab-scroll>.tbl-wrap thead th{position:sticky;top:0;z-index:2}
+/* Cột có thể sort (2026-08) — bấm tiêu đề cột để đổi thứ tự, xem onSortClick()/applySort() */
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{background:var(--pd)}
+.sort-ic{font-size:10px;margin-left:2px;display:inline-block;min-width:9px}
 .pill{padding:3px 12px;border-radius:999px;font-size:12px;font-weight:700;display:inline-block}
 .pill-new{background:var(--pl);color:var(--p)}
 .pill-called{background:#FEF3C7;color:var(--warn)}
@@ -288,11 +292,14 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 /* ===== field tự điền từ dialog "Chọn khách hàng" — đổi nền để nhân viên biết đây là dữ
    liệu lấy từ khách hàng có sẵn, không gõ tay được (Dialog_Tao_moi_ho_so.png) ===== */
 .autofilled{background:#DDE1E6!important}
-/* ===== Ô "Tên khách hàng" (dialog Hồ sơ): input readonly + nút kính lúp mở dialog chọn ===== */
-.kh-pick-wrap{display:flex;gap:6px}
-.kh-pick-wrap input{flex:1;min-width:0}
-.kh-pick-btn{flex-shrink:0;width:44px;border:1.5px solid rgba(0,64,133,.5);border-radius:8px;
-  background:#fff;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
+/* ===== Ô "Tên khách hàng" (dialog Hồ sơ): input readonly + icon kính lúp mở dialog chọn — icon
+   lồng BÊN TRONG ô input (2026-08, sửa lại theo mẫu icon lịch mục 20, thay vì nút rời to đứng
+   cạnh ô như trước) để gọn hơn, đồng bộ phong cách với icon lịch 📅. ===== */
+.kh-pick-wrap{position:relative}
+.kh-pick-wrap input{width:100%;padding-right:34px}
+.kh-pick-btn{position:absolute;right:3px;top:50%;transform:translateY(-50%);
+  width:28px;height:28px;border:none;background:transparent;border-radius:6px;
+  cursor:pointer;font-size:15px;color:var(--mut);display:flex;align-items:center;justify-content:center}
 .kh-pick-btn:hover{background:var(--pl)}
 /* ===== Icon lịch tùy chỉnh cho MỌI ô ngày mask dd/mm/yyyy (2026-08, sửa lại cho gọn) — bọc
    quanh input bằng JS lúc tải trang (initDatePickers()), không sửa từng input trong HTML, xem
@@ -535,7 +542,18 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Ngày</th><th>Tên</th><th>SĐT</th><th>Nước đến</th><th>Mục đích</th><th>Nguồn</th><th>Trạng thái</th><th>Nhắc lại</th><th class="th-center">Thao tác</th></tr></thead>
+          <thead><tr>
+            <th>#</th>
+            <th class="sortable" onclick="onSortClick('tv','ngay',renderTuVan)">Ngày<span class="sort-ic" data-tbl="tv" data-col="ngay"></span></th>
+            <th class="sortable" onclick="onSortClick('tv','ten',renderTuVan)">Tên<span class="sort-ic" data-tbl="tv" data-col="ten"></span></th>
+            <th class="sortable" onclick="onSortClick('tv','sdt',renderTuVan)">SĐT<span class="sort-ic" data-tbl="tv" data-col="sdt"></span></th>
+            <th class="sortable" onclick="onSortClick('tv','nuoc',renderTuVan)">Nước đến<span class="sort-ic" data-tbl="tv" data-col="nuoc"></span></th>
+            <th class="sortable" onclick="onSortClick('tv','mucdich',renderTuVan)">Mục đích<span class="sort-ic" data-tbl="tv" data-col="mucdich"></span></th>
+            <th class="sortable" onclick="onSortClick('tv','nguon',renderTuVan)">Nguồn<span class="sort-ic" data-tbl="tv" data-col="nguon"></span></th>
+            <th class="sortable" onclick="onSortClick('tv','trangthai',renderTuVan)">Trạng thái<span class="sort-ic" data-tbl="tv" data-col="trangthai"></span></th>
+            <th class="sortable" onclick="onSortClick('tv','nhaclai',renderTuVan)">Nhắc lại<span class="sort-ic" data-tbl="tv" data-col="nhaclai"></span></th>
+            <th class="th-center">Thao tác</th>
+          </tr></thead>
           <tbody id="tvBody"></tbody>
         </table>
         <div class="empty hidden" id="tvEmpty">Chưa có dữ liệu tư vấn</div>
@@ -563,7 +581,20 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Ngày</th><th>Tên khách</th><th>SĐT</th><th>Nước đến</th><th>Mục đích</th><th>Đại lý ủy thác</th><th>Trạng thái</th><th>Lợi nhuận</th><th>Ngày nộp</th><th>Ngày trả KQ</th><th class="th-center">Thao tác</th></tr></thead>
+          <thead><tr>
+            <th>#</th>
+            <th class="sortable" onclick="onSortClick('hs','ngay',renderHoSo)">Ngày<span class="sort-ic" data-tbl="hs" data-col="ngay"></span></th>
+            <th class="sortable" onclick="onSortClick('hs','ten',renderHoSo)">Tên khách<span class="sort-ic" data-tbl="hs" data-col="ten"></span></th>
+            <th class="sortable" onclick="onSortClick('hs','sdt',renderHoSo)">SĐT<span class="sort-ic" data-tbl="hs" data-col="sdt"></span></th>
+            <th class="sortable" onclick="onSortClick('hs','nuoc',renderHoSo)">Nước đến<span class="sort-ic" data-tbl="hs" data-col="nuoc"></span></th>
+            <th class="sortable" onclick="onSortClick('hs','mucdich',renderHoSo)">Mục đích<span class="sort-ic" data-tbl="hs" data-col="mucdich"></span></th>
+            <th class="sortable" onclick="onSortClick('hs','doitac',renderHoSo)">Đại lý ủy thác<span class="sort-ic" data-tbl="hs" data-col="doitac"></span></th>
+            <th class="sortable" onclick="onSortClick('hs','trangthai',renderHoSo)">Trạng thái<span class="sort-ic" data-tbl="hs" data-col="trangthai"></span></th>
+            <th class="sortable" onclick="onSortClick('hs','loinhuan',renderHoSo)">Lợi nhuận<span class="sort-ic" data-tbl="hs" data-col="loinhuan"></span></th>
+            <th class="sortable" onclick="onSortClick('hs','ngaynop',renderHoSo)">Ngày nộp<span class="sort-ic" data-tbl="hs" data-col="ngaynop"></span></th>
+            <th class="sortable" onclick="onSortClick('hs','ngaytrakq',renderHoSo)">Ngày trả KQ<span class="sort-ic" data-tbl="hs" data-col="ngaytrakq"></span></th>
+            <th class="th-center">Thao tác</th>
+          </tr></thead>
           <tbody id="hsBody"></tbody>
         </table>
         <div class="empty hidden" id="hsEmpty">Chưa có hồ sơ nào</div>
@@ -581,7 +612,16 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Họ và tên</th><th>Số ĐT</th><th>Ngày sinh</th><th>CCCD</th><th>Địa chỉ</th><th>Email</th><th class="th-center">Thao tác</th></tr></thead>
+          <thead><tr>
+            <th>#</th>
+            <th class="sortable" onclick="khCurrentPage=1;onSortClick('kh','hoten',renderKhachHang)">Họ và tên<span class="sort-ic" data-tbl="kh" data-col="hoten"></span></th>
+            <th class="sortable" onclick="khCurrentPage=1;onSortClick('kh','sdt',renderKhachHang)">Số ĐT<span class="sort-ic" data-tbl="kh" data-col="sdt"></span></th>
+            <th class="sortable" onclick="khCurrentPage=1;onSortClick('kh','ngaysinh',renderKhachHang)">Ngày sinh<span class="sort-ic" data-tbl="kh" data-col="ngaysinh"></span></th>
+            <th class="sortable" onclick="khCurrentPage=1;onSortClick('kh','cccd',renderKhachHang)">CCCD<span class="sort-ic" data-tbl="kh" data-col="cccd"></span></th>
+            <th class="sortable" onclick="khCurrentPage=1;onSortClick('kh','diachi',renderKhachHang)">Địa chỉ<span class="sort-ic" data-tbl="kh" data-col="diachi"></span></th>
+            <th class="sortable" onclick="khCurrentPage=1;onSortClick('kh','email',renderKhachHang)">Email<span class="sort-ic" data-tbl="kh" data-col="email"></span></th>
+            <th class="th-center">Thao tác</th>
+          </tr></thead>
           <tbody id="khBody"></tbody>
         </table>
         <div class="empty hidden" id="khEmpty">Chưa có khách hàng nào</div>
@@ -614,7 +654,13 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Ngày</th><th>Phân loại</th><th>Nội dung</th><th>Số tiền</th><th class="th-center">Thao tác</th></tr></thead>
+          <thead><tr>
+            <th class="sortable" onclick="onSortClick('tc','ngay',renderTaiChinhSorted)">Ngày<span class="sort-ic" data-tbl="tc" data-col="ngay"></span></th>
+            <th class="sortable" onclick="onSortClick('tc','loai',renderTaiChinhSorted)">Phân loại<span class="sort-ic" data-tbl="tc" data-col="loai"></span></th>
+            <th class="sortable" onclick="onSortClick('tc','noidung',renderTaiChinhSorted)">Nội dung<span class="sort-ic" data-tbl="tc" data-col="noidung"></span></th>
+            <th class="sortable" onclick="onSortClick('tc','sotien',renderTaiChinhSorted)">Số tiền<span class="sort-ic" data-tbl="tc" data-col="sotien"></span></th>
+            <th class="th-center">Thao tác</th>
+          </tr></thead>
           <tbody id="tcBody"></tbody>
         </table>
         <div class="empty hidden" id="tcEmpty">Chưa có dữ liệu trong khoảng thời gian này</div>
@@ -629,7 +675,14 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Tên công ty</th><th>Người đại diện</th><th>SĐT liên hệ</th><th>Trạng thái</th><th class="th-center">Thao tác</th></tr></thead>
+          <thead><tr>
+            <th>#</th>
+            <th class="sortable" onclick="onSortClick('dt','tencongty',renderDoiTac)">Tên công ty<span class="sort-ic" data-tbl="dt" data-col="tencongty"></span></th>
+            <th class="sortable" onclick="onSortClick('dt','daidien',renderDoiTac)">Người đại diện<span class="sort-ic" data-tbl="dt" data-col="daidien"></span></th>
+            <th class="sortable" onclick="onSortClick('dt','sdt',renderDoiTac)">SĐT liên hệ<span class="sort-ic" data-tbl="dt" data-col="sdt"></span></th>
+            <th class="sortable" onclick="onSortClick('dt','trangthai',renderDoiTac)">Trạng thái<span class="sort-ic" data-tbl="dt" data-col="trangthai"></span></th>
+            <th class="th-center">Thao tác</th>
+          </tr></thead>
           <tbody id="dtBody"></tbody>
         </table>
         <div class="empty hidden" id="dtEmpty">Chưa có đại lý nào</div>
@@ -667,6 +720,27 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div id="listTruongNhom" class="cat-list"></div>
         </div>
       </div>
+      <!-- "Dịch vụ Visa các quốc gia" (2026-08) — giá hiển thị ở landing page (section "Dịch vụ"),
+           thay cho giá fix cứng trong index.html trước đây. "Đất nước" chỉ giới hạn đúng 8 nước
+           đang có card trên landing page (DVG_COUNTRIES) — không phải danh mục "Nước đến" ở trên
+           (danh_muc_nuoc dùng cho Hồ sơ/Tư vấn, có thể nhiều nước khác ngoài 8 nước này). -->
+      <div class="cat-block-full c-dvgia">
+        <div class="cat-block-full-head">
+          <h3>💰 Dịch vụ Visa các quốc gia</h3>
+          <button class="btn btn-p" onclick="openDvGiaModal()">+ Thêm</button>
+        </div>
+        <div class="tbl-wrap">
+          <table style="min-width:400px">
+            <thead><tr>
+              <th class="sortable" onclick="onSortClick('dvg','quocgia',renderDichVuGia)">Đất nước<span class="sort-ic" data-tbl="dvg" data-col="quocgia"></span></th>
+              <th class="sortable" onclick="onSortClick('dvg','gia',renderDichVuGia)">Giá tiền<span class="sort-ic" data-tbl="dvg" data-col="gia"></span></th>
+              <th class="th-center">Thao tác</th>
+            </tr></thead>
+            <tbody id="dvgBody"></tbody>
+          </table>
+          <div class="empty hidden" id="dvgEmpty">Chưa có dữ liệu</div>
+        </div>
+      </div>
     </section>
 
     <!-- ===== TAB POSTS ===== -->
@@ -677,7 +751,15 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Tiêu đề</th><th>Danh mục</th><th>Ngày tạo</th><th>Hiển thị</th><th class="th-center">Thao tác</th></tr></thead>
+          <thead><tr>
+            <th>#</th>
+            <th class="sortable" onclick="onSortClick('posts','title',renderPosts)">Tiêu đề<span class="sort-ic" data-tbl="posts" data-col="title"></span></th>
+            <th class="sortable" onclick="onSortClick('posts','cat',renderPosts)">Danh mục<span class="sort-ic" data-tbl="posts" data-col="cat"></span></th>
+            <th class="sortable" onclick="onSortClick('posts','phanloai',renderPosts)">Phân loại<span class="sort-ic" data-tbl="posts" data-col="phanloai"></span></th>
+            <th class="sortable" onclick="onSortClick('posts','ngay',renderPosts)">Ngày tạo<span class="sort-ic" data-tbl="posts" data-col="ngay"></span></th>
+            <th class="sortable" onclick="onSortClick('posts','published',renderPosts)">Hiển thị<span class="sort-ic" data-tbl="posts" data-col="published"></span></th>
+            <th class="th-center">Thao tác</th>
+          </tr></thead>
           <tbody id="postsBody"></tbody>
         </table>
         <div class="empty hidden" id="postsEmpty">Chưa có bài viết nào</div>
@@ -695,7 +777,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
       <div class="tbl-wrap">
         <table style="min-width:400px">
-          <thead><tr><th>#</th><th>Tên danh mục</th><th class="th-center">Thao tác</th></tr></thead>
+          <thead><tr><th>#</th><th class="sortable" onclick="onSortClick('cats','name',renderCats)">Tên danh mục<span class="sort-ic" data-tbl="cats" data-col="name"></span></th><th class="th-center">Thao tác</th></tr></thead>
           <tbody id="catsBody"></tbody>
         </table>
       </div>
@@ -719,6 +801,10 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="dlg-row">
           <div class="dlg-field"><label>Tiêu đề <span class="req-badge">Bắt buộc</span></label><input type="text" id="postTitle"></div>
           <div class="dlg-field"><label>Danh mục</label><select id="postCat"></select></div>
+          <div class="dlg-field"><label>Phân loại <span class="req-badge">Bắt buộc</span></label>
+            <input type="text" id="postPhanLoai" list="postPhanLoaiList" placeholder="VD: Tin tức &amp; Kinh nghiệm xin Visa">
+            <datalist id="postPhanLoaiList"></datalist>
+          </div>
           <div class="dlg-field dlg-field-wide"><label>Link ảnh đại diện (URL)</label><input type="url" id="postImage" placeholder="https://... (tải ảnh lên postimages.org để lấy link miễn phí)"></div>
         </div>
         <label style="display:flex;align-items:center;gap:8px;margin-top:6px">
@@ -821,7 +907,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       <div class="dlg-section">
         <div class="dlg-section-title">Thông tin nộp hồ sơ</div>
         <div class="dlg-row">
-          <div class="dlg-field"><label>Đại lý ủy thác <span class="req-badge">Bắt buộc</span></label><select id="hoDoiTac" onchange="lookupDoiTacPhi()"></select></div>
+          <div class="dlg-field"><label>Đại lý ủy thác</label><select id="hoDoiTac" onchange="lookupDoiTacPhi()"></select></div>
           <div class="dlg-field"><label>Ngày nộp hồ sơ</label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="hoNgayNop" oninput="onDateInput(this)"></div>
           <div class="dlg-field"><label>Ngày trả KQ</label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="hoNgayTraKq" oninput="onDateInput(this)"></div>
           <div class="dlg-field"><label>Trạng thái hồ sơ</label>
@@ -1053,6 +1139,25 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
   </div>
 </div>
 
+<!-- ============ MODAL "DỊCH VỤ VISA CÁC QUỐC GIA" (Cài đặt chung, Phase 7) ============ -->
+<div class="overlay hidden" id="dvgOverlay">
+  <div class="modal dlg-standard" style="max-width:460px">
+    <div class="dlg-head">
+      <h3 id="dvgModalTitle">Thêm dịch vụ</h3>
+      <button type="button" class="modal-x" onclick="closeDvGiaModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="dlg-body">
+      <input type="hidden" id="dvgId">
+      <div class="dlg-field"><label>Đất nước <span class="req-badge">Bắt buộc</span></label><select id="dvgQuocGia"></select></div>
+      <div class="dlg-field"><label>Giá tiền</label><input type="text" inputmode="numeric" class="money-input" id="dvgGia" placeholder="Vui lòng nhập" oninput="onChiMoneyInput(this)"></div>
+    </div>
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeDvGiaModal()">Đóng lại</button>
+      <button class="btn btn-p" id="dvgSaveBtn" onclick="saveDvGia()">Lưu</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL KHOẢN CHI (Tài chính) ============ -->
 <div class="overlay hidden" id="chiOverlay">
   <div class="modal modal-lg dlg-standard">
@@ -1198,6 +1303,7 @@ let DOI_TAC = [], DANH_MUC_NUOC = [], DANH_MUC_MUC_DICH = [], DANH_MUC_TRUONG_NH
 let CUR_HOSO_XLPS = [], CUR_HOSO_THANHVIEN = [], CUR_FEE_DOITAC = null, CUR_FEE_ROWS = [], CHART_DT = null, CHART_SL = null;
 let KHOAN_CHI = [], TC_ROWS = [];
 let KHACH_HANG = [];
+let DICH_VU_GIA = [];
 const REMEMBER_KEY = 'tv_admin_refresh_token';
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1348,6 +1454,41 @@ window.addEventListener('scroll', ()=>{
 window.addEventListener('resize', ()=>{
   if(!$('datePickerPopup').classList.contains('hidden')) closeDatePicker();
 });
+/* ==================== SORT CHUNG CHO MỌI BẢNG LIST (2026-08) ====================
+   Bấm vào tiêu đề cột (<th class="sortable" onclick="onSortClick('key','col',renderFn)">) để sắp
+   xếp tăng/giảm theo cột đó — áp dụng cho 7 màn list (Tư vấn/Hồ sơ/Thông tin khách hàng/Tài
+   chính/Đại lý ủy thác/Bài viết/Danh mục bài viết). Bỏ qua cột "#" (số thứ tự) và "Thao tác"
+   (không có ý nghĩa để sort). thead là HTML tĩnh (không render lại mỗi lần) nên chỉ cập nhật mũi
+   tên qua <span class="sort-ic" data-tbl="..." data-col="...">, không đụng gì tới cấu trúc bảng.
+   SORT_STATE[tableKey] = {col, dir} — dir: 'asc'|'desc'. Chưa chọn cột nào (SORT_STATE rỗng) thì
+   dùng thứ tự mặc định hiện có của từng màn (vd Hồ sơ: Trạng thái rồi Ngày tạo cũ nhất trước). */
+let SORT_STATE = {};
+function onSortClick(tableKey, col, renderFn){
+  const s = SORT_STATE[tableKey];
+  if(s && s.col===col) s.dir = s.dir==='asc' ? 'desc' : 'asc';
+  else SORT_STATE[tableKey] = {col, dir:'asc'};
+  renderFn();
+}
+/* getters: {col: item=>giá trị so sánh (string hoặc number)}. Không sort (SORT_STATE rỗng hoặc cột
+   không có trong getters) -> trả về rows gốc, không đổi thứ tự. */
+function applySort(tableKey, rows, getters){
+  const s = SORT_STATE[tableKey];
+  if(!s || !getters[s.col]) return rows;
+  const get = getters[s.col];
+  return [...rows].sort((a,b)=>{
+    let va = get(a), vb = get(b);
+    if(va==null) va = '';
+    if(vb==null) vb = '';
+    const cmp = (typeof va==='number' && typeof vb==='number') ? va-vb : va.toString().localeCompare(vb.toString(),'vi');
+    return s.dir==='asc' ? cmp : -cmp;
+  });
+}
+function updateSortIcons(tableKey){
+  const s = SORT_STATE[tableKey];
+  document.querySelectorAll('.sort-ic[data-tbl="'+tableKey+'"]').forEach(el=>{
+    el.textContent = (s && s.col===el.dataset.col) ? (s.dir==='asc'?' ▲':' ▼') : '';
+  });
+}
 function applyRowLabels(tbodyId){
   const tbody = $(tbodyId);
   const table = tbody.closest('table');
@@ -1553,7 +1694,7 @@ $('loginForm').addEventListener('submit', async e=>{
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang()]);
+    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia()]);
     loadPosts();
     loadDashboard();
   }catch(err){
@@ -1584,7 +1725,7 @@ async function trySilentLogin(){
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang()]);
+    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia()]);
     loadPosts();
     loadDashboard();
   }catch(e){
@@ -1639,10 +1780,7 @@ function exportTuVanCSV(){
 async function loadCats(){
   try{
     CATS = await api('categories?select=*&order=name') || [];
-    $('catsBody').innerHTML = CATS.map((c,i)=>`
-      <tr><td>${i+1}</td><td>${esc(c.name)}</td>
-      <td class="td-actions"><button class="btn btn-d" onclick="delCategory(${c.id})">Xóa</button></td></tr>`).join('');
-    applyRowLabels('catsBody');
+    renderCats();
     $('postCat').innerHTML = '<option value="">-- Không chọn --</option>'+
       CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   }catch(e){ if(e.message!=='401') toast('Lỗi tải danh mục: '+e.message,'err'); }
@@ -1655,32 +1793,65 @@ async function addCategory(){
     $('newCatName').value=''; loadCats(); toast('Đã thêm danh mục');
   }catch(e){ toast(e.message.includes('duplicate')?'Danh mục đã tồn tại':'Lỗi: '+e.message,'err'); }
 }
+/* ==== Xóa "Danh mục bài viết" — CHẶN xóa nếu đang có bài viết dùng (posts.category_id), 2026-08
+   theo yêu cầu PM (đảo lại quyết định cũ ở CLAUDE.md mục 14 vốn cho xóa tự do vì posts.category_id
+   cho phép NULL — giờ PM muốn chặn giống mọi danh mục khác trong hệ thống). ==== */
 async function delCategory(id){
-  if(!await showConfirmPopup({message:'Xóa danh mục này? Bài viết thuộc danh mục sẽ chuyển thành "Không chọn".'})) return;
-  try{ await api('categories?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
-    loadCats(); loadPosts(); toast('Đã xóa danh mục');
-  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+  if(!await showConfirmPopup({message:'Xóa danh mục này? Không thể hoàn tác.'})) return;
+  const blockMsg = 'Danh mục này đang được dùng ở bài viết nên không thể xóa.';
+  try{
+    if(await isRecordInUse([{table:'posts',column:'category_id',value:id}])){
+      showNotifyPopup({message:blockMsg}); return;
+    }
+    await api('categories?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadCats(); toast('Đã xóa danh mục');
+  }catch(e){
+    const msg=e.message.toLowerCase();
+    if(msg.includes('foreign key')||msg.includes('violates')||msg.includes('23503'))
+      showNotifyPopup({message:blockMsg});
+    else toast('Lỗi xóa: '+e.message,'err');
+  }
+}
+function renderCats(){
+  const rows = applySort('cats', CATS, {name:c=>c.name});
+  $('catsBody').innerHTML = rows.map((c,i)=>`
+    <tr><td>${i+1}</td><td>${esc(c.name)}</td>
+    <td class="td-actions">
+      <button class="btn btn-p" onclick="openRenameModal('cat',${c.id})">Sửa</button>
+      <button class="btn btn-d" onclick="delCategory(${c.id})">Xóa</button>
+    </td></tr>`).join('');
+  applyRowLabels('catsBody');
+  updateSortIcons('cats');
 }
 
 /* ==================== POSTS (Bài viết — giữ nguyên) ==================== */
 async function loadPosts(){
   try{
     POSTS = await api('posts?select=*,categories(name)&order=created_at.desc') || [];
-    $('postsEmpty').classList.toggle('hidden', POSTS.length>0);
-    $('postsBody').innerHTML = POSTS.map((p,i)=>`
-      <tr>
-        <td>${i+1}</td>
-        <td><b>${esc(p.title)}</b></td>
-        <td>${esc(p.categories?.name||'–')}</td>
-        <td>${fmtTime(p.created_at)}</td>
-        <td>${p.published?'✅ Công khai':'🚫 Ẩn'}</td>
-        <td class="td-actions">
-          <button class="btn btn-p" onclick="openPostModal(${p.id})">Sửa</button>
-          <button class="btn btn-d" onclick="delPost(${p.id})">Xóa</button>
-        </td>
-      </tr>`).join('');
-    applyRowLabels('postsBody');
+    renderPosts();
   }catch(e){ if(e.message!=='401') toast('Lỗi tải bài viết: '+e.message,'err'); }
+}
+function renderPosts(){
+  const rows = applySort('posts', POSTS, {
+    title:p=>p.title, cat:p=>p.categories?.name||'', phanloai:p=>p.phan_loai||'',
+    ngay:p=>p.created_at, published:p=>p.published?1:0
+  });
+  $('postsEmpty').classList.toggle('hidden', rows.length>0);
+  $('postsBody').innerHTML = rows.map((p,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td><b>${esc(p.title)}</b></td>
+      <td>${esc(p.categories?.name||'–')}</td>
+      <td>${p.phan_loai?`<span class="text-trunc" title="${esc(p.phan_loai)}">${esc(p.phan_loai)}</span>`:'–'}</td>
+      <td>${fmtTime(p.created_at)}</td>
+      <td>${p.published?'✅ Công khai':'🚫 Ẩn'}</td>
+      <td class="td-actions">
+        <button class="btn btn-p" onclick="openPostModal(${p.id})">Sửa</button>
+        <button class="btn btn-d" onclick="delPost(${p.id})">Xóa</button>
+      </td>
+    </tr>`).join('');
+  applyRowLabels('postsBody');
+  updateSortIcons('posts');
 }
 function openPostModal(id){
   const p = id ? POSTS.find(x=>x.id===id) : null;
@@ -1688,6 +1859,9 @@ function openPostModal(id){
   $('postId').value = p?.id||'';
   $('postTitle').value = p?.title||'';
   $('postCat').value = p?.category_id||'';
+  $('postPhanLoaiList').innerHTML = [...new Set(POSTS.map(x=>x.phan_loai).filter(Boolean))]
+    .map(v=>`<option value="${esc(v)}">`).join('');
+  $('postPhanLoai').value = p?.phan_loai||'';
   $('postImage').value = p?.image_url||'';
   $('postContent').value = p?.content||'';
   $('postPublished').checked = p ? p.published : true;
@@ -1698,9 +1872,12 @@ function closePostModal(){ confirmCloseDialog('postOverlay', ()=>$('postOverlay'
 async function savePost(){
   const title=$('postTitle').value.trim();
   if(!title){ toast('Nhập tiêu đề bài viết','err'); return; }
+  const phan_loai=$('postPhanLoai').value.trim();
+  if(!phan_loai){ toast('Nhập Phân loại','err'); return; }
   const body={
     title,
     category_id: $('postCat').value||null,
+    phan_loai,
     image_url: $('postImage').value.trim()||null,
     content: $('postContent').value,
     published: $('postPublished').checked
@@ -1830,6 +2007,68 @@ async function saveNuocModal(){
   }catch(e){ toast(e.message.includes('duplicate')?'Tên này đã tồn tại':'Lỗi: '+e.message,'err'); }
   finally{ btn.disabled=false; }
 }
+
+/* ==== "Dịch vụ Visa các quốc gia" (Cài đặt chung, Phase 7, 2026-08) — giá hiển thị ở landing page
+   (section "Dịch vụ", xem index.html). "Đất nước" CHỈ giới hạn đúng 8 nước đang có card trên
+   landing page (DVG_COUNTRIES, danh sách cứng — không phải danh mục "Nước đến" động ở trên, vì
+   landing page có đúng 8 card cố định trong HTML, thêm 1 nước không có card tương ứng thì cũng
+   không có nơi hiển thị giá đó). Không cần isRecordInUse trước khi xóa — không bảng nào tham
+   chiếu tới dich_vu_gia, giống các bảng "lá" khác (CLAUDE.md mục 14). ==== */
+const DVG_COUNTRIES = ['Nhật Bản','Hàn Quốc','Đài Loan','Trung Quốc','Schengen (châu Âu)','Mỹ','Úc','Khác'];
+async function loadDichVuGia(){
+  try{
+    DICH_VU_GIA = await api('dich_vu_gia?select=*&order=id') || [];
+    renderDichVuGia();
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải dịch vụ visa: '+e.message,'err'); }
+}
+function renderDichVuGia(){
+  const rows = applySort('dvg', DICH_VU_GIA, {quocgia:x=>x.quoc_gia, gia:x=>Number(x.gia||0)});
+  $('dvgEmpty').classList.toggle('hidden', rows.length>0);
+  $('dvgBody').innerHTML = rows.map(x=>`
+    <tr>
+      <td><b>${esc(x.quoc_gia)}</b></td>
+      <td>${x.gia!=null?fmtVND(x.gia):'Liên hệ báo giá'}</td>
+      <td class="td-actions">
+        <button class="btn btn-p" onclick="openDvGiaModal(${x.id})">Sửa</button>
+        <button class="btn btn-d" onclick="delDvGia(${x.id})">Xóa</button>
+      </td>
+    </tr>`).join('');
+  applyRowLabels('dvgBody');
+  updateSortIcons('dvg');
+}
+function openDvGiaModal(id){
+  const x = id ? DICH_VU_GIA.find(r=>r.id===id) : null;
+  $('dvgModalTitle').textContent = x ? 'Sửa dịch vụ' : 'Thêm dịch vụ';
+  $('dvgId').value = x?.id||'';
+  $('dvgQuocGia').innerHTML = '<option value="">-- Chọn --</option>'+
+    DVG_COUNTRIES.map(c=>`<option ${x&&x.quoc_gia===c?'selected':''}>${esc(c)}</option>`).join('');
+  $('dvgGia').value = formatMoney(x?.gia);
+  $('dvgOverlay').classList.remove('hidden');
+  snapshotDialog('dvgOverlay');
+}
+function closeDvGiaModal(){ confirmCloseDialog('dvgOverlay', ()=>$('dvgOverlay').classList.add('hidden')); }
+async function saveDvGia(){
+  const quoc_gia = $('dvgQuocGia').value;
+  if(!quoc_gia){ toast('Vui lòng chọn Đất nước','err'); return; }
+  const body = { quoc_gia, gia: $('dvgGia').value.trim()?unformatMoney($('dvgGia').value):null };
+  const id = $('dvgId').value;
+  const btn = $('dvgSaveBtn'); btn.disabled=true;
+  try{
+    if(id) await api('dich_vu_gia?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
+    else await api('dich_vu_gia',{method:'POST',body:JSON.stringify(body)});
+    snapshotDialog('dvgOverlay');
+    closeDvGiaModal(); loadDichVuGia(); toast(id?'Đã cập nhật':'Đã thêm');
+  }catch(e){ toast(e.message.includes('duplicate')?'Quốc gia này đã tồn tại':'Lỗi: '+e.message,'err'); }
+  finally{ btn.disabled=false; }
+}
+async function delDvGia(id){
+  if(!await showConfirmPopup({message:'Xóa dịch vụ này? Không thể hoàn tác.'})) return;
+  try{
+    await api('dich_vu_gia?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadDichVuGia(); toast('Đã xóa');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+}
+
 /* ==== Kiểm tra ràng buộc TRƯỚC KHI XÓA — dùng chung cho MỌI màn hình có nút "Xóa" trên dữ
    liệu có thể đang được tham chiếu ở nơi khác (Hồ sơ, Tư vấn, Bảng phí đại lý...). Nếu đang
    được dùng thì CHẶN xóa (không cho xóa), báo lỗi dễ hiểu thay vì để lỗi FK kỹ thuật từ CSDL.
@@ -1868,12 +2107,14 @@ async function deleteDanhMuc(type,id){
     else toast('Lỗi xóa: '+e.message,'err');
   }
 }
+/* type==='cat' -> "Danh mục bài viết" (bảng categories, cột name) — khác nhóm "Nước/Mục đích/
+   Đối tác" (bảng danh_muc_*, cột ten) nên xử lý riêng 1 nhánh, dùng chung dialog renameOverlay. */
 function openRenameModal(type,id){
-  const cur = danhMucArr(type).find(x=>x.id===id);
+  const cur = type==='cat' ? CATS.find(x=>x.id===id) : danhMucArr(type).find(x=>x.id===id);
   if(!cur) return;
   $('renameType').value = type;
   $('renameId').value = id;
-  $('renameValue').value = cur.ten;
+  $('renameValue').value = type==='cat' ? cur.name : cur.ten;
   $('renameOverlay').classList.remove('hidden');
   snapshotDialog('renameOverlay');
 }
@@ -1882,6 +2123,16 @@ async function saveRename(){
   const type = $('renameType').value, id = Number($('renameId').value);
   const ten = $('renameValue').value.trim();
   if(!ten){ toast('Nhập tên','err'); return; }
+  if(type==='cat'){
+    const cur = CATS.find(x=>x.id===id);
+    if(cur && ten===cur.name){ closeRenameModal(); return; }
+    try{
+      await api('categories?id=eq.'+id,{method:'PATCH',body:JSON.stringify({name:ten}),prefer:'return=minimal'});
+      snapshotDialog('renameOverlay');
+      closeRenameModal(); loadCats(); loadPosts(); toast('Đã cập nhật');
+    }catch(e){ toast(e.message.includes('duplicate')?'Danh mục đã tồn tại':'Lỗi: '+e.message,'err'); }
+    return;
+  }
   const cur = danhMucArr(type).find(x=>x.id===id);
   if(cur && ten===cur.ten){ closeRenameModal(); return; }
   try{
@@ -1909,8 +2160,11 @@ function fillHoDoiTacOptions(currentId){
     `<option value="${d.id}">${esc(doiTacLabel(d))}${d.trang_thai==='Ngừng hợp tác'?' – Ngừng hợp tác':''}</option>`).join('');
 }
 function renderDoiTac(){
+  const rows = applySort('dt', DOI_TAC, {
+    tencongty:d=>d.ten_cong_ty, daidien:d=>d.ten_dai_dien, sdt:d=>d.sdt_lien_he, trangthai:d=>d.trang_thai
+  });
   $('dtEmpty').classList.toggle('hidden', DOI_TAC.length>0);
-  $('dtBody').innerHTML = DOI_TAC.map((d,i)=>`
+  $('dtBody').innerHTML = rows.map((d,i)=>`
     <tr>
       <td>${i+1}</td>
       <td><b>${esc(d.ten_cong_ty)}</b></td>
@@ -1924,6 +2178,7 @@ function renderDoiTac(){
       </td>
     </tr>`).join('');
   applyRowLabels('dtBody');
+  updateSortIcons('dt');
 }
 function openDoiTacModal(id){
   const d = id ? DOI_TAC.find(x=>x.id===id) : null;
@@ -2065,10 +2320,14 @@ async function addDoiTacPhi(){
    (nhân viên tự thêm qua dialog "Thêm tư vấn", xem saveTuVan()). */
 function renderTuVan(){
   const st=$('fTvStatus').value, ng=$('fTvNguon').value, ct=$('fTvCountry').value, q=vnNorm($('fTvSearch').value.trim());
-  const rows = LEADS.filter(l=>
+  let rows = LEADS.filter(l=>
     (!st||l.status===st) && (!ng||l.nguon===ng) && (!ct||l.country===ct) &&
     (!q||vnNorm(l.name).includes(q)||vnNorm(l.phone).includes(q))
   );
+  rows = applySort('tv', rows, {
+    ngay:l=>l.created_at, ten:l=>l.name, sdt:l=>l.phone, nuoc:l=>l.country,
+    mucdich:l=>l.muc_dich, nguon:l=>l.nguon, trangthai:l=>l.status, nhaclai:l=>l.ngay_nhac_lai
+  });
   const cnt = s => LEADS.filter(l=>l.status===s).length;
   const cntNg = n => LEADS.filter(l=>l.nguon===n).length;
   $('tvStatRow').innerHTML = `
@@ -2093,6 +2352,7 @@ function renderTuVan(){
       <td class="td-actions"><button class="btn btn-p" onclick="openTvModal(${l.id})">Sửa</button></td>
     </tr>`).join('');
   applyRowLabels('tvBody');
+  updateSortIcons('tv');
 }
 function openTvModal(id){
   const l = id ? LEADS.find(x=>x.id===id) : null;
@@ -2181,19 +2441,28 @@ function renderHoSo(){
   const checkedSt=checkedHsStatuses(), q=vnNorm($('fHsSearch').value.trim());
   const tuNgay=toISODate($('fHsTuNgay').value), denNgay=toISODate($('fHsDenNgay').value);
   const todayStr = new Date().toISOString().slice(0,10);
-  const rows = HO_SO.filter(h=>
+  let rows = HO_SO.filter(h=>
     checkedSt.includes(h.trang_thai) &&
     (!q||vnNorm(h.ten_khach).includes(q)) &&
     (!tuNgay||(h.ngay_nop&&h.ngay_nop>=tuNgay)) &&
     (!denNgay||(h.ngay_nop&&h.ngay_nop<=denNgay))
   );
-  /* Sort: Ưu tiên 1 - trạng thái (Đang xử lý -> Đã nộp -> Đậu -> Rớt -> Hủy); Ưu tiên 2 - cùng
-     trạng thái thì Ngày tạo cũ nhất lên trước. */
-  rows.sort((a,b)=>{
-    const oa=HS_STATUS_ORDER[a.trang_thai]||99, ob=HS_STATUS_ORDER[b.trang_thai]||99;
-    if(oa!==ob) return oa-ob;
-    return (a.ngay||'').localeCompare(b.ngay||'');
-  });
+  /* Sort: bấm 1 cột (SORT_STATE['hs']) thì dùng đúng cột đó; chưa bấm cột nào -> giữ mặc định
+     Ưu tiên 1 - trạng thái (Đang xử lý -> Đã nộp -> Đậu -> Rớt -> Hủy); Ưu tiên 2 - cùng trạng
+     thái thì Ngày tạo cũ nhất lên trước. */
+  if(SORT_STATE['hs']){
+    rows = applySort('hs', rows, {
+      ngay:h=>h.ngay, ten:h=>h.ten_khach, sdt:h=>h.sdt_khach, nuoc:h=>h.danh_muc_nuoc?.ten,
+      mucdich:h=>h.danh_muc_muc_dich?.ten, doitac:h=>h.doi_tac?doiTacLabel(h.doi_tac):'',
+      trangthai:h=>h.trang_thai, loinhuan:h=>Number(h.loi_nhuan||0), ngaynop:h=>h.ngay_nop, ngaytrakq:h=>h.ngay_tra_kq
+    });
+  } else {
+    rows.sort((a,b)=>{
+      const oa=HS_STATUS_ORDER[a.trang_thai]||99, ob=HS_STATUS_ORDER[b.trang_thai]||99;
+      if(oa!==ob) return oa-ob;
+      return (a.ngay||'').localeCompare(b.ngay||'');
+    });
+  }
   $('hsEmpty').classList.toggle('hidden', rows.length>0);
   $('hsBody').innerHTML = rows.map((h,i)=>{
     // Chỉ tô đỏ Ngày trả KQ khi Trạng thái = "Đã nộp" và ngày đó đã tới/quá hạn (PM xác nhận, Phase 4 mục 4)
@@ -2215,6 +2484,7 @@ function renderHoSo(){
     </tr>`;
   }).join('');
   applyRowLabels('hsBody');
+  updateSortIcons('hs');
 }
 function resetHoSoFilters(){
   document.querySelectorAll('#fHsStatusGroup input').forEach(cb=>{
@@ -2323,7 +2593,7 @@ async function saveHoSo(){
   if(!ten_khach){ toast('Vui lòng bấm 🔍 để chọn khách hàng','err'); return; }
   if(!nuoc_id){ toast('Vui lòng chọn Nước đến','err'); return; }
   if(!muc_dich_id){ toast('Vui lòng chọn Mục đích','err'); return; }
-  if(!doi_tac_id){ toast('Vui lòng chọn Đại lý ủy thác','err'); return; }
+  // Đại lý ủy thác không còn bắt buộc (2026-08, PM xác nhận) — nhiều hồ sơ tự làm không qua đại lý
   const ngayRaw=$('hoNgay').value.trim();
   const ngayIso = ngayRaw ? toISODate(ngayRaw) : new Date().toISOString().slice(0,10);
   if(ngayRaw && !ngayIso){ toast('Ngày tạo không hợp lệ, vui lòng nhập đúng dd/mm/yyyy','err'); return; }
@@ -2339,7 +2609,7 @@ async function saveHoSo(){
     truong_nhom_id: $('hoTruongNhom').value||null,
     ten_khach, sdt_khach: $('hoSdtKhach').value.trim()||null, dia_chi: $('hoDiaChi').value.trim()||null,
     email: $('hoEmail').value.trim()||null,
-    nuoc_id: Number(nuoc_id), muc_dich_id: Number(muc_dich_id), doi_tac_id: Number(doi_tac_id),
+    nuoc_id: Number(nuoc_id), muc_dich_id: Number(muc_dich_id), doi_tac_id: doi_tac_id?Number(doi_tac_id):null,
     so_luong: soLuong,
     thu_le_phi: unformatMoney($('hoThuLePhi').value), thu_in_anh: unformatMoney($('hoThuInAnh').value),
     thu_ho_tro_khac: unformatMoney($('hoThuHoTro').value), thu_khach_tip: unformatMoney($('hoThuKhachTip').value),
@@ -2415,7 +2685,10 @@ let khCurrentPage = 1;
 const KH_PAGE_SIZE = 25;
 function renderKhachHang(){
   const q = vnNorm($('fKhSearch').value.trim());
-  const rows = KHACH_HANG.filter(k=>!q||vnNorm(k.ho_ten).includes(q)||vnNorm(k.so_dt).includes(q));
+  let rows = KHACH_HANG.filter(k=>!q||vnNorm(k.ho_ten).includes(q)||vnNorm(k.so_dt).includes(q));
+  rows = applySort('kh', rows, {
+    hoten:k=>k.ho_ten, sdt:k=>k.so_dt, ngaysinh:k=>k.ngay_sinh, cccd:k=>k.cccd, diachi:k=>k.dia_chi, email:k=>k.email
+  });
   const totalPages = Math.max(1, Math.ceil(rows.length/KH_PAGE_SIZE));
   if(khCurrentPage>totalPages) khCurrentPage = totalPages;
   if(khCurrentPage<1) khCurrentPage = 1;
@@ -2437,6 +2710,7 @@ function renderKhachHang(){
       </td>
     </tr>`).join('');
   applyRowLabels('khBody');
+  updateSortIcons('kh');
   renderKhPagination(rows.length, totalPages, startIdx);
 }
 function renderKhPagination(total, totalPages, startIdx){
@@ -2659,7 +2933,7 @@ function renderDashboard(byMonth, nhacLai, xlps7, chiThangNay){
   $('dashStatRow').innerHTML = `
     <div class="stat"><div class="n" style="color:${loiNhuanThangNay>=0?'var(--ok)':'var(--err)'}">${fmtVND(loiNhuanThangNay)}</div><div class="l">Lợi nhuận tháng này</div></div>
     <div class="stat"><div class="n">${hsDangXuLy}</div><div class="l">Hồ sơ đang xử lý</div></div>
-    <div class="stat"><div class="n">${hsDaNop}</div><div class="l">Hồ sơ đang nộp</div></div>
+    <div class="stat"><div class="n">${hsDaNop}</div><div class="l">Hồ sơ đã nộp</div></div>
     <div class="stat"><div class="n">${hsDangTuVan}</div><div class="l">Hồ sơ đang tư vấn</div></div>
     <div class="stat"><div class="n">${hsTraKqHomNay}</div><div class="l">Trả KQ hôm nay</div></div>
     <div class="stat"><div class="n">${nhacLai.length}</div><div class="l">Cần nhắc lại (7 ngày)</div></div>`;
@@ -2700,10 +2974,12 @@ function addDaysIso(iso, days){
 }
 /* ==== "Hồ sơ trả kết quả tuần này" (Dashboard, 2026-08) — lấy trực tiếp từ HO_SO đã nạp sẵn lúc
    đăng nhập (không cần view SQL riêng), lọc ngay_tra_kq trong [hôm nay, hôm nay+6], sort tăng dần
-   (gần nhất trước), tô đỏ nếu đúng là hôm nay. ==== */
+   (gần nhất trước), tô đỏ nếu đúng là hôm nay. Chỉ lấy hồ sơ trạng thái "Đã nộp"/"Đang xử lý"
+   (2026-08, theo yêu cầu PM) — hồ sơ đã "Đậu"/"Rớt"/"Hủy" thì kết quả không còn ý nghĩa "sắp trả". ==== */
 function renderDashTraKqTuan(todayIso){
   const endIso = addDaysIso(todayIso, 6);
-  const rows = HO_SO.filter(h=>h.ngay_tra_kq && h.ngay_tra_kq>=todayIso && h.ngay_tra_kq<=endIso)
+  const rows = HO_SO.filter(h=>h.ngay_tra_kq && h.ngay_tra_kq>=todayIso && h.ngay_tra_kq<=endIso &&
+      (h.trang_thai==='Đã nộp' || h.trang_thai==='Đang xử lý'))
     .sort((a,b)=>a.ngay_tra_kq.localeCompare(b.ngay_tra_kq));
   $('dashTraKqTuanEmpty').classList.toggle('hidden', rows.length>0);
   $('dashTraKqTuanBody').innerHTML = rows.map(h=>`
@@ -2751,9 +3027,13 @@ async function loadTaiChinh(){
     const thu = (hoSoRows||[]).map(h=>({ngay:h.ngay_tra_kq, loai:'Thu', noi_dung: h.ten_khach+' - '+(h.danh_muc_nuoc?.ten||'–'), so_tien:Number(h.loi_nhuan||0), ref_id:h.id}));
     const chi = KHOAN_CHI.map(c=>({ngay:c.ngay, loai:'Chi', noi_dung:c.noi_dung, so_tien:Number(c.so_tien||0), ref_id:c.id}));
     TC_ROWS = thu.concat(chi).sort((a,b)=> (a.ngay||'')<(b.ngay||'') ? 1 : (a.ngay||'')>(b.ngay||'') ? -1 : 0);
+    TC_LAST_THU = thu; TC_LAST_CHI = chi;
     renderTaiChinh(thu, chi);
   }catch(e){ if(e.message!=='401') toast('Lỗi tải dữ liệu tài chính: '+e.message,'err'); }
 }
+let TC_LAST_THU = [], TC_LAST_CHI = [];
+/* Bấm tiêu đề cột để sort không cần gọi lại API — render lại đúng thu/chi lần tải gần nhất. */
+function renderTaiChinhSorted(){ renderTaiChinh(TC_LAST_THU, TC_LAST_CHI); }
 function renderTaiChinh(thuArr, chiArr){
   const tongThu = thuArr.reduce((s,r)=>s+r.so_tien,0);
   const tongChi = chiArr.reduce((s,r)=>s+r.so_tien,0);
@@ -2764,7 +3044,8 @@ function renderTaiChinh(thuArr, chiArr){
     <div class="stat"><div class="n">${fmtVND(tongChi)}</div><div class="l">Khoản chi</div></div>
     <div class="stat"><div class="n">${thuArr.length}</div><div class="l">Số hồ sơ đậu trong kỳ</div></div>`;
   $('tcEmpty').classList.toggle('hidden', TC_ROWS.length>0);
-  $('tcBody').innerHTML = TC_ROWS.map(r=>`
+  const rows = applySort('tc', TC_ROWS, {ngay:r=>r.ngay, loai:r=>r.loai, noidung:r=>r.noi_dung, sotien:r=>r.so_tien});
+  $('tcBody').innerHTML = rows.map(r=>`
     <tr>
       <td>${fmtDate(r.ngay)}</td>
       <td><span class="pill ${r.loai==='Thu'?'pill-won':'pill-chi'}">${r.loai}</span></td>
@@ -2775,6 +3056,7 @@ function renderTaiChinh(thuArr, chiArr){
         : `<button class="btn btn-p" onclick="openChiModal(${r.ref_id})">Sửa</button><button class="btn btn-d" onclick="delChi(${r.ref_id})">Xóa</button>`}</td>
     </tr>`).join('');
   applyRowLabels('tcBody');
+  updateSortIcons('tc');
 }
 function onChiMoneyInput(el){ const digits=el.value.replace(/[^\d]/g,''); el.value = digits ? Number(digits).toLocaleString('vi-VN') : ''; }
 function openChiModal(id){

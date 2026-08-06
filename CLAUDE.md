@@ -16,7 +16,7 @@ Toàn bộ tài liệu thiết kế (yêu cầu, sitemap, wireframe, design syst
 | 2. Thiết kế (sitemap/wireframe/design system) | ✅ Xong |
 | 3. Front-end landing page (`index.html`) | ✅ Xong, đã gắn thông tin thật (logo, hotline, Zalo, Facebook, địa chỉ) + USP + slider đánh giá thật + section Tin tức + SEO (canonical/OG/JSON-LD/robots.txt/sitemap.xml, xem mục 12) |
 | 4. Back-end (Supabase) | ✅ **Đã chạy thật** — `SUPABASE_URL`/`SUPABASE_ANON_KEY` đã điền giá trị thật trong cả 2 file HTML |
-| 5. Admin CRM (`admin.html`) | ✅ Xong nhiều đợt (Phase 2→6, xem README.md) — Dashboard, Tư vấn (đã gộp "Khách đăng ký"), Hồ sơ, Thông tin khách hàng (có phân trang), Tài chính, Đại lý ủy thác, Cài đặt chung (Nước đến mở rộng), Danh mục bài viết |
+| 5. Admin CRM (`admin.html`) | ✅ Xong nhiều đợt (Phase 2→7, xem README.md) — Dashboard, Tư vấn (đã gộp "Khách đăng ký"), Hồ sơ, Thông tin khách hàng (có phân trang), Tài chính, Đại lý ủy thác, Cài đặt chung (Nước đến mở rộng + Dịch vụ Visa các quốc gia), Danh mục bài viết, sort theo cột cho mọi màn list |
 | 6. Kiểm thử | 🟡 Một phần — đã test thủ công + qua DOM (Claude Browser), **chưa test đủ với đăng nhập admin thật** trên tất cả tính năng mới, xem `Handover_Phien_Moi.md` mục "Việc cần làm ngay" |
 | 7. Deploy | ✅ **Đã lên Internet** — qua Cloudflare Workers, domain riêng **`https://topvisa5s.com`** (đã trỏ, 2026-08) — vẫn còn chạy song song ở `https://topvisa.nguyennc1357.workers.dev` (cùng 1 bản deploy) |
 
@@ -56,7 +56,8 @@ Visa-Landing-Page/
 │   ├── 03_supabase_setup_phase3.sql ← Phase 3: khoan_chi (Tài chính)
 │   ├── 04_supabase_setup_phase4.sql ← Phase 4: khach_hang + đổi chi_thu_di/chi_thu_ve → chi_phi_ship
 │   ├── 05_supabase_setup_phase5.sql ← Phase 5: doi_tac_phi thêm nuoc_id/muc_dich_id/phi_lanh_su, đổi tên muc_phi→phi_uy_thac
-│   └── 06_supabase_setup_phase6.sql ← Phase 6: danh_muc_nuoc thêm le_phi/thoi_gian_xet_duyet/checklist/ghi_chu
+│   ├── 06_supabase_setup_phase6.sql ← Phase 6: danh_muc_nuoc thêm le_phi/thoi_gian_xet_duyet/checklist/ghi_chu
+│   └── 07_supabase_setup_phase7.sql ← Phase 7: ho_so.doi_tac_id bỏ NOT NULL, posts thêm phan_loai, bảng mới dich_vu_gia
 └── Handover_Phien_Moi.md           ← ⭐ ĐỌC FILE NÀY TRƯỚC — tóm tắt phiên gần nhất, việc dở dang
 ```
 
@@ -154,7 +155,7 @@ Tìm bằng cách grep `[THAY_THẾ]` trong `02_Source/index.html`:
 | Vị trí | Placeholder | Cần gì |
 |---|---|---|
 | Badge hero | "5000+ hồ sơ", "98% đậu" | ⬜ Vẫn thiếu — số liệu thật, bịa số ở đây có thể vi phạm chính sách quảng cáo |
-| Section dịch vụ | Giá "Từ x đ" mỗi quốc gia | ⬜ Vẫn thiếu — bảng giá thật |
+| Section dịch vụ | Giá "Từ x đ" mỗi quốc gia | ⬜ Vẫn thiếu bảng giá THẬT — nhưng từ Phase 7 (2026-08-06) đã có nơi để PM tự cập nhật (admin.html → Cài đặt chung → "Dịch vụ Visa các quốc gia", xem mục 31), không cần Claude Code sửa code nữa. Số hiện tại vẫn là placeholder cũ. |
 | Section đánh giá | ~~3 review mẫu~~ | ✅ Đã xong — đã thay bằng 2 review thật lấy từ Facebook công ty (xem `01_Docs/09_Noi_dung_Dang_bai.md`) |
 | Footer | ~~Số GPKD~~ | ✅ Đã bỏ theo yêu cầu người dùng (2026-07-31) — footer không còn hiển thị dòng GPKD nữa, chỉ còn "© 2026 Top Visa." Nếu sau này có số GPKD thật, hỏi người dùng có muốn thêm lại không. |
 | Cả 2 file | ~~`SUPABASE_URL`, `SUPABASE_ANON_KEY`~~ | ✅ Đã điền giá trị thật (2026-07-30) — chi tiết ở `01_Docs/08_Ban_giao_Claude_Code.md` |
@@ -286,16 +287,21 @@ async function delXxx(id){
 Luôn làm **CẢ 2 lớp**: pre-check bằng `isRecordInUse()` (chặn sớm, UX tốt hơn — không cần đợi DB
 trả lỗi) VÀ fallback bắt lỗi FK ở `catch` (phòng khi pre-check bỏ sót 1 bảng tham chiếu nào đó).
 
-**4 nơi đã áp dụng** (tham chiếu khi cần thêm chỗ mới): `delKhachHang`→chặn nếu `ho_so.khach_hang_id`
+**5 nơi đã áp dụng** (tham chiếu khi cần thêm chỗ mới): `delKhachHang`→chặn nếu `ho_so.khach_hang_id`
 đang dùng; `delDoiTac`→chặn nếu `ho_so.doi_tac_id` hoặc `doi_tac_phi.doi_tac_id` đang dùng;
 `deleteDanhMuc` (dùng chung cho Nước đến/Mục đích/Đối tác qua hàm con `isDanhMucInUse`)→chặn nếu
-`ho_so` hoặc `leads` đang dùng.
+`ho_so` hoặc `leads` đang dùng; `delCategory` ("Danh mục bài viết")→chặn nếu `posts.category_id`
+đang dùng.
 
 **⚠️ Khi thêm nút "Xóa" MỚI nào sau này** trên dữ liệu có thể bị bảng khác tham chiếu: PHẢI gọi
 qua `isRecordInUse()` theo đúng mẫu trên. Các bảng "lá" không ai tham chiếu tới (khoản chi, xử lý
-phát sinh/thành viên nhóm của hồ sơ, bài viết...) thì **không cần** — riêng `categories` (danh mục
-bài viết) cũng không cần vì `posts.category_id` cho phép NULL (xóa danh mục thì bài viết tự
-chuyển "Không chọn", không bị chặn — đây là thiết kế cố ý, khác với các trường hợp chặn ở trên).
+phát sinh/thành viên nhóm của hồ sơ, `dich_vu_gia`...) thì **không cần**.
+
+**⚠️ Đảo lại quyết định cũ (Phase 7, 2026-08-06):** trước đây `categories` (danh mục bài viết)
+CHỦ Ý không chặn xóa (`posts.category_id` cho phép NULL, xóa danh mục thì bài viết tự chuyển
+"Không chọn") — PM yêu cầu đổi lại thành CHẶN xóa giống mọi danh mục khác trong hệ thống, đã sửa
+`delCategory` theo đúng mẫu `isRecordInUse()` ở trên. Không tự ý đảo lại lần nữa trừ khi có yêu
+cầu rõ ràng.
 
 ## 15. Gộp màn "Tư vấn" + "Khách đăng ký" thành 1 màn hình duy nhất (2026-08)
 
@@ -775,3 +781,100 @@ có giữ trong bộ nhớ cho phiên hiện tại). Khi `api()` gặp `401`:
 → gọi lại thành công; và ca refresh cũng thất bại → rơi về đúng hành vi cũ) — cả 2 nhánh đều đúng.
 **Không cần sửa gì ở bất kỳ hàm `saveXxx()` nào khác** — vì tất cả đều gọi qua `api()` chung, tự
 động được hưởng cơ chế này.
+
+## 31. Phase 7 (2026-08-06): giá dịch vụ động, Phân loại bài viết + menu/section động, đại lý
+    không bắt buộc, sort chung cho mọi màn list
+
+Migration: `05_Database/07_supabase_setup_phase7.sql` (chưa chạy thì 2 mục C, E dưới đây sẽ lỗi —
+lưu Bài viết báo lỗi thiếu cột `phan_loai`, "Dịch vụ Visa các quốc gia" báo lỗi thiếu bảng
+`dich_vu_gia`; giá landing page vẫn hiện đúng số cũ viết sẵn trong HTML một cách an toàn, không
+crash, nhờ cơ chế fallback ở mục D).
+
+**A. Dashboard** (`renderDashTraKqTuan()`/`renderDashboard()`): khối "Hồ sơ trả kết quả tuần này"
+giờ CHỈ lấy hồ sơ trạng thái "Đã nộp"/"Đang xử lý" (bỏ qua Đậu/Rớt/Hủy — kết quả không còn ý nghĩa
+"sắp trả" nữa). Đổi tên thẻ thống kê "Hồ sơ đang nộp" → **"Hồ sơ đã nộp"** (chỉ đổi label hiển thị,
+biến/logic tính `hsDaNop` giữ nguyên).
+
+**B. "Danh mục bài viết"** (`delCategory()`/`renderCats()`): thêm nút "Sửa" (tái dùng dialog
+`renameOverlay` có sẵn — `openRenameModal()`/`saveRename()` thêm 1 nhánh `type==='cat'` xử lý field
+`name` của bảng `categories` thay vì `ten` của các bảng `danh_muc_*`). Xóa giờ **CHẶN** nếu danh mục
+đang có bài viết dùng (`isRecordInUse([{table:'posts',column:'category_id',value:id}])`) — đảo lại
+quyết định cũ ở mục 14 (không tự đảo lại lần nữa trừ khi có yêu cầu rõ ràng).
+
+**C. Hồ sơ**: bỏ bắt buộc chọn "Đại lý ủy thác" (`saveHoSo()` bỏ validate, `doi_tac_id` gửi `null`
+khi để trống) — migration `alter table ho_so alter column doi_tac_id drop not null` (đảo lại quyết
+định BẮT BUỘC ở Phase 2). Icon kính lúp 🔍 ở "Tên khách hàng" đổi từ nút rời đứng cạnh ô sang **lồng
+bên trong ô input** (`.kh-pick-wrap`/`.kh-pick-btn` đổi sang `position:relative`/`absolute`, đúng
+mẫu icon lịch mục 20) — HTML không đổi, chỉ đổi CSS.
+
+**D. "Dịch vụ Visa các quốc gia"** (mới, Cài đặt chung) — bảng `dich_vu_gia` (`quoc_gia` unique,
+`gia` nullable = "Liên hệ báo giá"), quản lý qua dialog `#dvgOverlay`
+(`loadDichVuGia()`/`openDvGiaModal()`/`saveDvGia()`/`delDvGia()`, load cùng lúc đăng nhập). "Đất
+nước" là **droplist cố định 8 giá trị** (`DVG_COUNTRIES` — đúng 7 nước + "Khác" đang có card trên
+landing page), KHÔNG phải danh mục "Nước đến" động (`danh_muc_nuoc`, dùng cho Hồ sơ/Tư vấn, có thể
+có nước khác 8 nước này) — 2 danh sách nước này ĐỘC LẬP nhau, đừng nhầm lẫn khi sửa. Không cần
+`isRecordInUse` trước khi xóa (không bảng nào tham chiếu tới, giống các bảng "lá" khác).
+
+Landing page (`index.html`, section "Dịch vụ") — mỗi `.price` có `data-country="<tên nước>"`
+(khớp đúng text trong `DVG_COUNTRIES`); script cuối trang fetch `dich_vu_gia` (anon SELECT) rồi
+cập nhật `textContent` từng `.price` theo giá tra được (`gia>0` → "Từ x đ", `gia` null/0 → "Liên
+hệ báo giá"). Nước KHÔNG có trong bảng (chưa migration/PM chưa cấu hình) → **giữ nguyên số cũ viết
+sẵn trong HTML** làm fallback, không xóa/ẩn gì — đây là lý do các số "Từ x đ" cũ VẪN PHẢI giữ trong
+HTML dù giờ có nguồn dữ liệu động, không xóa được như placeholder `[THAY_THẾ]` thông thường.
+
+**E. Bài viết** — thêm field bắt buộc **"Phân loại"** (cột `posts.phan_loai`, input có
+`<datalist>` gợi ý các giá trị đã dùng trước đó để hạn chế gõ lệch chính tả, KHÔNG ép chọn từ danh
+sách). Ý nghĩa: "Phân loại" là tiêu đề H2 hiển thị cho section chứa bài viết đó trên landing page —
+khác với "Danh mục" (`category_id`, đã có từ Phase 1) là khóa NHÓM bài viết để quyết định section
+nào + menu nào. Dữ liệu cũ (4 bài viết, Danh mục "Tin tức") được backfill `phan_loai = 'Tin tức &
+Kinh nghiệm xin Visa'` (khớp đúng tên section cứng trước Phase 7) trong migration.
+
+**F. Landing page — menu/section ĐỘNG theo Danh mục** (thay hẳn section+nav-link "Tin tức" cứng cũ):
+script cuối `index.html` fetch toàn bộ `posts` (published=true, kèm `categories(id,name)`), nhóm
+theo `category_id` (bỏ qua bài viết chưa gán Danh mục), với MỖI nhóm có ≥1 bài viết:
+- Menu: `<li><a href="#cat-<slug>">📰 <tên Danh mục></a></li>` chèn ngay TRƯỚC link `#faq` trong
+  `#navLinks` (không còn `<li>` "Tin tức" tĩnh trong HTML — xóa hẳn).
+- Section: `<section id="cat-<slug>">` chèn vào `<div id="categorySections">` (đặt đúng vị trí cũ
+  của section "Tin tức", giữa "Đánh giá" và "FAQ") — tiêu đề H2 lấy từ `phan_loai` của bài viết MỚI
+  NHẤT trong nhóm (fallback = tên Danh mục nếu vì lý do gì đó rỗng, vd DB chưa migration).
+- `slug` = `slugifyCatName(tên Danh mục)` (bỏ dấu tiếng Việt, thay non-alnum bằng `-`, tiền tố
+  `cat-`). Nhóm sắp xếp theo tên Danh mục A-Z (menu ổn định, không đổi chỗ theo bài viết mới nhất).
+- `openPostDetail(i)` vẫn dùng đúng cơ chế cũ (index vào `window.__POSTS__`) — mỗi bài viết được
+  gán `p.__idx` = vị trí gốc trong mảng fetch phẳng lúc build nhóm, để card trong MỌI section trỏ
+  đúng bài viết dù đã được nhóm lại theo Danh mục.
+- **Scrollspy** (`initScrollSpy()`, đổi từ IIFE thành hàm dùng lại được): gọi lại 1 lần SAU KHI chèn
+  xong menu/section động, để observer theo dõi được cả các mục mới chèn (mục tĩnh lúc tải trang đã
+  được observer đầu gọi trước đó theo dõi rồi — gọi lại không hại gì, chỉ tạo thêm observer mới bao
+  trùm luôn cả 2 loại).
+- Danh mục KHÔNG có bài viết công khai nào → không tạo gì cả (không menu rỗng, không section rỗng).
+
+**⚠️ Khi thêm Danh mục bài viết MỚI sau này**: không cần sửa gì ở `index.html` — chỉ cần tạo Danh
+mục ở tab "Danh mục bài viết", gán cho bài viết (kèm "Phân loại"), landing page tự nhận diện và
+hiện thêm menu/section tương ứng ngay lần tải trang kế tiếp.
+
+**G. Sort theo cột — dùng CHUNG cho 7 màn list** (Tư vấn/Hồ sơ/Thông tin khách hàng/Tài chính/Đại
+lý ủy thác/Bài viết/Danh mục bài viết) + block "Dịch vụ Visa các quốc gia": 3 hàm dùng chung
+(`onSortClick(tableKey,col,renderFn)`/`applySort(tableKey,rows,getters)`/`updateSortIcons(tableKey)`,
+định nghĩa cạnh `applyRowLabels()`) — bấm `<th class="sortable" onclick="onSortClick(...)">` đổi
+hướng tăng/giảm (mũi tên ▲/▼ hiện qua `<span class="sort-ic" data-tbl="..." data-col="...">`, cập
+nhật qua `updateSortIcons()` vì `thead` là HTML tĩnh, không render lại mỗi lần). Bỏ qua cột "#" và
+"Thao tác" (không có ý nghĩa để sort).
+
+- **Hồ sơ** là trường hợp đặc biệt: có sẵn sort mặc định 2 cấp (Trạng thái rồi Ngày tạo, mục 28) —
+  `renderHoSo()` chỉ dùng `applySort()` khi `SORT_STATE['hs']` đã được set (đã bấm 1 cột), còn
+  chưa bấm gì thì vẫn giữ đúng sort mặc định cũ.
+- **Tài chính**: `renderTaiChinh(thuArr,chiArr)` cần 2 tham số để tính lại thống kê, nên thêm hàm
+  không tham số `renderTaiChinhSorted()` (dùng lại `TC_LAST_THU`/`TC_LAST_CHI` lưu từ lần
+  `loadTaiChinh()` gần nhất) làm đích cho `onclick` của `<th>` — sort chỉ đổi thứ tự `TC_ROWS` hiển
+  thị, không tính lại thống kê.
+- **Thông tin khách hàng**: bấm sort tự reset về trang 1 (`khCurrentPage=1;onSortClick(...)`) —
+  cùng lý do đổi từ khóa tìm kiếm cũng reset trang, tránh đứng ở 1 trang giữa danh sách đã sort lại.
+- **Cài đặt chung** (Nước đến/Mục đích/Đối tác) và **Dashboard**: KHÔNG áp dụng sort — không phải
+  dạng "list nhiều dòng cần sắp xếp lại", giống lý do các màn này không có "tab cuộn cố định" (mục
+  17). Riêng "Dịch vụ Visa các quốc gia" (block mới trong Cài đặt chung) VẪN có sort vì bảng đó có
+  thể tăng dần theo thời gian gần bằng số nước, cùng nhóm với "list" hơn.
+
+**⚠️ Khi thêm 1 màn list MỚI có bảng cần sort sau này**: copy đúng mẫu `onSortClick`/`applySort`/
+`updateSortIcons` + cấu trúc `<th class="sortable" onclick="...">...<span class="sort-ic"
+data-tbl="..." data-col="...">` ở trên, đặt tên `tableKey` mới không trùng 8 key đã dùng
+(`tv`/`hs`/`kh`/`tc`/`dt`/`posts`/`cats`/`dvg`).
