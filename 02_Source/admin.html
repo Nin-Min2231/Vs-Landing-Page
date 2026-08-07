@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trang quản trị – Top Visa</title>
+<title>Trang quản trị – Top Visa 5S</title>
 <meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <!-- PWA: cho phép "Cài đặt" trang admin như 1 ứng dụng trên điện thoại/máy tính -->
 <link rel="manifest" href="admin-manifest.webmanifest">
 <meta name="theme-color" content="#0F1E3D">
-<link rel="apple-touch-icon" href="assets/logo.png">
+<link rel="apple-touch-icon" href="assets/logo-backup.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="TopVisa Admin">
+<meta name="apple-mobile-web-app-title" content="Top Visa 5S Admin">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -65,7 +66,7 @@ header.bar{background:var(--dark);color:#fff;padding:0 20px;display:flex;align-i
 @media(max-width:600px){
   header.bar{padding:0 12px}
   .bar .brand{font-size:14px;gap:6px}
-  .bar .brand img{height:24px;width:24px}
+  .bar .brand img{height:24px;width:auto}
   .bar .who{display:none}
 }
 .tabs{display:flex;gap:6px;background:#fff;padding:10px 20px;border-bottom:1px solid var(--bd);
@@ -454,7 +455,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 <!-- ============ ỨNG DỤNG ============ -->
 <div id="appView" class="hidden">
   <header class="bar">
-    <div class="brand" style="display:flex;align-items:center;gap:10px"><img src="assets/logo.png" alt="" style="height:32px;width:32px">Top <span>Visa</span> Admin</div>
+    <div class="brand" style="display:flex;align-items:center;gap:10px"><img src="assets/logo.svg" alt="" style="height:32px;width:auto">Top <span>Visa 5S</span> Admin</div>
     <div style="display:flex;align-items:center">
       <span class="who" id="whoami"></span>
       <button class="btn btn-g" onclick="logout()">Đăng xuất</button>
@@ -747,7 +748,11 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <section id="tab-posts" class="hidden tab-scroll">
       <div class="panel-head">
         <h2>Bài viết</h2>
-        <button class="btn btn-p btn-add-fab" onclick="openPostModal()">+ Thêm bài viết</button>
+        <div class="filters">
+          <select id="fPostCat" onchange="renderPosts()"><option value="">Tất cả danh mục</option></select>
+          <select id="fPostPhanLoai" onchange="renderPosts()"><option value="">Tất cả phân loại</option></select>
+          <button class="btn btn-p btn-add-fab" onclick="openPostModal()">+ Thêm bài viết</button>
+        </div>
       </div>
       <div class="tbl-wrap">
         <table>
@@ -955,10 +960,12 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
             </table>
           </div>
           <div class="subrow-add">
+            <input type="hidden" id="tvienEditId">
             <input type="text" id="tvienTenKhach" placeholder="Tên khách">
             <input type="tel" id="tvienSdtKhach" placeholder="SĐT">
             <input type="text" id="tvienGhiChu" placeholder="Ghi chú">
-            <button class="btn btn-p" onclick="addThanhVien()">+ Thêm</button>
+            <button class="btn btn-p" id="tvienSaveBtn" onclick="addThanhVien()">+ Thêm</button>
+            <button class="btn btn-g hidden" id="tvienCancelBtn" onclick="cancelEditThanhVien()">Hủy sửa</button>
           </div>
         </div>
       </div>
@@ -1783,6 +1790,10 @@ async function loadCats(){
     renderCats();
     $('postCat').innerHTML = '<option value="">-- Không chọn --</option>'+
       CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    const fCat=$('fPostCat'), fCatCur=fCat.value;
+    fCat.innerHTML = '<option value="">Tất cả danh mục</option>'+
+      CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    fCat.value = fCatCur;
   }catch(e){ if(e.message!=='401') toast('Lỗi tải danh mục: '+e.message,'err'); }
 }
 async function addCategory(){
@@ -1828,11 +1839,20 @@ function renderCats(){
 async function loadPosts(){
   try{
     POSTS = await api('posts?select=*,categories(name)&order=created_at.desc') || [];
+    const fPl=$('fPostPhanLoai'), fPlCur=fPl.value;
+    fPl.innerHTML = '<option value="">Tất cả phân loại</option>'+
+      [...new Set(POSTS.map(p=>p.phan_loai).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi'))
+        .map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    fPl.value = fPlCur;
     renderPosts();
   }catch(e){ if(e.message!=='401') toast('Lỗi tải bài viết: '+e.message,'err'); }
 }
 function renderPosts(){
-  const rows = applySort('posts', POSTS, {
+  const fCat=$('fPostCat').value, fPl=$('fPostPhanLoai').value;
+  const filtered = POSTS.filter(p=>
+    (!fCat || String(p.category_id)===fCat) && (!fPl || p.phan_loai===fPl)
+  );
+  const rows = applySort('posts', filtered, {
     title:p=>p.title, cat:p=>p.categories?.name||'', phanloai:p=>p.phan_loai||'',
     ngay:p=>p.created_at, published:p=>p.published?1:0
   });
@@ -2550,6 +2570,7 @@ function openHoSoModal(id, prefill){
   if(h) loadXlps(h.id); else { CUR_HOSO_XLPS=[]; renderXlps(); }
   $('hoTvienHint').classList.toggle('hidden', !!h);
   $('hoTvienBox').classList.toggle('hidden', !h);
+  cancelEditThanhVien();
   if(h) loadThanhVien(h.id); else { CUR_HOSO_THANHVIEN=[]; renderThanhVien(); }
   $('hoOverlay').classList.remove('hidden');
   const body = $('hoOverlay').querySelector('.dlg-body');
@@ -2805,7 +2826,7 @@ function renderXlps(){
       <td><select onchange="updateXlpsStatus(${x.id},this.value)" class="stt-xlps">
         ${['Đang xử lý','Hủy','Tạm dừng','Hoàn thành'].map(s=>`<option ${s===x.trang_thai?'selected':''}>${s}</option>`).join('')}
       </select></td>
-      <td><button class="btn btn-d" onclick="delXlps(${x.id})">Xóa</button></td>
+      <td class="td-actions"><button class="btn btn-d" onclick="delXlps(${x.id})">Xóa</button></td>
     </tr>`).join('') : '<tr><td colspan="5" class="empty">Chưa có dòng nào</td></tr>';
   applyRowLabels('hoXlpsBody');
 }
@@ -2855,7 +2876,10 @@ function renderThanhVien(){
       <td>${esc(t.ten_khach)}</td>
       <td>${t.sdt_khach?`<a href="tel:${esc(t.sdt_khach)}">${esc(t.sdt_khach)}</a>`:'–'}</td>
       <td>${esc(t.ghi_chu||'–')}</td>
-      <td><button class="btn btn-d" onclick="delThanhVien(${t.id})">Xóa</button></td>
+      <td class="td-actions">
+        <button class="btn btn-p" onclick="editThanhVien(${t.id})">Sửa</button>
+        <button class="btn btn-d" onclick="delThanhVien(${t.id})">Xóa</button>
+      </td>
     </tr>`).join('') : '<tr><td colspan="4" class="empty">Chưa có thành viên nào</td></tr>';
   applyRowLabels('hoTvienBody');
 }
@@ -2868,22 +2892,46 @@ async function refreshSoLuong(hoSoId){
     updateHoSoTotals();
   }catch(e){ /* khong chan thao tac chinh neu lam moi lai khong duoc */ }
 }
+/* ==== Sửa thành viên nhóm (2026-08) — tái dùng luôn 3 ô "+ Thêm" làm form sửa (không mở thêm
+   dialog/hàng inline riêng): bấm "Sửa" nạp dữ liệu dòng đó vào 3 ô + ghi nhớ id đang sửa vào
+   #tvienEditId, đổi nhãn nút thành "Cập nhật" + hiện thêm nút "Hủy sửa". addThanhVien() dùng
+   chung cho cả thêm mới lẫn cập nhật, rẽ nhánh PATCH/POST theo đúng mẫu id?PATCH:POST đã dùng
+   ở mọi hàm saveXxx() khác trong file này. ==== */
+function editThanhVien(id){
+  const t = CUR_HOSO_THANHVIEN.find(x=>x.id===id);
+  if(!t) return;
+  $('tvienEditId').value = t.id;
+  $('tvienTenKhach').value = t.ten_khach;
+  $('tvienSdtKhach').value = t.sdt_khach||'';
+  $('tvienGhiChu').value = t.ghi_chu||'';
+  $('tvienSaveBtn').textContent = 'Cập nhật';
+  $('tvienCancelBtn').classList.remove('hidden');
+  $('tvienTenKhach').focus();
+}
+function cancelEditThanhVien(){
+  $('tvienEditId').value = '';
+  $('tvienTenKhach').value=''; $('tvienSdtKhach').value=''; $('tvienGhiChu').value='';
+  $('tvienSaveBtn').textContent = '+ Thêm';
+  $('tvienCancelBtn').classList.add('hidden');
+}
 async function addThanhVien(){
   const hoId = $('hoId').value;
   if(!hoId){ toast('Lưu hồ sơ trước khi thêm thành viên nhóm','err'); return; }
   const ten_khach=$('tvienTenKhach').value.trim();
   if(!ten_khach){ toast('Nhập tên khách','err'); return; }
+  const editId = $('tvienEditId').value;
+  const body = {
+    ten_khach, sdt_khach:$('tvienSdtKhach').value.trim()||null, ghi_chu:$('tvienGhiChu').value.trim()||null
+  };
   try{
-    await api('ho_so_thanh_vien',{method:'POST',body:JSON.stringify({
-      ho_so_id:Number(hoId), ten_khach,
-      sdt_khach:$('tvienSdtKhach').value.trim()||null, ghi_chu:$('tvienGhiChu').value.trim()||null
-    })});
-    $('tvienTenKhach').value=''; $('tvienSdtKhach').value=''; $('tvienGhiChu').value='';
+    if(editId) await api('ho_so_thanh_vien?id=eq.'+editId,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
+    else await api('ho_so_thanh_vien',{method:'POST',body:JSON.stringify({...body, ho_so_id:Number(hoId)})});
+    cancelEditThanhVien();
     await loadThanhVien(hoId);
     await refreshSoLuong(hoId);
-    toast('Đã thêm thành viên nhóm');
+    toast(editId?'Đã cập nhật thành viên nhóm':'Đã thêm thành viên nhóm');
     snapshotDialog('hoOverlay');
-  }catch(e){ toast('Lỗi thêm: '+e.message,'err'); }
+  }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
 }
 async function delThanhVien(id){
   if(!await showConfirmPopup({message:'Xóa thành viên này khỏi nhóm?'})) return;

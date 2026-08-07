@@ -250,6 +250,36 @@ Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 31.
       `index.html` xem giá có đổi theo không, thêm 1 bài viết Danh mục mới xem có tự hiện menu mới
       trên landing page không, bấm sort thử vài cột ở mỗi màn list.
 
+## Phase 8 — Đổi thương hiệu "Top Visa 5S", sửa lời cam kết, ảnh bài viết đúng tỷ lệ, SEO (2026-08-07)
+
+- **Đổi tên công ty "Top Visa" → "Top Visa 5S"** ở MỌI nơi trên `index.html`/`admin.html` (tiêu đề
+  trang, meta, JSON-LD, logo, chân trang...) theo bộ nhận diện mới. Logo cũ (`logo.png`) thay bằng
+  bộ mới: `logo.svg` (icon kim cương trong suốt, dùng cho navbar/footer), `favicon.png`,
+  `logo-backup.png` (icon nền trắng, dùng cho apple-touch-icon/PWA), `og-image.png` (1200×630,
+  ảnh đẹp hơn khi chia sẻ link Facebook/Zalo).
+- **Sửa lời cam kết "Đậu visa mới thu phí dịch vụ"**: câu cũ cam kết tuyệt đối "trượt không mất phí
+  dịch vụ" — thực tế hồ sơ khách yếu đôi khi vẫn phát sinh phí xử lý dù trượt. Đã viết lại thêm điều
+  kiện "hồ sơ đủ điều kiện" + luôn kèm "báo phí bằng văn bản trước khi quyết định" ở cả 5 vị trí
+  (promo bar, 2 khối cam kết, FAQ + JSON-LD) — tránh khách hiểu nhầm, đúng thực tế vận hành hơn.
+- **Ảnh đại diện bài viết hết bị cắt xấu**: khung ảnh đổi từ chiều cao cố định 160px sang tỷ lệ cố
+  định 2,3:1 ở MỌI kích thước màn hình (trước đây trên điện thoại tỷ lệ khung có thể lên tới ~4:1,
+  cắt mất phần lớn ảnh). Khi đăng bài mới, nên chọn/canh ảnh theo tỷ lệ ngang ~2,3:1 (vd 1200×520).
+- **Hồ sơ**: bảng "Thành viên nhóm" thêm nút "Sửa" (cạnh nút "Xóa"), sửa lỗi nút bị lệch trái so với
+  tiêu đề cột "Thao tác" (cùng sửa luôn cho bảng "Xử lý phát sinh").
+- **Bài viết**: thêm 2 bộ lọc "Danh mục" và "Phân loại" (chỉ hiện các Phân loại đang thực sự được
+  dùng) để tìm bài nhanh hơn khi danh sách dài.
+- **SEO bổ sung**: thêm dữ liệu có cấu trúc liệt kê 7 dịch vụ visa theo quốc gia (không kèm giá, vì
+  giá giờ quản lý động), cập nhật ngày `sitemap.xml`.
+
+Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 31 (F.1, ảnh bài viết) và mục 32 (còn lại).
+
+- [ ] **Nếu công ty đã có Google Business Profile/trang mạng xã hội dưới tên "Top Visa" cũ** — cập
+      nhật lại tên khớp "Top Visa 5S" ở những nơi đó (Google đánh giá độ tin cậy một phần dựa vào
+      tên công ty khớp nhau giữa website và các nơi khác).
+- [ ] Test với đăng nhập admin thật: bấm "Sửa" 1 thành viên nhóm trong hồ sơ, thử lọc Bài viết theo
+      Danh mục/Phân loại, xem lại kỹ toàn bộ nội dung "Đậu visa mới thu phí dịch vụ" trên trang chủ
+      xem đã đúng ý muốn truyền tải chưa (đây là nội dung marketing/cam kết, PM nên tự đọc lại kỹ).
+
 ## Muốn sửa nội dung?
 
 Gửi file cho Claude kèm yêu cầu, ví dụ: "Đổi giá visa Nhật thành 1.800.000đ", "Thêm quốc gia Singapore", "Đổi màu chủ đạo sang xanh lá" — sau đó deploy lại theo Bước 5 trong hướng dẫn.

@@ -1,7 +1,7 @@
 {
-  "name": "Top Visa Admin",
-  "short_name": "TopVisa Admin",
-  "description": "Trang quản trị nội bộ Top Visa",
+  "name": "Top Visa 5S Admin",
+  "short_name": "TopVisa5S Admin",
+  "description": "Trang quản trị nội bộ Top Visa 5S",
   "start_url": "/admin.html",
   "scope": "/",
   "display": "standalone",
@@ -9,7 +9,7 @@
   "theme_color": "#0F1E3D",
   "orientation": "any",
   "icons": [
-    { "src": "assets/logo.png", "sizes": "240x240", "type": "image/png", "purpose": "any" },
-    { "src": "assets/logo.png", "sizes": "240x240", "type": "image/png", "purpose": "maskable" }
+    { "src": "assets/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/logo-backup.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

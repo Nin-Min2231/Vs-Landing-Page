@@ -4,7 +4,10 @@
 
 ## 1. Dự án là gì
 
-Landing page dịch vụ **Visa đa quốc gia** cho công ty **Top Visa** (Đà Nẵng), mục tiêu **Lead Generation** (thu thập khách hàng tiềm năng qua form đăng ký tư vấn). Có kèm trang quản trị đơn giản để xem/xuất lead và quản lý bài viết.
+Landing page dịch vụ **Visa đa quốc gia** cho công ty **Top Visa 5S** (Đà Nẵng, đổi tên từ "Top Visa"
+2026-08-07 — "5S" = Solution/Simple/Speed/Secure/Success, xem mục 32), mục tiêu **Lead Generation**
+(thu thập khách hàng tiềm năng qua form đăng ký tư vấn). Có kèm trang quản trị đơn giản để xem/xuất
+lead và quản lý bài viết.
 
 Toàn bộ tài liệu thiết kế (yêu cầu, sitemap, wireframe, design system, kế hoạch, test case, hướng dẫn deploy) nằm ở `01_Docs/` — đọc `01_Docs/Visa-Landing-Page_Tai_lieu.xlsx` (1 file Excel gộp cả 7 tài liệu, có màu sắc dễ đọc) hoặc từng file `.md` tương ứng nếu cần xem sơ đồ Mermaid/wireframe ASCII chi tiết.
 
@@ -852,6 +855,25 @@ theo `category_id` (bỏ qua bài viết chưa gán Danh mục), với MỖI nh�
 mục ở tab "Danh mục bài viết", gán cho bài viết (kèm "Phân loại"), landing page tự nhận diện và
 hiện thêm menu/section tương ứng ngay lần tải trang kế tiếp.
 
+**F.1 Sửa lỗi ảnh đại diện bài viết bị cắt xấu (2026-08-07):** người dùng phản hồi ảnh đại diện
+(`.card-post .thumb`) hiển thị bị "vỡ"/lệch trên landing page. Nguyên nhân THẬT: không phải lỗi
+code mà do khung ảnh dùng `height:160px` CỐ ĐỊNH trong khi bề ngang thẻ đổi theo từng breakpoint
+(mobile 1 cột/tablet 2 cột/desktop 3 cột) → tỷ lệ khung (`object-fit:cover`) đổi theo từng màn
+hình (desktop ~2.3:1, mobile có thể tới ~4:1+), nên ảnh gốc không đúng tỷ lệ bị cắt mất rất nhiều
+phần trên/dưới. Đã sửa 2 phần:
+1. **CSS**: đổi `.card-post .thumb`/`.thumb-placeholder` từ `height:160px` sang
+   `aspect-ratio:2.3/1` — giữ ĐÚNG tỷ lệ khung 2,3:1 ở MỌI kích thước màn hình (đã test xác nhận
+   1280px và 390px đều ra đúng ratio 2.3). Khi cần đổi tỷ lệ khung chuẩn sau này, chỉ sửa 1 chỗ
+   `2.3/1` này (2 nơi, `.thumb` và `.thumb-placeholder`, PHẢI sửa cùng lúc để khớp nhau).
+2. **Ảnh mẫu quốc kỳ/logo** (thư mục `D:\...\NguyenNC\Quoc_Ky\`, NGOÀI git repo — của người dùng,
+   không phải asset dự án): đã viết script Python (Pillow) canh lại 10 ảnh cờ/logo về đúng khung
+   1380×600 (tỷ lệ 2,3:1) bằng cách **thu nhỏ giữ nguyên tỷ lệ gốc rồi dán giữa** (không kéo méo,
+   không cắt mất nội dung) — nền thêm vào dùng màu trắng (khớp nền trắng của `.card-post`), riêng
+   `Logo_TV5s_black.png` (có alpha trong suốt thật) giữ nền trong suốt. Xuất ra thư mục con `Edit/`
+   cạnh ảnh gốc. **Quy tắc chung khi chuẩn bị ảnh đăng bài mới sau này**: nên crop/canh ảnh theo
+   tỷ lệ ngang gần **2,3:1** trước khi tải lên (vd 1200×520, 1380×600) để không bị cắt mất nội
+   dung quan trọng (logo, chi tiết chính giữa ảnh...).
+
 **G. Sort theo cột — dùng CHUNG cho 7 màn list** (Tư vấn/Hồ sơ/Thông tin khách hàng/Tài chính/Đại
 lý ủy thác/Bài viết/Danh mục bài viết) + block "Dịch vụ Visa các quốc gia": 3 hàm dùng chung
 (`onSortClick(tableKey,col,renderFn)`/`applySort(tableKey,rows,getters)`/`updateSortIcons(tableKey)`,
@@ -878,3 +900,97 @@ nhật qua `updateSortIcons()` vì `thead` là HTML tĩnh, không render lại m
 `updateSortIcons` + cấu trúc `<th class="sortable" onclick="...">...<span class="sort-ic"
 data-tbl="..." data-col="...">` ở trên, đặt tên `tableKey` mới không trùng 8 key đã dùng
 (`tv`/`hs`/`kh`/`tc`/`dt`/`posts`/`cats`/`dvg`).
+
+## 32. Sửa "Thành viên nhóm", filter Bài viết, đổi thương hiệu "Top Visa 5S", sửa lời cam kết,
+    SEO bổ sung (2026-08-07)
+
+**A. Hồ sơ — "Thành viên nhóm" thêm Sửa + canh giữa "Thao tác":** trước đây `renderXlps()` và
+`renderThanhVien()` KHÔNG gắn class `td-actions` vào ô "Thao tác" (chỉ `<th class="th-center">`
+canh giữa tiêu đề, còn `<td>` bên dưới không có gì canh nên nút bị dạt trái) — đã thêm
+`class="td-actions"` vào cả 2 (dùng chung `.td-actions{display:flex;justify-content:center}` có
+sẵn). "Sửa" thành viên nhóm KHÔNG mở dialog riêng — tái dùng luôn 3 ô "+ Thêm" làm form sửa
+(`editThanhVien(id)` nạp dữ liệu + đổi nhãn nút thành "Cập nhật" + hiện nút "Hủy sửa"; `addThanhVien()`
+dùng chung cho cả thêm lẫn sửa, rẽ nhánh PATCH/POST theo `tvienEditId` có giá trị hay không, đúng
+mẫu `id?PATCH:POST` dùng khắp nơi khác trong file). `openHoSoModal()` gọi `cancelEditThanhVien()`
+mỗi lần mở dialog để tránh mang state "đang sửa" từ hồ sơ trước sang hồ sơ đang mở.
+
+**B. Bài viết — filter theo Danh mục + Phân loại:** 2 dropdown mới `#fPostCat`/`#fPostPhanLoai`
+trong `.filters` cạnh nút "+ Thêm bài viết". `fPostCat` nạp từ `CATS` (trong `loadCats()`, giữ
+nguyên lựa chọn cũ khi load lại — đúng mẫu `fTvCountry` ở `loadLeads()`). `fPostPhanLoai` nạp từ
+**giá trị Phân loại ĐANG CÓ THẬT** trong `POSTS` (distinct, sort A-Z) — không phải danh sách cố
+định, tự cập nhật mỗi lần `loadPosts()` chạy lại. `renderPosts()` lọc theo cả 2 điều kiện (AND)
+trước khi sort/hiển thị.
+
+**C. Đổi tên thương hiệu "Top Visa" → "Top Visa 5S"** (5S = Solution/Simple/Speed/Secure/Success,
+theo bộ nhận diện mới người dùng cung cấp trong `02_Source/assets/logo/Logo Lockup.png`/`.svg`) —
+đã sửa MỌI nơi hiển thị tên công ty trong `index.html`/`admin.html`: `<title>`, meta
+description/OG/Twitter, JSON-LD `name`, `COMPANY_NAME` (tự động cập nhật `.js-company` ở footer),
+chữ trên logo navbar/footer ("Top **Visa 5S**", đưa "5S" vào chung span màu accent với "Visa" —
+không tạo thêm màu thứ 3), alt text logo/QR, admin.html `<title>`/brand header/
+`apple-mobile-web-app-title`, `admin-manifest.webmanifest` (`name`/`short_name`/`description`).
+**KHÔNG đổi**: domain `topvisa5s.com` (đã có sẵn "5s"), email, và key nội bộ
+`tv_admin_refresh_token` (localStorage key kỹ thuật, không phải "thông tin" hiển thị cho khách).
+**⚠️ Nếu công ty đã có Google Business Profile/trang mạng xã hội dưới tên "Top Visa" cũ, PM cần tự
+cập nhật tên ở đó khớp "Top Visa 5S"** — Google đánh giá độ tin cậy địa phương một phần dựa vào tên
+công ty khớp nhau giữa website và các nơi khác (NAP consistency), xem thêm mục D bên dưới.
+
+**Bộ nhận diện mới** (`02_Source/assets/logo/` — giữ nguyên file gốc do người dùng cung cấp để
+sau này cần chỉnh lại): `Logo_TV5s_white.png`/`.svg` (icon kim cương, nền trắng đặc), `Logo
+Lockup.png`/`.svg` (icon + "TOP VISA 5S" + tagline, nền thẻ `#F6F9FE` bo góc). Từ bộ gốc này đã
+tạo ra các file THẬT SỰ dùng trên site (nằm thẳng trong `02_Source/assets/`, không phải trong thư
+mục `logo/`):
+- `logo.svg` — copy y nguyên `Logo_TV5s_white.svg` nhưng **xóa hẳn `<rect>` nền trắng** (dòng đầu
+  tiên trong `<svg>`) để có bản trong suốt thật — dùng cho `<img>` navbar/footer (cả 2 file HTML),
+  hiển thị đẹp trên nền sáng LẪN nền tối (footer màu `--color-dark`). Browser tự render SVG khi
+  dùng trong thẻ `<img>`, không cần công cụ rasterize nào.
+- `favicon.png` (512×512, nền trắng, icon chiếm ~86% khung) — thay hẳn `favicon.png` cũ. Có thêm
+  `<link rel="icon" type="image/svg+xml" href="assets/logo.svg">` đứng TRƯỚC link PNG (trình
+  duyệt hiện đại ưu tiên SVG nếu hỗ trợ, PNG là fallback).
+- `logo-backup.png` (512×512, nền trắng, icon chỉ chiếm ~62% khung — chừa lề RỘNG hơn hẳn
+  favicon) — dùng cho `apple-touch-icon` (Apple khuyến nghị nền đặc, không trong suốt) VÀ icon
+  "maskable" trong `admin-manifest.webmanifest` (icon maskable bị hệ điều hành tự cắt tròn/bo góc,
+  cần chừa "vùng an toàn" quanh nội dung — đây là lý do lề phải rộng hơn favicon thường).
+- `og-image.png` (1200×630, đúng chuẩn khuyến nghị của Facebook/Zalo/Twitter) — ghép "Logo
+  Lockup" (đã có sẵn nền thẻ sáng) lên nền gradient xanh dương trùng màu `.hero-visual` của site
+  (`#1B6EF3`→`#0F4FC2`). Dùng cho `og:image`/`twitter:image`/JSON-LD `image` — thay hẳn kiểu cũ
+  (tái dùng logo nhỏ 240×240 vuông, xem mục 12) bằng ảnh chia sẻ đúng tỉ lệ chuẩn, đẹp hơn hẳn khi
+  dán link lên Facebook/Zalo. JSON-LD `logo` (khác với `image`) trỏ riêng sang `logo-backup.png`
+  (đúng ngữ nghĩa "logo" nên là icon vuông, không phải ảnh ngang).
+- **`.logo img{height:40px;width:40px}` (navbar/footer) và `.bar .brand img{height:24px;width:24px}`
+  (admin.html) đổi `width` cố định thành `width:auto`** — icon kim cương KHÔNG vuông (tỉ lệ ~1,24:1,
+  rộng hơn cao), ép `width` cố định bằng `height` sẽ bóp méo hình. Đã test xác nhận hiển thị đúng
+  tỉ lệ (50×40 thay vì 40×40 méo) qua Claude Browser.
+- File `logo.png` cũ (240×240, thiết kế trước "TV5S") đã **xóa hẳn** — không còn nơi nào tham
+  chiếu (đã grep xác nhận sạch trước khi xóa).
+
+**D. Viết lại lời cam kết "Đậu visa mới thu phí dịch vụ"** — lý do: câu cũ ("Trượt visa, bạn không
+mất một đồng phí dịch vụ nào!") là cam kết TUYỆT ĐỐI không điều kiện, nhưng thực tế PM cho biết hồ
+sơ khách quá yếu (tài chính/hồ sơ chưa đủ mạnh) đôi khi vẫn phải thu thêm phí xử lý dù trượt — câu
+cũ có thể khiến khách hiểu nhầm, rủi ro tranh chấp/khiếu nại và vi phạm quảng cáo "cam kết không
+đúng thực tế". Đã sửa lại theo hướng: giữ NGUYÊN tinh thần cam kết mạnh (điểm khác biệt cạnh tranh
+thật), nhưng thêm điều kiện rõ ràng "hồ sơ đủ điều kiện" + luôn chốt lại bằng "báo phí rõ ràng
+bằng văn bản trước khi khách quyết định" (nguyên tắc minh bạch đã có sẵn ở nơi khác trên trang, vd
+FAQ "Chi phí dịch vụ gồm những gì?" — không mâu thuẫn nhau: câu đó nói KHÔNG phát sinh phí ẩn SAU
+KHI đã chốt giá, còn câu cam kết nói giá ban đầu có thể khác nhau tùy độ khó hồ sơ, đánh giá TRƯỚC
+khi chốt). Đã sửa đủ **4 vị trí + FAQ (2 nơi, HTML hiển thị + JSON-LD phải khớp y hệt nhau)**:
+promo-bar (dòng phụ), `.usp-highlight` (hero), `.usp-banner` (section Lợi ích), FAQ "Trượt visa có
+mất phí dịch vụ không?". **Không đổi** badge ngắn "✓ Đậu mới thu phí" (hero) — câu này vốn đã an
+toàn, chỉ nói MÔ HÌNH thu phí (thu khi đậu) chứ không cam kết tuyệt đối chuyện gì xảy ra khi trượt.
+**Nếu sửa lại các câu này lần sau**: luôn giữ nguyên tinh thần "có điều kiện + báo giá bằng văn bản
+trước khi chốt", không quay lại kiểu cam kết tuyệt đối 100% cho mọi trường hợp.
+
+**E. SEO bổ sung** (tiếp nối mục 12):
+- Thêm `hasOfferCatalog` (schema.org `OfferCatalog`/`Service`, KHÔNG kèm giá) vào JSON-LD
+  `TravelAgency` — liệt kê 7 dịch vụ visa theo quốc gia. Cố tình KHÔNG đưa giá tiền vào structured
+  data vì giá giờ quản lý động qua `dich_vu_gia` (mục 31.D) — nếu hardcode giá vào JSON-LD sẽ dễ
+  lệch với giá thật hiển thị trên trang (Google phạt nếu structured data không khớp nội dung thấy
+  được, cùng nguyên tắc đã áp dụng cho FAQPage ở mục 12).
+- `sitemap.xml`: cập nhật `lastmod` theo ngày thay đổi nội dung đáng kể gần nhất.
+- Đã rà soát: chỉ có đúng 1 thẻ `<h1>` trên trang, `<html lang="vi">` đúng — không cần sửa.
+- **Việc CẦN người dùng tự làm** (không thể làm thay vì cần tài khoản riêng): xem tiếp mục 12 (Google
+  Search Console/Business Profile/backlink) — bổ sung thêm 1 việc MỚI do đổi tên ở mục C: nếu đã có
+  Google Business Profile/trang mạng xã hội dưới tên "Top Visa" cũ, cập nhật khớp "Top Visa 5S".
+  Ngoài ra nên tận dụng đều đặn tab "Bài viết" (đã có filter theo Danh mục/Phân loại ở mục B, và cơ
+  chế menu/section tự động theo Danh mục ở mục 31.F) để đăng nội dung mới target từ khóa dài
+  ("kinh nghiệm xin visa...", "hồ sơ xin visa... cần gì") — nội dung mới đều đặn là yếu tố SEO có
+  tác động thật, không phụ thuộc thao tác kỹ thuật một lần.
