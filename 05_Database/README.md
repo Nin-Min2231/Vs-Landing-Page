@@ -24,6 +24,9 @@
 7. `07_supabase_setup_phase7.sql` — Phase 7: `ho_so.doi_tac_id` bỏ NOT NULL, `posts` thêm
    `phan_loai`, bảng mới `dich_vu_gia` (giá "Dịch vụ Visa các quốc gia" trên landing page, quản lý
    qua Cài đặt chung) — có seed 8 dòng giá mặc định theo yêu cầu PM.
+8. `08_supabase_setup_phase8.sql` — Phase 8: bảng mới `notifications` (chuông thông báo admin.html:
+   trả kết quả hôm nay / nhắc tư vấn hôm nay / khách đăng ký mới) + `push_subscriptions` (đăng ký
+   nhận thông báo đẩy Web Push ra điện thoại) — cả 2 chỉ `authenticated` (admin) truy cập được.
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
 project đang dùng đã qua đủ cả 4 phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy

@@ -1,5 +1,15 @@
 name = "vs-landing-page"
 compatibility_date = "2026-07-30"
+main = "worker.js"
 
 [assets]
 directory = "."
+binding = "ASSETS"
+
+# Chạy job nền cứ mỗi 10 phút: quét ho_so/leads sinh thông báo (Trả kết quả hôm nay / Nhắc tư vấn
+# hôm nay / Khách đăng ký mới) + gửi Web Push cho các thiết bị đã bật thông báo đẩy trong admin.html.
+# Xem 02_Source/worker.js + CLAUDE.md mục 33. Cần 2 secret bắt buộc (set qua Cloudflare Dashboard,
+# KHÔNG bao giờ đặt trong file này/git): SUPABASE_SERVICE_ROLE_KEY, VAPID_PRIVATE_KEY_JWK
+# (+ VAPID_SUBJECT tùy chọn). VAPID_PUBLIC_KEY hardcode thẳng trong worker.js vì khóa CÔNG KHAI.
+[triggers]
+crons = ["*/10 * * * *"]

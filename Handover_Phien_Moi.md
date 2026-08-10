@@ -1,154 +1,146 @@
-# Handover — Bàn giao sang phiên làm việc mới (2026-08-07, bản 4 — GHI ĐÈ toàn bộ bản cũ)
+# Handover — Bàn giao sang phiên làm việc mới (2026-08-10, bản 5 — GHI ĐÈ toàn bộ bản cũ)
 
-> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→3 và mọi đoạn "Cập nhật mới nhất" nối
-> thêm sau đó) — **không cần đọc lại bản cũ**, nội dung quan trọng còn giá trị đã gom hết vào đây.
-> Đọc theo đúng thứ tự: `CLAUDE.md` (toàn bộ, đặc biệt mục 22–32 cho các thay đổi gần đây nhất) →
-> file này → bắt tay vào **mục 1**. Viết để dùng được cho cả Claude Code lẫn Claude Cowork/agent
-> khác, không giả định sẵn bối cảnh hội thoại trước đó.
+> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→4) — **không cần đọc lại bản cũ**, nội
+> dung quan trọng còn giá trị đã gom hết vào đây. Đọc theo đúng thứ tự: `CLAUDE.md` (toàn bộ, đặc
+> biệt mục 33 cho thay đổi phiên này) → file này → bắt tay vào **mục 1**. Viết để dùng được cho cả
+> Claude Code lẫn Claude Cowork/agent khác, không giả định sẵn bối cảnh hội thoại trước đó.
 
 ## 0. Trạng thái ngay lúc viết file này
 
-- Nhánh làm việc: `claude/dashboard-admin-multi-screen-f81258` — **đã fast-forward vào `main` và
-  deploy thành công**, xác nhận qua `curl` lặp lại nhiều lần ổn định ở bản mới (commit `ca1851d`).
-  `git status` sạch, không có gì chưa commit. `origin/main` và branch này đang trỏ **cùng 1 commit**.
-- Trang chạy thật: `https://topvisa5s.com` (chính) + `https://topvisa.nguyennc1357.workers.dev`
-  (cùng 1 bản deploy, Cloudflare Workers, tự build khi push lên `main`).
-- **Migration `05_Database/07_supabase_setup_phase7.sql` đã được người dùng xác nhận trực tiếp là
-  đã chạy** ("Anh đã chạy rồi nha", 2026-08-07) — Phase 7 (bảng `dich_vu_gia`, `posts.phan_loai`,
-  `ho_so.doi_tac_id` bỏ NOT NULL) coi như đã áp dụng đầy đủ trên Supabase thật. File `01`→`06` được
-  xác nhận đã chạy ở các phiên trước, không có báo lỗi gì trong session này dù đã đọc dữ liệu thật
-  từ các bảng liên quan (`danh_muc_nuoc`, `posts`, `categories`...) qua Claude Browser.
-- Toàn bộ việc trong session này đã **code xong + test qua Claude Browser** — phần lớn test đọc
-  dữ liệu **THẬT** trực tiếp từ Supabase production (vì `SUPABASE_URL`/`ANON_KEY` cấu hình sẵn
-  trong file là khóa thật), phần ghi/sửa/xóa vẫn phải mock `api()` vì không có tài khoản admin thật
-  để đăng nhập (xem mục 3).
+- Nhánh làm việc: `claude/handover-phien-moi-015f64` (worktree riêng) — **CHƯA commit, chưa push,
+  chưa deploy**. Toàn bộ việc mô tả trong file này mới chỉ nằm trên máy, đợi người dùng xác nhận
+  mới commit/push (đúng quy trình luôn hỏi trước khi push, xem mục 5).
+- Trang chạy thật hiện tại (bản CŨ, chưa có thay đổi phiên này): `https://topvisa5s.com` +
+  `https://topvisa.nguyennc1357.workers.dev`.
+- Phiên này KHÔNG đọc/sửa gì thêm ở Phase 7/8 (thương hiệu, giá dịch vụ...) — các phase đó coi như
+  đã xong và đã chạy thật từ trước (theo bản handover cũ), không lặp lại chi tiết ở đây.
 
-## 1. Việc CẦN LÀM NGAY
+## 1. Việc CẦN LÀM NGAY (theo đúng thứ tự)
 
-1. **Đọc lại kỹ nội dung "Đậu visa mới thu phí dịch vụ" mới trên trang chủ** — session này đã viết
-   lại câu cam kết ở 5 vị trí (promo bar, 2 khối cam kết, FAQ + JSON-LD) để thêm điều kiện "hồ sơ
-   đủ điều kiện" thay vì cam kết tuyệt đối 100% như trước (lý do: PM cho biết hồ sơ khách yếu đôi
-   khi vẫn phát sinh phí xử lý dù trượt — câu cũ có thể gây hiểu nhầm/tranh chấp). Đây là nội dung
-   marketing/pháp lý, **PM nên tự đọc lại và xác nhận đúng ý muốn truyền tải** trước khi chạy quảng
-   cáo — xem toàn bộ câu chữ mới ở `CLAUDE.md` mục 32.D.
-2. **Nếu công ty đã có Google Business Profile / trang mạng xã hội dưới tên "Top Visa" cũ** — cập
-   nhật lại tên khớp **"Top Visa 5S"** ở những nơi đó. Toàn bộ website (`index.html`/`admin.html`)
-   đã đổi tên đầy đủ trong session này (xem `CLAUDE.md` mục 32.C) — tên không khớp giữa website và
-   Google Business Profile sẽ ảnh hưởng tín hiệu SEO địa phương (NAP consistency).
-3. **Giá ở "Dịch vụ Visa các quốc gia" (Cài đặt chung) vẫn đang là giá mặc định/placeholder** (số
-   cũ từng viết cứng trong `index.html`, PM xác nhận dùng tạm làm giá trị default ở phiên trước) —
-   PM cần tự vào sửa lại giá thật khi có, xem `CLAUDE.md` mục 31.D.
-4. **Test với đăng nhập admin thật** — vẫn CHƯA ai xác nhận trên phiên bản thật với đăng nhập thật
-   cho các tính năng MỚI của 2 session gần nhất (Phase 7 + Phase 8, xem mục 2 bảng dưới). Ưu tiên
-   test: lưu 1 bài viết (bắt buộc nhập "Phân loại"), thêm/sửa/xóa ở "Dịch vụ Visa các quốc gia",
-   sửa 1 thành viên nhóm trong dialog Hồ sơ, lọc Bài viết theo Danh mục/Phân loại, lưu 1 Hồ sơ
-   không chọn Đại lý ủy thác.
-5. **Google Search Console / Google Business Profile** — vẫn dang dở từ trước, không có cập nhật
-   thao tác gì mới trong session này ngoài việc ghi chú thêm việc đổi tên ở mục 2 trên (xem
-   `CLAUDE.md` mục 12 nếu cần tiếp tục từ đầu).
+1. **⚠️ Xóa 2 dòng dữ liệu THỬ NGHIỆM đã vô tình gửi thật vào Supabase production** — lúc test ô
+   Email mới ở form đăng ký (`index.html`) qua trình duyệt thật (không phải giả lập), 1-2 request
+   POST đã thật sự thành công tới bảng `leads` thật trước khi kịp nhận ra và chặn lại. Vào
+   `admin.html` → tab "Tư vấn" → tìm và xóa dòng tên **"Nguyễn Văn Test"**, SĐT **0912345678**
+   (có thể có 1 hoặc 2 dòng trùng do 1 lần chạy song song 2 request). Xin lỗi vì sơ suất này — từ
+   phiên sau, khi cần test form gửi thật, PHẢI mock `window.fetch`/`api()` trước khi mô phỏng submit,
+   không chỉ dựa vào validate ở tầng field để "chắc" là sẽ không gửi thật.
+2. **Chạy migration SQL mới**: `05_Database/08_supabase_setup_phase8.sql` (tạo bảng `notifications`
+   + `push_subscriptions`) trong Supabase SQL Editor — chưa chạy thì chuông thông báo ở `admin.html`
+   sẽ báo lỗi khi tải (im lặng, không có toast — xem `CLAUDE.md` mục 33.B, cố ý không làm phiền
+   bằng lỗi mỗi 45 giây).
+3. **Cấu hình 2 secret bắt buộc trên Cloudflare Dashboard** (Worker đang chạy trang này → Settings →
+   Variables and Secrets → thêm dạng "Encrypt", KHÔNG bao giờ dán vào file/chat):
+   - `SUPABASE_SERVICE_ROLE_KEY` — copy trực tiếp từ Supabase Dashboard → Project Settings → API →
+     mục "service_role" (⚠️ KHÁC với `anon` key đang dùng trong `index.html`/`admin.html` — khóa
+     này có toàn quyền trên database, tuyệt đối không để lộ).
+   - `VAPID_PRIVATE_KEY_JWK` — dán NGUYÊN VĂN chuỗi JSON sau (Claude Code đã sinh sẵn 1 cặp khóa
+     Web Push cho riêng dự án này trong phiên làm việc, đã tự kiểm chứng ký/xác thực đúng):
+     ```
+     {"key_ops":["sign"],"ext":true,"kty":"EC","x":"OOWg9oryjO2AvNcyF6Npfj9i3D2LlwpskW4ibcaOB38","y":"ukYXhKo5siKUGdkvjHHB8-PruG0A8iLto2U2ItxaPNI","crv":"P-256","d":"61N9oEE1qtbLVOK7eF05IjzR4RAYPNmaPELTcpD-oBs"}
+     ```
+   - `VAPID_SUBJECT` (không bắt buộc, có giá trị mặc định trong code nếu bỏ trống) —
+     `mailto:hien.gotravel@gmail.com`.
+   - Khóa CÔNG KHAI tương ứng (`BDjloPaK8oztgLzXMhejaX4_Ytw9i5cKbJFuIm3Gjgd_ukYXhKo5siKUGdkvjHHB8-PruG0A8iLto2U2ItxaPNI`)
+     đã hardcode sẵn CẢ trong `admin.html` (`VAPID_PUBLIC_KEY`) LẪN `worker.js` — khóa công khai
+     nên không cần đặt secret, không cần làm gì thêm với giá trị này.
+4. **Commit + push + deploy** (đợi người dùng xác nhận trước — xem mục 5), sau đó vào Cloudflare
+   Dashboard → Worker → tab "Triggers" xác nhận Cron Trigger `*/10 * * * *` đã "Active" (CHƯA chắc
+   chắn 100% việc thêm `[triggers]` vào `wrangler.toml` rồi deploy qua git-integration hiện tại sẽ
+   tự bật cron mà không cần thao tác thêm trên dashboard — cần tự xác nhận).
+5. **Test thật trên điện thoại** (việc duy nhất Claude Code không thể tự làm/tự xác nhận vì không
+   có thiết bị thật): mở `admin.html`, đăng nhập, bấm chuông 🔔 → "Bật thông báo đẩy trên thiết bị
+   này" → đồng ý cấp quyền → tạo/sửa 1 Hồ sơ có "Ngày trả KQ" = hôm nay (hoặc đợi có khách đăng ký
+   thật từ web) → đợi tối đa 10 phút (chu kỳ cron) → xem điện thoại có hiện thông báo dù đã khóa
+   màn hình/tắt hẳn trình duyệt hay không.
+6. **Test với đăng nhập admin thật** các phần còn lại: ô Email ở form đăng ký (nhập sai định dạng
+   phải báo lỗi, để trống vẫn gửi được), nút "Gửi tư vấn →", chuông thông báo (đếm đúng số chưa
+   đọc, bấm 1 dòng mở đúng hồ sơ/khách liên quan, "Đánh dấu đã đọc", "Xóa đã đọc").
 
-## 2. Tóm tắt những gì session này đã làm (chi tiết đầy đủ nằm ở CLAUDE.md, không lặp lại ở đây)
+## 2. Tóm tắt việc phiên này đã làm (chi tiết đầy đủ ở `CLAUDE.md` mục 33)
 
-Session này gồm **2 đợt việc** (2 commit đã lên `main`), theo đúng thứ tự thời gian:
+Theo đúng 3 yêu cầu người dùng đưa ra (chưa commit, xem mục 0):
 
-### Đợt 1 — "Phase 7" (commit `066a0bf`)
+1. **`index.html`**: thêm ô "Email" (không bắt buộc, validate định dạng) vào form đăng ký, gửi kèm
+   trong payload `leads` (cột `email` đã có sẵn từ Phase 2, không cần migration). Đổi text nút
+   "Gửi đăng ký →" → "Gửi tư vấn →" (3 chỗ, giữ nguyên "Đang gửi...").
+2. **`admin.html`**: chuông thông báo trên header — 3 loại (trả kết quả hôm nay / nhắc tư vấn hôm
+   nay / khách đăng ký mới từ web), đếm chưa đọc, đánh dấu đã đọc, xóa đã đọc, bấm 1 dòng tự mở
+   đúng hồ sơ/khách liên quan. **Quyết định kiến trúc quan trọng**: `admin.html` CHỈ đọc bảng
+   `notifications`, KHÔNG tự sinh thông báo — việc sinh thông báo do 1 Cloudflare Worker chạy nền
+   đảm nhiệm (điểm 3), để thông báo vẫn được tạo + đẩy ra điện thoại dù không ai đang mở trang.
+3. **Thông báo đẩy (Web Push) thật, kể cả khi tắt hẳn app** — theo đúng lựa chọn người dùng chọn
+   khi được hỏi (3 mức độ: chỉ mở app / silent... / **push thật kể cả tắt app** — người dùng chọn
+   mức cao nhất). Gồm: bảng `push_subscriptions` mới, nút "Bật thông báo đẩy" trong `admin.html`,
+   Service Worker (`sw-admin.js`) xử lý nhận push + hiện thông báo hệ thống, và **1 Cloudflare
+   Worker chạy nền theo lịch (cron 10 phút/lần, `02_Source/worker.js`)** — lần ĐẦU TIÊN dự án có
+   code chạy phía server thật (trước giờ Cloudflare chỉ phục vụ file tĩnh).
 
-| # | Việc | CLAUDE.md | Ghi chú |
-|---|---|---|---|
-| 1 | Dashboard: lọc "Hồ sơ trả kết quả tuần này" chỉ Đã nộp/Đang xử lý, đổi tên thẻ "Hồ sơ đang nộp"→"Hồ sơ đã nộp" | mục 31.A | |
-| 2 | Danh mục bài viết: thêm nút Sửa, chặn xóa nếu đang có bài viết dùng | mục 31.B | Đảo lại quyết định cũ ở mục 14 (trước đây cho xóa tự do) |
-| 3 | Hồ sơ: bỏ bắt buộc "Đại lý ủy thác", icon 🔍 lồng trong ô "Tên khách hàng" | mục 31.C | Migration: `ho_so.doi_tac_id` bỏ NOT NULL |
-| 4 | "Dịch vụ Visa các quốc gia" (mới, Cài đặt chung) — CRUD giá 8 nước, landing page tự lấy giá từ đây | mục 31.D | Bảng mới `dich_vu_gia`, seed 8 dòng giá mặc định |
-| 5 | Bài viết: field bắt buộc "Phân loại"; landing page tự tạo menu+section riêng cho mỗi Danh mục có bài viết công khai (thay hẳn section "Tin tức" cứng) | mục 31.E, 31.F | Cột mới `posts.phan_loai`, backfill dữ liệu cũ |
-| 6 | Sort theo cột cho 7 màn list + block "Dịch vụ Visa các quốc gia" | mục 31.G | Dùng chung `onSortClick`/`applySort`/`updateSortIcons` |
-| 7 | (Ngoài batch SQL) Sửa ảnh đại diện bài viết bị cắt xấu trên landing page | mục 31.F.1 | Đổi `.thumb` từ `height:160px` sang `aspect-ratio:2.3/1`; đã canh lại 10 ảnh cờ/logo mẫu ngoài git (`NguyenNC/Quoc_Ky/Edit/`) |
+**Quyết định kỹ thuật quan trọng cần biết** (đã giải thích đầy đủ lý do ở `CLAUDE.md` mục 33.C-D):
+- Push gửi đi KHÔNG kèm nội dung sẵn (silent/rỗng) — chỉ để "đánh thức" thiết bị, Service Worker tự
+  gọi API lấy nội dung thật ngay lúc nhận. Lý do: mã hóa payload Web Push chuẩn (RFC8291) rất dễ sai
+  mà không có thiết bị thật để kiểm chứng tận nơi (lỗi kinh điển: gửi "thành công" nhưng trình duyệt
+  âm thầm không hiện được gì) — đổi lấy độ tin cậy cao hơn dù phải đánh đổi 1 bước gọi API thêm.
+- Service Worker cần refresh token để tự làm mới access token lúc nhận push khi app đã đóng — lưu
+  thêm 1 bản vào IndexedDB (Service Worker không đọc được `localStorage`), luôn đồng bộ với ô "Ghi
+  nhớ đăng nhập" (tắt ghi nhớ/đăng xuất thì xóa sạch cả 2 nơi).
+- Đã tự kiểm chứng TOÀN BỘ logic của `worker.js` bằng Node (mock `fetch`, chạy thẳng file như 1 ES
+  module) — xác nhận đúng: query, upsert chống trùng, ký JWT VAPID đúng chuẩn + verify chữ ký thành
+  công, dọn subscription hết hạn (410). **Chưa/không thể kiểm chứng**: gửi push thật tới 1 thiết bị
+  thật (xem mục 1.5).
 
-Migration: `05_Database/07_supabase_setup_phase7.sql` — **đã xác nhận chạy** (xem mục 0).
+## 3. ⚠️ Sự cố trong lúc test (đã xử lý minh bạch ngay khi phát hiện)
 
-### Đợt 2 — "Phase 8" (commit `ca1851d`)
+Lúc test ô Email mới bằng cách mô phỏng submit form thật trên trình duyệt (không phải mock), 2 lần
+gửi (1 lần email hợp lệ, có thể thêm 1 lần do chạy đua với lần trước chưa kịp set cờ chống spam) đã
+**thực sự thành công** tới bảng `leads` thật trên Supabase production — vì `SUPABASE_URL`/`ANON_KEY`
+cấu hình sẵn trong `index.html` là khóa thật (đúng như mọi phiên trước vẫn cảnh báo, xem mục 3 các
+bản handover cũ). Dữ liệu rác: tên "Nguyễn Văn Test", SĐT "0912345678", email "ten@email.com" hoặc
+rỗng. **Cần xóa thủ công** qua `admin.html` (xem mục 1.1) — Claude Code không có quyền xóa (anon
+key chỉ được INSERT vào `leads`, không SELECT/DELETE được). Từ nay khi cần test hành vi submit thật
+của `index.html`, PHẢI ghi đè `window.fetch` bằng hàm giả trước khi mô phỏng, không chỉ dựa vào để
+sai định dạng nhằm chặn ở tầng validate.
 
-| # | Việc | CLAUDE.md | Ghi chú |
-|---|---|---|---|
-| 8 | Hồ sơ: nút Sửa cho "Thành viên nhóm", sửa canh giữa cột "Thao tác" (cả Xử lý phát sinh) | mục 32.A | Tái dùng 3 ô "+ Thêm" làm form sửa, không mở dialog riêng |
-| 9 | Bài viết: filter theo Danh mục + Phân loại | mục 32.B | Phân loại chỉ hiện giá trị đang thực có trong dữ liệu |
-| 10 | Đổi thương hiệu "Top Visa" → "Top Visa 5S" toàn bộ + bộ logo mới | mục 32.C | `logo.svg` (trong suốt), `favicon.png`, `logo-backup.png` (apple-touch-icon/PWA), `og-image.png` (1200×630) |
-| 11 | Viết lại lời cam kết "Đậu visa mới thu phí dịch vụ" ở 5 vị trí | mục 32.D | **Xem mục 1.1 — cần PM tự đọc lại xác nhận** |
-| 12 | SEO bổ sung: `hasOfferCatalog` trong JSON-LD, cập nhật `sitemap.xml` | mục 32.E | Không kèm giá trong structured data (tránh lệch với giá động) |
+## 4. Cách đã test trong phiên này
 
-Không có migration SQL mới ở đợt 2 (chỉ đổi asset/code/nội dung).
+- **`index.html`**: mở qua server tĩnh cục bộ (`python -m http.server`, xem mục 6), test validate ô
+  Email (sai định dạng → báo lỗi + không gửi; hợp lệ/để trống → không báo lỗi field) bằng cách gán
+  `.value` rồi tự bắn sự kiện `submit` qua JavaScript — ĐÃ vô tình chạm tới Supabase thật (xem mục 3).
+- **`admin.html`**: mock `window.api()` (đúng mẫu các phiên trước đã dùng, an toàn tuyệt đối vì
+  không đụng mạng thật) để giả lập 4 thông báo mẫu, xác nhận: đếm đúng badge, render đúng nội
+  dung/nhãn từng loại, bấm 1 dòng → PATCH đúng id + điều hướng đúng `switchTab`/`openHoSoModal`/
+  `openTvModal`, "Đánh dấu đã đọc" → PATCH hàng loạt + badge về 0, "Xóa đã đọc" (mock luôn
+  `showConfirmPopup` trả `true`) → DELETE hàng loạt + danh sách rỗng đúng. Đã đo vị trí chuông trên
+  header bằng `getBoundingClientRect()` xác nhận nằm gọn trong header, không vỡ layout.
+- **`worker.js`**: KHÔNG dùng Claude Browser (không phải môi trường trình duyệt) — copy sang file
+  `.mjs`, mock `globalThis.fetch` toàn cục, `import` thẳng và gọi `scheduled()` như Cloudflare thật
+  sẽ gọi. 3 kịch bản: (1) có dữ liệu mới → sinh đúng thông báo + gửi đúng push + JWT verify được;
+  (2) không có gì mới → KHÔNG gọi `push_subscriptions` (tránh phí request thừa); (3) subscription
+  nhận 410 → bị xóa khỏi DB. Cả 3 đều đúng — xem lại đoạn code test nếu cần chạy lại (không lưu lại
+  trong repo, chỉ chạy tạm trong thư mục temp).
+- Đã xóa `.claude/launch.json` tạo tạm để chạy server tĩnh sau khi test xong (đúng quy tắc không để
+  lại file thừa).
 
-**Quyết định UX tự đưa ra trong lúc làm, CHƯA hỏi lại người dùng xác nhận riêng** (nếu người dùng
-phản hồi muốn khác thì sửa lại): cách viết lại câu "Đậu visa mới thu phí dịch vụ" ở mục 1.1 — đã cố
-gắng giữ tinh thần cam kết mạnh nhưng thêm điều kiện, nhưng câu chữ cụ thể là do Claude tự soạn
-theo yêu cầu "phân tích đưa ra câu từ", chưa qua PM duyệt câu chữ cuối cùng.
+## 5. Quy trình deploy (tiếp tục dùng đúng cách này — CHƯA làm ở phiên này)
 
-## 3. Cách đã test trong session này
+- Toàn bộ thay đổi trong phiên này **CHƯA được commit/push** — đợi người dùng xác nhận trước khi
+  làm (đúng quy tắc "chỉ commit/push khi được yêu cầu rõ").
+- Khi được xác nhận: `git add` từng file cụ thể (không dùng `-A`) → `git commit` (kèm dòng
+  `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`) → push. **Lưu ý khác các phiên trước**:
+  phiên này thêm `main = "worker.js"` + `[triggers]` vào `wrangler.toml` — đây là lần đầu Cloudflare
+  Worker của dự án có code chạy ngoài việc phục vụ file tĩnh, nên sau khi deploy cần vào Cloudflare
+  Dashboard xác nhận thêm (xem mục 1.4), không chỉ `curl` kiểm tra HTML như mọi khi.
+- Vẫn không có quyền chạy SQL trực tiếp lên Supabase, và giờ cũng không có quyền vào Cloudflare
+  Dashboard để set secret/xác nhận cron — cả 2 việc này bắt buộc người dùng tự làm (mục 1.2-1.4).
 
-- **Đọc dữ liệu THẬT từ Supabase production** qua Claude Browser (mở thẳng `https://topvisa5s.com`
-  và load `index.html`/`admin.html` cục bộ nhưng vẫn gọi API thật vì key cấu hình sẵn là key thật)
-  — xác nhận: danh mục bài viết động hoạt động đúng với dữ liệu thật (site đã có category "Tin
-  tức" + "Thủ tục Visa", tự tạo đúng 2 menu/section), ảnh cờ/logo người dùng tự đăng tải hiển thị
-  đúng sau khi sửa CSS `aspect-ratio`, logo mới load đúng dạng SVG trong suốt.
-- **Mock `api()`** để test các luồng có ghi/sửa/xóa (thêm/sửa Thành viên nhóm, lưu Hồ sơ không có
-  Đại lý ủy thác, lưu Bài viết thiếu/có "Phân loại", chặn xóa Danh mục bài viết đang dùng, sort các
-  bảng) — theo đúng cách đã dùng ở các phiên trước: gán `api = async(path,opts)=>{...}` tạm thời,
-  restore lại sau khi test xong. **Lưu ý đã gặp lại 1 lần**: mock trả `[]`/`{}` không đúng dạng cho
-  GET reload sau khi save có thể làm hỏng state cục bộ (`CUR_HOSO_THANHVIEN` bị rỗng) — không phải
-  bug code, chỉ là mock chưa đủ chân thực, xem lại cách mock kỹ hơn (phân biệt path GET vs PATCH)
-  nếu gặp lại hiện tượng tương tự.
-- **Xử lý ảnh bằng Python/Pillow** (không có sẵn công cụ rasterize SVG như `rsvg-convert`/`inkscape`
-  /`cairosvg` do thiếu thư viện `libcairo` gốc trên máy — đã kiểm chứng, nếu cần rasterize SVG thật
-  sự ở phiên sau, cân nhắc dùng Claude Browser render SVG trong `<img>` rồi chụp lại, hoặc cài
-  `cairosvg`/`libcairo` nếu môi trường cho phép): dùng để canh tỷ lệ ảnh cờ/logo, tạo favicon/
-  logo-backup/og-image từ ảnh raster gốc. Sửa SVG (bỏ nền trắng) làm trực tiếp bằng chỉnh sửa text
-  vì đã có sẵn file vector nguồn với `<path>` thật (không phải ảnh nhúng), không cần rasterize.
-- **Server tĩnh cục bộ** (`python -m http.server` qua `.claude/launch.json`, xem CLAUDE.md mục 9)
-  dùng để test CSS/tỷ lệ ảnh ở nhiều kích thước màn hình (`resize_window` với số cụ thể, xem giới
-  hạn viewport đã biết ở các bản handover cũ) — luôn **xóa `.claude/launch.json` sau khi test xong**
-  để không để lại file thừa trong repo.
+## 6. ⚠️ Rủi ro "2 bản sao file" — vẫn như bản handover cũ, không đổi gì thêm
 
-## 4. ⚠️ Rủi ro "2 bản sao file" (vẫn còn — cấu trúc dự án, không phải lỗi tạm thời)
+Xem lại bản handover cũ (đã bị ghi đè, nhưng phần này không đổi): thư mục gốc dự án trên máy người
+dùng có thể có nhiều hơn những gì hiện trong git/worktree (`Quoc_Ky/`, `04_Phase 2/`,
+`05_Branding_5S/`, file CSV xuất từ `admin.html`...) — không tự ý kết luận "không tồn tại" nếu
+không thấy trong worktree đang làm việc, hỏi lại người dùng nếu cần nội dung cụ thể.
 
-Thư mục gốc dự án trên máy người dùng (`D:\01_NguyenNC\10_Claude\03_Study VS1\Vs-Landing-Page\`)
-có thể có **nhiều hơn** những gì hiện trong git/worktree bạn đang thấy. Đã xác nhận cụ thể trong
-session này: `02_Source/assets/logo/` (file gốc bộ nhận diện "5S" người dùng cung cấp) **đã được
-copy vào worktree và commit vào git** — không còn là rủi ro "2 bản sao" nữa, đã đồng bộ.
+## 7. Tài liệu tham khảo (đọc theo thứ tự nếu cần)
 
-Các vị trí **NGOÀI git, vẫn còn rủi ro như cũ** (không tự ý kết luận "không tồn tại" nếu không thấy
-trong worktree đang làm việc):
-- `D:\01_NguyenNC\10_Claude\03_Study VS1\NguyenNC\Quoc_Ky\` — ảnh cờ/logo gốc do người dùng chuẩn
-  bị (KHÁC với `02_Source/assets/logo/` đã commit — đây là bộ ảnh CỜ QUỐC GIA dùng làm ảnh đại diện
-  bài viết, không phải logo công ty), có thư mục con `Edit/` chứa bản đã canh lại tỷ lệ 2,3:1 từ
-  phiên trước — người dùng tự lấy từ đây để đăng lên `postimages.org`, KHÔNG phải asset dự án nên
-  không commit vào git.
-- `04_Phase 2/`, `06_Phase 3_Tai_Chinh/`, `07_Phase 4_Thong_Tin_Khach_Hang/` (tài liệu bàn giao cũ),
-  `05_Branding_5S/` (tài liệu thiết kế thương hiệu "5S" gốc — nhiều khả năng đây chính là nơi người
-  dùng tạo ra bộ logo mới đã cung cấp trong session này), file CSV xuất từ `admin.html`.
-
-File `CLAUDE.md`, `README.md`, `01_Docs/*`, `02_Source/*`, `05_Database/*`, `Handover_Phien_Moi.md`
-có trong cả 2 nơi (đồng bộ qua git) — thư mục gốc nên `git pull` để lấy đúng bản mới nhất trước khi
-đọc/sửa gì tiếp.
-
-## 5. Quy trình deploy (tiếp tục dùng đúng cách này)
-
-- KHÔNG có quyền chạy SQL trực tiếp lên Supabase — luôn nhờ người dùng tự chạy trong SQL Editor,
-  và luôn hỏi/xác nhận rõ đã chạy chưa trước khi coi tính năng liên quan là "xong hoàn toàn".
-- Sửa code → `node --check` phần script (xem `CLAUDE.md` mục 9 cho lệnh mẫu) → test qua Claude
-  Browser (mục 3 ở trên) → `git add <file cụ thể>` (không dùng `-A`) → `git commit` (luôn có dòng
-  `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`) → `git push origin <nhánh>` rồi
-  `git push origin <nhánh>:main` (fast-forward thẳng, KHÔNG tạo Pull Request — đã làm đúng cách
-  này xuyên suốt session, nhánh và main luôn đồng bộ ngay sau mỗi lần push).
-- Verify sau deploy: `curl -sL https://topvisa5s.com/... | grep "<chuỗi đặc trưng mới>"` lặp lại
-  8-15 lần cách nhau ~6-8s (Cloudflare cache theo từng edge node riêng biệt, session này có lúc
-  phải đợi ~40-50s mới thấy bản mới ổn định ở TẤT CẢ các lần gọi, kể cả với các file asset nhị phân
-  như `.png`/`.svg` — không chỉ HTML) — thấy ổn định ở bản MỚI thì mới kết luận xong.
-- **File SQL mới:** luôn thêm vào `05_Database/` theo đúng thứ tự phase (đọc `05_Database/README.md`
-  trước), không tạo lại thư mục Phase rải rác.
-- Chỉ commit/push khi người dùng yêu cầu rõ (đã xảy ra đúng mẫu này suốt session: làm xong → hỏi
-  "có muốn commit/deploy không" → người dùng xác nhận → mới push).
-
-## 6. Tài liệu tham khảo (đọc theo thứ tự nếu cần)
-
-`CLAUDE.md` (toàn bộ, đặc biệt mục 22–32 cho các thay đổi gần đây nhất) → file này →
-`05_Database/README.md` (thứ tự chạy SQL) → `01_Docs/10_Chuan_Dialog_Chung.md` (chuẩn dialog +
-mục 9.1 cảnh báo chưa lưu, BẮT BUỘC đọc trước khi tạo dialog mới).
+`CLAUDE.md` (toàn bộ, đặc biệt mục 33) → file này → `05_Database/README.md` (thứ tự chạy SQL,
+file `08` là file MỚI nhất) → `01_Docs/10_Chuan_Dialog_Chung.md` (không liên quan trực tiếp phiên
+này vì chuông thông báo không phải dialog dữ liệu, nhưng vẫn là chuẩn chung cho dialog khác).

@@ -671,6 +671,11 @@ footer a:hover{color:#fff}
           <input type="tel" id="phone" placeholder="0912 345 678" autocomplete="tel">
           <div class="err-msg">Số điện thoại không hợp lệ (VD: 0912345678)</div>
         </div>
+        <div class="field" id="f-email">
+          <label>Email</label>
+          <input type="email" id="regEmail" placeholder="ten@email.com" autocomplete="email">
+          <div class="err-msg">Email không đúng định dạng (VD: ten@email.com)</div>
+        </div>
         <div class="field" id="f-country">
           <label>Quốc gia muốn xin Visa</label>
           <select id="country">
@@ -684,7 +689,7 @@ footer a:hover{color:#fff}
           <label>Ghi chú</label>
           <textarea id="note" rows="3" placeholder="VD: Cần visa gấp trong 2 tuần, đi cùng gia đình 4 người..."></textarea>
         </div>
-        <button type="submit" class="btn btn-cta" id="submitBtn" style="width:100%">Gửi đăng ký →</button>
+        <button type="submit" class="btn btn-cta" id="submitBtn" style="width:100%">Gửi tư vấn →</button>
         <p style="font-size:12px;color:var(--color-text-muted);margin-top:10px;text-align:center">🔒 Thông tin của bạn được bảo mật tuyệt đối</p>
       </form>
       <div class="form-success" id="formSuccess">
@@ -1041,21 +1046,24 @@ function normalizePhone(raw){
   return p;
 }
 function isValidPhone(p){ return /^0(3|5|7|8|9)\d{8}$/.test(p); }
+function isValidEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
 let lastSubmit = 0; // chống spam: 60 giây
 document.getElementById('leadForm').addEventListener('submit', async function(e){
   e.preventDefault();
-  const fName=document.getElementById('f-name'), fPhone=document.getElementById('f-phone');
-  fName.classList.remove('error'); fPhone.classList.remove('error');
+  const fName=document.getElementById('f-name'), fPhone=document.getElementById('f-phone'), fEmail=document.getElementById('f-email');
+  fName.classList.remove('error'); fPhone.classList.remove('error'); fEmail.classList.remove('error');
 
   const name = document.getElementById('name').value.trim();
   const phone = normalizePhone(document.getElementById('phone').value);
+  const email = document.getElementById('regEmail').value.trim();
   const country = document.getElementById('country').value || 'Chưa chọn';
   const note = document.getElementById('note').value.trim();
 
   let ok = true;
   if(name.length<2){ fName.classList.add('error'); ok=false; }
   if(!isValidPhone(phone)){ fPhone.classList.add('error'); ok=false; }
+  if(email && !isValidEmail(email)){ fEmail.classList.add('error'); ok=false; }
   if(!ok) return;
 
   if(Date.now()-lastSubmit < 60000){
@@ -1075,7 +1083,7 @@ document.getElementById('leadForm').addEventListener('submit', async function(e)
         'Authorization':'Bearer '+SUPABASE_ANON_KEY,
         'Prefer':'return=minimal'
       },
-      body: JSON.stringify({ name, phone, country, note })
+      body: JSON.stringify({ name, phone, email: email||null, country, note })
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     lastSubmit = Date.now();
@@ -1086,7 +1094,7 @@ document.getElementById('leadForm').addEventListener('submit', async function(e)
     const hotlineFmt = HOTLINE.replace(/(\d{4})(\d{3})(\d{3})/,'$1 $2 $3');
     showToast('Không gửi được lúc này. Vui lòng gọi '+hotlineFmt+' hoặc chat Zalo để được hỗ trợ ngay!','error');
   }finally{
-    btn.disabled = false; btn.textContent = 'Gửi đăng ký →';
+    btn.disabled = false; btn.textContent = 'Gửi tư vấn →';
   }
 });
 </script>

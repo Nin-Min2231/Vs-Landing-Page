@@ -994,3 +994,129 @@ trước khi chốt", không quay lại kiểu cam kết tuyệt đối 100% cho
   chế menu/section tự động theo Danh mục ở mục 31.F) để đăng nội dung mới target từ khóa dài
   ("kinh nghiệm xin visa...", "hồ sơ xin visa... cần gì") — nội dung mới đều đặn là yếu tố SEO có
   tác động thật, không phụ thuộc thao tác kỹ thuật một lần.
+
+## 33. Ô Email ở form đăng ký + Chuông thông báo admin.html + Thông báo đẩy (Web Push) (2026-08-10)
+
+**A. `index.html` — thêm ô "Email" (không bắt buộc) vào form đăng ký:** field mới `#regEmail`
+(giữa "Số điện thoại" và "Quốc gia muốn xin Visa"), validate bằng regex đơn giản
+(`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`) CHỈ khi có nhập (để trống vẫn cho gửi bình thường, không bắt
+buộc). Gửi kèm `email` trong payload POST `leads` (cột này đã có sẵn từ Phase 2, không cần
+migration). Đổi text nút gửi từ "Gửi đăng ký →" thành "Gửi tư vấn →" (3 chỗ: HTML gốc, lúc bấm
+"Đang gửi...", lúc reset lại trong `finally`) — chữ "Đang gửi..." lúc đang submit giữ nguyên,
+không đổi.
+
+**B. `admin.html` — chuông thông báo trên header** (`#notifBellBtn`/`#notifPanel`, khu vực code
+"CHUÔNG THÔNG BÁO" ngay sau đoạn đăng ký service worker PWA): 3 loại thông báo, lưu trong bảng mới
+`notifications` (`05_Database/08_supabase_setup_phase8.sql`):
+- `tra_kq` — hồ sơ có `ngay_tra_kq` đúng hôm nay, còn "Đã nộp"/"Đang xử lý" (khớp đúng điều kiện
+  khối "Hồ sơ trả kết quả tuần này" ở Dashboard, mục 31.A).
+- `nhac_tuvan` — lead có `ngay_nhac_lai` đúng hôm nay (không lọc trạng thái, khớp view có sẵn
+  `v_tu_van_can_nhac_lai`).
+- `dang_ky_moi` — lead có `nguon='Từ Web'` (khách tự đăng ký qua `index.html`).
+
+Nội dung mỗi dòng: `"<Tên khách hàng>_ Visa <Nước>"`, hiển thị kèm nhãn+icon theo loại
+(`NOTIF_LOAI_LABEL`, vd "📆 Trả kết quả: Nguyễn Văn A_ Visa Nhật Bản"). Chuông có: số chưa đọc
+(badge đỏ, ẩn khi =0), bấm 1 dòng → đánh dấu đã đọc + tự chuyển đúng tab (`switchTab`) và mở đúng
+dialog liên quan (`openHoSoModal`/`openTvModal` theo `ref_id`), nút "Đánh dấu đã đọc" (PATCH hàng
+loạt `is_read=eq.false`), nút "Xóa đã đọc" (DELETE hàng loạt `is_read=eq.true`, có hỏi xác nhận
+qua `showConfirmPopup`). Panel định vị bằng `getBoundingClientRect()` giống hệt cơ chế
+`datePickerPopup` (mục 20) — đóng khi click ra ngoài/Esc/cuộn/đổi kích thước màn hình. Poll lại
+mỗi 45 giây (`startNotifPolling()`, gọi cùng lúc `loadLeads()`... lúc đăng nhập THÀNH CÔNG và lúc
+tự đăng nhập lại — 2 chỗ) để badge luôn mới trong lúc đang mở trang; dừng poll khi `logout()`.
+
+**⚠️ QUYẾT ĐỊNH KIẾN TRÚC QUAN TRỌNG — admin.html KHÔNG tự sinh thông báo:** `loadNotifications()`
+CHỈ đọc bảng `notifications`, KHÔNG tự quét `ho_so`/`leads` để tạo dòng mới. Việc SINH thông báo
+(quét dữ liệu + ghi vào bảng) do 1 **Cloudflare Worker chạy nền theo lịch (cron)** đảm nhiệm (xem
+mục C) — lý do: nếu để admin.html tự sinh, thông báo chỉ xuất hiện khi có người đang mở trang,
+không thể đẩy ra điện thoại lúc không ai mở app (yêu cầu cốt lõi của tính năng này). Nếu sau này
+cần thêm 1 loại thông báo thứ 4, phải sửa CẢ 2 nơi: query mới trong `worker.js`
+(`generateNewNotifications()`) VÀ nhãn/icon hiển thị trong `admin.html`
+(`NOTIF_LOAI_LABEL`/`NOTIF_LOAI_TAB`) — không sửa 1 chỗ rồi bỏ mặc chỗ kia.
+
+**C. Cloudflare Worker chạy nền (`02_Source/worker.js` + `wrangler.toml`)** — đây là lần ĐẦU TIÊN
+dự án có code chạy phía server thật (trước giờ Cloudflare chỉ phục vụ file tĩnh, xem mục 3). Thêm
+`main = "worker.js"` + `[triggers] crons = ["*/10 * * * *"]` vào `wrangler.toml` (chạy mỗi 10
+phút) — `fetch()` trong `worker.js` CHỈ passthrough `env.ASSETS.fetch(request)`, giữ nguyên 100%
+hành vi phục vụ file tĩnh cũ, không ảnh hưởng gì tới khách truy cập landing page hay admin đăng
+nhập bình thường. Chỉ thêm đúng 1 khả năng mới: `scheduled()` — quét `ho_so`/`leads` bằng
+**`SUPABASE_SERVICE_ROLE_KEY`** (bắt buộc phải dùng service_role vì cần đọc bảng `notifications`/
+`push_subscriptions` vốn CHẶN hoàn toàn `anon`, xem mục D), upsert dòng thông báo mới (bỏ qua
+trùng nhờ ràng buộc `unique(loai,ref_id,ref_ngay)` + `Prefer: resolution=ignore-duplicates` —
+response chỉ trả về đúng những dòng MỚI thật sự được tạo, nhờ đó biết chính xác dòng nào cần gửi
+push), rồi gửi Web Push tới mọi thiết bị trong `push_subscriptions`.
+
+**Không dùng thư viện `web-push` (npm)** — viết tay bằng Web Crypto API (`crypto.subtle`) sẵn có
+trong Cloudflare Workers, KHÔNG cần bundler/build step (đúng triết lý dự án, mục 3): ký JWT VAPID
+(ECDSA P-256/SHA-256, `crypto.subtle.sign` trả thẳng chữ ký dạng raw r‖s 64 byte — đúng định dạng
+JOSE ES256 cần, không phải lo chuyển đổi từ DER như một số thư viện khác). Push gửi đi **KHÔNG kèm
+nội dung** (silent/empty-body push, chỉ có header `Authorization: vapid t=<jwt>, k=<public key>` +
+`TTL`) — quyết định có chủ đích: mã hóa payload Web Push chuẩn (RFC8291, dùng ECDH+HKDF+AES-128-GCM)
+phức tạp và rất dễ sai 1 bước nhỏ mà không có thiết bị thật để kiểm chứng tận nơi (gửi vẫn "thành
+công" ở tầng HTTP nhưng trình duyệt âm thầm không giải mã được, không hiện thông báo — lỗi kinh
+điển, khó debug nhất của Web Push). Push rỗng chỉ để "đánh thức" Service Worker, `sw-admin.js`
+mới là nơi lấy nội dung thật (xem mục D) — đánh đổi lấy độ tin cậy cao hơn.
+
+**Đã tự kiểm chứng logic (không cần deploy thật) bằng Node** (Web Crypto API trong Node 24 tương
+thích Cloudflare Workers): mock `fetch` toàn cục, chạy thẳng `worker.js` như 1 ES module, xác nhận
+— (1) query đúng cột/điều kiện, (2) upsert + lọc dòng mới đúng, (3) JWT VAPID ký đúng chuẩn ES256
+và **verify chữ ký thành công** bằng đúng public key tương ứng, `aud` đúng origin endpoint, (4)
+dòng thông báo trùng bị bỏ qua không gọi thêm push, (5) subscription nhận về 410 (Gone) bị xóa khỏi
+DB. **Chưa/không thể kiểm chứng**: gửi push THẬT tới 1 thiết bị thật và thấy thông báo hiện lên màn
+hình khóa — cần PM tự bật "Bật thông báo đẩy" trong admin.html trên điện thoại thật để xác nhận
+(xem việc cần làm ở `Handover_Phien_Moi.md`).
+
+**D. `push_subscriptions` + `sw-admin.js` — nhận push khi đã tắt hẳn trình duyệt:** bấm nút
+"🔔 Bật thông báo đẩy trên thiết bị này" trong panel chuông (`togglePushSubscription()`) → xin
+quyền `Notification` (bắt buộc qua thao tác bấm của người dùng, trình duyệt chặn xin quyền tự động
+lúc tải trang) → `pushManager.subscribe()` với `VAPID_PUBLIC_KEY` (khóa CÔNG KHAI, an toàn khi
+nhúng thẳng trong `admin.html`, khóa RIÊNG TƯ chỉ nằm trên Cloudflare Worker) → lưu
+`{endpoint,p256dh,auth}` vào bảng `push_subscriptions` (`on_conflict=endpoint`, bấm lại không tạo
+trùng). Bấm lần nữa để tắt (hủy subscribe + xóa khỏi DB).
+
+`sw-admin.js` nhận sự kiện `push` (rỗng, xem mục C) → nếu ĐANG có tab admin.html mở VÀ hiển thị
+trước mắt (`visibilityState==='visible'`) thì **im lặng bỏ qua** (chuông trong trang đã tự cập
+nhật qua polling 45s, khỏi làm phiền thêm) → ngược lại (tab đang nền/khóa màn hình, hoặc không có
+tab nào mở) thì tự làm mới access token bằng **refresh token đọc từ IndexedDB** (Service Worker
+KHÔNG đọc được `localStorage` của trang, chỉ đọc được IndexedDB — nên `admin.html` phải ghi thêm 1
+bản refresh token vào IndexedDB `tv5s-admin`/store `kv`/key `refresh_token` mỗi khi có token mới,
+xem hàm `idbSet()` gọi ở CẢ 3 chỗ token được set: đăng nhập, tự đăng nhập lại, và
+`refreshAccessToken()` khi gặp 401 — luôn đi kèm ĐÚNG điều kiện "Ghi nhớ đăng nhập" đang bật, để
+tắt "Ghi nhớ đăng nhập"/đăng xuất cũng xóa sạch IndexedDB, không để sót quyền nhận push trên thiết
+bị người dùng không còn muốn giữ đăng nhập), rồi gọi thẳng API lấy 5 thông báo chưa đọc mới nhất để
+hiện `showNotification(...)` với nội dung THẬT (không phải nội dung "đóng băng" từ lúc gửi push).
+Nếu bất kỳ bước nào lỗi (refresh token hết hạn, mất mạng...) → hiện thông báo dự phòng chung chung
+"Có thông báo mới, mở app để xem chi tiết" thay vì im lặng không báo gì. Bấm vào thông báo hệ thống
+→ focus tab admin.html đang mở (nếu có) hoặc mở tab mới.
+
+**⚠️ Rủi ro đã cân nhắc và CHẤP NHẬN**: Supabase có thể xoay (rotate) refresh token mỗi lần dùng
+tùy cấu hình project — nếu tab admin.html đang mở VÀ Service Worker CÙNG lúc làm mới token (hiếm,
+chỉ trùng đúng lúc access token vừa hết hạn ~1 giờ/lần), 1 bên có thể dùng phải refresh token vừa
+bị bên kia làm mới → lỗi, phải đăng nhập lại. Giảm thiểu bằng cách CHỈ cho Service Worker tự làm
+mới token khi KHÔNG có tab nào đang hiển thị trước mắt (xem trên) — thu hẹp cửa sổ race condition
+này rất nhiều, chấp nhận rủi ro còn lại vì tần suất cực hiếm và hậu quả nhẹ (chỉ cần đăng nhập lại,
+không mất dữ liệu).
+
+**3 bảng/cột SQL mới** (`05_Database/08_supabase_setup_phase8.sql`, đọc mục README trước khi chạy):
+`notifications` (loai/ref_table/ref_id/ref_ngay/noi_dung/is_read/read_at/pushed_at, unique
+loai+ref_id+ref_ngay), `push_subscriptions` (endpoint unique/p256dh/auth) — CẢ 2 chỉ
+`authenticated` (admin) truy cập được qua RLS, `anon` không có quyền gì (không lộ tên/SĐT khách
+qua API công khai). **Việc PM CẦN tự làm để tính năng chạy được thật** (Claude Code không có quyền
+đăng nhập Supabase/Cloudflare Dashboard của PM):
+1. Chạy `05_Database/08_supabase_setup_phase8.sql` trong Supabase SQL Editor.
+2. Vào Cloudflare Dashboard → Worker (project deploy trang này) → Settings → Variables and
+   Secrets → thêm 2 secret bắt buộc dạng "Encrypt" (KHÔNG bao giờ dán vào file trong git):
+   - `SUPABASE_SERVICE_ROLE_KEY` — copy từ Supabase Dashboard → Project Settings → API → "service_role" key (**khác** `anon` key đang dùng trong `index.html`/`admin.html` — khóa này có toàn quyền, copy trực tiếp giữa 2 dashboard, không dán vào chat/file nào khác).
+   - `VAPID_PRIVATE_KEY_JWK` — khóa riêng tư Web Push (Claude Code đã sinh sẵn 1 cặp khóa cho dự án này trong phiên làm việc, xem tin nhắn bàn giao).
+   - `VAPID_SUBJECT` (KHÔNG bắt buộc, có giá trị mặc định `mailto:hien.gotravel@gmail.com` ngay trong code nếu bỏ trống) — email liên hệ theo chuẩn VAPID để dịch vụ push có thể liên hệ nếu phát hiện gửi rác.
+   - `VAPID_PUBLIC_KEY` KHÔNG cần đặt secret — khóa này CÔNG KHAI theo đúng thiết kế Web Push nên
+     hardcode thẳng trong `worker.js` (khớp y hệt hằng số cùng tên trong `admin.html`), gộp về 1
+     chỗ duy nhất để tránh gõ lệch giữa 2 nơi.
+3. Sau khi deploy (push code lên `main`), vào Cloudflare Dashboard → Worker → tab "Triggers" xác
+   nhận Cron Trigger `*/10 * * * *` đã hiện diện và đang "Active" (chưa chắc chắn 100% việc thêm
+   `[triggers]` vào `wrangler.toml` rồi deploy qua git-integration hiện tại sẽ tự bật cron mà
+   không cần thao tác thêm trên dashboard — cần PM tự xác nhận vì Claude Code không truy cập được
+   Cloudflare Dashboard).
+4. Test thật trên điện thoại: mở `admin.html` (khuyến khích "Cài đặt ứng dụng"/thêm ra màn hình
+   chính trước), đăng nhập, bấm chuông → "Bật thông báo đẩy trên thiết bị này" → đồng ý cấp quyền.
+   Tạo/sửa 1 hồ sơ có `ngay_tra_kq`=hôm nay (hoặc đợi có khách đăng ký thật từ web) → chờ tối đa 10
+   phút (chu kỳ cron) → kiểm tra điện thoại có hiện thông báo dù đã khóa màn hình/tắt trình duyệt.

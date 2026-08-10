@@ -21,6 +21,9 @@
    ============================================================ */
 const SUPABASE_URL      = "https://vvnjxvcdnzttcdufjjgo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_mp5Q5GRLV_ll8E4eNeivWw_aUv0q0xR";
+// Khóa CÔNG KHAI dùng để đăng ký nhận thông báo đẩy (Web Push) — an toàn khi nhúng ở đây, khóa
+// RIÊNG TƯ tương ứng chỉ nằm trên Cloudflare Worker (biến môi trường), xem CLAUDE.md mục 33.
+const VAPID_PUBLIC_KEY  = "BDjloPaK8oztgLzXMhejaX4_Ytw9i5cKbJFuIm3Gjgd_ukYXhKo5siKUGdkvjHHB8-PruG0A8iLto2U2ItxaPNI";
 </script>
 <style>
 :root{
@@ -69,6 +72,37 @@ header.bar{background:var(--dark);color:#fff;padding:0 20px;display:flex;align-i
   .bar .brand img{height:24px;width:auto}
   .bar .who{display:none}
 }
+
+/* ===== Chuông thông báo (header) — xem CLAUDE.md mục 33 ===== */
+.notif-bell{position:relative;background:none;border:none;color:#fff;font-size:19px;cursor:pointer;
+  padding:6px 10px;border-radius:8px;margin-right:6px;line-height:1}
+.notif-bell:hover{background:rgba(255,255,255,.12)}
+.notif-badge{position:absolute;top:1px;right:1px;background:var(--err);color:#fff;font-size:10px;
+  font-weight:700;min-width:16px;height:16px;border-radius:999px;display:flex;align-items:center;
+  justify-content:center;padding:0 4px;line-height:1;border:1.5px solid var(--dark)}
+.notif-panel{position:fixed;z-index:200;background:#fff;border:1px solid var(--bd);border-radius:var(--r);
+  box-shadow:var(--sh);width:380px;max-width:calc(100vw - 24px);max-height:min(70vh,560px);
+  display:flex;flex-direction:column}
+.notif-panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+  border-bottom:1px solid var(--bd);flex-shrink:0}
+.notif-panel-head b{font-size:14px}
+.notif-panel-actions{display:flex;gap:12px}
+.notif-panel-actions .btn-link{background:none;border:none;color:var(--p);font-size:12px;font-weight:600;
+  cursor:pointer;padding:0;font-family:var(--font)}
+.notif-panel-actions .btn-link:hover{text-decoration:underline}
+.notif-push-row{padding:8px 14px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.notif-push-row .btn{width:100%;font-size:12px;padding:8px 10px}
+.notif-list{overflow-y:auto;flex:1;min-height:0}
+.notif-item{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bd);cursor:pointer}
+.notif-item:hover{background:var(--pl)}
+.notif-item.is-unread{background:#F0F7FF}
+.notif-item .notif-dot{width:8px;height:8px;border-radius:999px;background:var(--p);flex-shrink:0;margin-top:6px}
+.notif-item:not(.is-unread) .notif-dot{visibility:hidden}
+.notif-item-body{flex:1;min-width:0}
+.notif-item-title{font-size:13px;color:var(--tx);line-height:1.4}
+.notif-item-title b{font-weight:700}
+.notif-item-time{font-size:11px;color:var(--mut);margin-top:2px}
+.notif-empty{padding:24px 14px;text-align:center;color:var(--mut);font-size:13px}
 .tabs{display:flex;gap:6px;background:#fff;padding:10px 20px;border-bottom:1px solid var(--bd);
   position:sticky;top:58px;z-index:40;overflow-x:auto;flex-shrink:0}
 .tab{padding:9px 18px;border-radius:999px;border:none;background:none;font-family:var(--font);
@@ -457,10 +491,29 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
   <header class="bar">
     <div class="brand" style="display:flex;align-items:center;gap:10px"><img src="assets/logo.svg" alt="" style="height:32px;width:auto">Top <span>Visa 5S</span> Admin</div>
     <div style="display:flex;align-items:center">
+      <button class="notif-bell" id="notifBellBtn" onclick="toggleNotifPanel()" aria-label="Thông báo">
+        🔔<span class="notif-badge hidden" id="notifBadge">0</span>
+      </button>
       <span class="who" id="whoami"></span>
       <button class="btn btn-g" onclick="logout()">Đăng xuất</button>
     </div>
   </header>
+
+  <!-- ============ PANEL CHUÔNG THÔNG BÁO ============ -->
+  <div class="notif-panel hidden" id="notifPanel">
+    <div class="notif-panel-head">
+      <b>Thông báo</b>
+      <div class="notif-panel-actions">
+        <button class="btn-link" onclick="markAllNotifRead()">Đánh dấu đã đọc</button>
+        <button class="btn-link" onclick="deleteReadNotifications()">Xóa đã đọc</button>
+      </div>
+    </div>
+    <div class="notif-push-row">
+      <button class="btn btn-g" id="notifPushBtn" onclick="togglePushSubscription()">🔔 Bật thông báo đẩy trên thiết bị này</button>
+    </div>
+    <div class="notif-list" id="notifList"></div>
+    <div class="notif-empty hidden" id="notifEmpty">Chưa có thông báo nào</div>
+  </div>
 
   <nav class="tabs">
     <button class="tab active" data-tab="dash" onclick="switchTab('dash')">📊 Dashboard</button>
@@ -1311,7 +1364,31 @@ let CUR_HOSO_XLPS = [], CUR_HOSO_THANHVIEN = [], CUR_FEE_DOITAC = null, CUR_FEE_
 let KHOAN_CHI = [], TC_ROWS = [];
 let KHACH_HANG = [];
 let DICH_VU_GIA = [];
+let NOTIFICATIONS = [];
 const REMEMBER_KEY = 'tv_admin_refresh_token';
+/* ==== IndexedDB dùng chung với sw-admin.js (cùng tên db/store/key) — Service Worker KHÔNG đọc
+   được localStorage của trang, chỉ đọc được IndexedDB, nên refresh token cần lưu thêm 1 bản ở
+   đây để sw-admin.js dùng lúc nhận Web Push khi đã tắt hẳn admin.html (xem CLAUDE.md mục 33).
+   Lỗi (vd chế độ ẩn danh chặn IndexedDB) đều được nuốt lặng lẽ — đây chỉ là tính năng phụ trợ
+   cho thông báo đẩy, không được phép chặn luồng đăng nhập/thao tác chính của trang. ==== */
+function idbOpen(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open('tv5s-admin', 1);
+    req.onupgradeneeded = ()=> req.result.createObjectStore('kv');
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+async function idbSet(key, value){
+  try{
+    const db = await idbOpen();
+    await new Promise((resolve,reject)=>{
+      const tx = db.transaction('kv','readwrite');
+      tx.objectStore('kv').put(value, key);
+      tx.oncomplete = resolve; tx.onerror = ()=>reject(tx.error);
+    });
+  }catch(e){ /* bỏ qua, xem comment ở trên */ }
+}
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ==== Tìm kiếm free-text KHÔNG phân biệt dấu tiếng Việt — dùng chung cho MỌI ô tìm kiếm
@@ -1696,14 +1773,20 @@ $('loginForm').addEventListener('submit', async e=>{
     if(!res.ok) throw new Error(data.error_description||data.msg||'Sai email hoặc mật khẩu');
     TOKEN = data.access_token;
     REFRESH_TOKEN = data.refresh_token||null;
-    if($('rememberMe').checked && data.refresh_token) localStorage.setItem(REMEMBER_KEY, data.refresh_token);
-    else localStorage.removeItem(REMEMBER_KEY);
+    if($('rememberMe').checked && data.refresh_token){
+      localStorage.setItem(REMEMBER_KEY, data.refresh_token);
+      idbSet('refresh_token', data.refresh_token);
+    } else {
+      localStorage.removeItem(REMEMBER_KEY);
+      idbSet('refresh_token', null);
+    }
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
     await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia()]);
     loadPosts();
     loadDashboard();
+    startNotifPolling();
   }catch(err){
     $('loginErr').textContent = err.message==='Failed to fetch'
       ? 'Không kết nối được Supabase. Kiểm tra mạng hoặc URL cấu hình.' : err.message;
@@ -1711,6 +1794,7 @@ $('loginForm').addEventListener('submit', async e=>{
   }finally{ btn.disabled=false; btn.textContent='Đăng nhập'; }
 });
 function logout(){ TOKEN=null; REFRESH_TOKEN=null; localStorage.removeItem(REMEMBER_KEY);
+  idbSet('refresh_token', null); stopNotifPolling();
   $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden');
   $('password').value=''; }
 
@@ -1729,12 +1813,14 @@ async function trySilentLogin(){
     TOKEN = data.access_token;
     REFRESH_TOKEN = data.refresh_token||rt;
     if(data.refresh_token) localStorage.setItem(REMEMBER_KEY, data.refresh_token);
+    idbSet('refresh_token', REFRESH_TOKEN);
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
     await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia()]);
     loadPosts();
     loadDashboard();
+    startNotifPolling();
   }catch(e){
     localStorage.removeItem(REMEMBER_KEY);
   }
@@ -1744,6 +1830,149 @@ trySilentLogin();
 /* ==================== PWA: đăng ký service worker để có thể "Cài đặt" ==================== */
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw-admin.js').catch(()=>{}); });
+}
+
+/* ==================== CHUÔNG THÔNG BÁO (header) ====================
+   3 loại: 'tra_kq' (hồ sơ trả kết quả hôm nay), 'nhac_tuvan' (lead nhắc tư vấn hôm nay),
+   'dang_ky_moi' (khách tự đăng ký từ web). Các dòng do 1 Cloudflare Worker chạy nền (cron, xem
+   02_Source/worker.js) tự sinh ra bằng cách quét ho_so/leads định kỳ — trang admin.html CHỈ đọc/
+   đánh dấu đã đọc/xóa, KHÔNG tự sinh thông báo (tránh 2 nơi cùng sinh logic dễ lệch nhau, và để
+   thông báo vẫn được sinh + đẩy ra điện thoại kể cả khi không ai đang mở admin.html). Xem CLAUDE.md
+   mục 33. ==================== */
+const NOTIF_LOAI_LABEL = { tra_kq:'📆 Trả kết quả', nhac_tuvan:'📅 Nhắc tư vấn', dang_ky_moi:'🆕 Khách hàng đăng ký' };
+const NOTIF_LOAI_TAB   = { tra_kq:'hoso', nhac_tuvan:'tuvan', dang_ky_moi:'tuvan' };
+let notifPollTimer = null;
+function startNotifPolling(){
+  loadNotifications();
+  if(notifPollTimer) return;
+  notifPollTimer = setInterval(loadNotifications, 45000);
+}
+function stopNotifPolling(){ clearInterval(notifPollTimer); notifPollTimer=null; }
+async function loadNotifications(){
+  try{
+    NOTIFICATIONS = await api('notifications?select=*&order=created_at.desc&limit=50') || [];
+    renderNotifBell();
+  }catch(e){ /* im lặng — chuông thông báo là tính năng phụ, không làm phiền bằng toast lỗi mỗi 45s */ }
+}
+function renderNotifBell(){
+  const unread = NOTIFICATIONS.filter(n=>!n.is_read).length;
+  const badge = $('notifBadge');
+  badge.textContent = unread>99 ? '99+' : unread;
+  badge.classList.toggle('hidden', unread===0);
+  $('notifEmpty').classList.toggle('hidden', NOTIFICATIONS.length>0);
+  $('notifList').innerHTML = NOTIFICATIONS.map(n => `
+    <div class="notif-item ${n.is_read?'':'is-unread'}" onclick="onNotifClick(${n.id})">
+      <span class="notif-dot"></span>
+      <div class="notif-item-body">
+        <div class="notif-item-title"><b>${esc(NOTIF_LOAI_LABEL[n.loai]||'Thông báo')}:</b> ${esc(n.noi_dung)}</div>
+        <div class="notif-item-time">${fmtTime(n.created_at)}</div>
+      </div>
+    </div>`).join('');
+}
+function toggleNotifPanel(){
+  $('notifPanel').classList.contains('hidden') ? openNotifPanel() : closeNotifPanel();
+}
+function openNotifPanel(){
+  $('notifPanel').classList.remove('hidden');
+  positionNotifPanel();
+  refreshPushButtonLabel();
+}
+function closeNotifPanel(){ $('notifPanel').classList.add('hidden'); }
+function positionNotifPanel(){
+  const btn=$('notifBellBtn'), panel=$('notifPanel'), r=btn.getBoundingClientRect();
+  const pw = panel.offsetWidth || 380;
+  panel.style.left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8))+'px';
+  panel.style.top = (r.bottom+6)+'px';
+}
+document.addEventListener('mousedown', e=>{
+  const panel=$('notifPanel');
+  if(!panel || panel.classList.contains('hidden')) return;
+  if(panel.contains(e.target) || e.target.closest('#notifBellBtn')) return;
+  closeNotifPanel();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeNotifPanel(); });
+window.addEventListener('scroll', ()=>closeNotifPanel());
+window.addEventListener('resize', ()=>closeNotifPanel());
+async function onNotifClick(id){
+  const n = NOTIFICATIONS.find(x=>x.id===id);
+  if(!n) return;
+  closeNotifPanel();
+  if(!n.is_read){
+    try{
+      await api('notifications?id=eq.'+id,{method:'PATCH',body:JSON.stringify({is_read:true,read_at:new Date().toISOString()}),prefer:'return=minimal'});
+      n.is_read=true; n.read_at=new Date().toISOString();
+      renderNotifBell();
+    }catch(e){ toast('Lỗi cập nhật thông báo: '+e.message,'err'); }
+  }
+  const tab = NOTIF_LOAI_TAB[n.loai];
+  if(!tab) return;
+  switchTab(tab);
+  if(n.loai==='tra_kq') openHoSoModal(n.ref_id); else openTvModal(n.ref_id);
+}
+async function markAllNotifRead(){
+  if(!NOTIFICATIONS.some(n=>!n.is_read)) return;
+  try{
+    await api('notifications?is_read=eq.false',{method:'PATCH',body:JSON.stringify({is_read:true,read_at:new Date().toISOString()}),prefer:'return=minimal'});
+    NOTIFICATIONS.forEach(n=>{ if(!n.is_read){ n.is_read=true; n.read_at=new Date().toISOString(); } });
+    renderNotifBell();
+  }catch(e){ toast('Lỗi: '+e.message,'err'); }
+}
+async function deleteReadNotifications(){
+  if(!NOTIFICATIONS.some(n=>n.is_read)){ toast('Không có thông báo đã đọc để xóa','err'); return; }
+  if(!await showConfirmPopup({message:'Xóa toàn bộ thông báo đã đọc? Không thể hoàn tác.'})) return;
+  try{
+    await api('notifications?is_read=eq.true',{method:'DELETE',prefer:'return=minimal'});
+    NOTIFICATIONS = NOTIFICATIONS.filter(n=>!n.is_read);
+    renderNotifBell();
+    toast('Đã xóa thông báo đã đọc');
+  }catch(e){ toast('Lỗi: '+e.message,'err'); }
+}
+
+/* ==== Thông báo đẩy (Web Push) — bấm nút mới xin quyền (bắt buộc phải qua thao tác bấm của người
+   dùng, trình duyệt chặn xin quyền tự động lúc tải trang). Sau khi bật, 1 Cloudflare Worker chạy
+   nền (worker.js) sẽ gửi push tới đúng thiết bị này kể cả khi đã tắt hẳn trình duyệt/app. ==== */
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+}
+async function refreshPushButtonLabel(){
+  const btn = $('notifPushBtn');
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+    btn.textContent = '🔕 Trình duyệt này không hỗ trợ thông báo đẩy'; btn.disabled = true; return;
+  }
+  btn.disabled = false;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    btn.textContent = sub ? '🔕 Tắt thông báo đẩy trên thiết bị này' : '🔔 Bật thông báo đẩy trên thiết bị này';
+  }catch(e){ btn.textContent = '🔔 Bật thông báo đẩy trên thiết bị này'; }
+}
+async function togglePushSubscription(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+    toast('Trình duyệt này không hỗ trợ thông báo đẩy','err'); return;
+  }
+  const reg = await navigator.serviceWorker.ready;
+  const existing = await reg.pushManager.getSubscription();
+  if(existing){
+    try{ await api('push_subscriptions?endpoint=eq.'+encodeURIComponent(existing.endpoint),{method:'DELETE',prefer:'return=minimal'}); }catch(e){}
+    await existing.unsubscribe();
+    toast('Đã tắt thông báo đẩy trên thiết bị này');
+    refreshPushButtonLabel();
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if(perm!=='granted'){ toast('Bạn cần cho phép quyền thông báo để bật tính năng này','err'); return; }
+  try{
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+    const j = sub.toJSON();
+    await api('push_subscriptions?on_conflict=endpoint',{method:'POST',
+      body:JSON.stringify({endpoint:j.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth, user_agent:navigator.userAgent, last_seen_at:new Date().toISOString()}),
+      prefer:'resolution=merge-duplicates,return=minimal'});
+    toast('Đã bật thông báo đẩy trên thiết bị này');
+  }catch(e){ toast('Không bật được thông báo đẩy: '+e.message,'err'); }
+  refreshPushButtonLabel();
 }
 
 /* ==================== TAB ==================== */

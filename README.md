@@ -280,6 +280,35 @@ Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 31 (F.1, ảnh bài vi�
       Danh mục/Phân loại, xem lại kỹ toàn bộ nội dung "Đậu visa mới thu phí dịch vụ" trên trang chủ
       xem đã đúng ý muốn truyền tải chưa (đây là nội dung marketing/cam kết, PM nên tự đọc lại kỹ).
 
+## Phase 9 — Ô Email ở form đăng ký, chuông thông báo + thông báo đẩy ra điện thoại (2026-08-10)
+
+- **`index.html`**: thêm ô "Email" (không bắt buộc, có kiểm tra đúng định dạng khi có nhập) vào
+  form đăng ký. Đổi text nút gửi "Gửi đăng ký →" → "Gửi tư vấn →".
+- **`admin.html`**: thêm chuông thông báo trên header — báo khi có hồ sơ trả kết quả hôm nay,
+  khách cần nhắc tư vấn hôm nay, hoặc khách mới tự đăng ký từ web. Có đếm số chưa đọc, đánh dấu đã
+  đọc, xóa thông báo đã đọc, bấm vào 1 thông báo tự mở đúng hồ sơ/khách liên quan.
+- **Thông báo đẩy ra điện thoại**: bấm "Bật thông báo đẩy trên thiết bị này" trong panel chuông để
+  nhận thông báo ngay trên điện thoại (kể cả khi đã khóa màn hình/tắt hẳn trình duyệt) — cần 1
+  Cloudflare Worker chạy nền (`02_Source/worker.js`) quét dữ liệu mỗi 10 phút và gửi push.
+
+Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 33.
+
+- [ ] **Cần chạy `05_Database/08_supabase_setup_phase8.sql` trong Supabase SQL Editor** (tạo bảng
+      mới `notifications` + `push_subscriptions`) — chưa chạy thì chuông thông báo sẽ báo lỗi.
+- [ ] **Cần cấu hình 2 secret bắt buộc trên Cloudflare Dashboard** (Worker → Settings → Variables
+      and Secrets → "Encrypt"): `SUPABASE_SERVICE_ROLE_KEY` (copy từ Supabase → Project Settings →
+      API), `VAPID_PRIVATE_KEY_JWK` (+ `VAPID_SUBJECT` tùy chọn) — xem giá trị cụ thể + hướng dẫn
+      chi tiết ở `CLAUDE.md` mục 33.D. Thiếu bước này thì thông báo trong trang vẫn chạy bình
+      thường, chỉ riêng phần đẩy ra điện thoại không hoạt động.
+- [ ] Sau khi deploy, vào Cloudflare Dashboard → Worker → tab "Triggers" xác nhận Cron Trigger
+      `*/10 * * * *` đã "Active".
+- [ ] Test thật trên điện thoại: đăng nhập admin.html, bấm chuông → "Bật thông báo đẩy" → đồng ý
+      cấp quyền → tạo/sửa 1 hồ sơ có Ngày trả KQ = hôm nay → đợi tối đa 10 phút → xem điện thoại có
+      hiện thông báo dù đã khóa màn hình không.
+- [ ] **Xóa 2 dòng dữ liệu thử nghiệm** trong tab "Tư vấn": tên "Nguyễn Văn Test", SĐT
+      0912345678 — do Claude Code vô tình gửi thật lúc test form đăng ký trong phiên làm việc này
+      (đã báo ngay khi phát hiện, xem `Handover_Phien_Moi.md`).
+
 ## Muốn sửa nội dung?
 
 Gửi file cho Claude kèm yêu cầu, ví dụ: "Đổi giá visa Nhật thành 1.800.000đ", "Thêm quốc gia Singapore", "Đổi màu chủ đạo sang xanh lá" — sau đó deploy lại theo Bước 5 trong hướng dẫn.
