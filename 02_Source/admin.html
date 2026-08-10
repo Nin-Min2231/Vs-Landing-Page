@@ -96,6 +96,7 @@ header.bar{background:var(--dark);color:#fff;padding:0 20px;display:flex;align-i
 .notif-item{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bd);cursor:pointer}
 .notif-item:hover{background:var(--pl)}
 .notif-item.is-unread{background:#F0F7FF}
+.notif-item .notif-check{width:auto;flex-shrink:0;margin-top:3px;cursor:pointer}
 .notif-item .notif-dot{width:8px;height:8px;border-radius:999px;background:var(--p);flex-shrink:0;margin-top:6px}
 .notif-item:not(.is-unread) .notif-dot{visibility:hidden}
 .notif-item-body{flex:1;min-width:0}
@@ -505,7 +506,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       <b>Thông báo</b>
       <div class="notif-panel-actions">
         <button class="btn-link" onclick="markAllNotifRead()">Đánh dấu đã đọc</button>
-        <button class="btn-link" onclick="deleteReadNotifications()">Xóa đã đọc</button>
+        <button class="btn-link" id="notifDeleteBtn" onclick="deleteSelectedNotifications()">Xóa đã chọn</button>
       </div>
     </div>
     <div class="notif-push-row">
@@ -1862,12 +1863,16 @@ function renderNotifBell(){
   $('notifEmpty').classList.toggle('hidden', NOTIFICATIONS.length>0);
   $('notifList').innerHTML = NOTIFICATIONS.map(n => `
     <div class="notif-item ${n.is_read?'':'is-unread'}" onclick="onNotifClick(${n.id})">
+      <input type="checkbox" class="notif-check" data-id="${n.id}" onclick="event.stopPropagation()">
       <span class="notif-dot"></span>
       <div class="notif-item-body">
         <div class="notif-item-title"><b>${esc(NOTIF_LOAI_LABEL[n.loai]||'Thông báo')}:</b> ${esc(n.noi_dung)}</div>
         <div class="notif-item-time">${fmtTime(n.created_at)}</div>
       </div>
     </div>`).join('');
+}
+function getSelectedNotifIds(){
+  return [...document.querySelectorAll('.notif-check:checked')].map(cb=>Number(cb.dataset.id));
 }
 function toggleNotifPanel(){
   $('notifPanel').classList.contains('hidden') ? openNotifPanel() : closeNotifPanel();
@@ -1917,14 +1922,15 @@ async function markAllNotifRead(){
     renderNotifBell();
   }catch(e){ toast('Lỗi: '+e.message,'err'); }
 }
-async function deleteReadNotifications(){
-  if(!NOTIFICATIONS.some(n=>n.is_read)){ toast('Không có thông báo đã đọc để xóa','err'); return; }
-  if(!await showConfirmPopup({message:'Xóa toàn bộ thông báo đã đọc? Không thể hoàn tác.'})) return;
+async function deleteSelectedNotifications(){
+  const ids = getSelectedNotifIds();
+  if(!ids.length){ toast('Hãy tick chọn ít nhất 1 thông báo cần xóa','err'); return; }
+  if(!await showConfirmPopup({message:'Xóa '+ids.length+' thông báo đã chọn? Không thể hoàn tác.'})) return;
   try{
-    await api('notifications?is_read=eq.true',{method:'DELETE',prefer:'return=minimal'});
-    NOTIFICATIONS = NOTIFICATIONS.filter(n=>!n.is_read);
+    await api('notifications?id=in.('+ids.join(',')+')',{method:'DELETE',prefer:'return=minimal'});
+    NOTIFICATIONS = NOTIFICATIONS.filter(n=>!ids.includes(n.id));
     renderNotifBell();
-    toast('Đã xóa thông báo đã đọc');
+    toast('Đã xóa '+ids.length+' thông báo');
   }catch(e){ toast('Lỗi: '+e.message,'err'); }
 }
 
