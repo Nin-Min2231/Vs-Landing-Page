@@ -20,9 +20,14 @@ export default {
   }
 };
 
-/* ==================== GỌI SUPABASE BẰNG SERVICE ROLE (bỏ qua RLS) ==================== */
+/* ==================== GỌI SUPABASE BẰNG SERVICE ROLE (bỏ qua RLS) ====================
+   SUPABASE_URL hardcode thẳng ở đây (PHẢI khớp y hệt hằng số cùng tên trong index.html/admin.html)
+   — giá trị này vốn đã công khai (ai mở View Source trang chủ cũng thấy), không cần đặt thành
+   biến môi trường trên Cloudflare nữa, tránh lặp lại sự cố "quên thêm 1 biến nên job im lặng
+   không chạy gì" (đã gặp thật lúc set up lần đầu — xem CLAUDE.md mục 33). ==================== */
+const SUPABASE_URL = "https://vvnjxvcdnzttcdufjjgo.supabase.co";
 async function supa(env, path, opts = {}) {
-  const res = await fetch(env.SUPABASE_URL + '/rest/v1/' + path, {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
     ...opts,
     headers: {
       'Content-Type': 'application/json',
@@ -46,42 +51,50 @@ async function generateNewNotifications(env) {
   const today = new Date().toISOString().slice(0, 10);
   const candidates = [];
 
-  // 'tra_kq': hồ sơ có ngay_tra_kq đúng hôm nay, còn "Đã nộp"/"Đang xử lý" — khớp đúng điều kiện
-  // khối "Hồ sơ trả kết quả tuần này" ở Dashboard (CLAUDE.md mục 31.A).
-  const hoSoRows = await supa(env,
-    'ho_so?select=id,ten_khach,ngay_tra_kq,danh_muc_nuoc(ten)' +
-    '&ngay_tra_kq=eq.' + today +
-    '&trang_thai=in.' + encodeURIComponent('("Đã nộp","Đang xử lý")'));
-  for (const h of hoSoRows || []) {
-    candidates.push({
-      loai: 'tra_kq', ref_table: 'ho_so', ref_id: h.id, ref_ngay: h.ngay_tra_kq,
-      noi_dung: (h.ten_khach || 'Khách hàng') + '_ Visa ' + (h.danh_muc_nuoc?.ten || 'chưa rõ')
-    });
-  }
+  // Mỗi loại bọc try/catch RIÊNG — 1 loại lỗi (vd sai cú pháp filter, đổi schema...) không được
+  // phép làm im lặng luôn 2 loại còn lại (bài học thật từ lúc set up lần đầu, xem CLAUDE.md mục 33).
+  try {
+    // 'tra_kq': hồ sơ có ngay_tra_kq đúng hôm nay, còn "Đã nộp"/"Đang xử lý" — khớp đúng điều kiện
+    // khối "Hồ sơ trả kết quả tuần này" ở Dashboard (CLAUDE.md mục 31.A).
+    const hoSoRows = await supa(env,
+      'ho_so?select=id,ten_khach,ngay_tra_kq,danh_muc_nuoc(ten)' +
+      '&ngay_tra_kq=eq.' + today +
+      '&trang_thai=in.' + encodeURIComponent('("Đã nộp","Đang xử lý")'));
+    for (const h of hoSoRows || []) {
+      candidates.push({
+        loai: 'tra_kq', ref_table: 'ho_so', ref_id: h.id, ref_ngay: h.ngay_tra_kq,
+        noi_dung: (h.ten_khach || 'Khách hàng') + '_ Visa ' + (h.danh_muc_nuoc?.ten || 'chưa rõ')
+      });
+    }
+  } catch (e) { console.error('generateNewNotifications tra_kq lỗi:', e); }
 
-  // 'nhac_tuvan': lead có ngay_nhac_lai đúng hôm nay — không lọc trạng thái, khớp view có sẵn
-  // v_tu_van_can_nhac_lai (05_Database/02_supabase_setup_phase2.sql).
-  const nhacLaiRows = await supa(env,
-    'leads?select=id,name,country,ngay_nhac_lai&ngay_nhac_lai=eq.' + today);
-  for (const l of nhacLaiRows || []) {
-    candidates.push({
-      loai: 'nhac_tuvan', ref_table: 'leads', ref_id: l.id, ref_ngay: l.ngay_nhac_lai,
-      noi_dung: (l.name || 'Khách hàng') + '_ Visa ' + (l.country || 'chưa rõ')
-    });
-  }
+  try {
+    // 'nhac_tuvan': lead có ngay_nhac_lai đúng hôm nay — không lọc trạng thái, khớp view có sẵn
+    // v_tu_van_can_nhac_lai (05_Database/02_supabase_setup_phase2.sql).
+    const nhacLaiRows = await supa(env,
+      'leads?select=id,name,country,ngay_nhac_lai&ngay_nhac_lai=eq.' + today);
+    for (const l of nhacLaiRows || []) {
+      candidates.push({
+        loai: 'nhac_tuvan', ref_table: 'leads', ref_id: l.id, ref_ngay: l.ngay_nhac_lai,
+        noi_dung: (l.name || 'Khách hàng') + '_ Visa ' + (l.country || 'chưa rõ')
+      });
+    }
+  } catch (e) { console.error('generateNewNotifications nhac_tuvan lỗi:', e); }
 
-  // 'dang_ky_moi': khách tự đăng ký từ form công khai index.html (nguon='Từ Web'). Giới hạn 200
-  // dòng mới nhất — đủ rộng để không bỏ sót nếu Worker lỡ dừng vài ngày, vẫn nhẹ cho DB; dòng đã
-  // có thông báo rồi tự bị bỏ qua nhờ ràng buộc unique khi upsert bên dưới.
-  const moiRows = await supa(env,
-    'leads?select=id,name,country,created_at&nguon=eq.' + encodeURIComponent('Từ Web') +
-    '&order=created_at.desc&limit=200');
-  for (const l of moiRows || []) {
-    candidates.push({
-      loai: 'dang_ky_moi', ref_table: 'leads', ref_id: l.id, ref_ngay: (l.created_at || '').slice(0, 10),
-      noi_dung: (l.name || 'Khách hàng') + '_ Visa ' + (l.country || 'chưa rõ')
-    });
-  }
+  try {
+    // 'dang_ky_moi': khách tự đăng ký từ form công khai index.html (nguon='Từ Web'). Giới hạn 200
+    // dòng mới nhất — đủ rộng để không bỏ sót nếu Worker lỡ dừng vài ngày, vẫn nhẹ cho DB; dòng đã
+    // có thông báo rồi tự bị bỏ qua nhờ ràng buộc unique khi upsert bên dưới.
+    const moiRows = await supa(env,
+      'leads?select=id,name,country,created_at&nguon=eq.' + encodeURIComponent('Từ Web') +
+      '&order=created_at.desc&limit=200');
+    for (const l of moiRows || []) {
+      candidates.push({
+        loai: 'dang_ky_moi', ref_table: 'leads', ref_id: l.id, ref_ngay: (l.created_at || '').slice(0, 10),
+        noi_dung: (l.name || 'Khách hàng') + '_ Visa ' + (l.country || 'chưa rõ')
+      });
+    }
+  } catch (e) { console.error('generateNewNotifications dang_ky_moi lỗi:', e); }
 
   if (!candidates.length) return [];
 
@@ -122,10 +135,12 @@ async function pushToAllSubscriptions(env, newRows) {
 }
 
 async function runNotificationJob(env) {
-  if (!env || !env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return; // chưa cấu hình secret
+  if (!env || !env.SUPABASE_SERVICE_ROLE_KEY) return; // chưa cấu hình secret
   const newRows = await generateNewNotifications(env);
   if (env.VAPID_PRIVATE_KEY_JWK) {
-    await pushToAllSubscriptions(env, newRows);
+    try {
+      await pushToAllSubscriptions(env, newRows);
+    } catch (e) { console.error('pushToAllSubscriptions lỗi:', e); }
   }
 }
 
