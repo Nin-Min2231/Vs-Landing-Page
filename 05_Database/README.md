@@ -27,6 +27,8 @@
 8. `08_supabase_setup_phase8.sql` — Phase 8: bảng mới `notifications` (chuông thông báo admin.html:
    trả kết quả hôm nay / nhắc tư vấn hôm nay / khách đăng ký mới) + `push_subscriptions` (đăng ký
    nhận thông báo đẩy Web Push ra điện thoại) — cả 2 chỉ `authenticated` (admin) truy cập được.
+9. `09_supabase_setup_phase9.sql` — Phase 9: `notifications` thêm cột `ref_parent_id` + nới CHECK
+   constraint cột `loai` để thêm loại thông báo thứ 4 `'xlps'` (Xử lý phát sinh có hạn chốt hôm nay).
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
 project đang dùng đã qua đủ cả 4 phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy

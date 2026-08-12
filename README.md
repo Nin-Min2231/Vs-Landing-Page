@@ -283,31 +283,30 @@ Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 31 (F.1, ảnh bài vi�
 ## Phase 9 — Ô Email ở form đăng ký, chuông thông báo + thông báo đẩy ra điện thoại (2026-08-10)
 
 - **`index.html`**: thêm ô "Email" (không bắt buộc, có kiểm tra đúng định dạng khi có nhập) vào
-  form đăng ký. Đổi text nút gửi "Gửi đăng ký →" → "Gửi tư vấn →".
+  form đăng ký. Đổi text nút gửi "Gửi đăng ký →" → "Gửi tư vấn →". Menu mobile giờ tự đóng khi bấm
+  1 mục hoặc bấm ra ngoài (trước đây bung ra là đứng yên luôn, không tự tắt).
 - **`admin.html`**: thêm chuông thông báo trên header — báo khi có hồ sơ trả kết quả hôm nay,
-  khách cần nhắc tư vấn hôm nay, hoặc khách mới tự đăng ký từ web. Có đếm số chưa đọc, đánh dấu đã
-  đọc, xóa thông báo đã đọc, bấm vào 1 thông báo tự mở đúng hồ sơ/khách liên quan.
+  khách cần nhắc tư vấn hôm nay, khách mới tự đăng ký từ web, hoặc xử lý phát sinh (trong Hồ sơ) có
+  hạn chốt hôm nay. Có đếm số chưa đọc, đánh dấu tất cả đã đọc, tick chọn từng thông báo rồi xóa
+  (không xóa hàng loạt), bấm vào 1 thông báo tự mở đúng hồ sơ/khách liên quan.
 - **Thông báo đẩy ra điện thoại**: bấm "Bật thông báo đẩy trên thiết bị này" trong panel chuông để
   nhận thông báo ngay trên điện thoại (kể cả khi đã khóa màn hình/tắt hẳn trình duyệt) — cần 1
-  Cloudflare Worker chạy nền (`02_Source/worker.js`) quét dữ liệu mỗi 10 phút và gửi push.
+  Cloudflare Worker chạy nền (`02_Source/worker.js`) quét dữ liệu mỗi 5-10 phút và gửi push.
 
-Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 33.
+Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 33-34.
 
-- [ ] **Cần chạy `05_Database/08_supabase_setup_phase8.sql` trong Supabase SQL Editor** (tạo bảng
-      mới `notifications` + `push_subscriptions`) — chưa chạy thì chuông thông báo sẽ báo lỗi.
-- [ ] **Cần cấu hình 2 secret bắt buộc trên Cloudflare Dashboard** (Worker → Settings → Variables
-      and Secrets → "Encrypt"): `SUPABASE_SERVICE_ROLE_KEY` (copy từ Supabase → Project Settings →
-      API), `VAPID_PRIVATE_KEY_JWK` (+ `VAPID_SUBJECT` tùy chọn) — xem giá trị cụ thể + hướng dẫn
-      chi tiết ở `CLAUDE.md` mục 33.D. Thiếu bước này thì thông báo trong trang vẫn chạy bình
-      thường, chỉ riêng phần đẩy ra điện thoại không hoạt động.
-- [ ] Sau khi deploy, vào Cloudflare Dashboard → Worker → tab "Triggers" xác nhận Cron Trigger
-      `*/10 * * * *` đã "Active".
-- [ ] Test thật trên điện thoại: đăng nhập admin.html, bấm chuông → "Bật thông báo đẩy" → đồng ý
-      cấp quyền → tạo/sửa 1 hồ sơ có Ngày trả KQ = hôm nay → đợi tối đa 10 phút → xem điện thoại có
-      hiện thông báo dù đã khóa màn hình không.
-- [ ] **Xóa 2 dòng dữ liệu thử nghiệm** trong tab "Tư vấn": tên "Nguyễn Văn Test", SĐT
-      0912345678 — do Claude Code vô tình gửi thật lúc test form đăng ký trong phiên làm việc này
-      (đã báo ngay khi phát hiện, xem `Handover_Phien_Moi.md`).
+- [x] Chạy `05_Database/08_supabase_setup_phase8.sql` trong Supabase SQL Editor — đã chạy 2026-08-10.
+- [ ] **Cần chạy thêm `05_Database/09_supabase_setup_phase9.sql`** (thêm cột `ref_parent_id` +
+      cho phép loại thông báo mới `'xlps'`) — chưa chạy thì thông báo "Xử lý phát sinh" sẽ báo lỗi.
+- [x] Cấu hình 2 secret bắt buộc trên Cloudflare Dashboard (`SUPABASE_SERVICE_ROLE_KEY`,
+      `VAPID_PRIVATE_KEY_JWK`, dạng "Encrypt") — đã làm 2026-08-10, đã đổi loại từ Plaintext sang
+      Encrypt sau khi phát hiện lộ giá trị qua ảnh chụp màn hình, và đã tạo khóa `service_role`
+      mới thay cho khóa cũ bị lộ.
+- [x] Cron Trigger đã "Active" trên Cloudflare Dashboard (đặt `*/5 * * * *`, chạy mỗi 5 phút).
+- [x] Đã test chuông thông báo trong trang — hoạt động đúng (PM xác nhận 2026-08-10).
+- [ ] Test thật thông báo ĐẨY RA ĐIỆN THOẠI (khi khóa màn hình/tắt trình duyệt) — chưa có xác nhận
+      riêng cho phần này, chỉ mới xác nhận chuông trong trang.
+- [x] Xóa dữ liệu thử nghiệm ("Nguyễn Văn Test") trong tab "Tư vấn" — đã xóa.
 
 ## Muốn sửa nội dung?
 

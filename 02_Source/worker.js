@@ -62,7 +62,7 @@ async function generateNewNotifications(env) {
       '&trang_thai=in.' + encodeURIComponent('("Đã nộp","Đang xử lý")'));
     for (const h of hoSoRows || []) {
       candidates.push({
-        loai: 'tra_kq', ref_table: 'ho_so', ref_id: h.id, ref_ngay: h.ngay_tra_kq,
+        loai: 'tra_kq', ref_table: 'ho_so', ref_id: h.id, ref_parent_id: null, ref_ngay: h.ngay_tra_kq,
         noi_dung: (h.ten_khach || 'Khách hàng') + '_ Visa ' + (h.danh_muc_nuoc?.ten || 'chưa rõ')
       });
     }
@@ -75,7 +75,7 @@ async function generateNewNotifications(env) {
       'leads?select=id,name,country,ngay_nhac_lai&ngay_nhac_lai=eq.' + today);
     for (const l of nhacLaiRows || []) {
       candidates.push({
-        loai: 'nhac_tuvan', ref_table: 'leads', ref_id: l.id, ref_ngay: l.ngay_nhac_lai,
+        loai: 'nhac_tuvan', ref_table: 'leads', ref_id: l.id, ref_parent_id: null, ref_ngay: l.ngay_nhac_lai,
         noi_dung: (l.name || 'Khách hàng') + '_ Visa ' + (l.country || 'chưa rõ')
       });
     }
@@ -90,11 +90,32 @@ async function generateNewNotifications(env) {
       '&order=created_at.desc&limit=200');
     for (const l of moiRows || []) {
       candidates.push({
-        loai: 'dang_ky_moi', ref_table: 'leads', ref_id: l.id, ref_ngay: (l.created_at || '').slice(0, 10),
+        loai: 'dang_ky_moi', ref_table: 'leads', ref_id: l.id, ref_parent_id: null,
+        ref_ngay: (l.created_at || '').slice(0, 10),
         noi_dung: (l.name || 'Khách hàng') + '_ Visa ' + (l.country || 'chưa rõ')
       });
     }
   } catch (e) { console.error('generateNewNotifications dang_ky_moi lỗi:', e); }
+
+  try {
+    // 'xlps': xử lý phát sinh (trong dialog Hồ sơ) có han_chot đúng hôm nay, còn "Đang xử lý" —
+    // khớp đúng điều kiện view v_xu_ly_phat_sinh_7_ngay (chỉ tính khi chưa Hủy/Tạm dừng/Hoàn
+    // thành). ref_id PHẢI là id của chính dòng xử lý phát sinh (không phải ho_so_id) để 2 dòng
+    // xử lý phát sinh khác nhau cùng hạn chốt trên 1 hồ sơ vẫn tạo được 2 thông báo riêng —
+    // ref_parent_id lưu ho_so_id để admin.html biết mở đúng Hồ sơ nào lúc bấm vào thông báo.
+    const xlpsRows = await supa(env,
+      'ho_so_xu_ly_phat_sinh?select=id,ho_so_id,noi_dung,han_chot,ho_so(ten_khach,danh_muc_nuoc(ten))' +
+      '&han_chot=eq.' + today +
+      '&trang_thai=eq.' + encodeURIComponent('Đang xử lý'));
+    for (const x of xlpsRows || []) {
+      candidates.push({
+        loai: 'xlps', ref_table: 'ho_so_xu_ly_phat_sinh', ref_id: x.id, ref_parent_id: x.ho_so_id,
+        ref_ngay: x.han_chot,
+        noi_dung: (x.ho_so?.ten_khach || 'Khách hàng') + '_' + (x.ho_so?.danh_muc_nuoc?.ten || 'chưa rõ') +
+          '_ ' + x.noi_dung
+      });
+    }
+  } catch (e) { console.error('generateNewNotifications xlps lỗi:', e); }
 
   if (!candidates.length) return [];
 

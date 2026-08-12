@@ -1840,8 +1840,8 @@ if('serviceWorker' in navigator){
    đánh dấu đã đọc/xóa, KHÔNG tự sinh thông báo (tránh 2 nơi cùng sinh logic dễ lệch nhau, và để
    thông báo vẫn được sinh + đẩy ra điện thoại kể cả khi không ai đang mở admin.html). Xem CLAUDE.md
    mục 33. ==================== */
-const NOTIF_LOAI_LABEL = { tra_kq:'📆 Trả kết quả', nhac_tuvan:'📅 Nhắc tư vấn', dang_ky_moi:'🆕 Khách hàng đăng ký' };
-const NOTIF_LOAI_TAB   = { tra_kq:'hoso', nhac_tuvan:'tuvan', dang_ky_moi:'tuvan' };
+const NOTIF_LOAI_LABEL = { tra_kq:'📆 Trả kết quả', nhac_tuvan:'📅 Nhắc tư vấn', dang_ky_moi:'🆕 Khách hàng đăng ký', xlps:'⚠️ Xử lý phát sinh' };
+const NOTIF_LOAI_TAB   = { tra_kq:'hoso', nhac_tuvan:'tuvan', dang_ky_moi:'tuvan', xlps:'hoso' };
 let notifPollTimer = null;
 function startNotifPolling(){
   loadNotifications();
@@ -1912,7 +1912,9 @@ async function onNotifClick(id){
   const tab = NOTIF_LOAI_TAB[n.loai];
   if(!tab) return;
   switchTab(tab);
-  if(n.loai==='tra_kq') openHoSoModal(n.ref_id); else openTvModal(n.ref_id);
+  if(n.loai==='tra_kq') openHoSoModal(n.ref_id);
+  else if(n.loai==='xlps') openHoSoModal(n.ref_parent_id);
+  else openTvModal(n.ref_id);
 }
 async function markAllNotifRead(){
   if(!NOTIFICATIONS.some(n=>!n.is_read)) return;

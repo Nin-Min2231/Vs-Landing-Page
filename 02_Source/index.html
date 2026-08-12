@@ -779,11 +779,23 @@ footer a:hover{color:#fff}
   document.querySelectorAll('.js-company').forEach(e=>e.textContent=COMPANY_NAME);
 })();
 
-/* ==================== MENU MOBILE ==================== */
+/* ==================== MENU MOBILE ====================
+   Đóng menu khi: (1) bấm vào 1 mục trong menu — dùng event delegation trên navLinks thay vì gắn
+   listener từng thẻ <a> để tự động hoạt động luôn với menu "Danh mục bài viết" chèn ĐỘNG sau khi
+   tải xong bài viết (mục "DANH MỤC BÀI VIẾT ĐỘNG" cuối trang), không cần gắn lại thủ công; (2) bấm
+   ra ngoài menu (outfocus) — cùng mẫu stopPropagation() + document click listener đã dùng cho
+   floatContact bên dưới, tránh bị tự đóng ngay lúc vừa bấm nút hamburger để MỞ menu. ==================== */
 const navLinks = document.getElementById('navLinks');
-document.getElementById('hamburger').addEventListener('click',()=>navLinks.classList.toggle('show'));
-function closeMobileMenuOnClick(a){ a.addEventListener('click',()=>navLinks.classList.remove('show')); }
-navLinks.querySelectorAll('a').forEach(closeMobileMenuOnClick);
+document.getElementById('hamburger').addEventListener('click',e=>{
+  e.stopPropagation();
+  navLinks.classList.toggle('show');
+});
+navLinks.addEventListener('click',e=>{
+  if(e.target.closest('a')) navLinks.classList.remove('show');
+});
+document.addEventListener('click',e=>{
+  if(navLinks.classList.contains('show') && !navLinks.contains(e.target)) navLinks.classList.remove('show');
+});
 
 /* ==================== SCROLLSPY MENU (highlight mục đang xem) ====================
    Đóng thành hàm dùng lại được vì menu "Danh mục bài viết" được chèn ĐỘNG sau khi tải xong bài

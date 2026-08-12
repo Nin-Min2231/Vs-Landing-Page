@@ -1,146 +1,101 @@
-# Handover — Bàn giao sang phiên làm việc mới (2026-08-10, bản 5 — GHI ĐÈ toàn bộ bản cũ)
+# Handover — Bàn giao sang phiên làm việc mới (2026-08-10, bản 6 — GHI ĐÈ toàn bộ bản cũ)
 
-> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→4) — **không cần đọc lại bản cũ**, nội
+> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→5) — **không cần đọc lại bản cũ**, nội
 > dung quan trọng còn giá trị đã gom hết vào đây. Đọc theo đúng thứ tự: `CLAUDE.md` (toàn bộ, đặc
-> biệt mục 33 cho thay đổi phiên này) → file này → bắt tay vào **mục 1**. Viết để dùng được cho cả
-> Claude Code lẫn Claude Cowork/agent khác, không giả định sẵn bối cảnh hội thoại trước đó.
+> biệt mục 33-34 cho thay đổi phiên này) → file này → bắt tay vào **mục 1**.
 
 ## 0. Trạng thái ngay lúc viết file này
 
-- Nhánh làm việc: `claude/handover-phien-moi-015f64` (worktree riêng) — **CHƯA commit, chưa push,
-  chưa deploy**. Toàn bộ việc mô tả trong file này mới chỉ nằm trên máy, đợi người dùng xác nhận
-  mới commit/push (đúng quy trình luôn hỏi trước khi push, xem mục 5).
-- Trang chạy thật hiện tại (bản CŨ, chưa có thay đổi phiên này): `https://topvisa5s.com` +
-  `https://topvisa.nguyennc1357.workers.dev`.
-- Phiên này KHÔNG đọc/sửa gì thêm ở Phase 7/8 (thương hiệu, giá dịch vụ...) — các phase đó coi như
-  đã xong và đã chạy thật từ trước (theo bản handover cũ), không lặp lại chi tiết ở đây.
+- Nhánh làm việc: `claude/handover-phien-moi-015f64` — **đã push và fast-forward vào `main`** (3
+  commit: `0bd8f92`, `bc71278`, `b0fd786`), Cloudflare đã tự deploy. **NGOẠI TRỪ commit MỚI NHẤT
+  của phiên này** (menu mobile tự đóng + loại thông báo thứ 4 "Xử lý phát sinh") — commit này **có
+  thể CHƯA push** tùy thời điểm đọc file, kiểm tra `git log`/`git status` trước khi kết luận.
+- Hạ tầng thông báo (mục 33 CLAUDE.md) đã **chạy thật và PM xác nhận hoạt động**: đã chạy
+  `05_Database/08_supabase_setup_phase8.sql`, đã cấu hình đúng 2 secret trên Cloudflare (dạng
+  Encrypt), Cron Trigger đang "Active" (đặt `*/5 * * * *`, không phải `*/10` như code gợi ý ban
+  đầu — không sao, đã xác nhận với PM). Chuông thông báo trong `admin.html` đã test OK.
+- **Việc CẦN làm ngay** (xem đầy đủ ở mục 1): chạy thêm migration mới
+  `05_Database/09_supabase_setup_phase9.sql` (loại thông báo thứ 4).
 
-## 1. Việc CẦN LÀM NGAY (theo đúng thứ tự)
+## 1. Việc CẦN LÀM NGAY
 
-1. **⚠️ Xóa 2 dòng dữ liệu THỬ NGHIỆM đã vô tình gửi thật vào Supabase production** — lúc test ô
-   Email mới ở form đăng ký (`index.html`) qua trình duyệt thật (không phải giả lập), 1-2 request
-   POST đã thật sự thành công tới bảng `leads` thật trước khi kịp nhận ra và chặn lại. Vào
-   `admin.html` → tab "Tư vấn" → tìm và xóa dòng tên **"Nguyễn Văn Test"**, SĐT **0912345678**
-   (có thể có 1 hoặc 2 dòng trùng do 1 lần chạy song song 2 request). Xin lỗi vì sơ suất này — từ
-   phiên sau, khi cần test form gửi thật, PHẢI mock `window.fetch`/`api()` trước khi mô phỏng submit,
-   không chỉ dựa vào validate ở tầng field để "chắc" là sẽ không gửi thật.
-2. **Chạy migration SQL mới**: `05_Database/08_supabase_setup_phase8.sql` (tạo bảng `notifications`
-   + `push_subscriptions`) trong Supabase SQL Editor — chưa chạy thì chuông thông báo ở `admin.html`
-   sẽ báo lỗi khi tải (im lặng, không có toast — xem `CLAUDE.md` mục 33.B, cố ý không làm phiền
-   bằng lỗi mỗi 45 giây).
-3. **Cấu hình 2 secret bắt buộc trên Cloudflare Dashboard** (Worker đang chạy trang này → Settings →
-   Variables and Secrets → thêm dạng "Encrypt", KHÔNG bao giờ dán vào file/chat):
-   - `SUPABASE_SERVICE_ROLE_KEY` — copy trực tiếp từ Supabase Dashboard → Project Settings → API →
-     mục "service_role" (⚠️ KHÁC với `anon` key đang dùng trong `index.html`/`admin.html` — khóa
-     này có toàn quyền trên database, tuyệt đối không để lộ).
-   - `VAPID_PRIVATE_KEY_JWK` — dán NGUYÊN VĂN chuỗi JSON sau (Claude Code đã sinh sẵn 1 cặp khóa
-     Web Push cho riêng dự án này trong phiên làm việc, đã tự kiểm chứng ký/xác thực đúng):
-     ```
-     {"key_ops":["sign"],"ext":true,"kty":"EC","x":"OOWg9oryjO2AvNcyF6Npfj9i3D2LlwpskW4ibcaOB38","y":"ukYXhKo5siKUGdkvjHHB8-PruG0A8iLto2U2ItxaPNI","crv":"P-256","d":"61N9oEE1qtbLVOK7eF05IjzR4RAYPNmaPELTcpD-oBs"}
-     ```
-   - `VAPID_SUBJECT` (không bắt buộc, có giá trị mặc định trong code nếu bỏ trống) —
-     `mailto:hien.gotravel@gmail.com`.
-   - Khóa CÔNG KHAI tương ứng (`BDjloPaK8oztgLzXMhejaX4_Ytw9i5cKbJFuIm3Gjgd_ukYXhKo5siKUGdkvjHHB8-PruG0A8iLto2U2ItxaPNI`)
-     đã hardcode sẵn CẢ trong `admin.html` (`VAPID_PUBLIC_KEY`) LẪN `worker.js` — khóa công khai
-     nên không cần đặt secret, không cần làm gì thêm với giá trị này.
-4. **Commit + push + deploy** (đợi người dùng xác nhận trước — xem mục 5), sau đó vào Cloudflare
-   Dashboard → Worker → tab "Triggers" xác nhận Cron Trigger `*/10 * * * *` đã "Active" (CHƯA chắc
-   chắn 100% việc thêm `[triggers]` vào `wrangler.toml` rồi deploy qua git-integration hiện tại sẽ
-   tự bật cron mà không cần thao tác thêm trên dashboard — cần tự xác nhận).
-5. **Test thật trên điện thoại** (việc duy nhất Claude Code không thể tự làm/tự xác nhận vì không
-   có thiết bị thật): mở `admin.html`, đăng nhập, bấm chuông 🔔 → "Bật thông báo đẩy trên thiết bị
-   này" → đồng ý cấp quyền → tạo/sửa 1 Hồ sơ có "Ngày trả KQ" = hôm nay (hoặc đợi có khách đăng ký
-   thật từ web) → đợi tối đa 10 phút (chu kỳ cron) → xem điện thoại có hiện thông báo dù đã khóa
-   màn hình/tắt hẳn trình duyệt hay không.
-6. **Test với đăng nhập admin thật** các phần còn lại: ô Email ở form đăng ký (nhập sai định dạng
-   phải báo lỗi, để trống vẫn gửi được), nút "Gửi tư vấn →", chuông thông báo (đếm đúng số chưa
-   đọc, bấm 1 dòng mở đúng hồ sơ/khách liên quan, "Đánh dấu đã đọc", "Xóa đã đọc").
+1. **Chạy `05_Database/09_supabase_setup_phase9.sql` trong Supabase SQL Editor** — thêm cột
+   `notifications.ref_parent_id` + nới CHECK constraint cho phép loại thông báo mới `'xlps'`. Chưa
+   chạy thì thông báo "Xử lý phát sinh" sẽ báo lỗi khi Worker cố insert.
+2. Xác nhận commit mới nhất (menu mobile + loại thông báo thứ 4) đã push lên `main` chưa — nếu
+   `git push` bị chặn bởi permission classifier (đã xảy ra vài lần trong phiên này), cần người
+   dùng tự chạy `git push origin claude/handover-phien-moi-015f64` rồi
+   `git push origin claude/handover-phien-moi-015f64:main`.
+3. **Test thật trên điện thoại việc ĐẨY thông báo ra màn hình khóa** — phần duy nhất CHƯA có xác
+   nhận riêng (chuông trong trang đã test OK, nhưng "khóa màn hình vẫn nhận được" thì chưa). Bấm
+   chuông → "Bật thông báo đẩy trên thiết bị này" trên điện thoại thật → tạo 1 xử lý phát sinh có
+   Hạn chốt = hôm nay (hoặc đợi có sẵn dữ liệu) → đợi tối đa 5-10 phút → khóa màn hình xem có nhận
+   được không.
+4. Test loại thông báo mới "⚠️ Xử lý phát sinh" + menu mobile tự đóng (cả 2 đã tự test qua Claude
+   Browser với dữ liệu giả lập, xem mục 3, nhưng chưa có xác nhận trên thiết bị/dữ liệu thật).
 
-## 2. Tóm tắt việc phiên này đã làm (chi tiết đầy đủ ở `CLAUDE.md` mục 33)
+## 2. Tóm tắt việc phiên này đã làm (2026-08-10, nối tiếp việc dựng hạ tầng thông báo ở mục 33)
 
-Theo đúng 3 yêu cầu người dùng đưa ra (chưa commit, xem mục 0):
+Sau khi PM tự tay chạy migration/cấu hình secret theo hướng dẫn mục 33, phát sinh thêm 1 lỗi thật
++ 2 yêu cầu chỉnh sửa — đã xử lý cả 3, ghi chi tiết đầy đủ ở `CLAUDE.md` mục 34:
 
-1. **`index.html`**: thêm ô "Email" (không bắt buộc, validate định dạng) vào form đăng ký, gửi kèm
-   trong payload `leads` (cột `email` đã có sẵn từ Phase 2, không cần migration). Đổi text nút
-   "Gửi đăng ký →" → "Gửi tư vấn →" (3 chỗ, giữ nguyên "Đang gửi...").
-2. **`admin.html`**: chuông thông báo trên header — 3 loại (trả kết quả hôm nay / nhắc tư vấn hôm
-   nay / khách đăng ký mới từ web), đếm chưa đọc, đánh dấu đã đọc, xóa đã đọc, bấm 1 dòng tự mở
-   đúng hồ sơ/khách liên quan. **Quyết định kiến trúc quan trọng**: `admin.html` CHỈ đọc bảng
-   `notifications`, KHÔNG tự sinh thông báo — việc sinh thông báo do 1 Cloudflare Worker chạy nền
-   đảm nhiệm (điểm 3), để thông báo vẫn được tạo + đẩy ra điện thoại dù không ai đang mở trang.
-3. **Thông báo đẩy (Web Push) thật, kể cả khi tắt hẳn app** — theo đúng lựa chọn người dùng chọn
-   khi được hỏi (3 mức độ: chỉ mở app / silent... / **push thật kể cả tắt app** — người dùng chọn
-   mức cao nhất). Gồm: bảng `push_subscriptions` mới, nút "Bật thông báo đẩy" trong `admin.html`,
-   Service Worker (`sw-admin.js`) xử lý nhận push + hiện thông báo hệ thống, và **1 Cloudflare
-   Worker chạy nền theo lịch (cron 10 phút/lần, `02_Source/worker.js`)** — lần ĐẦU TIÊN dự án có
-   code chạy phía server thật (trước giờ Cloudflare chỉ phục vụ file tĩnh).
+1. **Sự cố thật: quên hướng dẫn thêm biến `SUPABASE_URL`** cho Cloudflare Worker — khiến job chạy
+   "Success" nhưng thực chất không làm gì (im lặng). Đã sửa tận gốc: hardcode `SUPABASE_URL` thẳng
+   trong `worker.js` (như đã làm với `VAPID_PUBLIC_KEY`), không cần biến môi trường này nữa. Đồng
+   thời tách try/catch riêng cho từng loại thông báo để 1 loại lỗi không chặn im lặng cả 3 loại còn
+   lại — bài học rút ra: ưu tiên hardcode giá trị KHÔNG nhạy cảm thay vì bắt PM thêm biến, giảm rủi
+   ro thiếu sót không có tín hiệu lỗi rõ ràng.
+2. **Menu mobile trên `index.html`**: trước đây bấm hamburger mở ra là đứng yên luôn, không tự
+   đóng khi bấm 1 mục hay bấm ra ngoài. Đã đổi sang event delegation trên `#navLinks` (tự hoạt
+   động cả với menu "Danh mục bài viết" chèn động, mục 31.F) + listener đóng khi click ra ngoài
+   (dùng đúng mẫu `stopPropagation()` đã có sẵn cho nút liên hệ nổi `floatContact`).
+3. **Loại thông báo thứ 4 — "⚠️ Xử lý phát sinh"**: báo khi 1 dòng xử lý phát sinh (trong dialog
+   Hồ sơ) có Hạn chốt = hôm nay và còn "Đang xử lý". Nội dung: `"Tên khách hàng_Nước đến_ Nội
+   dung"`. Cần cột mới `ref_parent_id` (migration 09, xem mục 1) vì bản ghi gốc của loại này là 1
+   dòng xử lý phát sinh (không phải hồ sơ), nhưng bấm vào cần mở đúng Hồ sơ CHA — xem giải thích kỹ
+   thuật đầy đủ ở `CLAUDE.md` mục 34.C (đặc biệt lý do KHÔNG được dùng `ho_so_id` làm `ref_id`).
+4. **Đổi cách xóa thông báo**: PM phản hồi nút "Xóa đã đọc" cũ xóa hết cùng lúc không kiểm soát
+   được — đã đổi sang tick chọn từng thông báo (checkbox mỗi dòng) rồi bấm "Xóa đã chọn". (Việc
+   này làm ở lượt trước loại thông báo thứ 4 trong cùng phiên, đã push thành công — commit
+   `b0fd786`.)
 
-**Quyết định kỹ thuật quan trọng cần biết** (đã giải thích đầy đủ lý do ở `CLAUDE.md` mục 33.C-D):
-- Push gửi đi KHÔNG kèm nội dung sẵn (silent/rỗng) — chỉ để "đánh thức" thiết bị, Service Worker tự
-  gọi API lấy nội dung thật ngay lúc nhận. Lý do: mã hóa payload Web Push chuẩn (RFC8291) rất dễ sai
-  mà không có thiết bị thật để kiểm chứng tận nơi (lỗi kinh điển: gửi "thành công" nhưng trình duyệt
-  âm thầm không hiện được gì) — đổi lấy độ tin cậy cao hơn dù phải đánh đổi 1 bước gọi API thêm.
-- Service Worker cần refresh token để tự làm mới access token lúc nhận push khi app đã đóng — lưu
-  thêm 1 bản vào IndexedDB (Service Worker không đọc được `localStorage`), luôn đồng bộ với ô "Ghi
-  nhớ đăng nhập" (tắt ghi nhớ/đăng xuất thì xóa sạch cả 2 nơi).
-- Đã tự kiểm chứng TOÀN BỘ logic của `worker.js` bằng Node (mock `fetch`, chạy thẳng file như 1 ES
-  module) — xác nhận đúng: query, upsert chống trùng, ký JWT VAPID đúng chuẩn + verify chữ ký thành
-  công, dọn subscription hết hạn (410). **Chưa/không thể kiểm chứng**: gửi push thật tới 1 thiết bị
-  thật (xem mục 1.5).
+## 3. ⚠️ Sự cố đã xảy ra trong toàn bộ quá trình (tổng hợp, đã xử lý xong hết)
 
-## 3. ⚠️ Sự cố trong lúc test (đã xử lý minh bạch ngay khi phát hiện)
-
-Lúc test ô Email mới bằng cách mô phỏng submit form thật trên trình duyệt (không phải mock), 2 lần
-gửi (1 lần email hợp lệ, có thể thêm 1 lần do chạy đua với lần trước chưa kịp set cờ chống spam) đã
-**thực sự thành công** tới bảng `leads` thật trên Supabase production — vì `SUPABASE_URL`/`ANON_KEY`
-cấu hình sẵn trong `index.html` là khóa thật (đúng như mọi phiên trước vẫn cảnh báo, xem mục 3 các
-bản handover cũ). Dữ liệu rác: tên "Nguyễn Văn Test", SĐT "0912345678", email "ten@email.com" hoặc
-rỗng. **Cần xóa thủ công** qua `admin.html` (xem mục 1.1) — Claude Code không có quyền xóa (anon
-key chỉ được INSERT vào `leads`, không SELECT/DELETE được). Từ nay khi cần test hành vi submit thật
-của `index.html`, PHẢI ghi đè `window.fetch` bằng hàm giả trước khi mô phỏng, không chỉ dựa vào để
-sai định dạng nhằm chặn ở tầng validate.
+- **Lộ giá trị thật của `SUPABASE_SERVICE_ROLE_KEY`** qua ảnh chụp màn hình PM gửi trong chat (biến
+  đặt kiểu "Plaintext" nên hiện nguyên giá trị). Đã hướng dẫn PM: tạo khóa `service_role` MỚI trong
+  Supabase, xóa khóa cũ bị lộ, cập nhật lại Cloudflare, đổi loại biến sang "Encrypt" — PM xác nhận
+  đã làm xong.
+- **1-2 dòng dữ liệu thử nghiệm** ("Nguyễn Văn Test", SĐT 0912345678) từng bị gửi thật vào bảng
+  `leads` production lúc Claude Code test form đăng ký bằng cách mô phỏng submit thật (không mock
+  fetch) — đã báo ngay, PM đã xóa.
+- **Thiếu `SUPABASE_URL`** khiến job chạy nền không hoạt động dù không báo lỗi gì — đã sửa (mục 2.1).
+- **`git push` bị chặn** bởi permission classifier của phiên làm việc nhiều lần — mỗi lần đều phải
+  nhờ PM tự chạy 2 lệnh push (nhánh + fast-forward main). Không phải lỗi code, là giới hạn quyền
+  của môi trường agent.
 
 ## 4. Cách đã test trong phiên này
 
-- **`index.html`**: mở qua server tĩnh cục bộ (`python -m http.server`, xem mục 6), test validate ô
-  Email (sai định dạng → báo lỗi + không gửi; hợp lệ/để trống → không báo lỗi field) bằng cách gán
-  `.value` rồi tự bắn sự kiện `submit` qua JavaScript — ĐÃ vô tình chạm tới Supabase thật (xem mục 3).
-- **`admin.html`**: mock `window.api()` (đúng mẫu các phiên trước đã dùng, an toàn tuyệt đối vì
-  không đụng mạng thật) để giả lập 4 thông báo mẫu, xác nhận: đếm đúng badge, render đúng nội
-  dung/nhãn từng loại, bấm 1 dòng → PATCH đúng id + điều hướng đúng `switchTab`/`openHoSoModal`/
-  `openTvModal`, "Đánh dấu đã đọc" → PATCH hàng loạt + badge về 0, "Xóa đã đọc" (mock luôn
-  `showConfirmPopup` trả `true`) → DELETE hàng loạt + danh sách rỗng đúng. Đã đo vị trí chuông trên
-  header bằng `getBoundingClientRect()` xác nhận nằm gọn trong header, không vỡ layout.
-- **`worker.js`**: KHÔNG dùng Claude Browser (không phải môi trường trình duyệt) — copy sang file
-  `.mjs`, mock `globalThis.fetch` toàn cục, `import` thẳng và gọi `scheduled()` như Cloudflare thật
-  sẽ gọi. 3 kịch bản: (1) có dữ liệu mới → sinh đúng thông báo + gửi đúng push + JWT verify được;
-  (2) không có gì mới → KHÔNG gọi `push_subscriptions` (tránh phí request thừa); (3) subscription
-  nhận 410 → bị xóa khỏi DB. Cả 3 đều đúng — xem lại đoạn code test nếu cần chạy lại (không lưu lại
-  trong repo, chỉ chạy tạm trong thư mục temp).
-- Đã xóa `.claude/launch.json` tạo tạm để chạy server tĩnh sau khi test xong (đúng quy tắc không để
-  lại file thừa).
+- **Menu mobile**: Claude Browser ở khổ 375px — mở bằng hamburger, đóng khi click ra ngoài
+  (`document.body`), đóng khi click 1 link (kể cả link giả lập chèn động sau), hamburger vẫn toggle
+  bình thường không bị nhiễu bởi listener mới.
+- **Loại thông báo "xlps"**: mock `fetch` cho `worker.js` (chạy như ES module qua Node, xem mục 4
+  bản handover cũ để biết cách làm) — xác nhận 2 xử lý phát sinh khác nhau CÙNG 1 hồ sơ tạo được
+  ĐÚNG 2 thông báo riêng biệt (không bị trùng do `ref_id`), `ref_parent_id` đúng bằng `ho_so_id`,
+  định dạng nội dung đúng mẫu PM yêu cầu. Qua Claude Browser (mock `api()`): nhãn hiển thị đúng
+  "⚠️ Xử lý phát sinh: ...", bấm vào mở đúng `switchTab('hoso')` + `openHoSoModal(ref_parent_id)`
+  (không phải `ref_id`).
+- **Xóa chọn lọc thông báo**: mock `api()` — không chọn gì mà bấm Xóa → báo lỗi, không gọi API;
+  chọn đúng 2/4 dòng → chỉ 2 dòng đó bị xóa; tick checkbox không vô tình kích hoạt điều hướng của
+  cả dòng (đã kiểm tra `event.stopPropagation()` hoạt động đúng).
+- Đã xóa `.claude/launch.json` tạo tạm sau mỗi lần test, đúng quy tắc không để lại file thừa.
 
-## 5. Quy trình deploy (tiếp tục dùng đúng cách này — CHƯA làm ở phiên này)
+## 5. Quy trình deploy — vẫn dùng đúng cách cũ, xem chi tiết ở CLAUDE.md mục 5/33
 
-- Toàn bộ thay đổi trong phiên này **CHƯA được commit/push** — đợi người dùng xác nhận trước khi
-  làm (đúng quy tắc "chỉ commit/push khi được yêu cầu rõ").
-- Khi được xác nhận: `git add` từng file cụ thể (không dùng `-A`) → `git commit` (kèm dòng
-  `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`) → push. **Lưu ý khác các phiên trước**:
-  phiên này thêm `main = "worker.js"` + `[triggers]` vào `wrangler.toml` — đây là lần đầu Cloudflare
-  Worker của dự án có code chạy ngoài việc phục vụ file tĩnh, nên sau khi deploy cần vào Cloudflare
-  Dashboard xác nhận thêm (xem mục 1.4), không chỉ `curl` kiểm tra HTML như mọi khi.
-- Vẫn không có quyền chạy SQL trực tiếp lên Supabase, và giờ cũng không có quyền vào Cloudflare
-  Dashboard để set secret/xác nhận cron — cả 2 việc này bắt buộc người dùng tự làm (mục 1.2-1.4).
+Lưu ý riêng phiên này: `git push` bị permission classifier chặn nhiều lần (không phải lỗi cố định
+— có lúc chặn có lúc không, không rõ quy luật) — nếu gặp lại, đưa nguyên 2 lệnh push cho người dùng
+tự chạy, không cố tìm cách vượt qua.
 
-## 6. ⚠️ Rủi ro "2 bản sao file" — vẫn như bản handover cũ, không đổi gì thêm
+## 6. Tài liệu tham khảo (đọc theo thứ tự nếu cần)
 
-Xem lại bản handover cũ (đã bị ghi đè, nhưng phần này không đổi): thư mục gốc dự án trên máy người
-dùng có thể có nhiều hơn những gì hiện trong git/worktree (`Quoc_Ky/`, `04_Phase 2/`,
-`05_Branding_5S/`, file CSV xuất từ `admin.html`...) — không tự ý kết luận "không tồn tại" nếu
-không thấy trong worktree đang làm việc, hỏi lại người dùng nếu cần nội dung cụ thể.
-
-## 7. Tài liệu tham khảo (đọc theo thứ tự nếu cần)
-
-`CLAUDE.md` (toàn bộ, đặc biệt mục 33) → file này → `05_Database/README.md` (thứ tự chạy SQL,
-file `08` là file MỚI nhất) → `01_Docs/10_Chuan_Dialog_Chung.md` (không liên quan trực tiếp phiên
-này vì chuông thông báo không phải dialog dữ liệu, nhưng vẫn là chuẩn chung cho dialog khác).
+`CLAUDE.md` (toàn bộ, đặc biệt mục 33-34) → file này → `05_Database/README.md` (thứ tự chạy SQL,
+file `09` là file MỚI nhất, BẮT BUỘC chạy trước khi loại thông báo "xlps" hoạt động được).

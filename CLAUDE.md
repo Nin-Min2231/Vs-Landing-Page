@@ -1120,3 +1120,70 @@ qua API công khai). **Việc PM CẦN tự làm để tính năng chạy đư�
    chính trước), đăng nhập, bấm chuông → "Bật thông báo đẩy trên thiết bị này" → đồng ý cấp quyền.
    Tạo/sửa 1 hồ sơ có `ngay_tra_kq`=hôm nay (hoặc đợi có khách đăng ký thật từ web) → chờ tối đa 10
    phút (chu kỳ cron) → kiểm tra điện thoại có hiện thông báo dù đã khóa màn hình/tắt trình duyệt.
+
+## 34. Menu mobile tự đóng, sự cố thiếu `SUPABASE_URL`, loại thông báo thứ 4 "Xử lý phát sinh",
+    xóa thông báo theo lựa chọn (2026-08-10, cùng ngày với mục 33 — set up thật + fix trong lúc PM
+    tự tay cấu hình theo hướng dẫn mục 33)
+
+**A. `index.html` — menu mobile tự đóng khi bấm 1 mục HOẶC bấm ra ngoài:** trước đây chỉ đóng khi
+bấm đúng vào 1 thẻ `<a>` đã được gắn listener lúc tải trang (`closeMobileMenuOnClick` gọi 1 lần cho
+từng `<a>` có sẵn) — bấm ra ngoài menu không đóng, và menu "Danh mục bài viết" chèn ĐỘNG sau khi
+tải xong bài viết (mục 31.F) cũng không tự đóng được vì được thêm vào SAU thời điểm gắn listener.
+Đã đổi sang **event delegation**: gắn listener DUY NHẤT trên `#navLinks` bắt sự kiện click bằng
+`e.target.closest('a')` — tự động hoạt động với MỌI thẻ `<a>` kể cả những thẻ chèn động sau này,
+không cần gắn lại thủ công. Thêm listener `click` trên `document` để đóng khi bấm ra ngoài, dùng
+đúng mẫu `e.stopPropagation()` trên nút hamburger + kiểm tra `!navLinks.contains(e.target)` đã
+dùng cho `floatContact` (nút liên hệ nổi) có sẵn trong file — tránh bug "vừa bấm mở đã tự đóng
+ngay" nếu không stopPropagation đúng chỗ. Đã test qua Claude Browser ở khổ mobile 375px: mở bằng
+hamburger, đóng khi bấm ra ngoài, đóng khi bấm 1 link (kể cả link giả lập chèn động), hamburger
+vẫn toggle mở/đóng bình thường không bị nhiễu bởi listener mới.
+
+**B. ⚠️ Sự cố thật gặp lúc PM tự cấu hình Cloudflare Worker theo mục 33 — thiếu `SUPABASE_URL`:**
+hướng dẫn ở mục 33.D chỉ liệt kê 2 secret bắt buộc (`SUPABASE_SERVICE_ROLE_KEY`,
+`VAPID_PRIVATE_KEY_JWK`) nhưng **quên hẳn** `SUPABASE_URL` — biến này CHƯA từng được hardcode trong
+`worker.js` ở lần viết đầu (khác với `VAPID_PUBLIC_KEY` đã hardcode ngay từ đầu), vẫn đọc qua
+`env.SUPABASE_URL`. Hậu quả: Cron Trigger chạy đúng giờ, Cloudflare ghi "Success" (chỉ có nghĩa
+job không bị crash), nhưng `runNotificationJob()` tự thoát ngay dòng đầu vì thiếu biến — hoàn toàn
+im lặng, không có cách nào biết được ngoài việc đọc kỹ code. **Đã sửa tận gốc**: hardcode
+`SUPABASE_URL` thẳng trong `worker.js` (khớp y hệt `index.html`/`admin.html`, giống cách đã làm với
+`VAPID_PUBLIC_KEY`) — từ nay PM KHÔNG cần thêm biến này nữa, giảm 1 bước cấu hình dễ quên sót.
+Đồng thời tách riêng khối `try/catch` cho MỖI loại thông báo trong `generateNewNotifications()`
+(trước đó cả 4 loại chung 1 khối try/catch lỏng lẻo — nếu 1 loại lỗi vd đổi schema/sai cột thì 3
+loại còn lại cũng bị chặn theo, im lặng không tạo được gì). **Bài học cho lần thêm biến môi trường
+Worker mới sau này**: ưu tiên hardcode thẳng trong code nếu giá trị KHÔNG nhạy cảm/đã công khai sẵn
+(như URL, public key) thay vì bắt PM tự thêm biến — giảm hẳn 1 lớp có thể sai sót không có tín hiệu
+báo lỗi rõ ràng, chỉ dùng Cloudflare secret cho giá trị THẬT SỰ cần giữ kín (service_role key, VAPID
+private key).
+
+**C. Loại thông báo thứ 4 — `xlps` (Xử lý phát sinh có hạn chốt hôm nay):** quét bảng
+`ho_so_xu_ly_phat_sinh` có `han_chot` đúng hôm nay VÀ `trang_thai='Đang xử lý'` (khớp đúng điều
+kiện view có sẵn `v_xu_ly_phat_sinh_7_ngay`, chỉ khác ở việc lọc đúng "hôm nay" thay vì cả khoảng
+7 ngày). Nội dung: `"<Tên khách hàng>_<Nước đến>_ <Nội dung xử lý phát sinh>"` (theo đúng mẫu PM
+yêu cầu, LƯU Ý dấu cách khác 3 loại kia: không có dấu cách sau dấu `_` đầu tiên, chỉ có dấu cách
+sau dấu `_` thứ hai — không phải lỗi đánh máy, cố tình khớp đúng mẫu PM đưa).
+
+**⚠️ Khác biệt kỹ thuật quan trọng so với 3 loại thông báo trước — cột `ref_parent_id` mới:** 3 loại
+cũ (`tra_kq`/`nhac_tuvan`/`dang_ky_moi`) đều lưu `ref_id` = id của chính bản ghi cần mở khi bấm vào
+thông báo (hồ sơ hoặc lead), nên `onNotifClick()` gọi thẳng `openHoSoModal(ref_id)`/
+`openTvModal(ref_id)` được luôn. Loại `xlps` KHÁC: bản ghi "gốc" của thông báo là 1 dòng trong
+`ho_so_xu_ly_phat_sinh` (bắt buộc dùng chính `id` của dòng này làm `ref_id`, KHÔNG được dùng
+`ho_so_id` — nếu dùng `ho_so_id` thì 2 xử lý phát sinh khác nhau nhưng cùng 1 hồ sơ + cùng hạn chốt
+sẽ bị ràng buộc `unique(loai,ref_id,ref_ngay)` coi là trùng, chỉ tạo được 1 thông báo thay vì 2 —
+đã viết test xác nhận đúng hành vi này), nhưng lúc bấm vào thông báo lại cần mở đúng **Hồ sơ CHA**
+chứ không phải bản thân dòng xử lý phát sinh (không có dialog riêng cho nó). Giải quyết bằng cột
+mới `notifications.ref_parent_id` (migration `05_Database/09_supabase_setup_phase9.sql`, cũng nới
+CHECK constraint cột `loai` để chấp nhận thêm giá trị `'xlps'`) — `worker.js` ghi
+`ref_parent_id = ho_so_id` khi tạo thông báo loại `xlps` (3 loại kia ghi `null`), `onNotifClick()`
+trong `admin.html` rẽ nhánh riêng: `n.loai==='xlps'` → `openHoSoModal(n.ref_parent_id)` thay vì
+`n.ref_id`. **Nếu sau này thêm loại thông báo thứ 5 mà bản ghi gốc KHÔNG PHẢI hồ sơ/lead cấp cao
+nhất** (là con của 1 bảng khác cần mở qua bảng cha) — áp dụng đúng mẫu `ref_parent_id` này, đừng tái
+sử dụng `ref_id` cho 2 mục đích khác nhau (chống trùng VÀ điều hướng) như đã từng nhầm lẫn ban đầu.
+
+**D. Xóa thông báo — đổi từ "xóa hàng loạt tất cả đã đọc" sang "tick chọn từng thông báo cần xóa":**
+PM phản hồi nút "Xóa đã đọc" cũ xóa TOÀN BỘ thông báo đã đọc cùng lúc, không kiểm soát được — đã đổi
+thành mỗi dòng thông báo có 1 checkbox riêng (`.notif-check`, ở đầu dòng, `onclick="event.
+stopPropagation()"` để tick không vô tình kích hoạt điều hướng của cả dòng), nút đổi tên thành
+"Xóa đã chọn" (`deleteSelectedNotifications()`) — chưa tick gì mà bấm thì báo lỗi nhắc chọn trước,
+chỉ xóa đúng những id đã tick (`notifications?id=in.(...)`). Hàm `deleteReadNotifications()` cũ đã
+xóa hẳn, không giữ lại tương thích ngược. **Đánh dấu đã đọc" (`markAllNotifRead()`) KHÔNG đổi** —
+PM chỉ yêu cầu đổi hành vi xóa, vẫn đánh dấu tất cả đã đọc cùng lúc như cũ.
