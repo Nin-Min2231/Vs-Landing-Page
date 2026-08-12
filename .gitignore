@@ -2,3 +2,8 @@
 
 # Du lieu khach hang that (ten/SDT/dia chi/tai chinh) - KHONG dua len repo public
 04_Phase 2/Quan Ly Khach Hang.xlsx
+
+# Tool backup Supabase (06_Backup_Tool/) - khoa service_role va du lieu backup chua thong tin
+# khach hang that, KHONG duoc dua len repo public (xem 06_Backup_Tool/README.md)
+06_Backup_Tool/backup-config.json
+06_Backup_Tool/backups/
