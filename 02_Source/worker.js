@@ -47,18 +47,32 @@ async function supa(env, path, opts = {}) {
    Dashboard/Hồ sơ (hàm tcToday()) — tránh 2 nơi lệch ngày nhau. (2026-08, sửa lại: bản cũ tính
    thẳng theo UTC nên từ 0h-7h sáng giờ VN mốc UTC vẫn là "ngày hôm qua", khiến cả tô đỏ trên
    Dashboard lẫn thông báo bị trễ tới 7h sáng mới đúng — PM phản hồi thật gặp lúc 6h30 sáng.) */
+/* Quét lùi thêm mấy ngày (2026-08, "lớp an toàn bắt lại thông báo bị bỏ sót") — nếu Worker/khóa
+   Supabase bị lỗi vài ngày (sự cố thật đã gặp 12-14/8/2026 do sai SUPABASE_SERVICE_ROLE_KEY, xem
+   CLAUDE.md mục 38), trước đây chỉ hỏi "=hôm nay" nên qua ngày là MẤT VĨNH VIỄN, không có cách nào
+   tự bắt lại. Giờ hỏi "trong N ngày gần nhất" — AN TOÀN để nới rộng vì ràng buộc unique
+   (loai,ref_id,ref_ngay) + resolution=ignore-duplicates ở bước upsert phía dưới đã tự chặn tạo
+   trùng cho combo đã từng thông báo thành công; nới ngày chỉ giúp BẮT THÊM đúng phần còn thiếu. */
+const BACKFILL_DAYS = 7;
+function isoDaysAgo(todayIso, days) {
+  const d = new Date(todayIso + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
 async function generateNewNotifications(env) {
   const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+  const backfillFrom = isoDaysAgo(today, BACKFILL_DAYS);
   const candidates = [];
 
   // Mỗi loại bọc try/catch RIÊNG — 1 loại lỗi (vd sai cú pháp filter, đổi schema...) không được
   // phép làm im lặng luôn 2 loại còn lại (bài học thật từ lúc set up lần đầu, xem CLAUDE.md mục 33).
   try {
-    // 'tra_kq': hồ sơ có ngay_tra_kq đúng hôm nay, còn "Đã nộp"/"Đang xử lý" — khớp đúng điều kiện
-    // khối "Hồ sơ trả kết quả tuần này" ở Dashboard (CLAUDE.md mục 31.A).
+    // 'tra_kq': hồ sơ có ngay_tra_kq trong N ngày gần nhất (đến hết hôm nay), còn "Đã nộp"/"Đang xử
+    // lý" — khớp đúng điều kiện khối "Hồ sơ trả kết quả tuần này" ở Dashboard (CLAUDE.md mục 31.A)
+    // CỘNG THÊM lớp bắt lại thông báo cũ bị bỏ sót (xem comment BACKFILL_DAYS ở trên).
     const hoSoRows = await supa(env,
       'ho_so?select=id,ten_khach,ngay_tra_kq,danh_muc_nuoc(ten)' +
-      '&ngay_tra_kq=eq.' + today +
+      '&ngay_tra_kq=gte.' + backfillFrom + '&ngay_tra_kq=lte.' + today +
       '&trang_thai=in.' + encodeURIComponent('("Đã nộp","Đang xử lý")'));
     for (const h of hoSoRows || []) {
       candidates.push({
@@ -69,10 +83,10 @@ async function generateNewNotifications(env) {
   } catch (e) { console.error('generateNewNotifications tra_kq lỗi:', e); }
 
   try {
-    // 'nhac_tuvan': lead có ngay_nhac_lai đúng hôm nay — không lọc trạng thái, khớp view có sẵn
-    // v_tu_van_can_nhac_lai (05_Database/02_supabase_setup_phase2.sql).
+    // 'nhac_tuvan': lead có ngay_nhac_lai trong N ngày gần nhất — không lọc trạng thái, khớp view
+    // có sẵn v_tu_van_can_nhac_lai (05_Database/02_supabase_setup_phase2.sql) + bắt lại bị bỏ sót.
     const nhacLaiRows = await supa(env,
-      'leads?select=id,name,country,ngay_nhac_lai&ngay_nhac_lai=eq.' + today);
+      'leads?select=id,name,country,ngay_nhac_lai&ngay_nhac_lai=gte.' + backfillFrom + '&ngay_nhac_lai=lte.' + today);
     for (const l of nhacLaiRows || []) {
       candidates.push({
         loai: 'nhac_tuvan', ref_table: 'leads', ref_id: l.id, ref_parent_id: null, ref_ngay: l.ngay_nhac_lai,
@@ -98,14 +112,14 @@ async function generateNewNotifications(env) {
   } catch (e) { console.error('generateNewNotifications dang_ky_moi lỗi:', e); }
 
   try {
-    // 'xlps': xử lý phát sinh (trong dialog Hồ sơ) có han_chot đúng hôm nay, còn "Đang xử lý" —
-    // khớp đúng điều kiện view v_xu_ly_phat_sinh_7_ngay (chỉ tính khi chưa Hủy/Tạm dừng/Hoàn
-    // thành). ref_id PHẢI là id của chính dòng xử lý phát sinh (không phải ho_so_id) để 2 dòng
-    // xử lý phát sinh khác nhau cùng hạn chốt trên 1 hồ sơ vẫn tạo được 2 thông báo riêng —
-    // ref_parent_id lưu ho_so_id để admin.html biết mở đúng Hồ sơ nào lúc bấm vào thông báo.
+    // 'xlps': xử lý phát sinh (trong dialog Hồ sơ) có han_chot trong N ngày gần nhất, còn "Đang xử
+    // lý" — khớp đúng điều kiện view v_xu_ly_phat_sinh_7_ngay (chỉ tính khi chưa Hủy/Tạm dừng/Hoàn
+    // thành) + bắt lại bị bỏ sót. ref_id PHẢI là id của chính dòng xử lý phát sinh (không phải
+    // ho_so_id) để 2 dòng xử lý phát sinh khác nhau cùng hạn chốt trên 1 hồ sơ vẫn tạo được 2
+    // thông báo riêng — ref_parent_id lưu ho_so_id để admin.html biết mở đúng Hồ sơ nào.
     const xlpsRows = await supa(env,
       'ho_so_xu_ly_phat_sinh?select=id,ho_so_id,noi_dung,han_chot,ho_so(ten_khach,danh_muc_nuoc(ten))' +
-      '&han_chot=eq.' + today +
+      '&han_chot=gte.' + backfillFrom + '&han_chot=lte.' + today +
       '&trang_thai=eq.' + encodeURIComponent('Đang xử lý'));
     for (const x of xlpsRows || []) {
       candidates.push({

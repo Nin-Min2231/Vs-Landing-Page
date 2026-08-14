@@ -1334,3 +1334,32 @@ bước (tải/đọc 1 dòng/đánh dấu tất cả đã đọc).
 **⚠️ Nếu sau này cần thêm hành vi tương tự** (vd 1 tính năng khác cần "trạng thái riêng theo máy"):
 copy đúng mẫu bảng phụ `(id_gốc, device_id)` + `DEVICE_ID`/`getDeviceId()` này, đừng quay lại kiểu
 1 cờ chung trên bảng gốc như `notifications.is_read` cũ.
+
+## 39. `worker.js`: quét lùi 7 ngày để tự bắt lại thông báo bị bỏ sót (2026-08-14)
+
+**Lý do:** trước đây 3/4 loại thông báo (`tra_kq`/`nhac_tuvan`/`xlps`) chỉ hỏi Supabase "đúng ngày
+HÔM NAY" — nếu Worker/khóa `SUPABASE_SERVICE_ROLE_KEY` bị lỗi (sự cố thật đã gặp 12-14/8/2026, xem
+mục 35) thì qua ngày là **mất vĩnh viễn**, không có cách nào tự thông báo bù lại, dù sự cố đã được
+sửa. PM xác nhận muốn có "lớp an toàn" tự bắt lại trường hợp này.
+
+**Đã sửa:** thêm hằng số `BACKFILL_DAYS = 7` + hàm `isoDaysAgo(todayIso, days)`, đổi cả 3 câu query
+từ `=eq.<hôm nay>` sang khoảng `gte.<hôm nay-7 ngày> .. lte.<hôm nay>` (`tra_kq` theo `ngay_tra_kq`,
+`nhac_tuvan` theo `ngay_nhac_lai`, `xlps` theo `han_chot`). **An toàn để nới rộng khoảng ngày** vì
+ràng buộc `unique(loai,ref_id,ref_ngay)` + `resolution=ignore-duplicates` ở bước upsert đã tự chặn
+tạo trùng cho combo NGÀY+HỒ SƠ đã từng thông báo thành công — nới ngày chỉ giúp **bắt thêm** đúng
+phần còn thiếu (chưa từng có dòng `notifications` tương ứng), không tạo lại/gửi lại cái đã có.
+Loại `dang_ky_moi` (thứ 4) **không cần sửa** — đã tự an toàn từ trước nhờ lấy 200 lead mới nhất
+theo `created_at` (không giới hạn "hôm nay"), xem comment sẵn có trong code.
+
+**Tự giới hạn theo trạng thái nên không "hồi sinh" việc đã xử lý xong:** `tra_kq`/`xlps` vẫn giữ
+điều kiện lọc trạng thái cũ (`Đã nộp`/`Đang xử lý`) — hồ sơ 5 ngày trước đã được xử lý xong (đổi
+sang `Đậu`/`Rớt`/`Hoàn thành`...) sẽ tự không còn khớp query nữa, không bị bắt lại tạo thông báo vô
+nghĩa cho việc đã xong.
+
+**Không đổi nội dung thông báo** (`noi_dung`) để phân biệt "đúng hôm nay" hay "bắt lại từ hôm
+trước" — giữ đúng 1 định dạng như cũ cho cả 3 loại, tránh lệch với các thông báo tạo đúng ngày.
+`ref_ngay` lưu đúng ngày gốc (`ngay_tra_kq`/`ngay_nhac_lai`/`han_chot` thật của dòng đó) nên nếu
+sau này cần hiển thị "quá hạn từ ngày nào" thì đã có sẵn dữ liệu, chỉ cần sửa phần hiển thị.
+
+**⚠️ Nếu sau này cần đổi số ngày quét lùi:** chỉ cần đổi giá trị `BACKFILL_DAYS`, không cần sửa gì
+thêm ở 3 câu query (đều tham chiếu qua biến `backfillFrom` tính từ hằng số này).
