@@ -1394,6 +1394,26 @@ async function idbSet(key, value){
     });
   }catch(e){ /* bỏ qua, xem comment ở trên */ }
 }
+/* ==== "Đã đọc thông báo" tính RIÊNG theo từng máy/trình duyệt (2026-08, Phase 10) — mỗi trình
+   duyệt tự sinh 1 mã ngẫu nhiên, lưu cố định vào localStorage (không đổi qua các lần mở lại).
+   Đồng thời ghi thêm 1 bản vào IndexedDB (giống refresh_token) để sw-admin.js đọc được lúc nhận
+   Web Push khi trang đã tắt hẳn — Service Worker không đọc được localStorage của trang. Trước đây
+   trạng thái "đã đọc" là 1 cờ CHUNG trên bảng notifications, khiến máy A đọc thì máy B tưởng đã
+   đọc theo — xem bảng notification_reads (05_Database/10_supabase_setup_phase10.sql). ==== */
+function getDeviceId(){
+  const gen = () => crypto.randomUUID ? crypto.randomUUID() : 'dev-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+  try{
+    let id = localStorage.getItem('tv5s_device_id');
+    if(!id){ id = gen(); localStorage.setItem('tv5s_device_id', id); }
+    return id;
+  }catch(e){
+    // localStorage bị chặn (chế độ ẩn danh nghiêm ngặt...) -> vẫn trả về 1 mã tạm dùng được trong
+    // phiên này, KHÔNG được để lỗi ở đây chặn mất phần code phía sau (giống nguyên tắc idbSet ở trên).
+    return gen();
+  }
+}
+const DEVICE_ID = getDeviceId();
+idbSet('device_id', DEVICE_ID);
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ==== Tìm kiếm free-text KHÔNG phân biệt dấu tiếng Việt — dùng chung cho MỌI ô tìm kiếm
@@ -1877,7 +1897,15 @@ function startNotifPolling(){
 function stopNotifPolling(){ clearInterval(notifPollTimer); notifPollTimer=null; }
 async function loadNotifications(){
   try{
-    NOTIFICATIONS = await api('notifications?select=*&order=created_at.desc&limit=50') || [];
+    const [rows, reads] = await Promise.all([
+      api('notifications?select=*&order=created_at.desc&limit=50'),
+      api('notification_reads?device_id=eq.'+encodeURIComponent(DEVICE_ID)+'&select=notification_id')
+    ]);
+    const readIds = new Set((reads||[]).map(r=>r.notification_id));
+    // is_read ở đây tính RIÊNG cho thiết bị này (đọc từ notification_reads), KHÔNG dùng cột
+    // is_read gốc trên notifications nữa (cột đó vẫn còn trong DB nhưng không hiển thị dùng, xem
+    // 05_Database/10_supabase_setup_phase10.sql) — máy khác đọc không làm máy này tự thành đã đọc.
+    NOTIFICATIONS = (rows||[]).map(n=>({...n, is_read: readIds.has(n.id)}));
     renderNotifBell();
   }catch(e){ /* im lặng — chuông thông báo là tính năng phụ, không làm phiền bằng toast lỗi mỗi 45s */ }
 }
@@ -1930,8 +1958,10 @@ async function onNotifClick(id){
   closeNotifPanel();
   if(!n.is_read){
     try{
-      await api('notifications?id=eq.'+id,{method:'PATCH',body:JSON.stringify({is_read:true,read_at:new Date().toISOString()}),prefer:'return=minimal'});
-      n.is_read=true; n.read_at=new Date().toISOString();
+      await api('notification_reads?on_conflict=notification_id,device_id',{method:'POST',
+        body:JSON.stringify({notification_id:id, device_id:DEVICE_ID}),
+        prefer:'resolution=merge-duplicates,return=minimal'});
+      n.is_read=true;
       renderNotifBell();
     }catch(e){ toast('Lỗi cập nhật thông báo: '+e.message,'err'); }
   }
@@ -1943,10 +1973,13 @@ async function onNotifClick(id){
   else openTvModal(n.ref_id);
 }
 async function markAllNotifRead(){
-  if(!NOTIFICATIONS.some(n=>!n.is_read)) return;
+  const unread = NOTIFICATIONS.filter(n=>!n.is_read);
+  if(!unread.length) return;
   try{
-    await api('notifications?is_read=eq.false',{method:'PATCH',body:JSON.stringify({is_read:true,read_at:new Date().toISOString()}),prefer:'return=minimal'});
-    NOTIFICATIONS.forEach(n=>{ if(!n.is_read){ n.is_read=true; n.read_at=new Date().toISOString(); } });
+    await api('notification_reads?on_conflict=notification_id,device_id',{method:'POST',
+      body:JSON.stringify(unread.map(n=>({notification_id:n.id, device_id:DEVICE_ID}))),
+      prefer:'resolution=merge-duplicates,return=minimal'});
+    unread.forEach(n=>{ n.is_read=true; });
     renderNotifBell();
   }catch(e){ toast('Lỗi: '+e.message,'err'); }
 }

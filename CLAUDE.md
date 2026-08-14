@@ -1282,3 +1282,55 @@ cho HTML thường thấy ở nơi khác — đây là file Excel THẬT).
 **⚠️ Nếu sau này cần xuất Excel ở màn khác** (Tài chính, Hồ sơ...): dùng lại đúng 3 dòng
 `aoa_to_sheet`/`book_new`+`book_append_sheet`/`writeFile` này, không cần thêm `<script src>` nữa vì
 `XLSX` đã là biến toàn cục sẵn có trên mọi trang đã load `admin.html`.
+
+## 38. Chuông thông báo: "đã đọc" tính RIÊNG theo từng máy/trình duyệt (Phase 10, 2026-08-14)
+
+**Sự cố PM phản hồi:** dùng 2 máy đăng nhập cùng lúc — máy A mở chuông đọc 1 thông báo thì máy B
+cũng tự thấy thông báo đó "đã đọc" theo (badge giảm số), dù máy B chưa từng nhìn thấy nội dung đó.
+Nguyên nhân: cờ `is_read` (Phase 8, mục 33) nằm THẲNG trên bảng `notifications` — 1 cờ DUY NHẤT
+dùng chung cho mọi người/mọi máy, không phân biệt ai đọc.
+
+**Đã sửa — thêm bảng `notification_reads`** (`05_Database/10_supabase_setup_phase10.sql`, PM cần
+tự chạy migration này trước khi dùng): 1 dòng = "thiết bị X đã đọc thông báo Y"
+(`primary key(notification_id, device_id)`, `on delete cascade` theo `notifications.id`). Cột
+`is_read`/`read_at` CŨ trên `notifications` **giữ nguyên trong DB, không xóa** (không dùng nữa,
+không có tác dụng phụ khi bỏ không đọc/không ghi vào đó nữa).
+
+**`DEVICE_ID`** (`admin.html`, hàm `getDeviceId()` ngay sau `idbSet()`, khu vực "TIỆN ÍCH CHUNG"):
+mỗi trình duyệt tự sinh 1 mã ngẫu nhiên (`crypto.randomUUID()`) lúc tải trang lần đầu, lưu cố định
+vào `localStorage` (key `tv5s_device_id`) — các lần mở lại sau dùng lại đúng mã cũ, đổi trình duyệt/
+xóa dữ liệu trình duyệt thì coi như "máy khác" (thông báo cũ đã đọc trên máy cũ sẽ hiện lại là chưa
+đọc trên "máy mới" này, đây là đánh đổi hợp lý vì không có tài khoản riêng cho mỗi nhân viên để gắn
+vào). **Bọc try/catch** — nếu `localStorage` bị chặn (trình duyệt ẩn danh nghiêm ngặt...) vẫn trả về
+1 mã tạm dùng được trong phiên, KHÔNG được để lỗi ở đây chặn mất toàn bộ code phía sau (nguyên tắc
+đã áp dụng cho `idbSet` từ Phase 8, mục 33) — bài học thật gặp lúc tự test: quên bọc try/catch làm
+`localStorage` lỗi trong 1 sandbox test khiến toàn bộ script sau dòng đó không chạy được.
+
+**3 hàm đổi cách đọc/ghi trạng thái đã đọc** (`admin.html`):
+- `loadNotifications()`: gọi thêm 1 API `notification_reads?device_id=eq.<DEVICE_ID>` song song
+  với API `notifications` có sẵn, gộp lại thành cờ `is_read` tính riêng cho thiết bị này (KHÔNG
+  dùng cột `is_read` gốc trả về từ `notifications` nữa).
+- `onNotifClick()`: đổi từ `PATCH notifications.is_read` sang `POST notification_reads` (upsert qua
+  `on_conflict=notification_id,device_id` + `Prefer: resolution=merge-duplicates` — bấm nhiều lần
+  không lỗi, không tạo trùng).
+- `markAllNotifRead()`: cùng cơ chế nhưng gửi 1 mảng nhiều dòng (mọi thông báo đang chưa đọc CỦA
+  THIẾT BỊ NÀY) trong 1 lần POST.
+- `deleteSelectedNotifications()` **KHÔNG đổi** — xóa thông báo vẫn là hành động CHUNG (xóa khỏi
+  `notifications` cho mọi máy luôn, kèm tự xóa các dòng `notification_reads` liên quan nhờ
+  `on delete cascade`) — chỉ riêng "đã đọc/chưa đọc" mới tách theo máy, không tách luôn cả xóa.
+
+**`sw-admin.js` (Service Worker, nhận Web Push khi tắt hẳn trình duyệt)** cũng sửa tương tự: đọc
+`device_id` từ IndexedDB (ghi vào cùng lúc với `refresh_token`, xem `idbSet('device_id',...)` ở
+`admin.html`) rồi tự lọc "chưa đọc" theo đúng thiết bị này trước khi hiện thông báo hệ thống —
+tránh trường hợp máy A đã đọc làm máy B tưởng nhầm là "không còn gì mới" nên im lặng không hiện gì.
+
+**Đã test qua Claude Browser** (mock hàm `api()` giả lập 2 bảng `notifications`/`notification_reads`
+trong bộ nhớ, gọi trực tiếp `loadNotifications()`/`onNotifClick()`/`markAllNotifRead()`): đọc 1
+thông báo trên "thiết bị này" chỉ tạo đúng 1 dòng `notification_reads` gắn với `DEVICE_ID` thật của
+máy đang test, dò trực tiếp trong dữ liệu giả lập xác nhận KHÔNG có dòng nào gắn với 1 mã thiết bị
+khác — tức thiết bị khác vẫn sẽ thấy đúng thông báo đó là chưa đọc. Badge số giảm đúng 2→1→0 qua 3
+bước (tải/đọc 1 dòng/đánh dấu tất cả đã đọc).
+
+**⚠️ Nếu sau này cần thêm hành vi tương tự** (vd 1 tính năng khác cần "trạng thái riêng theo máy"):
+copy đúng mẫu bảng phụ `(id_gốc, device_id)` + `DEVICE_ID`/`getDeviceId()` này, đừng quay lại kiểu
+1 cờ chung trên bảng gốc như `notifications.is_read` cũ.

@@ -74,12 +74,21 @@ async function handlePush(){
     // Supabase co the xoay (rotate) refresh token moi lan dung — luu lai ngay de lan push sau van dung duoc.
     if(tok.refresh_token) await idbSet('refresh_token', tok.refresh_token).catch(() => {});
 
-    const res = await fetch(SUPABASE_URL + '/rest/v1/notifications?select=noi_dung&is_read=eq.false&order=created_at.desc&limit=5', {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + tok.access_token }
-    });
-    if(!res.ok) return fallback();
-    const rows = await res.json();
-    if(!rows.length) return; // khong con gi chua doc (vd da doc tren thiet bi khac) -> im lang, khong hien gi ca
+    // "Chua doc" tinh RIENG theo thiet bi nay (bang notification_reads, Phase 10) - KHONG con dung
+    // cot is_read chung tren notifications nua (xem CLAUDE.md, sua cung luc voi admin.html), vi
+    // may khac da doc khong duoc coi la may nay cung da doc. deviceId luu vao IndexedDB tu admin.html
+    // (Service Worker khong doc duoc localStorage cua trang).
+    const deviceId = await idbGet('device_id').catch(() => null);
+    const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + tok.access_token };
+    const [notifRes, readRes] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/notifications?select=id,noi_dung&order=created_at.desc&limit=30', { headers }),
+      deviceId ? fetch(SUPABASE_URL + '/rest/v1/notification_reads?device_id=eq.' + encodeURIComponent(deviceId) + '&select=notification_id', { headers }) : Promise.resolve(null)
+    ]);
+    if(!notifRes.ok) return fallback();
+    const allRows = await notifRes.json();
+    const readIds = new Set(readRes && readRes.ok ? (await readRes.json()).map(r => r.notification_id) : []);
+    const rows = allRows.filter(n => !readIds.has(n.id)).slice(0, 5);
+    if(!rows.length) return; // khong con gi chua doc (rieng may nay) -> im lang, khong hien gi ca
 
     const body = rows.length > 1
       ? rows[0].noi_dung + ' (+' + (rows.length - 1) + ' thông báo khác)'

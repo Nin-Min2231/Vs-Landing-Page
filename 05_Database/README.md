@@ -29,6 +29,9 @@
    nhận thông báo đẩy Web Push ra điện thoại) — cả 2 chỉ `authenticated` (admin) truy cập được.
 9. `09_supabase_setup_phase9.sql` — Phase 9: `notifications` thêm cột `ref_parent_id` + nới CHECK
    constraint cột `loai` để thêm loại thông báo thứ 4 `'xlps'` (Xử lý phát sinh có hạn chốt hôm nay).
+10. `10_supabase_setup_phase10.sql` — Phase 10: bảng mới `notification_reads` (trạng thái "đã đọc"
+    tính riêng theo từng thiết bị/trình duyệt, thay cho cờ `is_read` chung trên `notifications` —
+    tránh máy A đọc làm máy B tưởng đã xem).
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
 project đang dùng đã qua đủ cả 4 phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy
