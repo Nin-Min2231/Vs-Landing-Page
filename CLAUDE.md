@@ -1220,3 +1220,36 @@ trong `worker.js` nếu cần "hôm nay" ở chỗ khác, dùng lại đúng cô
 **Cần làm để có hiệu lực thật:** `admin.html`/`worker.js` đổi xong cần **push lên `main`** để
 Cloudflare tự deploy lại cả trang tĩnh và Worker (job nền) — nếu chỉ sửa file local mà chưa deploy,
 PM vẫn gặp lại đúng sự cố cũ.
+
+## 36. Màn "Tư vấn": tìm theo Nội dung tư vấn + hiện cột + bôi màu từ khóa khớp (2026-08-14)
+
+**3 việc PM yêu cầu, đã làm cả 3:**
+1. Ô tìm kiếm `#fTvSearch` (đổi placeholder thành "Tìm tên / SĐT / nội dung...") giờ so khớp thêm
+   `l.note` (cột "Ghi chú"/"Nội dung tư vấn" của `leads`, qua `vnNorm()` như 2 field cũ — không dấu
+   vẫn tìm ra có dấu, xem mục 13).
+2. Thêm cột "Nội dung tư vấn" vào bảng list (`renderTuVan()`, giữa "Nhắc lại" và "Thao tác", có
+   sortable giống mọi cột khác). Chữ dài dùng class có sẵn `.text-trunc` (mục cạnh `.addr-trunc`) —
+   cắt 1 dòng + "..." + `title` hiện đủ chữ khi rê chuột, KHÔNG xuống dòng.
+3. Đoạn khớp từ khóa được bôi màu vàng (`<mark class="hl-match">`, dùng lại đúng cặp màu pill
+   "Đang gọi"/"Đã nộp" có sẵn `#FEF3C7`/`var(--warn)`, không tạo màu mới) ở CẢ 3 cột có tham gia tìm
+   kiếm: Tên, SĐT, Nội dung tư vấn.
+
+**Hàm mới `highlightMatch(text, rawQuery)`** (đặt ngay sau `vnNorm()`, khu vực "TIỆN ÍCH CHUNG"):
+lợi dụng đúng 1 tính chất của `vnNorm()` — việc NFD-tách dấu rồi xóa dấu tổ hợp KHÔNG đổi số lượng
+ký tự gốc, nên `vnNorm(text)` luôn cùng độ dài + cùng vị trí ký tự với `text` gốc. Nhờ đó: tìm vị trí
+khớp trên bản đã bỏ dấu (`vnNorm(text)`/`vnNorm(rawQuery)`) rồi cắt ĐÚNG y nguyên vị trí đó trên
+`text` gốc (còn dấu) vẫn ra đúng đoạn khớp có dấu — gõ không dấu "nghi huu" vẫn bôi màu đúng chữ
+"nghỉ hưu" có dấu trong dữ liệu, không cần dò lại vị trí. Bôi màu TẤT CẢ lần khớp trong 1 ô (không
+chỉ lần đầu). Tự `esc()` toàn bộ text (kể cả phần không khớp) nên an toàn, không cần gọi `esc()`
+thêm ở nơi gọi.
+
+**Đã test qua Claude Browser (giả lập LEADS + gọi trực tiếp `renderTuVan()`, không cần đăng nhập
+thật):** gõ không dấu "nghi huu" khớp đúng dòng có "nghỉ hưu" trong Nội dung tư vấn (dòng không liên
+quan bị lọc mất đúng), bôi màu đúng cả 2 lần xuất hiện "nghỉ hưu" trong cùng 1 ô, cột Nội dung tư
+vấn cắt ellipsis đúng (xác nhận `scrollWidth>clientWidth` tại `max-width:240px`), xóa từ khóa thì
+hết bôi màu + hiện lại đủ dòng, bấm sort cột "Nội dung tư vấn" không lỗi.
+
+**⚠️ Nếu sau này cần bôi màu kết quả tìm kiếm ở màn list khác:** gọi lại đúng `highlightMatch(text,
+rawQuery)` này (đã dùng chung được cho mọi field, không phải viết riêng cho Tư vấn) — nhớ giữ biến
+`rawQuery` là giá trị GỐC người dùng gõ (chưa qua `vnNorm()`), không phải biến `q` đã chuẩn hóa dùng
+để lọc.

@@ -452,6 +452,8 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .text-trunc{display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap;vertical-align:bottom}
 @media(max-width:700px){.text-trunc{max-width:60vw}}
+/* Bôi màu đoạn khớp từ khóa tìm kiếm (dùng chung màu pill "Đã nộp"/"Đang gọi" có sẵn) */
+.hl-match{background:#FEF3C7;color:var(--warn);border-radius:2px;padding:0 1px}
 
 .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
 @media(max-width:900px){.chart-row{grid-template-columns:1fr}}
@@ -589,7 +591,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
             <option>Từ Web</option><option>Tự tạo</option>
           </select>
           <select id="fTvCountry" onchange="renderTuVan()"><option value="">Tất cả quốc gia</option></select>
-          <input type="search" id="fTvSearch" placeholder="Tìm tên / SĐT..." oninput="renderTuVan()" style="width:170px">
+          <input type="search" id="fTvSearch" placeholder="Tìm tên / SĐT / nội dung..." oninput="renderTuVan()" style="width:200px">
           <button class="btn btn-ok" onclick="exportTuVanCSV()">⬇ Xuất CSV</button>
           <button class="btn btn-g" onclick="loadLeads()">↻ Tải lại</button>
           <button class="btn btn-p btn-add-fab" onclick="openTvModal()">+ Thêm tư vấn</button>
@@ -607,6 +609,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
             <th class="sortable" onclick="onSortClick('tv','nguon',renderTuVan)">Nguồn<span class="sort-ic" data-tbl="tv" data-col="nguon"></span></th>
             <th class="sortable" onclick="onSortClick('tv','trangthai',renderTuVan)">Trạng thái<span class="sort-ic" data-tbl="tv" data-col="trangthai"></span></th>
             <th class="sortable" onclick="onSortClick('tv','nhaclai',renderTuVan)">Nhắc lại<span class="sort-ic" data-tbl="tv" data-col="nhaclai"></span></th>
+            <th class="sortable" onclick="onSortClick('tv','noidung',renderTuVan)">Nội dung tư vấn<span class="sort-ic" data-tbl="tv" data-col="noidung"></span></th>
             <th class="th-center">Thao tác</th>
           </tr></thead>
           <tbody id="tvBody"></tbody>
@@ -1402,6 +1405,24 @@ const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
    KHÔNG dùng .toLowerCase().includes() thô — xem thêm CLAUDE.md mục 13. ==== */
 function vnNorm(s){
   return (s??'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d');
+}
+/* ==== Bôi màu đoạn text khớp từ khóa tìm kiếm (2026-08) — dùng chung cho mọi cột hiển thị kết
+   quả của 1 ô tìm kiếm đã qua vnNorm(). Lợi dụng đúng 1 tính chất của vnNorm(): việc tách/bỏ dấu
+   qua NFD chỉ xóa các dấu tổ hợp (combining mark) được NFD tách ra sau chữ cái gốc, không đổi số
+   lượng ký tự gốc — nên vnNorm(text) LUÔN cùng độ dài và cùng thứ tự vị trí ký tự với text gốc.
+   Nhờ đó: tìm vị trí khớp trên bản đã bỏ dấu (normText/normQuery) rồi cắt ĐÚNG y nguyên vị trí đó
+   trên text gốc (còn dấu) vẫn ra đúng đoạn khớp, không cần dò lại vị trí phức tạp. ==== */
+function highlightMatch(text, rawQuery){
+  const t = (text??'').toString();
+  const q = (rawQuery??'').toString().trim();
+  if(!q) return esc(t);
+  const normT = vnNorm(t), normQ = vnNorm(q);
+  let out = '', i = 0, idx;
+  while((idx = normT.indexOf(normQ, i)) >= 0){
+    out += esc(t.slice(i, idx)) + '<mark class="hl-match">' + esc(t.slice(idx, idx+q.length)) + '</mark>';
+    i = idx + q.length;
+  }
+  return out + esc(t.slice(i));
 }
 function toast(msg,type='ok'){ const t=$('toast'); t.textContent=msg; t.className='toast show '+type;
   setTimeout(()=>t.classList.remove('show'),4000); }
@@ -2580,14 +2601,16 @@ async function addDoiTacPhi(){
    "Nguồn": "Từ Web" (form công khai index.html, tự gán qua default cột nguon) / "Tự tạo"
    (nhân viên tự thêm qua dialog "Thêm tư vấn", xem saveTuVan()). */
 function renderTuVan(){
-  const st=$('fTvStatus').value, ng=$('fTvNguon').value, ct=$('fTvCountry').value, q=vnNorm($('fTvSearch').value.trim());
+  const st=$('fTvStatus').value, ng=$('fTvNguon').value, ct=$('fTvCountry').value;
+  const rawQ=$('fTvSearch').value.trim(), q=vnNorm(rawQ);
   let rows = LEADS.filter(l=>
     (!st||l.status===st) && (!ng||l.nguon===ng) && (!ct||l.country===ct) &&
-    (!q||vnNorm(l.name).includes(q)||vnNorm(l.phone).includes(q))
+    (!q||vnNorm(l.name).includes(q)||vnNorm(l.phone).includes(q)||vnNorm(l.note).includes(q))
   );
   rows = applySort('tv', rows, {
     ngay:l=>l.created_at, ten:l=>l.name, sdt:l=>l.phone, nuoc:l=>l.country,
-    mucdich:l=>l.muc_dich, nguon:l=>l.nguon, trangthai:l=>l.status, nhaclai:l=>l.ngay_nhac_lai
+    mucdich:l=>l.muc_dich, nguon:l=>l.nguon, trangthai:l=>l.status, nhaclai:l=>l.ngay_nhac_lai,
+    noidung:l=>l.note||''
   });
   const cnt = s => LEADS.filter(l=>l.status===s).length;
   const cntNg = n => LEADS.filter(l=>l.nguon===n).length;
@@ -2603,13 +2626,14 @@ function renderTuVan(){
     <tr>
       <td>${i+1}</td>
       <td>${fmtTime(l.created_at)}</td>
-      <td><b>${esc(l.name)}</b></td>
-      <td>${l.phone?`<a href="tel:${esc(l.phone)}">${esc(l.phone)}</a>`:'–'}</td>
+      <td><b>${highlightMatch(l.name, rawQ)}</b></td>
+      <td>${l.phone?`<a href="tel:${esc(l.phone)}">${highlightMatch(l.phone, rawQ)}</a>`:'–'}</td>
       <td>${esc(l.country||'–')}</td>
       <td>${esc(l.muc_dich||'–')}</td>
       <td><span class="pill ${nguonPillClass(l.nguon)}">${esc(l.nguon||'Từ Web')}</span></td>
       <td><span class="pill stt-tuvan ${pillClass(l.status)}">${esc(l.status)}</span></td>
       <td>${fmtDate(l.ngay_nhac_lai)}</td>
+      <td>${l.note?`<span class="text-trunc" title="${esc(l.note)}">${highlightMatch(l.note, rawQ)}</span>`:'–'}</td>
       <td class="td-actions"><button class="btn btn-p" onclick="openTvModal(${l.id})">Sửa</button></td>
     </tr>`).join('');
   applyRowLabels('tvBody');
