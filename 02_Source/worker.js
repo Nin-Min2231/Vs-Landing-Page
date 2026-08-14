@@ -43,12 +43,12 @@ async function supa(env, path, opts = {}) {
 }
 
 /* ==================== BƯỚC 1: SINH THÔNG BÁO MỚI (bỏ qua nếu đã có) ====================
-   "Hôm nay" tính theo UTC (new Date().toISOString()) để khớp đúng cách admin.html đang tính
-   "hôm nay" ở Dashboard/Hồ sơ (todayIso/todayStr) — tránh 2 nơi lệch ngày nhau. Biết trước hạn
-   chế: quanh 00:00-07:00 giờ Việt Nam, mốc UTC vẫn là "ngày hôm qua" nên có thể trễ vài giờ vào
-   sáng sớm — không ảnh hưởng thực tế vì đây không phải giờ làm việc. */
+   "Hôm nay" tính theo giờ VIỆT NAM (UTC+7), khớp đúng cách admin.html tính "hôm nay" ở
+   Dashboard/Hồ sơ (hàm tcToday()) — tránh 2 nơi lệch ngày nhau. (2026-08, sửa lại: bản cũ tính
+   thẳng theo UTC nên từ 0h-7h sáng giờ VN mốc UTC vẫn là "ngày hôm qua", khiến cả tô đỏ trên
+   Dashboard lẫn thông báo bị trễ tới 7h sáng mới đúng — PM phản hồi thật gặp lúc 6h30 sáng.) */
 async function generateNewNotifications(env) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
   const candidates = [];
 
   // Mỗi loại bọc try/catch RIÊNG — 1 loại lỗi (vd sai cú pháp filter, đổi schema...) không được

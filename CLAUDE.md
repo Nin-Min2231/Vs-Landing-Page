@@ -1187,3 +1187,36 @@ stopPropagation()"` để tick không vô tình kích hoạt điều hướng c�
 chỉ xóa đúng những id đã tick (`notifications?id=in.(...)`). Hàm `deleteReadNotifications()` cũ đã
 xóa hẳn, không giữ lại tương thích ngược. **Đánh dấu đã đọc" (`markAllNotifRead()`) KHÔNG đổi** —
 PM chỉ yêu cầu đổi hành vi xóa, vẫn đánh dấu tất cả đã đọc cùng lúc như cũ.
+
+## 35. Sửa "hôm nay" tính theo UTC → giờ Việt Nam — fix tô đỏ/thông báo bị trễ tới 7h sáng (2026-08-14)
+
+**Sự cố PM phản hồi:** vào `admin.html` lúc 6h30 sáng, hồ sơ có "Ngày trả KQ" = hôm nay KHÔNG được
+tô đỏ trên Dashboard, và điện thoại KHÔNG nhận được thông báo "Trả kết quả" — lặp lại mỗi sáng.
+
+**Nguyên nhân:** `tcToday()` (`admin.html`) và biến `today` trong `generateNewNotifications()`
+(`worker.js`) đều tính "hôm nay" bằng `new Date().toISOString().slice(0,10)` — đây là ngày theo
+**giờ UTC**, không phải giờ Việt Nam. Việt Nam nhanh hơn UTC 7 giờ, nên từ 0h-7h sáng giờ VN, mốc
+UTC vẫn đang là "ngày hôm qua" → mọi so sánh `=== hôm nay` (tô đỏ Dashboard, query `ngay_tra_kq=eq.today`
+ở worker) đều trễ tới 7h sáng giờ VN mới đúng. Hạn chế này từng được ghi chú và CHẤP NHẬN lúc dựng
+tính năng thông báo (mục 33) vì nghĩ "0h-7h không phải giờ làm việc" — thực tế PM có kiểm tra sớm
+nên vẫn bị ảnh hưởng, đã quyết định sửa hẳn theo yêu cầu PM.
+
+**Đã sửa:** `tcToday()` đổi thành `new Date(Date.now()+7*3600*1000).toISOString().slice(0,10)`
+(cộng thêm đúng 7 giờ trước khi lấy ngày UTC = ngày theo giờ Việt Nam, không phụ thuộc múi giờ máy/
+điện thoại người dùng đang đặt). Đồng thời quy TẤT CẢ những chỗ khác trong `admin.html` từng tự tính
+`new Date().toISOString().slice(0,10)` riêng (không gọi qua `tcToday()`) về gọi chung `tcToday()` —
+gồm: "hôm nay" trong date-picker dùng chung (`renderDatePicker`/`dpGotoToday`), cờ quá hạn "Ngày trả
+KQ" ở màn Hồ sơ (`todayStr` trong `renderHoSo()`), và các giá trị mặc định điền sẵn ngày hôm nay
+(dialog "Bảng phí đại lý", dialog "Đăng ký hồ sơ mới", tên file CSV xuất Tư vấn/Tài chính) — tránh
+để sót một nơi vẫn tính theo UTC gây lệch ngày với phần còn lại của hệ thống. `worker.js` sửa tương
+tự (biến `today`), cùng công thức `+7*3600*1000` để 2 nơi luôn khớp nhau.
+
+**⚠️ Nếu sau này thêm bất kỳ chỗ nào cần biết "hôm nay"** trong `admin.html`: LUÔN gọi `tcToday()`,
+KHÔNG viết lại `new Date().toISOString().slice(0,10)` hay dùng `new Date().getFullYear()/getMonth()/
+getDate()` (getter theo giờ máy/điện thoại, không đáng tin vì phụ thuộc múi giờ thiết bị) — để mọi
+nơi trong hệ thống luôn thống nhất 1 định nghĩa "hôm nay" duy nhất theo giờ Việt Nam. Tương tự,
+trong `worker.js` nếu cần "hôm nay" ở chỗ khác, dùng lại đúng công thức `new Date(Date.now()+7*3600*1000).toISOString().slice(0,10)` đã áp dụng trong `generateNewNotifications()`.
+
+**Cần làm để có hiệu lực thật:** `admin.html`/`worker.js` đổi xong cần **push lên `main`** để
+Cloudflare tự deploy lại cả trang tĩnh và Worker (job nền) — nếu chỉ sửa file local mà chưa deploy,
+PM vẫn gặp lại đúng sự cố cũ.

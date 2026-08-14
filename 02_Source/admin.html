@@ -1492,7 +1492,7 @@ function renderDatePicker(){
   const firstWeekday = new Date(DP_YEAR, DP_MONTH, 1).getDay();
   const totalDays = new Date(DP_YEAR, DP_MONTH+1, 0).getDate();
   const prevMonthDays = new Date(DP_YEAR, DP_MONTH, 0).getDate();
-  const todayIso = new Date().toISOString().slice(0,10);
+  const todayIso = tcToday();
   const curIso = DP_TARGET ? toISODate(DP_TARGET.value) : null;
   let html = '';
   for(let i=firstWeekday-1;i>=0;i--) html += `<span class="dp-day-other">${prevMonthDays-i}</span>`;
@@ -1518,9 +1518,10 @@ function dpSelectDay(d){
   closeDatePicker();
 }
 function dpGotoToday(){
-  const t = new Date();
-  DP_YEAR = t.getFullYear(); DP_MONTH = t.getMonth();
-  dpSetInputValue(fromISODate(t.toISOString().slice(0,10)));
+  const todayIso = tcToday();
+  const [y,m] = todayIso.split('-').map(Number);
+  DP_YEAR = y; DP_MONTH = m-1;
+  dpSetInputValue(fromISODate(todayIso));
   closeDatePicker();
 }
 function dpClear(){ dpSetInputValue(''); closeDatePicker(); }
@@ -1623,7 +1624,10 @@ initScrollLock();
 
 /* Bộ lọc ngày mặc định cho tab Tài chính: từ ngày 1 tháng hiện tại đến hôm nay */
 function tcDefaultFrom(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'; }
-function tcToday(){ return new Date().toISOString().slice(0,10); }
+/* "Hôm nay" tính theo giờ Việt Nam (UTC+7), KHÔNG dùng thẳng new Date().toISOString() (đó là giờ
+   UTC) — nếu không, từ 0h-7h sáng giờ VN, toISOString() vẫn trả về ngày HÔM QUA, khiến các nơi tô
+   đỏ/lọc "hôm nay" (Dashboard, Hồ sơ, thông báo worker.js) bị trễ tới 7h sáng mới đúng (2026-08). */
+function tcToday(){ return new Date(Date.now()+7*3600*1000).toISOString().slice(0,10); }
 function initTaiChinhFilters(){ $('tcFrom').value = fromISODate(tcDefaultFrom()); $('tcTo').value = fromISODate(tcToday()); }
 initTaiChinhFilters();
 initDatePickers();
@@ -2015,7 +2019,7 @@ function exportTuVanCSV(){
   const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='tu_van_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download='tu_van_'+tcToday()+'.csv';
   a.click(); URL.revokeObjectURL(a.href);
   toast('Đã xuất '+LEADS.length+' dòng ra CSV');
 }
@@ -2496,7 +2500,7 @@ async function openDoiTacFeeModal(id){
   $('dtFeeDoiTacId').value=id;
   $('feeNoiNop').value=''; $('feeNuoc').value=''; $('feeMucDich').value='';
   $('feePhiUyThac').value=''; $('feePhiLanhSu').value=''; $('feeGhiChu').value='';
-  $('feeNgayApDung').value = fromISODate(new Date().toISOString().slice(0,10));
+  $('feeNgayApDung').value = fromISODate(tcToday());
   $('dtFeeOverlay').classList.remove('hidden');
   await loadDoiTacPhi(id);
   snapshotDialog('dtFeeOverlay');
@@ -2558,14 +2562,14 @@ async function addDoiTacPhi(){
     muc_dich_id: Number(muc_dich_id),
     phi_uy_thac: $('feePhiUyThac').value.trim()?unformatMoney($('feePhiUyThac').value):null,
     phi_lanh_su: $('feePhiLanhSu').value.trim()?unformatMoney($('feePhiLanhSu').value):null,
-    ngay_ap_dung_tu: ngay_ap_dung_tu||new Date().toISOString().slice(0,10),
+    ngay_ap_dung_tu: ngay_ap_dung_tu||tcToday(),
     ghi_chu: $('feeGhiChu').value.trim()||null
   };
   try{
     await api('doi_tac_phi',{method:'POST',body:JSON.stringify(body)});
     $('feeNoiNop').value=''; $('feeNuoc').value=''; $('feeMucDich').value='';
     $('feePhiUyThac').value=''; $('feePhiLanhSu').value=''; $('feeGhiChu').value='';
-    $('feeNgayApDung').value = fromISODate(new Date().toISOString().slice(0,10));
+    $('feeNgayApDung').value = fromISODate(tcToday());
     loadDoiTacPhi(CUR_FEE_DOITAC); toast('Đã thêm mức phí mới');
     snapshotDialog('dtFeeOverlay');
   }catch(e){ toast('Lỗi thêm phí: '+e.message,'err'); }
@@ -2697,7 +2701,7 @@ const HS_STATUS_ORDER = {'Đang xử lý':1,'Đã nộp':2,'Đậu':3,'Rớt':4,
 function renderHoSo(){
   const checkedSt=checkedHsStatuses(), q=vnNorm($('fHsSearch').value.trim());
   const tuNgay=toISODate($('fHsTuNgay').value), denNgay=toISODate($('fHsDenNgay').value);
-  const todayStr = new Date().toISOString().slice(0,10);
+  const todayStr = tcToday();
   let rows = HO_SO.filter(h=>
     checkedSt.includes(h.trang_thai) &&
     (!q||vnNorm(h.ten_khach).includes(q)) &&
@@ -2772,7 +2776,7 @@ function openHoSoModal(id, prefill){
   $('hoModalTitle').textContent = h ? 'Sửa hồ sơ' : 'Đăng ký hồ sơ mới';
   $('hoId').value = h?.id||'';
   $('hoNguonTuVan').value = h?.nguon_tu_van_id || prefill?.nguon_tu_van_id || '';
-  $('hoNgay').value = fromISODate(h?.ngay || new Date().toISOString().slice(0,10));
+  $('hoNgay').value = fromISODate(h?.ngay || tcToday());
   $('hoKhachHangId').value = h?.khach_hang_id||'';
   $('hoTenKhach').value = h ? h.ten_khach : (prefill?.ten_khach||'');
   $('hoTruongNhom').value = h?.truong_nhom_id||'';
@@ -2853,7 +2857,7 @@ async function saveHoSo(){
   if(!muc_dich_id){ toast('Vui lòng chọn Mục đích','err'); return; }
   // Đại lý ủy thác không còn bắt buộc (2026-08, PM xác nhận) — nhiều hồ sơ tự làm không qua đại lý
   const ngayRaw=$('hoNgay').value.trim();
-  const ngayIso = ngayRaw ? toISODate(ngayRaw) : new Date().toISOString().slice(0,10);
+  const ngayIso = ngayRaw ? toISODate(ngayRaw) : tcToday();
   if(ngayRaw && !ngayIso){ toast('Ngày tạo không hợp lệ, vui lòng nhập đúng dd/mm/yyyy','err'); return; }
   const ngayNopRaw=$('hoNgayNop').value.trim(), ngayTraKqRaw=$('hoNgayTraKq').value.trim();
   const ngayNopIso=toISODate(ngayNopRaw), ngayTraKqIso=toISODate(ngayTraKqRaw);
@@ -3391,7 +3395,7 @@ function exportTaiChinhCSV(){
   const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='tai_chinh_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download='tai_chinh_'+tcToday()+'.csv';
   a.click(); URL.revokeObjectURL(a.href);
   toast('Đã xuất '+TC_ROWS.length+' dòng ra CSV');
 }
