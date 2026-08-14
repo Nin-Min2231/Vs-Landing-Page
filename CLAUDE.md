@@ -1253,3 +1253,32 @@ hết bôi màu + hiện lại đủ dòng, bấm sort cột "Nội dung tư v�
 rawQuery)` này (đã dùng chung được cho mọi field, không phải viết riêng cho Tư vấn) — nhớ giữ biến
 `rawQuery` là giá trị GỐC người dùng gõ (chưa qua `vnNorm()`), không phải biến `q` đã chuẩn hóa dùng
 để lọc.
+
+## 37. Màn "Tư vấn": đổi nút "Xuất CSV" → "Xuất Excel" (file .xlsx thật) (2026-08-14)
+
+**Lý do:** PM yêu cầu xuất ra Excel thật (.xlsx) thay vì .csv — trước đây `exportTuVanCSV()` chỉ
+xuất file `.csv` (kèm BOM UTF-8 để Excel mở không lỗi tiếng Việt), không phải file Excel thật.
+
+**Đã thêm 1 thư viện ngoài qua CDN — SheetJS (`xlsx`)**, gắn kèm ngay dưới dòng `<script src=
+"...chart.js">` đã có sẵn ở đầu file: `<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/
+xlsx.full.min.js"></script>` (ghim đúng bản `0.18.5`, không dùng `@latest` để tránh 1 ngày nào đó
+CDN đổi bản mới làm hỏng code đang chạy mà không ai biết). **Đây KHÔNG phải phá vỡ triết lý "không
+framework/build step" ở mục 3/10** — chỉ là 1 thẻ `<script src>` tải sẵn, giống hệt cách Chart.js
+đã dùng từ trước cho biểu đồ Dashboard, không cần `npm install`/bundler gì thêm.
+
+**Hàm đổi tên `exportTuVanCSV()` → `exportTuVanExcel()`** (giữ nguyên đúng bộ cột/dữ liệu cũ: ID/
+Thời gian/Họ tên/SĐT/Quốc gia/Mục đích/Nguồn/Ghi chú/Trạng thái, xuất TOÀN BỘ `LEADS` không theo bộ
+lọc/tìm kiếm hiện tại trên màn hình — giữ đúng hành vi cũ, chỉ đổi định dạng file): dùng
+`XLSX.utils.aoa_to_sheet()` dựng sheet từ mảng 2 chiều, đặt `ws['!cols']` cho độ rộng cột hợp lý
+(không bị bó chữ khi mở), `XLSX.writeFile(wb, 'tu_van_'+tcToday()+'.xlsx')` tự trình duyệt tải file
+xuống — không cần dòng code Blob/`URL.createObjectURL` tự viết tay như bản CSV cũ (SheetJS tự làm).
+
+**Đã tự kiểm chứng logic bằng Node** (không cần mở trình duyệt — cài tạm gói `xlsx` ở thư mục tạm
+NGOÀI dự án, không đụng `package.json` của repo): dựng sheet bằng đúng API trên với dữ liệu tiếng
+Việt có dấu, ghi ra `.xlsx`, đọc lại xác nhận đúng nội dung + Unix nhận diện đúng định dạng
+"Microsoft Excel 2007+" (không phải file giả dạng .xlsx như cách gán MIME `application/vnd.ms-excel`
+cho HTML thường thấy ở nơi khác — đây là file Excel THẬT).
+
+**⚠️ Nếu sau này cần xuất Excel ở màn khác** (Tài chính, Hồ sơ...): dùng lại đúng 3 dòng
+`aoa_to_sheet`/`book_new`+`book_append_sheet`/`writeFile` này, không cần thêm `<script src>` nữa vì
+`XLSX` đã là biến toàn cục sẵn có trên mọi trang đã load `admin.html`.

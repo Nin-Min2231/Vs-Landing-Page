@@ -15,6 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="Top Visa 5S Admin">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 /* ============================================================
    ⚙️ CẤU HÌNH — dán CÙNG 2 giá trị như trong index.html
@@ -592,7 +593,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           </select>
           <select id="fTvCountry" onchange="renderTuVan()"><option value="">Tất cả quốc gia</option></select>
           <input type="search" id="fTvSearch" placeholder="Tìm tên / SĐT / nội dung..." oninput="renderTuVan()" style="width:200px">
-          <button class="btn btn-ok" onclick="exportTuVanCSV()">⬇ Xuất CSV</button>
+          <button class="btn btn-ok" onclick="exportTuVanExcel()">⬇ Xuất Excel</button>
           <button class="btn btn-g" onclick="loadLeads()">↻ Tải lại</button>
           <button class="btn btn-p btn-add-fab" onclick="openTvModal()">+ Thêm tư vấn</button>
         </div>
@@ -2030,19 +2031,16 @@ async function loadLeads(){
 }
 function pillClass(s){ return {'Mới':'pill-new','Đang tư vấn':'pill-called','Chốt':'pill-won','Hủy':'pill-lost'}[s]||'pill-new'; }
 function nguonPillClass(n){ return n==='Tự tạo' ? 'pill-nguon-tutao' : 'pill-nguon-web'; }
-function exportTuVanCSV(){
+function exportTuVanExcel(){
   if(!LEADS.length){ toast('Chưa có dữ liệu để xuất','err'); return; }
   const head=['ID','Thời gian','Họ tên','SĐT','Quốc gia','Mục đích','Nguồn','Ghi chú','Trạng thái'];
-  const csvCell = v => '"'+(v??'').toString().replace(/"/g,'""')+'"';
-  const lines=[head.join(',')].concat(LEADS.map(l=>
-    [l.id,fmtTime(l.created_at),l.name,l.phone,l.country,l.muc_dich,l.nguon,l.note,l.status].map(csvCell).join(',')));
-  // BOM UTF-8 để Excel mở đúng tiếng Việt
-  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='tu_van_'+tcToday()+'.csv';
-  a.click(); URL.revokeObjectURL(a.href);
-  toast('Đã xuất '+LEADS.length+' dòng ra CSV');
+  const rows=LEADS.map(l=>[l.id,fmtTime(l.created_at),l.name,l.phone,l.country,l.muc_dich,l.nguon,l.note,l.status]);
+  const ws = XLSX.utils.aoa_to_sheet([head, ...rows]);
+  ws['!cols'] = [{wch:6},{wch:16},{wch:22},{wch:14},{wch:12},{wch:14},{wch:10},{wch:40},{wch:14}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Tu van');
+  XLSX.writeFile(wb, 'tu_van_'+tcToday()+'.xlsx');
+  toast('Đã xuất '+LEADS.length+' dòng ra Excel');
 }
 
 /* ==================== CATEGORIES (Danh mục bài viết — giữ nguyên) ==================== */
