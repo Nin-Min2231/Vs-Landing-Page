@@ -2009,18 +2009,33 @@ function urlBase64ToUint8Array(base64String){
 async function subscribePush(){
   if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   const reg = await navigator.serviceWorker.ready;
-  const existing = await reg.pushManager.getSubscription();
-  if(existing) return; // đã có sẵn từ trước, không cần xin lại
-  const perm = await Notification.requestPermission();
-  if(perm!=='granted') return;
+  let sub = await reg.pushManager.getSubscription();
+  // ⚠️ (2026-08, sửa lỗi thật) — TRƯỚC ĐÂY: có `sub` sẵn ở trình duyệt là return luôn, không lưu gì
+  // vào DB cả. Nếu dòng `push_subscriptions` tương ứng từng bị xóa (dọn subscription hết hạn ở
+  // worker.js, hoặc do trước đây có sự cố `SUPABASE_SERVICE_ROLE_KEY` sai làm request lưu ban đầu
+  // thất bại) thì trình duyệt vẫn "nghĩ" mình đã đăng ký (nên không hỏi lại quyền), nhưng server
+  // hoàn toàn không biết thiết bị này tồn tại → Worker không gửi push tới được — đúng kiểu lỗi
+  // "chuông trong trang vẫn cập nhật (đọc thẳng notifications) nhưng điện thoại không nhận được gì"
+  // PM phản hồi. Giờ LUÔN ghi/đồng bộ lại `push_subscriptions` mỗi lần gọi hàm này (POST
+  // upsert theo endpoint — không tạo trùng, không hại gì nếu đã có), chỉ bỏ qua bước xin quyền/
+  // subscribe MỚI khi đã có `sub` sẵn.
+  if(!sub){
+    const perm = await Notification.requestPermission();
+    if(perm!=='granted'){
+      toast('Chưa bật được thông báo đẩy — bạn cần cho phép quyền thông báo','err');
+      return;
+    }
+    try{
+      sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+    }catch(e){ toast('Không bật được thông báo đẩy: '+e.message,'err'); return; }
+  }
   try{
-    const sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
     const j = sub.toJSON();
     await api('push_subscriptions?on_conflict=endpoint',{method:'POST',
       body:JSON.stringify({endpoint:j.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth, user_agent:navigator.userAgent, last_seen_at:new Date().toISOString()}),
       prefer:'resolution=merge-duplicates,return=minimal'});
     toast('Đã bật thông báo đẩy trên thiết bị này');
-  }catch(e){ toast('Không bật được thông báo đẩy: '+e.message,'err'); }
+  }catch(e){ toast('Không lưu được đăng ký thông báo đẩy: '+e.message,'err'); }
 }
 /* Gọi 1 lần ngay sau khi đăng nhập (cả 2 chỗ: đăng nhập thường + tự đăng nhập lại) — cờ
    'tv5s_push_asked' trong localStorage đảm bảo CHỈ hỏi đúng 1 lần/máy, không nài nỉ lại mỗi lần mở

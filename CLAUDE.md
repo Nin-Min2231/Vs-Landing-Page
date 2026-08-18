@@ -1485,3 +1485,49 @@ tầng 3 dùng ĐÚNG ví dụ PM đưa nhưng shuffle input để kiểm tra so
 hợp đúng vì dữ liệu vào đã đúng thứ tự): kết quả ra ĐÚNG in ra Hủy(01/8)→Rớt(03/8)→Đậu(05/8)→
 Hủy(09/8)→Rớt(12/8)→Đậu(15/8), xen kẽ đúng như ví dụ, không nhóm theo trạng thái. 2 tầng đầu
 ("Đang xử lý" theo Ngày tạo, "Đã nộp" theo Ngày trả KQ) vẫn đúng như lượt sửa trước.
+
+## 43. Sửa lỗi thật: thông báo đẩy không tới điện thoại dù chuông trong trang vẫn cập nhật (2026-08-18)
+
+**Sự cố PM phản hồi:** chuông thông báo trong `admin.html` vẫn tự cập nhật đúng (đọc thẳng bảng
+`notifications`, không phụ thuộc push) nhưng điện thoại KHÔNG nhận được thông báo đẩy ra màn hình
+khóa dù không mở app — tính năng Web Push (mục 33) **từ lúc dựng (2026-08-10) tới nay chưa từng có
+xác nhận thật hoạt động trên thiết bị thật** (luôn ghi "chưa/không thể kiểm chứng" ở các mục trước).
+
+**Bug tìm thấy trong `subscribePush()` (`admin.html`, đổi tên từ `togglePushSubscription()` ở mục
+40):** nếu trình duyệt ĐÃ có sẵn 1 `PushSubscription` object (`reg.pushManager.getSubscription()`
+trả về khác `null` — vd do đã từng subscribe ở lần test/phiên trước), hàm **return ngay, KHÔNG lưu
+gì vào bảng `push_subscriptions` cả**. Nếu dòng tương ứng trong bảng đó từng bị xóa/chưa từng được
+lưu thành công (vd do sự cố `SUPABASE_SERVICE_ROLE_KEY` sai ở mục 35, hoặc `push_subscriptions`
+từng bị dọn do 410 Gone ở `worker.js`) → trình duyệt "tưởng" mình đã đăng ký (nên không hỏi lại
+quyền, không báo lỗi gì) nhưng **server hoàn toàn không biết thiết bị này tồn tại** → `worker.js`
+lặp qua `push_subscriptions?select=*` không thấy dòng nào của máy này → không gửi push tới được.
+Đây khớp ĐÚNG 100% triệu chứng "chuông cập nhật (đọc DB trực tiếp, không qua push) nhưng điện thoại
+im lặng" — vì 2 luồng này hoàn toàn độc lập nhau.
+
+**Đã sửa:** `subscribePush()` giờ **LUÔN LUÔN** thực hiện bước lưu/đồng bộ lại
+`push_subscriptions` (POST `on_conflict=endpoint` + `resolution=merge-duplicates` — an toàn 100%,
+không tạo trùng, không hại gì nếu dòng đã tồn tại đúng) mỗi lần được gọi — chỉ bỏ qua đúng 2 bước
+"xin quyền `Notification`" + "gọi `pushManager.subscribe()` tạo mới" khi trình duyệt đã có sẵn
+subscription object. Nhờ đó: mỗi lần đăng nhập (`maybeAskPushPermission()` gọi `subscribePush()`
+mỗi lần `Notification.permission==='granted'`, tức MỌI lần mở app sau khi đã cấp quyền — xem mục
+40) sẽ tự "vá" lại dòng `push_subscriptions` nếu nó từng bị mất, không cần người dùng phải chủ động
+làm gì. Đồng thời thêm toast báo lỗi rõ ràng khi bị từ chối quyền `Notification` (trước đây `return`
+im lặng, không có tín hiệu gì cho người dùng biết là đã thất bại).
+
+**Đã test qua Claude Browser** (mock `navigator.serviceWorker`/`PushManager`/`Notification`/`api()`/
+`toast()`, gọi trực tiếp `subscribePush()`): (1) giả lập ĐÃ có sẵn `PushSubscription` ở trình duyệt
+— xác nhận vẫn gọi đúng `POST push_subscriptions` để đồng bộ lại (trước đây sẽ KHÔNG gọi gì cả,
+đây chính là bug), (2) giả lập quyền bị từ chối — xác nhận hiện đúng toast lỗi, không gọi API nào.
+
+**⚠️ Các nguyên nhân KHÁC có thể vẫn góp phần, KHÔNG kiểm chứng được từ code/máy chủ CI, cần PM tự
+kiểm tra trên đúng thiết bị thật đang test:**
+- **iPhone/Safari:** Web Push CHỈ hoạt động khi trang đã "Thêm vào màn hình chính" (Add to Home
+  Screen) và mở TỪ ICON đó (không phải tab Safari thường) + iOS bản 16.4 trở lên. Mở qua tab Safari
+  thường thì `'PushManager' in window` sẽ luôn `false`, không có cách nào bật được bằng code.
+- **Android:** từ Android 13, hệ điều hành có thêm 1 lớp quyền thông báo CẤP HỆ THỐNG riêng cho
+  từng app/trình duyệt (Cài đặt → Ứng dụng → Chrome → Thông báo) — nếu quyền này bị tắt ở tầng OS,
+  web code không có cách nào ghi đè, permission JS vẫn báo `granted` nhưng hệ thống vẫn chặn hiện.
+- Khóa `VAPID_PRIVATE_KEY_JWK` trên Cloudflare Worker (đã xác nhận CÓ tồn tại qua ảnh chụp PM gửi
+  lúc debug mục 35, nhưng GIÁ TRỊ chưa từng verify) — nếu sai/hỏng, `worker.js` gọi push tới đúng
+  endpoint nhưng bị dịch vụ push (FCM/Mozilla...) trả lỗi 401/403, chỉ thấy được qua Cloudflare
+  Logs (Observability → Logs, bật lên rồi đợi 1 lượt cron ~10 phút, đúng lúc có thông báo mới).
