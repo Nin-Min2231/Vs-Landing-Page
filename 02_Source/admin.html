@@ -91,8 +91,6 @@ header.bar{background:var(--dark);color:#fff;padding:0 20px;display:flex;align-i
 .notif-panel-actions .btn-link{background:none;border:none;color:var(--p);font-size:12px;font-weight:600;
   cursor:pointer;padding:0;font-family:var(--font)}
 .notif-panel-actions .btn-link:hover{text-decoration:underline}
-.notif-push-row{padding:8px 14px;border-bottom:1px solid var(--bd);flex-shrink:0}
-.notif-push-row .btn{width:100%;font-size:12px;padding:8px 10px}
 .notif-list{overflow-y:auto;flex:1;min-height:0}
 .notif-item{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bd);cursor:pointer}
 .notif-item:hover{background:var(--pl)}
@@ -511,9 +509,6 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <button class="btn-link" onclick="markAllNotifRead()">Đánh dấu đã đọc</button>
         <button class="btn-link" id="notifDeleteBtn" onclick="deleteSelectedNotifications()">Xóa đã chọn</button>
       </div>
-    </div>
-    <div class="notif-push-row">
-      <button class="btn btn-g" id="notifPushBtn" onclick="togglePushSubscription()">🔔 Bật thông báo đẩy trên thiết bị này</button>
     </div>
     <div class="notif-list" id="notifList"></div>
     <div class="notif-empty hidden" id="notifEmpty">Chưa có thông báo nào</div>
@@ -1834,6 +1829,7 @@ $('loginForm').addEventListener('submit', async e=>{
     loadPosts();
     loadDashboard();
     startNotifPolling();
+    maybeAskPushPermission();
   }catch(err){
     $('loginErr').textContent = err.message==='Failed to fetch'
       ? 'Không kết nối được Supabase. Kiểm tra mạng hoặc URL cấu hình.' : err.message;
@@ -1868,6 +1864,7 @@ async function trySilentLogin(){
     loadPosts();
     loadDashboard();
     startNotifPolling();
+    maybeAskPushPermission();
   }catch(e){
     localStorage.removeItem(REMEMBER_KEY);
   }
@@ -1934,7 +1931,6 @@ function toggleNotifPanel(){
 function openNotifPanel(){
   $('notifPanel').classList.remove('hidden');
   positionNotifPanel();
-  refreshPushButtonLabel();
 }
 function closeNotifPanel(){ $('notifPanel').classList.add('hidden'); }
 function positionNotifPanel(){
@@ -1995,42 +1991,28 @@ async function deleteSelectedNotifications(){
   }catch(e){ toast('Lỗi: '+e.message,'err'); }
 }
 
-/* ==== Thông báo đẩy (Web Push) — bấm nút mới xin quyền (bắt buộc phải qua thao tác bấm của người
-   dùng, trình duyệt chặn xin quyền tự động lúc tải trang). Sau khi bật, 1 Cloudflare Worker chạy
-   nền (worker.js) sẽ gửi push tới đúng thiết bị này kể cả khi đã tắt hẳn trình duyệt/app. ==== */
+/* ==== Thông báo đẩy (Web Push) (2026-08, đổi lại) — trước đây có nút "Bật/Tắt thông báo đẩy" thủ
+   công trong panel chuông, PM phản hồi bỏ nút này đi, thay bằng tự động hỏi quyền 1 LẦN DUY NHẤT
+   ngay sau khi đăng nhập lần đầu trên máy đó (không hỏi lại mỗi lần mở app). Vẫn phải xin quyền
+   Notification qua đúng 1 thao tác bấm của người dùng (bắt buộc theo trình duyệt, không thể tự xin
+   ngầm) — giải quyết bằng cách hiện popup xác nhận CỦA RIÊNG TRANG (showConfirmPopup) trước, bấm
+   "Bật thông báo" trong popup đó chính là thao tác bấm hợp lệ để gọi Notification.requestPermission()
+   ngay sau. Sau khi bật, 1 Cloudflare Worker chạy nền (worker.js) sẽ gửi push tới đúng thiết bị này
+   kể cả khi đã tắt hẳn trình duyệt/app. Không còn cách tắt lại trong app — muốn tắt thì vào cài đặt
+   thông báo của trình duyệt/điện thoại cho đúng trang này (như mọi web app khác). ==== */
 function urlBase64ToUint8Array(base64String){
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g,'+').replace(/_/g,'/');
   const raw = atob(base64);
   return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
 }
-async function refreshPushButtonLabel(){
-  const btn = $('notifPushBtn');
-  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
-    btn.textContent = '🔕 Trình duyệt này không hỗ trợ thông báo đẩy'; btn.disabled = true; return;
-  }
-  btn.disabled = false;
-  try{
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    btn.textContent = sub ? '🔕 Tắt thông báo đẩy trên thiết bị này' : '🔔 Bật thông báo đẩy trên thiết bị này';
-  }catch(e){ btn.textContent = '🔔 Bật thông báo đẩy trên thiết bị này'; }
-}
-async function togglePushSubscription(){
-  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
-    toast('Trình duyệt này không hỗ trợ thông báo đẩy','err'); return;
-  }
+async function subscribePush(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   const reg = await navigator.serviceWorker.ready;
   const existing = await reg.pushManager.getSubscription();
-  if(existing){
-    try{ await api('push_subscriptions?endpoint=eq.'+encodeURIComponent(existing.endpoint),{method:'DELETE',prefer:'return=minimal'}); }catch(e){}
-    await existing.unsubscribe();
-    toast('Đã tắt thông báo đẩy trên thiết bị này');
-    refreshPushButtonLabel();
-    return;
-  }
+  if(existing) return; // đã có sẵn từ trước, không cần xin lại
   const perm = await Notification.requestPermission();
-  if(perm!=='granted'){ toast('Bạn cần cho phép quyền thông báo để bật tính năng này','err'); return; }
+  if(perm!=='granted') return;
   try{
     const sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
     const j = sub.toJSON();
@@ -2039,7 +2021,28 @@ async function togglePushSubscription(){
       prefer:'resolution=merge-duplicates,return=minimal'});
     toast('Đã bật thông báo đẩy trên thiết bị này');
   }catch(e){ toast('Không bật được thông báo đẩy: '+e.message,'err'); }
-  refreshPushButtonLabel();
+}
+/* Gọi 1 lần ngay sau khi đăng nhập (cả 2 chỗ: đăng nhập thường + tự đăng nhập lại) — cờ
+   'tv5s_push_asked' trong localStorage đảm bảo CHỈ hỏi đúng 1 lần/máy, không nài nỉ lại mỗi lần mở
+   app dù người dùng bấm "Bỏ qua". Nếu quyền đã 'granted' từ trước (đổi máy khác vẫn còn nhớ, hoặc
+   lỡ xóa localStorage) thì tự âm thầm đảm bảo có subscription, không hỏi lại gì cả. Nếu đã
+   'denied' thì trình duyệt tự chặn xin lại — không hiện popup làm gì vô ích. */
+async function maybeAskPushPermission(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+  if(Notification.permission==='denied') return;
+  if(Notification.permission==='granted'){ subscribePush().catch(()=>{}); return; }
+  // localStorage có thể bị chặn (chế độ ẩn danh nghiêm ngặt...) — nuốt lỗi lặng lẽ giống getDeviceId(),
+  // không để lỗi ở đây làm rớt cả luồng đăng nhập. Chấp nhận đánh đổi: máy đó sẽ bị hỏi lại mỗi lần mở app.
+  let alreadyAsked = false;
+  try{ alreadyAsked = !!localStorage.getItem('tv5s_push_asked'); }catch(e){}
+  if(alreadyAsked) return;
+  try{ localStorage.setItem('tv5s_push_asked','1'); }catch(e){}
+  const ok = await showConfirmPopup({
+    title:'Bật thông báo đẩy?',
+    message:'Cho phép Top Visa 5S Admin gửi thông báo tới thiết bị này (hồ sơ trả kết quả hôm nay, khách cần nhắc lại tư vấn...) ngay cả khi bạn không mở app?',
+    confirmText:'Bật thông báo', cancelText:'Bỏ qua'
+  });
+  if(ok) await subscribePush();
 }
 
 /* ==================== TAB ==================== */

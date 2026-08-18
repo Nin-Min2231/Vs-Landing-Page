@@ -1363,3 +1363,43 @@ sau này cần hiển thị "quá hạn từ ngày nào" thì đã có sẵn d�
 
 **⚠️ Nếu sau này cần đổi số ngày quét lùi:** chỉ cần đổi giá trị `BACKFILL_DAYS`, không cần sửa gì
 thêm ở 3 câu query (đều tham chiếu qua biến `backfillFrom` tính từ hằng số này).
+
+## 40. Bỏ nút "Bật/Tắt thông báo đẩy" thủ công — tự hỏi quyền 1 lần lúc đăng nhập lần đầu (2026-08-14)
+
+**Lý do:** PM yêu cầu bỏ nút bấm thủ công trong panel chuông (`#notifPushBtn`/`togglePushSubscription()`,
+mục 33.D cũ) — người dùng dễ quên bấm, dẫn tới tưởng "không có thông báo" trong khi thực ra chỉ là
+chưa từng bật quyền. Đổi sang tự động hỏi ngay sau khi đăng nhập thành công lần đầu trên máy đó.
+
+**Đã xóa hẳn:** nút `#notifPushBtn` + khối `.notif-push-row` (HTML+CSS), hàm `refreshPushButtonLabel()`
+(không còn nút để cập nhật nhãn), và nhánh "tắt" (unsubscribe) trong `togglePushSubscription()` —
+**từ nay KHÔNG còn cách tắt push trong app nữa**, muốn tắt phải vào cài đặt thông báo của trình
+duyệt/điện thoại cho đúng trang `topvisa5s.com` (giống mọi web app khác) — quyết định có chủ đích
+theo đúng yêu cầu "bỏ chức năng bật HOẶC tắt", không phải thiếu sót.
+
+**Hàm mới `subscribePush()`** (đổi tên từ nhánh "bật" cũ trong `togglePushSubscription()`, giữ
+nguyên logic xin quyền + `pushManager.subscribe()` + lưu `push_subscriptions`) + **`maybeAskPushPermission()`**
+(gọi ngay sau `startNotifPolling()`, CẢ 2 luồng: đăng nhập thường + tự đăng nhập lại):
+- `Notification.permission==='denied'` → thoát ngay, không hiện gì (trình duyệt tự chặn xin lại,
+  hiện popup chỉ gây khó chịu vô ích).
+- `Notification.permission==='granted'` → gọi thẳng `subscribePush()` âm thầm (không hỏi lại,
+  `subscribePush()` tự kiểm tra đã có subscription chưa trước khi làm gì) — phòng trường hợp quyền
+  đã cho từ trước nhưng dòng `push_subscriptions` bị mất (đổi máy, xóa DB tay...).
+- `Notification.permission==='default'` (chưa từng hỏi) → kiểm tra cờ `localStorage['tv5s_push_asked']`:
+  đã hỏi rồi (dù đồng ý hay bấm "Bỏ qua") thì KHÔNG hỏi lại nữa, tránh làm phiền mỗi lần mở app;
+  chưa từng hỏi thì hiện `showConfirmPopup()` (câu hỏi bằng UI riêng của trang, không phải popup hệ
+  thống) giải thích lý do, bấm "Bật thông báo" trong popup NÀY chính là thao tác bấm hợp lệ để gọi
+  `Notification.requestPermission()` ngay sau — **trình duyệt vẫn bắt buộc phải có 1 thao tác bấm
+  thật của người dùng mới cho xin quyền** (không thể tự động hỏi ngầm lúc tải trang, đây là giới hạn
+  cứng của trình duyệt, không phải giới hạn của code) — cách làm 2 lớp "popup riêng → popup hệ
+  thống" này giải quyết đúng yêu cầu "tự hỏi lúc mở app lần đầu" mà vẫn hợp lệ với trình duyệt.
+- Cờ `tv5s_push_asked` đọc/ghi qua `try/catch` (không dùng trực tiếp `localStorage.x` không bọc) —
+  cùng nguyên tắc với `getDeviceId()` (mục 38): lỗi ở đây (trình duyệt ẩn danh chặn storage...)
+  không được phép làm rớt luồng đăng nhập chính; chấp nhận đánh đổi hỏi lại mỗi lần mở app trên máy
+  bị chặn storage, còn hơn crash.
+
+**Đã test qua Claude Browser** (mock `Notification.permission`/`navigator.serviceWorker`/
+`localStorage`/`showConfirmPopup`/`subscribePush`, gọi trực tiếp `maybeAskPushPermission()`): xác
+nhận đủ 5 tình huống — permission `denied` (không hỏi, không subscribe), `granted` (subscribe thẳng,
+không hỏi), `default` lần đầu bấm "Bật" (hỏi đúng 1 lần + subscribe), gọi lại ngay sau đó (không
+hỏi lại nữa), `default` lần đầu bấm "Bỏ qua" (hỏi 1 lần, KHÔNG subscribe, nhưng vẫn ghi nhận đã hỏi
+nên không hỏi lại lần sau).
