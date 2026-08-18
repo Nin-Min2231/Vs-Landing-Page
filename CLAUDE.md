@@ -1443,31 +1443,45 @@ tế) — chỉ cần đổi lại `const loiNhuan = tongThu;` → `const loiNhu
 lại lệnh gọi API `khoan_chi`) — không tự ý đổi lại nếu PM chưa yêu cầu rõ, đây là quyết định có
 chủ đích lần này, không phải lỗi bỏ sót.
 
-## 42. Màn "Hồ sơ": tách sort mặc định — "Đã nộp" theo Ngày trả KQ, còn lại theo Ngày tạo (2026-08-18)
+## 42. Màn "Hồ sơ": sort mặc định theo 3 tầng ưu tiên, "Đậu/Rớt/Hủy" GỘP CHUNG 1 nhóm (2026-08-18)
 
-**Trước đây** (mục "Sort màn Hồ sơ theo Trạng thái rồi Ngày tạo"): sort mặc định (chưa bấm cột nào)
-= Ưu tiên 1 theo trạng thái (`Đang xử lý`→`Đã nộp`→`Đậu`→`Rớt`→`Hủy`), Ưu tiên 2 — CÙNG trạng thái
-thì `Ngày tạo` (`ngay`) cũ nhất lên trước, áp dụng ĐỒNG NHẤT cho cả 5 trạng thái.
+**Bối cảnh — 2 lượt yêu cầu liên tiếp cùng ngày, lượt 2 chỉnh lại lượt 1:** lượt đầu PM yêu cầu tách
+riêng "Đã nộp" sort theo Ngày trả KQ (còn 4 trạng thái khác vẫn sort theo Ngày tạo, mỗi trạng thái
+vẫn là 1 khối riêng theo đúng thứ tự cũ `Đang xử lý→Đã nộp→Đậu→Rớt→Hủy`). Ngay sau đó PM đưa ví dụ
+cụ thể cho thấy **"Đậu"/"Rớt"/"Hủy" phải GỘP CHUNG thành 1 nhóm duy nhất** (không tách 3 khối riêng
+theo trạng thái rồi mới sort ngày trong từng khối) — bản mục 42 gốc đã SAI ở điểm này, đã sửa lại
+ngay, không giữ lại bản cũ.
 
-**PM yêu cầu tách riêng:** trong nhóm cùng trạng thái, **`Đã nộp`** sort theo **`Ngày trả KQ`**
-(`ngay_tra_kq`) tăng dần (gần nhất/quá hạn lên trước, xa nhất về sau — đúng nhu cầu "hồ sơ nào sắp
-tới hạn cần chú ý trước"); **4 trạng thái còn lại** (`Đang xử lý`/`Đậu`/`Rớt`/`Hủy`) **giữ nguyên**
-sort theo `Ngày tạo` tăng dần như cũ.
+**Sort mặc định (chưa bấm cột nào) — đúng 3 tầng ưu tiên:**
+1. **"Đang xử lý"** — trong nhóm, sort `Ngày tạo` (`ngay`) CŨ → MỚI.
+2. **"Đã nộp"** — trong nhóm, sort `Ngày trả KQ` (`ngay_tra_kq`) GẦN NHẤT (hôm nay/quá hạn) → XA
+   NHẤT (tương lai).
+3. **"Đậu"/"Rớt"/"Hủy" GỘP CHUNG 1 NHÓM** (không phân biệt 3 trạng thái này với nhau) — sort
+   `Ngày tạo` CŨ → MỚI, **xen kẽ lẫn nhau giữa 3 trạng thái đúng theo ngày** — ví dụ đúng theo PM
+   đưa: Hủy 01/8, Rớt 03/8, Đậu 05/8, Hủy 09/8, Rớt 12/8, Đậu 15/8 (SAI nếu xếp hết "Hủy" rồi mới
+   tới "Rớt" rồi "Đậu").
 
-**Đã sửa** (`renderHoSo()`, khối `else` của đoạn sort mặc định): thêm 1 nhánh rẽ —
+**Đã sửa — cách làm chỉ cần đổi 1 chỗ, không cần viết lại logic so sánh:**
 ```js
+// Đậu/Rớt/Hủy CÙNG giá trị 3 (không phải 3/4/5 riêng biệt như bản đầu) -> primary sort coi 3
+// trạng thái này là NGANG NHAU (oa===ob), rơi thẳng xuống nhánh so theo `ngay` chung 1 dãy duy nhất
+// thay vì tách thành 3 khối riêng.
+const HS_STATUS_ORDER = {'Đang xử lý':1,'Đã nộp':2,'Đậu':3,'Rớt':3,'Hủy':3};
+...
 rows.sort((a,b)=>{
   const oa=HS_STATUS_ORDER[a.trang_thai]||99, ob=HS_STATUS_ORDER[b.trang_thai]||99;
   if(oa!==ob) return oa-ob;
   if(a.trang_thai==='Đã nộp') return (a.ngay_tra_kq||'').localeCompare(b.ngay_tra_kq||'');
-  return (a.ngay||'').localeCompare(b.ngay||'');
+  return (a.ngay||'').localeCompare(b.ngay||''); // áp dụng cho cả "Đang xử lý" VÀ khối Đậu/Rớt/Hủy gộp
 });
 ```
 Chỉ đổi nhánh SORT MẶC ĐỊNH này — **không đổi** hành vi bấm tiêu đề cột để sort thủ công
 (`applySort('hs', ...)`, nhánh `if(SORT_STATE['hs'])`), người dùng vẫn bấm cột "Ngày trả KQ"/"Ngày"
-để tự sort theo ý mình như trước, không bị ảnh hưởng.
+để tự sort theo ý mình như trước, không bị ảnh hưởng. `HS_STATUS_ORDER` chỉ dùng đúng 2 chỗ trong
+file (khai báo + so sánh này) nên đổi giá trị không ảnh hưởng gì khác.
 
-**Đã test qua Claude Browser** (mock `HO_SO` trộn cả 2 nhóm trạng thái, cố tình đảo ngược thứ tự dữ
-liệu đầu vào): xác nhận nhóm "Đang xử lý" ra đúng thứ tự Ngày tạo tăng dần, nhóm "Đã nộp" ra đúng
-thứ tự Ngày trả KQ tăng dần (khớp đúng ví dụ PM đưa: hôm nay 18/8 → 18/8, 20/8, 22/8), thứ tự nhóm
-trạng thái (Đang xử lý trước Đã nộp) không đổi.
+**Đã test qua Claude Browser** (mock `HO_SO` đủ cả 3 tầng, xáo trộn thứ tự dữ liệu đầu vào, riêng
+tầng 3 dùng ĐÚNG ví dụ PM đưa nhưng shuffle input để kiểm tra sort thật hoạt động — không chỉ trùng
+hợp đúng vì dữ liệu vào đã đúng thứ tự): kết quả ra ĐÚNG in ra Hủy(01/8)→Rớt(03/8)→Đậu(05/8)→
+Hủy(09/8)→Rớt(12/8)→Đậu(15/8), xen kẽ đúng như ví dụ, không nhóm theo trạng thái. 2 tầng đầu
+("Đang xử lý" theo Ngày tạo, "Đã nộp" theo Ngày trả KQ) vẫn đúng như lượt sửa trước.

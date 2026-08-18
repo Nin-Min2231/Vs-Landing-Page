@@ -2754,8 +2754,11 @@ function onHsStatusChipChange(cb){
 function checkedHsStatuses(){
   return [...document.querySelectorAll('#fHsStatusGroup input:checked')].map(cb=>cb.value);
 }
-/* Thứ tự ưu tiên trạng thái khi sort list Hồ sơ (2026-08) — số nhỏ hơn hiện trước. */
-const HS_STATUS_ORDER = {'Đang xử lý':1,'Đã nộp':2,'Đậu':3,'Rớt':4,'Hủy':5};
+/* Thứ tự ưu tiên trạng thái khi sort list Hồ sơ (2026-08, đổi lại lần 2) — số nhỏ hơn hiện trước.
+   "Đậu"/"Rớt"/"Hủy" CỐ Ý cùng giá trị 3 (không tách 3/4/5 như trước) — PM yêu cầu 3 trạng thái này
+   xem là 1 nhóm DUY NHẤT, xen kẽ lẫn nhau theo đúng Ngày tạo (không tách riêng từng trạng thái rồi
+   mới xếp theo ngày), xem ví dụ minh họa ở comment renderHoSo() bên dưới. */
+const HS_STATUS_ORDER = {'Đang xử lý':1,'Đã nộp':2,'Đậu':3,'Rớt':3,'Hủy':3};
 function renderHoSo(){
   const checkedSt=checkedHsStatuses(), q=vnNorm($('fHsSearch').value.trim());
   const tuNgay=toISODate($('fHsTuNgay').value), denNgay=toISODate($('fHsDenNgay').value);
@@ -2766,11 +2769,14 @@ function renderHoSo(){
     (!tuNgay||(h.ngay_nop&&h.ngay_nop>=tuNgay)) &&
     (!denNgay||(h.ngay_nop&&h.ngay_nop<=denNgay))
   );
-  /* Sort: bấm 1 cột (SORT_STATE['hs']) thì dùng đúng cột đó; chưa bấm cột nào -> giữ mặc định
-     Ưu tiên 1 - trạng thái (Đang xử lý -> Đã nộp -> Đậu -> Rớt -> Hủy); Ưu tiên 2 - cùng trạng
-     thái thì: riêng "Đã nộp" sắp theo Ngày trả KQ gần nhất lên trước (hồ sơ nào sắp tới hạn trả kết
-     quả cần chú ý trước), 4 trạng thái còn lại (Đang xử lý/Đậu/Rớt/Hủy) vẫn theo Ngày tạo cũ nhất
-     lên trước như cũ (2026-08, PM yêu cầu tách riêng "Đã nộp" theo hạn trả KQ). */
+  /* Sort mặc định (chưa bấm cột nào, SORT_STATE['hs'] rỗng) — 3 tầng ưu tiên (2026-08, đổi lại
+     lần 2 theo đúng yêu cầu PM, xem CLAUDE.md mục 42/43):
+     Ưu tiên 1 — "Đang xử lý": trong nhóm, sắp theo Ngày tạo CŨ -> MỚI.
+     Ưu tiên 2 — "Đã nộp": trong nhóm, sắp theo Ngày trả KQ GẦN NHẤT (hôm nay) -> XA NHẤT (tương lai).
+     Ưu tiên 3 — "Đậu"/"Rớt"/"Hủy" GỘP CHUNG 1 NHÓM (không tách riêng từng trạng thái): sắp theo
+       Ngày tạo CŨ -> MỚI, xen kẽ lẫn nhau giữa 3 trạng thái theo đúng ngày (KHÔNG xếp hết "Hủy"
+       rồi mới tới "Rớt" rồi "Đậu" — ví dụ đúng: Hủy 01/8, Rớt 03/8, Đậu 05/8, Hủy 09/8, Rớt 12/8,
+       Đậu 15/8 — xen kẽ đúng theo ngày, không nhóm theo trạng thái). */
   if(SORT_STATE['hs']){
     rows = applySort('hs', rows, {
       ngay:h=>h.ngay, ten:h=>h.ten_khach, sdt:h=>h.sdt_khach, nuoc:h=>h.danh_muc_nuoc?.ten,
