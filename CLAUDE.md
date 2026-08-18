@@ -1403,3 +1403,71 @@ nhận đủ 5 tình huống — permission `denied` (không hỏi, không subsc
 không hỏi), `default` lần đầu bấm "Bật" (hỏi đúng 1 lần + subscribe), gọi lại ngay sau đó (không
 hỏi lại nữa), `default` lần đầu bấm "Bỏ qua" (hỏi 1 lần, KHÔNG subscribe, nhưng vẫn ghi nhận đã hỏi
 nên không hỏi lại lần sau).
+
+## 41. Tài chính/Dashboard: "Lợi nhuận" mở rộng sang Rớt/Hủy, KHÔNG trừ Khoản chi nữa (2026-08-18)
+
+**Trước đây** (mục 27): "Lợi nhuận" (cả ở Tài chính và Dashboard) = tổng `loi_nhuan` của hồ sơ
+**CHỈ** `trang_thai='Đậu'` trong kỳ, TRỪ ĐI tổng `khoan_chi` cùng kỳ.
+
+**PM yêu cầu đổi lại:** "Lợi nhuận" = **tổng `loi_nhuan`** của hồ sơ có `trang_thai` ∈
+**{Đậu, Rớt, Hủy}** (mở rộng thêm Rớt/Hủy — các hồ sơ này vẫn có thể ghi nhận lợi nhuận, kể cả
+**lỗ/giá trị ÂM**, vẫn phải tính vào tổng), lọc bỏ hồ sơ `loi_nhuan` bằng 0 (hoặc null). **KHÔNG còn
+trừ "Khoản chi" nữa** — "Khoản chi" (`khoan_chi`) vẫn hiển thị/quản lý như cũ (CRUD, list, nút Sửa/
+Xóa không đổi gì), chỉ tách riêng ra khỏi phép tính "Lợi nhuận", không cộng/trừ chung nữa.
+
+**Đã sửa 2 nơi (PHẢI khớp nhau, xem lại đúng nguyên tắc mục 27):**
+- `loadTaiChinh()`/`renderTaiChinh()` (`admin.html`): đổi filter API `ho_so` từ
+  `trang_thai=eq.Đậu` → `trang_thai=in.(Đậu,Rớt,Hủy)` + thêm `loi_nhuan=neq.0` (Postgres tự loại cả
+  `null` vì so sánh với `null` không đúng cũng không sai — không cần thêm điều kiện `is not null`
+  riêng). `loiNhuan` đổi từ `tongThu - tongChi` → chỉ còn `tongThu`. Đổi nhãn thống kê "Số hồ sơ đậu
+  trong kỳ" → **"Số hồ sơ tính lợi nhuận trong kỳ"** (không còn chỉ đúng nghĩa "đậu" nữa).
+- `loadDashboard()`/`renderDashboard()`: **bỏ hẳn lệnh gọi API `khoan_chi`** (không còn cần dùng
+  cho phép tính này nữa — tránh gọi API dư thừa không dùng tới). Đổi công thức `loiNhuanThangNay`
+  sang lọc `HO_SO` đã nạp sẵn theo đúng 3 trạng thái + `loi_nhuan!=0`, bỏ hẳn biến `chiThangNay`.
+
+**Sửa thêm 1 lỗi hiển thị màu phát sinh do mở rộng phạm vi:** dòng list ở Tài chính (`#tcBody`)
+trước đây tô MÀU XANH cứng cho mọi dòng "Thu" (vì trước đây chỉ có hồ sơ Đậu, `loi_nhuan` luôn
+dương, không cần phân biệt dấu). Giờ hồ sơ Rớt/Hủy có thể mang `loi_nhuan` ÂM — đã sửa màu theo
+đúng DẤU THẬT của số tiền (`r.so_tien<0` → đỏ) thay vì theo `loai==='Thu'` cứng, để 1 dòng lỗ không
+bị hiển thị nhầm thành màu xanh "lợi nhuận dương".
+
+**Đã test qua Claude Browser** (mock `api()` cho `loadTaiChinh()`, mock `HO_SO` cho
+`renderDashboard()`): xác nhận đúng — hồ sơ `loi_nhuan=0` bị loại khỏi cả list và tổng; hồ sơ
+`Đang xử lý`/hồ sơ có `ngay_tra_kq` ngoài khoảng lọc bị loại đúng; dòng Rớt có `loi_nhuan` âm hiện
+màu đỏ (`var(--err)`) trong khi dòng Đậu/Rớt dương hiện xanh (`var(--ok)`); "Khoản chi" vẫn hiển thị
+độc lập, không còn bị trừ vào "Lợi nhuận"; số Dashboard khớp đúng số tính tay từ cùng dữ liệu.
+
+**⚠️ Nếu PM phản hồi muốn "Lợi nhuận" trừ lại "Khoản chi" như cũ** (vd sau khi thấy số liệu thực
+tế) — chỉ cần đổi lại `const loiNhuan = tongThu;` → `const loiNhuan = tongThu - tongChi;` ở
+`renderTaiChinh()` + khôi phục đúng logic trừ tương ứng ở `renderDashboard()`/`loadDashboard()` (đưa
+lại lệnh gọi API `khoan_chi`) — không tự ý đổi lại nếu PM chưa yêu cầu rõ, đây là quyết định có
+chủ đích lần này, không phải lỗi bỏ sót.
+
+## 42. Màn "Hồ sơ": tách sort mặc định — "Đã nộp" theo Ngày trả KQ, còn lại theo Ngày tạo (2026-08-18)
+
+**Trước đây** (mục "Sort màn Hồ sơ theo Trạng thái rồi Ngày tạo"): sort mặc định (chưa bấm cột nào)
+= Ưu tiên 1 theo trạng thái (`Đang xử lý`→`Đã nộp`→`Đậu`→`Rớt`→`Hủy`), Ưu tiên 2 — CÙNG trạng thái
+thì `Ngày tạo` (`ngay`) cũ nhất lên trước, áp dụng ĐỒNG NHẤT cho cả 5 trạng thái.
+
+**PM yêu cầu tách riêng:** trong nhóm cùng trạng thái, **`Đã nộp`** sort theo **`Ngày trả KQ`**
+(`ngay_tra_kq`) tăng dần (gần nhất/quá hạn lên trước, xa nhất về sau — đúng nhu cầu "hồ sơ nào sắp
+tới hạn cần chú ý trước"); **4 trạng thái còn lại** (`Đang xử lý`/`Đậu`/`Rớt`/`Hủy`) **giữ nguyên**
+sort theo `Ngày tạo` tăng dần như cũ.
+
+**Đã sửa** (`renderHoSo()`, khối `else` của đoạn sort mặc định): thêm 1 nhánh rẽ —
+```js
+rows.sort((a,b)=>{
+  const oa=HS_STATUS_ORDER[a.trang_thai]||99, ob=HS_STATUS_ORDER[b.trang_thai]||99;
+  if(oa!==ob) return oa-ob;
+  if(a.trang_thai==='Đã nộp') return (a.ngay_tra_kq||'').localeCompare(b.ngay_tra_kq||'');
+  return (a.ngay||'').localeCompare(b.ngay||'');
+});
+```
+Chỉ đổi nhánh SORT MẶC ĐỊNH này — **không đổi** hành vi bấm tiêu đề cột để sort thủ công
+(`applySort('hs', ...)`, nhánh `if(SORT_STATE['hs'])`), người dùng vẫn bấm cột "Ngày trả KQ"/"Ngày"
+để tự sort theo ý mình như trước, không bị ảnh hưởng.
+
+**Đã test qua Claude Browser** (mock `HO_SO` trộn cả 2 nhóm trạng thái, cố tình đảo ngược thứ tự dữ
+liệu đầu vào): xác nhận nhóm "Đang xử lý" ra đúng thứ tự Ngày tạo tăng dần, nhóm "Đã nộp" ra đúng
+thứ tự Ngày trả KQ tăng dần (khớp đúng ví dụ PM đưa: hôm nay 18/8 → 18/8, 20/8, 22/8), thứ tự nhóm
+trạng thái (Đang xử lý trước Đã nộp) không đổi.

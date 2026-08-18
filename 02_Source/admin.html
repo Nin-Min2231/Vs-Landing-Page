@@ -2768,7 +2768,9 @@ function renderHoSo(){
   );
   /* Sort: bấm 1 cột (SORT_STATE['hs']) thì dùng đúng cột đó; chưa bấm cột nào -> giữ mặc định
      Ưu tiên 1 - trạng thái (Đang xử lý -> Đã nộp -> Đậu -> Rớt -> Hủy); Ưu tiên 2 - cùng trạng
-     thái thì Ngày tạo cũ nhất lên trước. */
+     thái thì: riêng "Đã nộp" sắp theo Ngày trả KQ gần nhất lên trước (hồ sơ nào sắp tới hạn trả kết
+     quả cần chú ý trước), 4 trạng thái còn lại (Đang xử lý/Đậu/Rớt/Hủy) vẫn theo Ngày tạo cũ nhất
+     lên trước như cũ (2026-08, PM yêu cầu tách riêng "Đã nộp" theo hạn trả KQ). */
   if(SORT_STATE['hs']){
     rows = applySort('hs', rows, {
       ngay:h=>h.ngay, ten:h=>h.ten_khach, sdt:h=>h.sdt_khach, nuoc:h=>h.danh_muc_nuoc?.ten,
@@ -2779,6 +2781,7 @@ function renderHoSo(){
     rows.sort((a,b)=>{
       const oa=HS_STATUS_ORDER[a.trang_thai]||99, ob=HS_STATUS_ORDER[b.trang_thai]||99;
       if(oa!==ob) return oa-ob;
+      if(a.trang_thai==='Đã nộp') return (a.ngay_tra_kq||'').localeCompare(b.ngay_tra_kq||'');
       return (a.ngay||'').localeCompare(b.ngay||'');
     });
   }
@@ -3247,17 +3250,15 @@ async function delThanhVien(id){
 /* ==================== PHASE 2: DASHBOARD ==================== */
 async function loadDashboard(){
   try{
-    const from = tcDefaultFrom(), to = tcToday();
-    const [byMonth, nhacLai, xlps7, chiThangNay] = await Promise.all([
+    const [byMonth, nhacLai, xlps7] = await Promise.all([
       api('v_dashboard_theo_thang?select=*&order=thang'),
       api('v_tu_van_can_nhac_lai?select=*&order=ngay_nhac_lai'),
-      api('v_xu_ly_phat_sinh_7_ngay?select=*&order=han_chot'),
-      api('khoan_chi?select=so_tien&ngay=gte.'+from+'&ngay=lte.'+to)
+      api('v_xu_ly_phat_sinh_7_ngay?select=*&order=han_chot')
     ]);
-    renderDashboard(byMonth||[], nhacLai||[], xlps7||[], chiThangNay||[]);
+    renderDashboard(byMonth||[], nhacLai||[], xlps7||[]);
   }catch(e){ if(e.message!=='401') toast('Lỗi tải Dashboard: '+e.message,'err'); }
 }
-function renderDashboard(byMonth, nhacLai, xlps7, chiThangNay){
+function renderDashboard(byMonth, nhacLai, xlps7){
   // 3 thống kê Hồ sơ/Tư vấn: đếm trực tiếp từ HO_SO/LEADS đã nạp sẵn (khớp đúng với dữ liệu
   // đang hiển thị ở màn "Hồ sơ"/"Tư vấn", không dùng view riêng để tránh lệch số liệu — trước
   // đây view v_ho_so_dang_xu_ly gộp nhầm cả "Đang xử lý" lẫn "Đã nộp" vào chung 1 số).
@@ -3266,17 +3267,16 @@ function renderDashboard(byMonth, nhacLai, xlps7, chiThangNay){
   const hsDangTuVan = LEADS.filter(l=>l.status==='Đang tư vấn').length;
   const todayIso = tcToday();
   const hsTraKqHomNay = HO_SO.filter(h=>h.ngay_tra_kq===todayIso).length;
-  /* "Lợi nhuận tháng này" (2026-08) — bỏ thẻ "Doanh thu tháng này", tính lại đúng công thức của
-     màn "Tài chính" (mục "Lợi nhuận" ở đó): Khoản thu = tổng loi_nhuan của Hồ sơ "Đậu" có
-     Ngày trả KQ trong tháng này (đầu tháng -> hôm nay, xem tcDefaultFrom()/tcToday()); Khoản chi =
-     tổng khoan_chi trong cùng khoảng — KHÔNG dùng cột doanh_thu/loi_nhuan có sẵn của view
-     v_dashboard_theo_thang nữa (view đó tính theo ngay_nop, khác cách Tài chính tính theo
-     ngay_tra_kq, nên số liệu 2 màn từng có thể lệch nhau). */
+  /* "Lợi nhuận tháng này" (2026-08, đổi lại lần 2) — tính ĐÚNG khớp công thức mới của màn "Tài
+     chính" (renderTaiChinh()): tổng loi_nhuan của hồ sơ ĐÃ CÓ KẾT QUẢ CUỐI (Đậu/Rớt/Hủy, loi_nhuan
+     khác 0 — giá trị âm của Rớt/Hủy vẫn tính) có Ngày trả KQ trong tháng này (đầu tháng -> hôm nay,
+     xem tcDefaultFrom()/tcToday()). KHÔNG còn trừ "Khoản chi" nữa (PM yêu cầu tách riêng, xem
+     comment tương ứng ở renderTaiChinh()) — nhờ đó không cần gọi API khoan_chi ở loadDashboard()
+     nữa. Sửa ở đây thì PHẢI sửa cả renderTaiChinh() cho khớp, và ngược lại (mục 27 CLAUDE.md). */
   const monthFrom = tcDefaultFrom(), monthTo = tcToday();
-  const thuThangNay = HO_SO.filter(h=>h.trang_thai==='Đậu' && h.ngay_tra_kq && h.ngay_tra_kq>=monthFrom && h.ngay_tra_kq<=monthTo)
+  const loiNhuanThangNay = HO_SO.filter(h=>['Đậu','Rớt','Hủy'].includes(h.trang_thai) &&
+      Number(h.loi_nhuan||0)!==0 && h.ngay_tra_kq && h.ngay_tra_kq>=monthFrom && h.ngay_tra_kq<=monthTo)
     .reduce((s,h)=>s+Number(h.loi_nhuan||0),0);
-  const chiThangNaySum = chiThangNay.reduce((s,c)=>s+Number(c.so_tien||0),0);
-  const loiNhuanThangNay = thuThangNay - chiThangNaySum;
   $('dashStatRow').innerHTML = `
     <div class="stat"><div class="n" style="color:${loiNhuanThangNay>=0?'var(--ok)':'var(--err)'}">${fmtVND(loiNhuanThangNay)}</div><div class="l">Lợi nhuận tháng này</div></div>
     <div class="stat"><div class="n">${hsDangXuLy}</div><div class="l">Hồ sơ đang xử lý</div></div>
@@ -3366,8 +3366,12 @@ async function loadTaiChinh(){
   const from = fromIso || tcDefaultFrom();
   const to = toIso || tcToday();
   try{
+    // "Lợi nhuận" (2026-08, đổi lại theo yêu cầu PM) = tổng loi_nhuan của hồ sơ ĐÃ CÓ KẾT QUẢ CUỐI
+    // (Đậu/Rớt/Hủy — trước đây CHỈ tính Đậu), loại bỏ hồ sơ chưa có lợi nhuận (0 hoặc null qua
+    // loi_nhuan=neq.0 — Postgres tự loại cả null vì so sánh null luôn không đúng/không sai). Giá trị
+    // ÂM (hồ sơ Rớt/Hủy vẫn ghi nhận lỗ) VẪN được tính vào tổng, không lọc bỏ.
     const [hoSoRows, chiRows] = await Promise.all([
-      api('ho_so?select=id,ten_khach,ngay_tra_kq,loi_nhuan,danh_muc_nuoc(ten)&trang_thai=eq.'+encodeURIComponent('Đậu')+'&ngay_tra_kq=gte.'+from+'&ngay_tra_kq=lte.'+to+'&order=ngay_tra_kq.desc'),
+      api('ho_so?select=id,ten_khach,ngay_tra_kq,loi_nhuan,danh_muc_nuoc(ten)&trang_thai=in.'+encodeURIComponent('(Đậu,Rớt,Hủy)')+'&loi_nhuan=neq.0&ngay_tra_kq=gte.'+from+'&ngay_tra_kq=lte.'+to+'&order=ngay_tra_kq.desc'),
       api('khoan_chi?select=*&ngay=gte.'+from+'&ngay=lte.'+to+'&order=ngay.desc')
     ]);
     KHOAN_CHI = chiRows||[];
@@ -3384,24 +3388,34 @@ function renderTaiChinhSorted(){ renderTaiChinh(TC_LAST_THU, TC_LAST_CHI); }
 function renderTaiChinh(thuArr, chiArr){
   const tongThu = thuArr.reduce((s,r)=>s+r.so_tien,0);
   const tongChi = chiArr.reduce((s,r)=>s+r.so_tien,0);
-  const loiNhuan = tongThu - tongChi;
+  // "Lợi nhuận" (2026-08, đổi lại) = ĐÚNG bằng tổng lợi nhuận hồ sơ (tongThu ở trên, đã gồm cả giá
+  // trị âm của hồ sơ Rớt/Hủy) — KHÔNG trừ "Khoản chi" nữa (PM yêu cầu tách riêng, Khoản chi vẫn
+  // hiển thị/quản lý như cũ, chỉ không cộng trừ chung vào "Lợi nhuận"). Nhớ đổi tương tự ở
+  // renderDashboard() ("Lợi nhuận tháng này") để 2 màn luôn khớp số nhau, xem mục 27 CLAUDE.md.
+  const loiNhuan = tongThu;
   $('tcStatRow').innerHTML = `
     <div class="stat"><div class="n" style="color:${loiNhuan>=0?'var(--ok)':'var(--err)'}">${fmtVND(loiNhuan)}</div><div class="l">Lợi nhuận</div></div>
     <div class="stat"><div class="n">${fmtVND(tongThu)}</div><div class="l">Khoản thu</div></div>
     <div class="stat"><div class="n">${fmtVND(tongChi)}</div><div class="l">Khoản chi</div></div>
-    <div class="stat"><div class="n">${thuArr.length}</div><div class="l">Số hồ sơ đậu trong kỳ</div></div>`;
+    <div class="stat"><div class="n">${thuArr.length}</div><div class="l">Số hồ sơ tính lợi nhuận trong kỳ</div></div>`;
   $('tcEmpty').classList.toggle('hidden', TC_ROWS.length>0);
   const rows = applySort('tc', TC_ROWS, {ngay:r=>r.ngay, loai:r=>r.loai, noidung:r=>r.noi_dung, sotien:r=>r.so_tien});
-  $('tcBody').innerHTML = rows.map(r=>`
+  $('tcBody').innerHTML = rows.map(r=>{
+    // Hồ sơ Rớt/Hủy có thể có loi_nhuan ÂM (lỗ) — tô đỏ đúng theo dấu thật, không tô xanh cứng theo
+    // loai='Thu' như trước nữa (trước đây chỉ có hồ sơ Đậu nên loi_nhuan luôn dương, không cần phân
+    // biệt; giờ mở rộng thêm Rớt/Hủy nên phải kiểm tra dấu thật).
+    const isNeg = r.loai==='Chi' || r.so_tien<0;
+    return `
     <tr>
       <td>${fmtDate(r.ngay)}</td>
       <td><span class="pill ${r.loai==='Thu'?'pill-won':'pill-chi'}">${r.loai}</span></td>
       <td>${esc(r.noi_dung)}</td>
-      <td style="color:${r.loai==='Thu'?'var(--ok)':'var(--err)'};font-weight:700">${r.loai==='Thu'?'':'-'}${fmtVND(r.so_tien)}</td>
+      <td style="color:${isNeg?'var(--err)':'var(--ok)'};font-weight:700">${r.loai==='Chi'?'-':''}${fmtVND(r.so_tien)}</td>
       <td class="td-actions">${r.loai==='Thu'
         ? `<button class="btn btn-p" onclick="openHoSoModal(${r.ref_id})">Chi tiết</button>`
         : `<button class="btn btn-p" onclick="openChiModal(${r.ref_id})">Sửa</button><button class="btn btn-d" onclick="delChi(${r.ref_id})">Xóa</button>`}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   applyRowLabels('tcBody');
   updateSortIcons('tc');
 }
