@@ -14,21 +14,19 @@
   thông báo"* — dù đã: (a) 2026-08-14 PM tự phát hiện + tự sửa khóa `SUPABASE_SERVICE_ROLE_KEY` sai
   trên Cloudflare (nguyên nhân gốc khiến robot thông báo im lặng ngừng chạy từ 11/8), (b) cùng ngày
   Claude Code đã sửa lỗi tính "hôm nay" theo UTC→giờ VN (mục 35) + thêm lớp quét lùi 7 ngày (mục 39).
-  Tới 2026-08-18 (4 ngày sau) PM báo vẫn chưa thấy thông báo — **CHƯA XÁC MINH ĐƯỢC** đây là do:
-  (1) PM chưa chạy migration `10_supabase_setup_phase10.sql` (rất có thể — xem mục 1.1 dưới), hay
-  (2) khóa Supabase vẫn còn sai/lại bị lệch, hay (3) 1 nguyên nhân khác chưa phát hiện. **Đọc kỹ mục
-  1 trước khi làm gì tiếp** — đây là việc ưu tiên số 1 của phiên mới.
+  **Cập nhật cùng ngày 2026-08-18:** PM xác nhận ĐÃ chạy `10_supabase_setup_phase10.sql` — nghi vấn
+  hàng đầu (mục 1.1 cũ) coi như đã loại trừ. **CHƯA CÓ XÁC NHẬN cuối cùng liệu chuông đã thật sự
+  hiện thông báo sau khi chạy migration hay chưa** — PM chưa quay lại báo kết quả sau khi chạy SQL.
+  Đọc kỹ mục 1 trước khi làm gì tiếp.
 
 ## 1. Việc CẦN LÀM NGAY
 
-1. **Hỏi/xác nhận PM đã chạy `05_Database/10_supabase_setup_phase10.sql` trong Supabase SQL Editor
-   chưa.** Đây là nghi vấn hàng đầu: code mới (từ 2026-08-14, mục 38) đã đổi `loadNotifications()`
-   sang gọi thêm bảng `notification_reads` — nếu bảng này CHƯA tồn tại, `Promise.all(...)` trong
-   hàm đó sẽ reject (PostgREST trả lỗi "bảng không tồn tại"), bị `catch` im lặng theo đúng thiết kế
-   ("chuông thông báo là tính năng phụ, không làm phiền bằng lỗi") → **hậu quả giống hệt "không có
-   thông báo gì cả"** dù bảng `notifications` gốc có dữ liệu mới. Nếu PM xác nhận CHƯA chạy — hướng
-   dẫn chạy ngay, đây gần như chắc chắn là nguyên nhân.
-2. Nếu ĐÃ chạy Phase 10 mà vẫn không thấy gì: nhờ PM (hoặc tự nếu có quyền) vào **Supabase Dashboard
+1. ✅ **[ĐÃ XONG 2026-08-18] Chạy `05_Database/10_supabase_setup_phase10.sql`** — PM xác nhận đã
+   chạy. **Việc kế tiếp bắt buộc:** hỏi lại PM xem sau khi chạy xong, mở lại chuông thông báo trong
+   `admin.html` (nhớ tải lại trang F5 để chắc không phải bản cache cũ) có thấy thông báo chưa —
+   *đừng giả định đã xong chỉ vì đã chạy migration*, phải có xác nhận thật từ PM mới coi là giải
+   quyết xong. Nếu vẫn chưa thấy gì, tiếp tục mục 1.2 dưới đây để tìm nguyên nhân khác.
+2. Nếu ĐÃ chạy Phase 10 (rồi) mà vẫn không thấy gì: nhờ PM (hoặc tự nếu có quyền) vào **Supabase Dashboard
    → Table Editor → bảng `notifications`** → sắp xếp `created_at` giảm dần → có dòng nào tạo trong
    4 ngày qua (14/8-18/8) không?
    - CÓ dòng mới → lỗi nằm ở phía `admin.html` hiển thị (kiểm tra Console F12 trên máy tính, đối
