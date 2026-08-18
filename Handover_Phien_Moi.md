@@ -1,101 +1,137 @@
-# Handover — Bàn giao sang phiên làm việc mới (2026-08-10, bản 6 — GHI ĐÈ toàn bộ bản cũ)
+# Handover — Bàn giao sang phiên làm việc mới (2026-08-18, bản 7 — GHI ĐÈ toàn bộ bản cũ)
 
-> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→5) — **không cần đọc lại bản cũ**, nội
+> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→6) — **không cần đọc lại bản cũ**, nội
 > dung quan trọng còn giá trị đã gom hết vào đây. Đọc theo đúng thứ tự: `CLAUDE.md` (toàn bộ, đặc
-> biệt mục 33-34 cho thay đổi phiên này) → file này → bắt tay vào **mục 1**.
+> biệt mục 35-40 cho thay đổi 2 phiên gần nhất) → file này → bắt tay vào **mục 1**.
 
 ## 0. Trạng thái ngay lúc viết file này
 
-- Nhánh làm việc: `claude/handover-phien-moi-015f64` — **đã push và fast-forward vào `main`** (3
-  commit: `0bd8f92`, `bc71278`, `b0fd786`), Cloudflare đã tự deploy. **NGOẠI TRỪ commit MỚI NHẤT
-  của phiên này** (menu mobile tự đóng + loại thông báo thứ 4 "Xử lý phát sinh") — commit này **có
-  thể CHƯA push** tùy thời điểm đọc file, kiểm tra `git log`/`git status` trước khi kết luận.
-- Hạ tầng thông báo (mục 33 CLAUDE.md) đã **chạy thật và PM xác nhận hoạt động**: đã chạy
-  `05_Database/08_supabase_setup_phase8.sql`, đã cấu hình đúng 2 secret trên Cloudflare (dạng
-  Encrypt), Cron Trigger đang "Active" (đặt `*/5 * * * *`, không phải `*/10` như code gợi ý ban
-  đầu — không sao, đã xác nhận với PM). Chuông thông báo trong `admin.html` đã test OK.
-- **Việc CẦN làm ngay** (xem đầy đủ ở mục 1): chạy thêm migration mới
-  `05_Database/09_supabase_setup_phase9.sql` (loại thông báo thứ 4).
+- Nhánh làm việc: **đẩy thẳng lên `main`, không qua branch riêng** trong cả 2 phiên gần nhất (khác
+  các phiên trước — không gặp `git push` bị chặn quyền lần nào) — 7 commit từ `d079b20` đến
+  `01b3e73`, tất cả đã lên `main`, Cloudflare tự deploy (đã xác nhận qua `curl` kiểm tra `/admin`
+  live có chứa đúng code mới nhất — `DEVICE_ID`, `notification_reads`).
+- **⚠️ VẤN ĐỀ ĐANG TREO, CHƯA CÓ KẾT LUẬN CUỐI:** PM báo (2026-08-18) *"mở app hôm nay vẫn không có
+  thông báo"* — dù đã: (a) 2026-08-14 PM tự phát hiện + tự sửa khóa `SUPABASE_SERVICE_ROLE_KEY` sai
+  trên Cloudflare (nguyên nhân gốc khiến robot thông báo im lặng ngừng chạy từ 11/8), (b) cùng ngày
+  Claude Code đã sửa lỗi tính "hôm nay" theo UTC→giờ VN (mục 35) + thêm lớp quét lùi 7 ngày (mục 39).
+  Tới 2026-08-18 (4 ngày sau) PM báo vẫn chưa thấy thông báo — **CHƯA XÁC MINH ĐƯỢC** đây là do:
+  (1) PM chưa chạy migration `10_supabase_setup_phase10.sql` (rất có thể — xem mục 1.1 dưới), hay
+  (2) khóa Supabase vẫn còn sai/lại bị lệch, hay (3) 1 nguyên nhân khác chưa phát hiện. **Đọc kỹ mục
+  1 trước khi làm gì tiếp** — đây là việc ưu tiên số 1 của phiên mới.
 
 ## 1. Việc CẦN LÀM NGAY
 
-1. **Chạy `05_Database/09_supabase_setup_phase9.sql` trong Supabase SQL Editor** — thêm cột
-   `notifications.ref_parent_id` + nới CHECK constraint cho phép loại thông báo mới `'xlps'`. Chưa
-   chạy thì thông báo "Xử lý phát sinh" sẽ báo lỗi khi Worker cố insert.
-2. Xác nhận commit mới nhất (menu mobile + loại thông báo thứ 4) đã push lên `main` chưa — nếu
-   `git push` bị chặn bởi permission classifier (đã xảy ra vài lần trong phiên này), cần người
-   dùng tự chạy `git push origin claude/handover-phien-moi-015f64` rồi
-   `git push origin claude/handover-phien-moi-015f64:main`.
-3. **Test thật trên điện thoại việc ĐẨY thông báo ra màn hình khóa** — phần duy nhất CHƯA có xác
-   nhận riêng (chuông trong trang đã test OK, nhưng "khóa màn hình vẫn nhận được" thì chưa). Bấm
-   chuông → "Bật thông báo đẩy trên thiết bị này" trên điện thoại thật → tạo 1 xử lý phát sinh có
-   Hạn chốt = hôm nay (hoặc đợi có sẵn dữ liệu) → đợi tối đa 5-10 phút → khóa màn hình xem có nhận
-   được không.
-4. Test loại thông báo mới "⚠️ Xử lý phát sinh" + menu mobile tự đóng (cả 2 đã tự test qua Claude
-   Browser với dữ liệu giả lập, xem mục 3, nhưng chưa có xác nhận trên thiết bị/dữ liệu thật).
+1. **Hỏi/xác nhận PM đã chạy `05_Database/10_supabase_setup_phase10.sql` trong Supabase SQL Editor
+   chưa.** Đây là nghi vấn hàng đầu: code mới (từ 2026-08-14, mục 38) đã đổi `loadNotifications()`
+   sang gọi thêm bảng `notification_reads` — nếu bảng này CHƯA tồn tại, `Promise.all(...)` trong
+   hàm đó sẽ reject (PostgREST trả lỗi "bảng không tồn tại"), bị `catch` im lặng theo đúng thiết kế
+   ("chuông thông báo là tính năng phụ, không làm phiền bằng lỗi") → **hậu quả giống hệt "không có
+   thông báo gì cả"** dù bảng `notifications` gốc có dữ liệu mới. Nếu PM xác nhận CHƯA chạy — hướng
+   dẫn chạy ngay, đây gần như chắc chắn là nguyên nhân.
+2. Nếu ĐÃ chạy Phase 10 mà vẫn không thấy gì: nhờ PM (hoặc tự nếu có quyền) vào **Supabase Dashboard
+   → Table Editor → bảng `notifications`** → sắp xếp `created_at` giảm dần → có dòng nào tạo trong
+   4 ngày qua (14/8-18/8) không?
+   - CÓ dòng mới → lỗi nằm ở phía `admin.html` hiển thị (kiểm tra Console F12 trên máy tính, đối
+     chiếu `loadNotifications()`/`renderNotifBell()` mục 38 CLAUDE.md).
+   - KHÔNG có dòng mới nào → lỗi nằm ở Cloudflare Worker (`worker.js`/cron) — vào Cloudflare
+     Dashboard → Worker `topvisa5s` → Observability → bật "Logs" → đợi 1 lượt cron chạy (mỗi 10
+     phút) → đọc lỗi thật. Nghi vấn: khóa `SUPABASE_SERVICE_ROLE_KEY` PM cập nhật ngày 14/8 có thể
+     đã bị rotate lại lần nữa, hoặc lượt cập nhật đó chưa thực sự lưu đúng.
+3. **PM CHƯA xác nhận thử tính năng "tự hỏi quyền thông báo lúc đăng nhập lần đầu"** (mục 40, vừa
+   code xong 2026-08-18, CHỈ test qua mock trong Claude Browser — chưa có xác nhận trên thiết bị
+   thật). Để PM tự test lại từ đầu: xóa `localStorage` khóa `tv5s_push_asked` (hoặc dùng hẳn 1 trình
+   duyệt/máy khác chưa từng đăng nhập), đăng nhập lại → phải tự hiện popup "Bật thông báo đẩy?".
+4. **Backfill 7 ngày (mục 39) mới thêm — chưa có xác nhận thật là nó có "bắt lại" đúng các hồ sơ bị
+   lỡ hôm 11-14/8 hay không** (phụ thuộc vào việc mục 1 ở trên được giải quyết trước — Worker phải
+   chạy được thành công ít nhất 1 lần thì mới biết backfill có hoạt động đúng không).
 
-## 2. Tóm tắt việc phiên này đã làm (2026-08-10, nối tiếp việc dựng hạ tầng thông báo ở mục 33)
+## 2. Tóm tắt việc 2 phiên gần nhất đã làm (chi tiết đầy đủ nằm ở `CLAUDE.md` mục 35-40)
 
-Sau khi PM tự tay chạy migration/cấu hình secret theo hướng dẫn mục 33, phát sinh thêm 1 lỗi thật
-+ 2 yêu cầu chỉnh sửa — đã xử lý cả 3, ghi chi tiết đầy đủ ở `CLAUDE.md` mục 34:
+**Phiên 2026-08-14** (bắt đầu từ câu hỏi "Dashboard tô đỏ Ngày trả KQ lúc mấy giờ, sáng 6h30 không
+thấy đỏ/không có thông báo"):
+- Mục 35 (`d079b20`): phát hiện + sửa gốc — `tcToday()` (`admin.html`) và biến `today`
+  (`worker.js`) tính "hôm nay" theo giờ UTC thay vì giờ Việt Nam (UTC+7) → tô đỏ/thông báo bị trễ
+  tới 7h sáng mới đúng. Sửa cả 2 nơi + quy hết các chỗ tự tính ngày rải rác trong `admin.html` về
+  gọi chung `tcToday()`.
+- **Sự cố riêng phát hiện qua debug cùng PM (KHÔNG phải commit code):** robot thông báo (Cloudflare
+  Worker cron) đã ngừng tạo thông báo hoàn toàn từ 11/8 — nguyên nhân: khóa
+  `SUPABASE_SERVICE_ROLE_KEY` lưu trên Cloudflare Worker Settings bị sai/lệch (nghi do lúc PM setup
+  công cụ backup `06_Backup_Tool` ngày 12/8 có ghé lại trang "Secret keys" của Supabase). PM tự vào
+  Cloudflare Dashboard cập nhật lại khóa đúng — **lúc đó CHƯA kiểm chứng lại có thành công thật hay
+  không**, và tới 18/8 PM vẫn báo chưa thấy thông báo (xem mục 0/1 ở trên).
+- Mục 36 (`1d4e5c5`): màn "Tư vấn" — thêm tìm kiếm theo cột `note` ("Nội dung tư vấn"), thêm cột
+  hiển thị (cắt ellipsis bằng class có sẵn `.text-trunc`), bôi màu đoạn khớp từ khóa (hàm chung mới
+  `highlightMatch()`, tận dụng tính chất `vnNorm()` không đổi độ dài chuỗi).
+- Mục 37 (`469b003`): màn "Tư vấn" — đổi "Xuất CSV" → "Xuất Excel" thật (`.xlsx`), dùng SheetJS qua
+  CDN (`<script src>`, giống cách Chart.js đã dùng — không phá triết lý "không build step").
+- Mục 38 (`189381d`): thông báo — PM phản hồi dùng 2 máy, máy A đọc thì máy B tự thấy "đã đọc"
+  theo (cờ `is_read` cũ là CHUNG trên bảng `notifications`). Thêm bảng mới `notification_reads`
+  (`05_Database/10_supabase_setup_phase10.sql` — **PM cần tự chạy migration này**, xem mục 1) +
+  `DEVICE_ID` sinh riêng mỗi trình duyệt (`localStorage`, có fallback an toàn nếu bị chặn). Sửa
+  `loadNotifications()`/`onNotifClick()`/`markAllNotifRead()` (`admin.html`) và `handlePush()`
+  (`sw-admin.js`) đọc/ghi qua bảng mới này. Xóa thông báo (`deleteSelectedNotifications`) vẫn là
+  hành động CHUNG (không đổi).
+- Mục 39 (`daa92bd`): `worker.js` — PM hỏi "có tự thông báo lại nếu bị trễ không" → phát hiện giới
+  hạn: trước đây 3/4 loại thông báo chỉ hỏi "=đúng hôm nay", qua ngày là mất vĩnh viễn không có
+  cách bắt lại. Thêm `BACKFILL_DAYS=7` — quét khoảng `[hôm nay-7, hôm nay]` thay vì đúng 1 ngày, an
+  toàn nhờ ràng buộc `unique(loai,ref_id,ref_ngay)` đã chặn tạo trùng sẵn. Loại `dang_ky_moi` không
+  cần sửa (đã an toàn từ trước nhờ lấy 200 lead mới nhất theo `created_at`, không lọc theo ngày).
 
-1. **Sự cố thật: quên hướng dẫn thêm biến `SUPABASE_URL`** cho Cloudflare Worker — khiến job chạy
-   "Success" nhưng thực chất không làm gì (im lặng). Đã sửa tận gốc: hardcode `SUPABASE_URL` thẳng
-   trong `worker.js` (như đã làm với `VAPID_PUBLIC_KEY`), không cần biến môi trường này nữa. Đồng
-   thời tách try/catch riêng cho từng loại thông báo để 1 loại lỗi không chặn im lặng cả 3 loại còn
-   lại — bài học rút ra: ưu tiên hardcode giá trị KHÔNG nhạy cảm thay vì bắt PM thêm biến, giảm rủi
-   ro thiếu sót không có tín hiệu lỗi rõ ràng.
-2. **Menu mobile trên `index.html`**: trước đây bấm hamburger mở ra là đứng yên luôn, không tự
-   đóng khi bấm 1 mục hay bấm ra ngoài. Đã đổi sang event delegation trên `#navLinks` (tự hoạt
-   động cả với menu "Danh mục bài viết" chèn động, mục 31.F) + listener đóng khi click ra ngoài
-   (dùng đúng mẫu `stopPropagation()` đã có sẵn cho nút liên hệ nổi `floatContact`).
-3. **Loại thông báo thứ 4 — "⚠️ Xử lý phát sinh"**: báo khi 1 dòng xử lý phát sinh (trong dialog
-   Hồ sơ) có Hạn chốt = hôm nay và còn "Đang xử lý". Nội dung: `"Tên khách hàng_Nước đến_ Nội
-   dung"`. Cần cột mới `ref_parent_id` (migration 09, xem mục 1) vì bản ghi gốc của loại này là 1
-   dòng xử lý phát sinh (không phải hồ sơ), nhưng bấm vào cần mở đúng Hồ sơ CHA — xem giải thích kỹ
-   thuật đầy đủ ở `CLAUDE.md` mục 34.C (đặc biệt lý do KHÔNG được dùng `ho_so_id` làm `ref_id`).
-4. **Đổi cách xóa thông báo**: PM phản hồi nút "Xóa đã đọc" cũ xóa hết cùng lúc không kiểm soát
-   được — đã đổi sang tick chọn từng thông báo (checkbox mỗi dòng) rồi bấm "Xóa đã chọn". (Việc
-   này làm ở lượt trước loại thông báo thứ 4 trong cùng phiên, đã push thành công — commit
-   `b0fd786`.)
+**Phiên 2026-08-18** (4 ngày sau, PM quay lại hỏi tiếp — nối tiếp đúng ngữ cảnh phiên trước):
+- PM xác nhận lại "tổng có 4 loại thông báo" (không phải 3) — giải thích lại rõ: `dang_ky_moi`
+  ("Khách hàng đăng ký" từ trang chủ) đã luôn an toàn, không cần nằm trong đợt sửa backfill mục 39.
+- PM báo *"vẫn không có thông báo"* + nghi ngờ do PWA không tự cập nhật — đã kiểm tra header HTTP
+  thật (`curl`) xác nhận `Cache-Control: public, max-age=0, must-revalidate` cho cả `admin.html` và
+  `sw-admin.js` → PWA/trình duyệt luôn phải hỏi lại server, KHÔNG bị kẹt ở bản cache cũ vô thời hạn
+  → **giả thuyết "do PWA" nhiều khả năng SAI**, nghi vấn thật nằm ở mục 1.1 (migration Phase 10).
+- Mục 40 (`01b3e73`): PM yêu cầu bỏ nút "Bật/Tắt thông báo đẩy" thủ công trong panel chuông, thay
+  bằng tự động hỏi quyền **đúng 1 lần** ngay sau khi đăng nhập lần đầu trên 1 máy (`localStorage`
+  cờ `tv5s_push_asked`) — dùng popup riêng của trang (`showConfirmPopup`) làm "cầu nối" vì trình
+  duyệt bắt buộc phải có 1 thao tác bấm thật mới cho xin quyền `Notification` (không thể tự động
+  hỏi ngầm lúc tải trang). **Từ nay KHÔNG còn cách tắt push trong app** — muốn tắt phải vào cài đặt
+  thông báo của trình duyệt/điện thoại cho trang `topvisa5s.com`, đây là quyết định có chủ đích
+  theo đúng yêu cầu PM, không phải thiếu sót nếu sau này có ai hỏi lại.
+- Sửa lại 1 lỗi ngày ghi nhầm trong `CLAUDE.md` mục 40 (ghi nhầm 2026-08-14 trong lúc soạn, thực ra
+  đổi ngày 2026-08-18 — bài học: **luôn kiểm tra ngày thật bằng `git log --format="%ad"` khi ghi
+  chú "(ngày)" vào CLAUDE.md, không tự suy đoán ngày từ ngữ cảnh hội thoại** vì phiên có thể trải
+  dài qua nhiều ngày thật mà hội thoại đọc liền mạch như 1 buổi.
 
-## 3. ⚠️ Sự cố đã xảy ra trong toàn bộ quá trình (tổng hợp, đã xử lý xong hết)
+## 3. Sự cố đã xảy ra (tổng hợp, để tránh lặp lại)
 
-- **Lộ giá trị thật của `SUPABASE_SERVICE_ROLE_KEY`** qua ảnh chụp màn hình PM gửi trong chat (biến
-  đặt kiểu "Plaintext" nên hiện nguyên giá trị). Đã hướng dẫn PM: tạo khóa `service_role` MỚI trong
-  Supabase, xóa khóa cũ bị lộ, cập nhật lại Cloudflare, đổi loại biến sang "Encrypt" — PM xác nhận
-  đã làm xong.
-- **1-2 dòng dữ liệu thử nghiệm** ("Nguyễn Văn Test", SĐT 0912345678) từng bị gửi thật vào bảng
-  `leads` production lúc Claude Code test form đăng ký bằng cách mô phỏng submit thật (không mock
-  fetch) — đã báo ngay, PM đã xóa.
-- **Thiếu `SUPABASE_URL`** khiến job chạy nền không hoạt động dù không báo lỗi gì — đã sửa (mục 2.1).
-- **`git push` bị chặn** bởi permission classifier của phiên làm việc nhiều lần — mỗi lần đều phải
-  nhờ PM tự chạy 2 lệnh push (nhánh + fast-forward main). Không phải lỗi code, là giới hạn quyền
-  của môi trường agent.
+- **Robot thông báo ngừng chạy im lặng 11/8 → 14/8** — khóa `SUPABASE_SERVICE_ROLE_KEY` trên
+  Cloudflare bị sai, không có tín hiệu lỗi nào hiện ra ngoài (đúng bài học đã ghi ở mục 33/34 cũ:
+  lỗi thiếu/sai secret luôn im lặng, phải chủ động soát Cloudflare Logs mới thấy). **CHƯA CÓ XÁC
+  NHẬN CUỐI khóa hiện tại đã đúng và ổn định** — xem mục 1.
+- **Bug tự phát hiện lúc code (đã tự sửa trong phiên, không lộ ra ngoài):** viết `getDeviceId()`
+  ban đầu KHÔNG bọc try/catch quanh `localStorage` — test thử trong Claude Browser (chạy ở sandbox
+  `data:` URL, chặn hẳn `localStorage`) làm lộ ra: nếu 1 trình duyệt thật nào cũng chặn storage
+  tương tự (chế độ ẩn danh nghiêm ngặt...), lỗi này sẽ làm rớt TOÀN BỘ code JS chạy sau dòng đó
+  trong `admin.html` (không chỉ mỗi tính năng thông báo). Đã sửa bọc try/catch, áp dụng luôn cho
+  `maybeAskPushPermission()` mới thêm mục 40. **Bài học cho code sau này:** mọi chỗ đọc/ghi
+  `localStorage` ở khu vực code chạy SỚM (gần đầu trang, trước khi user tương tác) nên bọc try/catch
+  nếu có thể, theo đúng nguyên tắc "tính năng phụ không được phép chặn luồng chính" đã có từ Phase 8.
 
-## 4. Cách đã test trong phiên này
+## 4. Cách đã test 2 phiên này
 
-- **Menu mobile**: Claude Browser ở khổ 375px — mở bằng hamburger, đóng khi click ra ngoài
-  (`document.body`), đóng khi click 1 link (kể cả link giả lập chèn động sau), hamburger vẫn toggle
-  bình thường không bị nhiễu bởi listener mới.
-- **Loại thông báo "xlps"**: mock `fetch` cho `worker.js` (chạy như ES module qua Node, xem mục 4
-  bản handover cũ để biết cách làm) — xác nhận 2 xử lý phát sinh khác nhau CÙNG 1 hồ sơ tạo được
-  ĐÚNG 2 thông báo riêng biệt (không bị trùng do `ref_id`), `ref_parent_id` đúng bằng `ho_so_id`,
-  định dạng nội dung đúng mẫu PM yêu cầu. Qua Claude Browser (mock `api()`): nhãn hiển thị đúng
-  "⚠️ Xử lý phát sinh: ...", bấm vào mở đúng `switchTab('hoso')` + `openHoSoModal(ref_parent_id)`
-  (không phải `ref_id`).
-- **Xóa chọn lọc thông báo**: mock `api()` — không chọn gì mà bấm Xóa → báo lỗi, không gọi API;
-  chọn đúng 2/4 dòng → chỉ 2 dòng đó bị xóa; tick checkbox không vô tình kích hoạt điều hướng của
-  cả dòng (đã kiểm tra `event.stopPropagation()` hoạt động đúng).
-- Đã xóa `.claude/launch.json` tạo tạm sau mỗi lần test, đúng quy tắc không để lại file thừa.
+- Toàn bộ tính năng mới (mục 36-40) đều test qua **Claude Browser với dữ liệu/hàm giả lập** (mock
+  `api()`, mock `Notification`/`navigator.serviceWorker`/`localStorage`/`showConfirmPopup`), gọi
+  trực tiếp hàm JS trong Console — KHÔNG đăng nhập thật, KHÔNG chạm dữ liệu Supabase thật.
+  **CHƯA có xác nhận nào từ PM trên thiết bị thật** cho: per-device read (mục 38), backfill 7 ngày
+  (mục 39), tự hỏi quyền push (mục 40) — xem việc cần làm mục 1.3/1.4.
+- Excel export (mục 37): kiểm chứng thật bằng Node (cài tạm gói `xlsx` ở thư mục NGOÀI dự án, không
+  đụng `package.json` của repo) — xuất `.xlsx`, đọc lại, xác nhận đúng nội dung tiếng Việt + Unix
+  nhận diện đúng định dạng "Microsoft Excel 2007+".
+- Đã xác nhận qua `curl` (không cần trình duyệt): header cache của `admin.html`/`sw-admin.js` trên
+  site thật, và nội dung `/admin` live thực sự chứa code mới nhất (loại trừ nghi ngờ "chưa deploy").
 
-## 5. Quy trình deploy — vẫn dùng đúng cách cũ, xem chi tiết ở CLAUDE.md mục 5/33
+## 5. Quy trình deploy — vẫn dùng đúng cách cũ (xem CLAUDE.md mục 5/33)
 
-Lưu ý riêng phiên này: `git push` bị permission classifier chặn nhiều lần (không phải lỗi cố định
-— có lúc chặn có lúc không, không rõ quy luật) — nếu gặp lại, đưa nguyên 2 lệnh push cho người dùng
-tự chạy, không cố tìm cách vượt qua.
+Khác các phiên trước: **`git push` KHÔNG bị chặn quyền lần nào** trong cả 2 phiên này — mọi commit
+đẩy thẳng lên `main` thành công ngay, Cloudflare tự deploy trong vài chục giây (đã xác nhận qua
+tab "Deployments" trên Cloudflare Dashboard PM chụp gửi lúc debug khóa Supabase).
 
 ## 6. Tài liệu tham khảo (đọc theo thứ tự nếu cần)
 
-`CLAUDE.md` (toàn bộ, đặc biệt mục 33-34) → file này → `05_Database/README.md` (thứ tự chạy SQL,
-file `09` là file MỚI nhất, BẮT BUỘC chạy trước khi loại thông báo "xlps" hoạt động được).
+`CLAUDE.md` mục 35-40 (toàn bộ thay đổi 2 phiên gần nhất, đọc kỹ mục 38 trước khi động vào code
+thông báo) → file này → `05_Database/README.md` (file `10` là mới nhất, **BẮT BUỘC PM tự chạy**
+trước khi Phase 10 hoạt động — xem mục 1.1, đây là việc ưu tiên số 1).

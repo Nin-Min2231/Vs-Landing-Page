@@ -1364,7 +1364,7 @@ sau này cần hiển thị "quá hạn từ ngày nào" thì đã có sẵn d�
 **⚠️ Nếu sau này cần đổi số ngày quét lùi:** chỉ cần đổi giá trị `BACKFILL_DAYS`, không cần sửa gì
 thêm ở 3 câu query (đều tham chiếu qua biến `backfillFrom` tính từ hằng số này).
 
-## 40. Bỏ nút "Bật/Tắt thông báo đẩy" thủ công — tự hỏi quyền 1 lần lúc đăng nhập lần đầu (2026-08-14)
+## 40. Bỏ nút "Bật/Tắt thông báo đẩy" thủ công — tự hỏi quyền 1 lần lúc đăng nhập lần đầu (2026-08-18)
 
 **Lý do:** PM yêu cầu bỏ nút bấm thủ công trong panel chuông (`#notifPushBtn`/`togglePushSubscription()`,
 mục 33.D cũ) — người dùng dễ quên bấm, dẫn tới tưởng "không có thông báo" trong khi thực ra chỉ là
