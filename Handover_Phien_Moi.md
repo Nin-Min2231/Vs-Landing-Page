@@ -1,135 +1,109 @@
-# Handover — Bàn giao sang phiên làm việc mới (2026-08-18, bản 7 — GHI ĐÈ toàn bộ bản cũ)
+# Handover — Bàn giao sang phiên làm việc mới (2026-08-18, bản 8 — GHI ĐÈ toàn bộ bản cũ)
 
-> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→6) — **không cần đọc lại bản cũ**, nội
+> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→7) — **không cần đọc lại bản cũ**, nội
 > dung quan trọng còn giá trị đã gom hết vào đây. Đọc theo đúng thứ tự: `CLAUDE.md` (toàn bộ, đặc
-> biệt mục 35-40 cho thay đổi 2 phiên gần nhất) → file này → bắt tay vào **mục 1**.
+> biệt mục 35-43 cho thay đổi phiên 14/8 và 18/8) → file này → bắt tay vào **mục 1**.
 
 ## 0. Trạng thái ngay lúc viết file này
 
-- Nhánh làm việc: **đẩy thẳng lên `main`, không qua branch riêng** trong cả 2 phiên gần nhất (khác
-  các phiên trước — không gặp `git push` bị chặn quyền lần nào) — 7 commit từ `d079b20` đến
-  `01b3e73`, tất cả đã lên `main`, Cloudflare tự deploy (đã xác nhận qua `curl` kiểm tra `/admin`
-  live có chứa đúng code mới nhất — `DEVICE_ID`, `notification_reads`).
-- **⚠️ VẤN ĐỀ ĐANG TREO, CHƯA CÓ KẾT LUẬN CUỐI:** PM báo (2026-08-18) *"mở app hôm nay vẫn không có
-  thông báo"* — dù đã: (a) 2026-08-14 PM tự phát hiện + tự sửa khóa `SUPABASE_SERVICE_ROLE_KEY` sai
-  trên Cloudflare (nguyên nhân gốc khiến robot thông báo im lặng ngừng chạy từ 11/8), (b) cùng ngày
-  Claude Code đã sửa lỗi tính "hôm nay" theo UTC→giờ VN (mục 35) + thêm lớp quét lùi 7 ngày (mục 39).
-  **Cập nhật cùng ngày 2026-08-18:** PM xác nhận ĐÃ chạy `10_supabase_setup_phase10.sql` — nghi vấn
-  hàng đầu (mục 1.1 cũ) coi như đã loại trừ. **CHƯA CÓ XÁC NHẬN cuối cùng liệu chuông đã thật sự
-  hiện thông báo sau khi chạy migration hay chưa** — PM chưa quay lại báo kết quả sau khi chạy SQL.
-  Đọc kỹ mục 1 trước khi làm gì tiếp.
+- Nhánh làm việc: **đẩy thẳng lên `main`** như 2 phiên trước, không qua branch riêng, không bị
+  chặn quyền `git push` lần nào. 4 commit mới từ `c92e8d9` đến `bdd065b`, tất cả đã lên `main` và
+  **đã tự xác nhận deploy live** bằng cách `curl` poll trang thật sau mỗi lần push (không cần đợi
+  PM tự check Cloudflare Dashboard) — cách làm này nên áp dụng tiếp cho các phiên sau.
+- **✅ Đã giải quyết trong phiên này:** PM xác nhận đã chạy `10_supabase_setup_phase10.sql` — chuông
+  thông báo trong `admin.html` từ đó hoạt động đúng (tự cập nhật, đếm đúng số chưa đọc).
+- **⚠️ VẤN ĐỀ CÒN ĐANG TREO — ưu tiên số 1 phiên mới:** Web Push (thông báo hệ thống ra màn hình
+  điện thoại, kiểu như tin nhắn/SMS đến, hoạt động cả khi đã tắt hẳn app) — tính năng này tồn tại từ
+  Phase 8 (10/8) nhưng **CHƯA TỪNG có xác nhận thật hoạt động trên thiết bị** cho tới tận phiên này.
+  Đã tìm + sửa 1 bug thật (mục 3 dưới) khiến subscription bị "mất đồng bộ" với server. PM (dùng
+  Android) đã xác nhận bấm nút và thấy toast "Đã bật thông báo đẩy trên thiết bị này" (bước đăng ký
+  ĐÃ thành công phía client) — nhưng **CHƯA xác nhận đã thật sự nhận được thông báo hệ thống** khi
+  tắt hẳn Chrome. Đã hướng dẫn PM quy trình test 4 bước (mục 1.1) — **PM CHƯA báo lại kết quả**.
 
 ## 1. Việc CẦN LÀM NGAY
 
-1. ✅ **[ĐÃ XONG 2026-08-18] Chạy `05_Database/10_supabase_setup_phase10.sql`** — PM xác nhận đã
-   chạy. **Việc kế tiếp bắt buộc:** hỏi lại PM xem sau khi chạy xong, mở lại chuông thông báo trong
-   `admin.html` (nhớ tải lại trang F5 để chắc không phải bản cache cũ) có thấy thông báo chưa —
-   *đừng giả định đã xong chỉ vì đã chạy migration*, phải có xác nhận thật từ PM mới coi là giải
-   quyết xong. Nếu vẫn chưa thấy gì, tiếp tục mục 1.2 dưới đây để tìm nguyên nhân khác.
-2. Nếu ĐÃ chạy Phase 10 (rồi) mà vẫn không thấy gì: nhờ PM (hoặc tự nếu có quyền) vào **Supabase Dashboard
-   → Table Editor → bảng `notifications`** → sắp xếp `created_at` giảm dần → có dòng nào tạo trong
-   4 ngày qua (14/8-18/8) không?
-   - CÓ dòng mới → lỗi nằm ở phía `admin.html` hiển thị (kiểm tra Console F12 trên máy tính, đối
-     chiếu `loadNotifications()`/`renderNotifBell()` mục 38 CLAUDE.md).
-   - KHÔNG có dòng mới nào → lỗi nằm ở Cloudflare Worker (`worker.js`/cron) — vào Cloudflare
-     Dashboard → Worker `topvisa5s` → Observability → bật "Logs" → đợi 1 lượt cron chạy (mỗi 10
-     phút) → đọc lỗi thật. Nghi vấn: khóa `SUPABASE_SERVICE_ROLE_KEY` PM cập nhật ngày 14/8 có thể
-     đã bị rotate lại lần nữa, hoặc lượt cập nhật đó chưa thực sự lưu đúng.
-3. **PM CHƯA xác nhận thử tính năng "tự hỏi quyền thông báo lúc đăng nhập lần đầu"** (mục 40, vừa
-   code xong 2026-08-18, CHỈ test qua mock trong Claude Browser — chưa có xác nhận trên thiết bị
-   thật). Để PM tự test lại từ đầu: xóa `localStorage` khóa `tv5s_push_asked` (hoặc dùng hẳn 1 trình
-   duyệt/máy khác chưa từng đăng nhập), đăng nhập lại → phải tự hiện popup "Bật thông báo đẩy?".
-4. **Backfill 7 ngày (mục 39) mới thêm — chưa có xác nhận thật là nó có "bắt lại" đúng các hồ sơ bị
-   lỡ hôm 11-14/8 hay không** (phụ thuộc vào việc mục 1 ở trên được giải quyết trước — Worker phải
-   chạy được thành công ít nhất 1 lần thì mới biết backfill có hoạt động đúng không).
+1. **Hỏi PM kết quả test Web Push thật** (đã hướng dẫn: tạo/sửa 1 hồ sơ có Ngày trả KQ = hôm nay →
+   tắt hẳn Chrome (vuốt khỏi đa nhiệm) → đợi tối đa 10 phút (chu kỳ cron) → xem điện thoại có hiện
+   thông báo "Top Visa 5S Admin" không).
+   - **CÓ nhận được** → tính năng Web Push coi như HOÀN TẤT, đóng hẳn vấn đề đã treo từ 10/8. Cập
+     nhật lại CLAUDE.md mục 33/43 xác nhận đã kiểm chứng thật (hiện đang ghi "chưa kiểm chứng").
+   - **KHÔNG nhận được** → tiếp mục 2.
+2. Nếu vẫn không nhận được thông báo, kiểm tra theo đúng thứ tự (đã note sẵn ở CLAUDE.md mục 43,
+   phần "Các nguyên nhân KHÁC"):
+   - Android Cài đặt → Ứng dụng → Chrome → Thông báo — có bị chặn ở cấp hệ điều hành không (lớp
+     quyền này KHÁC quyền `Notification` JS, code không kiểm soát được).
+   - Máy có phải dòng Xiaomi/Oppo/Vivo/Huawei hay không — các dòng này thường tự giới hạn chạy nền,
+     có thể giết mất Service Worker.
+   - Cloudflare Dashboard → Worker → Observability → bật "Logs" → đợi đúng lúc có thông báo mới
+     được tạo (xem trong bảng `notifications`) để bắt lỗi thật từ `sendWebPush()` (nghi vấn còn lại
+     lớn nhất: khóa `VAPID_PRIVATE_KEY_JWK` trên Cloudflare có tồn tại — đã xác nhận qua ảnh chụp
+     PM gửi trước đây — nhưng **GIÁ TRỊ chưa từng được verify là đúng/còn hiệu lực**).
+3. (Chỉ làm nếu PM chủ động muốn, KHÔNG tự ý thêm) Nếu PM muốn test nhanh hơn thay vì chờ 10 phút
+   mỗi lần, có thể cân nhắc thêm 1 route thủ công trong `worker.js` để tự bấm gửi push ngay — CHƯA
+   làm vì cần thêm lớp xác thực (route công khai không bảo vệ = ai cũng gọi được, spam push tới mọi
+   thiết bị đã đăng ký), cần hỏi rõ PM trước khi làm.
 
-## 2. Tóm tắt việc 2 phiên gần nhất đã làm (chi tiết đầy đủ nằm ở `CLAUDE.md` mục 35-40)
+## 2. Tóm tắt việc phiên này đã làm (tiếp nối bản 7 — mục mới 41→43 trong `CLAUDE.md`)
 
-**Phiên 2026-08-14** (bắt đầu từ câu hỏi "Dashboard tô đỏ Ngày trả KQ lúc mấy giờ, sáng 6h30 không
-thấy đỏ/không có thông báo"):
-- Mục 35 (`d079b20`): phát hiện + sửa gốc — `tcToday()` (`admin.html`) và biến `today`
-  (`worker.js`) tính "hôm nay" theo giờ UTC thay vì giờ Việt Nam (UTC+7) → tô đỏ/thông báo bị trễ
-  tới 7h sáng mới đúng. Sửa cả 2 nơi + quy hết các chỗ tự tính ngày rải rác trong `admin.html` về
-  gọi chung `tcToday()`.
-- **Sự cố riêng phát hiện qua debug cùng PM (KHÔNG phải commit code):** robot thông báo (Cloudflare
-  Worker cron) đã ngừng tạo thông báo hoàn toàn từ 11/8 — nguyên nhân: khóa
-  `SUPABASE_SERVICE_ROLE_KEY` lưu trên Cloudflare Worker Settings bị sai/lệch (nghi do lúc PM setup
-  công cụ backup `06_Backup_Tool` ngày 12/8 có ghé lại trang "Secret keys" của Supabase). PM tự vào
-  Cloudflare Dashboard cập nhật lại khóa đúng — **lúc đó CHƯA kiểm chứng lại có thành công thật hay
-  không**, và tới 18/8 PM vẫn báo chưa thấy thông báo (xem mục 0/1 ở trên).
-- Mục 36 (`1d4e5c5`): màn "Tư vấn" — thêm tìm kiếm theo cột `note` ("Nội dung tư vấn"), thêm cột
-  hiển thị (cắt ellipsis bằng class có sẵn `.text-trunc`), bôi màu đoạn khớp từ khóa (hàm chung mới
-  `highlightMatch()`, tận dụng tính chất `vnNorm()` không đổi độ dài chuỗi).
-- Mục 37 (`469b003`): màn "Tư vấn" — đổi "Xuất CSV" → "Xuất Excel" thật (`.xlsx`), dùng SheetJS qua
-  CDN (`<script src>`, giống cách Chart.js đã dùng — không phá triết lý "không build step").
-- Mục 38 (`189381d`): thông báo — PM phản hồi dùng 2 máy, máy A đọc thì máy B tự thấy "đã đọc"
-  theo (cờ `is_read` cũ là CHUNG trên bảng `notifications`). Thêm bảng mới `notification_reads`
-  (`05_Database/10_supabase_setup_phase10.sql` — **PM cần tự chạy migration này**, xem mục 1) +
-  `DEVICE_ID` sinh riêng mỗi trình duyệt (`localStorage`, có fallback an toàn nếu bị chặn). Sửa
-  `loadNotifications()`/`onNotifClick()`/`markAllNotifRead()` (`admin.html`) và `handlePush()`
-  (`sw-admin.js`) đọc/ghi qua bảng mới này. Xóa thông báo (`deleteSelectedNotifications`) vẫn là
-  hành động CHUNG (không đổi).
-- Mục 39 (`daa92bd`): `worker.js` — PM hỏi "có tự thông báo lại nếu bị trễ không" → phát hiện giới
-  hạn: trước đây 3/4 loại thông báo chỉ hỏi "=đúng hôm nay", qua ngày là mất vĩnh viễn không có
-  cách bắt lại. Thêm `BACKFILL_DAYS=7` — quét khoảng `[hôm nay-7, hôm nay]` thay vì đúng 1 ngày, an
-  toàn nhờ ràng buộc `unique(loai,ref_id,ref_ngay)` đã chặn tạo trùng sẵn. Loại `dang_ky_moi` không
-  cần sửa (đã an toàn từ trước nhờ lấy 200 lead mới nhất theo `created_at`, không lọc theo ngày).
+- **Mục 41 — Tài chính/Dashboard, "Lợi nhuận" đổi công thức** (`a680aea`): PM yêu cầu "Lợi nhuận" =
+  tổng `loi_nhuan` của hồ sơ `Đậu`+`Rớt`+`Hủy` (mở rộng từ chỉ `Đậu`), loại bỏ hồ sơ `loi_nhuan=0`,
+  **giá trị ÂM (Rớt/Hủy lỗ) vẫn tính**. **KHÔNG còn trừ "Khoản chi"** vào Lợi nhuận nữa — Khoản chi
+  vẫn hiển thị/quản lý riêng như cũ (CRUD không đổi), chỉ tách khỏi phép tính. Đã sửa đồng bộ cả
+  `renderTaiChinh()` VÀ `renderDashboard()` (theo đúng nguyên tắc mục 27 — 2 màn phải luôn khớp số
+  nhau). Sửa thêm: màu dòng list theo đúng DẤU thật của số tiền (trước đây to xanh cứng mọi dòng
+  "Thu", giờ hồ sơ Rớt/Hủy âm sẽ tô đỏ đúng).
+- **Mục 42 — Hồ sơ, sort mặc định 3 tầng ưu tiên** (`a680aea` rồi SỬA LẠI NGAY ở `c2fbb1d` cùng
+  phiên): PM yêu cầu 2 lượt liên tiếp — lượt 1 tách riêng "Đã nộp" sort theo Ngày trả KQ (còn 4
+  trạng thái khác vẫn mỗi trạng thái 1 khối riêng theo Ngày tạo). PM đưa ví dụ cụ thể ngay sau đó
+  cho thấy **"Đậu"/"Rớt"/"Hủy" phải GỘP CHUNG 1 NHÓM DUY NHẤT** (xen kẽ lẫn nhau theo Ngày tạo,
+  KHÔNG tách 3 khối riêng theo trạng thái) — bản lượt 1 đã SAI ở điểm này, phải sửa lại ngay trong
+  cùng phiên. Kết quả cuối cùng đúng: Ưu tiên 1 "Đang xử lý" (theo Ngày tạo) → Ưu tiên 2 "Đã nộp"
+  (theo Ngày trả KQ) → Ưu tiên 3 "Đậu"+"Rớt"+"Hủy" gộp chung (theo Ngày tạo, xen kẽ 3 trạng thái).
+  **Bài học quan trọng:** khi PM đưa ví dụ dữ liệu cụ thể kèm yêu cầu, PHẢI mô phỏng đúng y ví dụ đó
+  trước khi code — chỉ đọc mô tả bằng chữ dễ hiểu sai kiểu "tách riêng theo trạng thái" hay "gộp
+  chung theo ngày", 2 cách hiểu ra kết quả khác hẳn nhau.
+- **Mục 43 — Sửa bug thật: Web Push không tới điện thoại** (`bdd065b`): PM báo chuông trong trang
+  vẫn cập nhật (đọc thẳng DB, không qua push) nhưng điện thoại không nhận được gì. Tìm ra bug trong
+  `subscribePush()`: nếu trình duyệt ĐÃ có sẵn `PushSubscription` object thì hàm return ngay, KHÔNG
+  lưu/đồng bộ lại bảng `push_subscriptions` — nếu dòng đó từng bị mất ở server (nghi do sự cố khóa
+  `SUPABASE_SERVICE_ROLE_KEY` sai trước đó, mục 35), trình duyệt vẫn "tưởng" đã đăng ký (không hỏi
+  lại quyền, không báo lỗi) nhưng server không biết thiết bị này tồn tại → không gửi push được. Đã
+  sửa: LUÔN đồng bộ lại `push_subscriptions` (upsert an toàn) mỗi lần gọi, chỉ bỏ qua bước xin
+  quyền/tạo subscription MỚI khi trình duyệt đã có sẵn. Thêm toast báo lỗi rõ khi bị từ chối quyền
+  (trước đây im lặng). PM đã xác nhận thấy toast thành công sau khi đăng nhập lại — **nhưng đây chỉ
+  xác nhận bước ĐĂNG KÝ, chưa xác nhận bước NHẬN PUSH THẬT** (xem mục 1).
 
-**Phiên 2026-08-18** (4 ngày sau, PM quay lại hỏi tiếp — nối tiếp đúng ngữ cảnh phiên trước):
-- PM xác nhận lại "tổng có 4 loại thông báo" (không phải 3) — giải thích lại rõ: `dang_ky_moi`
-  ("Khách hàng đăng ký" từ trang chủ) đã luôn an toàn, không cần nằm trong đợt sửa backfill mục 39.
-- PM báo *"vẫn không có thông báo"* + nghi ngờ do PWA không tự cập nhật — đã kiểm tra header HTTP
-  thật (`curl`) xác nhận `Cache-Control: public, max-age=0, must-revalidate` cho cả `admin.html` và
-  `sw-admin.js` → PWA/trình duyệt luôn phải hỏi lại server, KHÔNG bị kẹt ở bản cache cũ vô thời hạn
-  → **giả thuyết "do PWA" nhiều khả năng SAI**, nghi vấn thật nằm ở mục 1.1 (migration Phase 10).
-- Mục 40 (`01b3e73`): PM yêu cầu bỏ nút "Bật/Tắt thông báo đẩy" thủ công trong panel chuông, thay
-  bằng tự động hỏi quyền **đúng 1 lần** ngay sau khi đăng nhập lần đầu trên 1 máy (`localStorage`
-  cờ `tv5s_push_asked`) — dùng popup riêng của trang (`showConfirmPopup`) làm "cầu nối" vì trình
-  duyệt bắt buộc phải có 1 thao tác bấm thật mới cho xin quyền `Notification` (không thể tự động
-  hỏi ngầm lúc tải trang). **Từ nay KHÔNG còn cách tắt push trong app** — muốn tắt phải vào cài đặt
-  thông báo của trình duyệt/điện thoại cho trang `topvisa5s.com`, đây là quyết định có chủ đích
-  theo đúng yêu cầu PM, không phải thiếu sót nếu sau này có ai hỏi lại.
-- Sửa lại 1 lỗi ngày ghi nhầm trong `CLAUDE.md` mục 40 (ghi nhầm 2026-08-14 trong lúc soạn, thực ra
-  đổi ngày 2026-08-18 — bài học: **luôn kiểm tra ngày thật bằng `git log --format="%ad"` khi ghi
-  chú "(ngày)" vào CLAUDE.md, không tự suy đoán ngày từ ngữ cảnh hội thoại** vì phiên có thể trải
-  dài qua nhiều ngày thật mà hội thoại đọc liền mạch như 1 buổi.
+## 3. Sự cố/bài học (tổng hợp thêm, ngoài mục 2)
 
-## 3. Sự cố đã xảy ra (tổng hợp, để tránh lặp lại)
+- Tính năng Web Push đã "treo" không ai biết trong **hơn 1 tuần** (10/8 → 18/8) vì chưa từng được
+  test thật trên thiết bị — mọi handover trước đều ghi "chưa kiểm chứng" nhưng không ai chủ động
+  đẩy việc test này lên ưu tiên cao hơn. Bài học: tính năng phụ thuộc thiết bị thật (push, PWA, mở
+  camera/GPS...) nên có lịch test thật SỚM ngay sau khi code xong, không để "chưa kiểm chứng" trôi
+  qua nhiều ngày/nhiều phiên mà không ai theo dõi lại.
 
-- **Robot thông báo ngừng chạy im lặng 11/8 → 14/8** — khóa `SUPABASE_SERVICE_ROLE_KEY` trên
-  Cloudflare bị sai, không có tín hiệu lỗi nào hiện ra ngoài (đúng bài học đã ghi ở mục 33/34 cũ:
-  lỗi thiếu/sai secret luôn im lặng, phải chủ động soát Cloudflare Logs mới thấy). **CHƯA CÓ XÁC
-  NHẬN CUỐI khóa hiện tại đã đúng và ổn định** — xem mục 1.
-- **Bug tự phát hiện lúc code (đã tự sửa trong phiên, không lộ ra ngoài):** viết `getDeviceId()`
-  ban đầu KHÔNG bọc try/catch quanh `localStorage` — test thử trong Claude Browser (chạy ở sandbox
-  `data:` URL, chặn hẳn `localStorage`) làm lộ ra: nếu 1 trình duyệt thật nào cũng chặn storage
-  tương tự (chế độ ẩn danh nghiêm ngặt...), lỗi này sẽ làm rớt TOÀN BỘ code JS chạy sau dòng đó
-  trong `admin.html` (không chỉ mỗi tính năng thông báo). Đã sửa bọc try/catch, áp dụng luôn cho
-  `maybeAskPushPermission()` mới thêm mục 40. **Bài học cho code sau này:** mọi chỗ đọc/ghi
-  `localStorage` ở khu vực code chạy SỚM (gần đầu trang, trước khi user tương tác) nên bọc try/catch
-  nếu có thể, theo đúng nguyên tắc "tính năng phụ không được phép chặn luồng chính" đã có từ Phase 8.
+## 4. Cách đã test phiên này
 
-## 4. Cách đã test 2 phiên này
+- Tài chính/Dashboard (mục 41): mock `api()`/`HO_SO` qua Claude Browser — xác nhận số tổng đúng
+  (gồm cả giá trị âm), hồ sơ `loi_nhuan=0`/sai trạng thái/ngoài khoảng ngày bị loại đúng, màu dòng
+  theo đúng dấu, "Khoản chi" vẫn hiển thị độc lập.
+- Hồ sơ sort (mục 42): mock `HO_SO` đủ cả 3 tầng, xáo trộn thứ tự dữ liệu đầu vào (không để trùng
+  hợp đúng sẵn) — xác nhận output khớp CHÍNH XÁC ví dụ PM đưa cho cả 3 tầng.
+- `subscribePush()` fix (mục 43): mock `navigator.serviceWorker`/`PushManager`/`Notification`/
+  `api()`/`toast()` — xác nhận 2 tình huống (đã có subscription cũ ở trình duyệt → vẫn gọi lại đúng
+  API lưu vào DB; bị từ chối quyền → hiện đúng toast lỗi, không gọi API).
+- **CHƯA/KHÔNG thể test được trong phiên này:** liệu push THẬT có tới được 1 thiết bị Android thật
+  hay không — đây là giới hạn của môi trường agent (không có thiết bị thật), bắt buộc phải chờ PM
+  tự xác nhận (xem mục 1).
 
-- Toàn bộ tính năng mới (mục 36-40) đều test qua **Claude Browser với dữ liệu/hàm giả lập** (mock
-  `api()`, mock `Notification`/`navigator.serviceWorker`/`localStorage`/`showConfirmPopup`), gọi
-  trực tiếp hàm JS trong Console — KHÔNG đăng nhập thật, KHÔNG chạm dữ liệu Supabase thật.
-  **CHƯA có xác nhận nào từ PM trên thiết bị thật** cho: per-device read (mục 38), backfill 7 ngày
-  (mục 39), tự hỏi quyền push (mục 40) — xem việc cần làm mục 1.3/1.4.
-- Excel export (mục 37): kiểm chứng thật bằng Node (cài tạm gói `xlsx` ở thư mục NGOÀI dự án, không
-  đụng `package.json` của repo) — xuất `.xlsx`, đọc lại, xác nhận đúng nội dung tiếng Việt + Unix
-  nhận diện đúng định dạng "Microsoft Excel 2007+".
-- Đã xác nhận qua `curl` (không cần trình duyệt): header cache của `admin.html`/`sw-admin.js` trên
-  site thật, và nội dung `/admin` live thực sự chứa code mới nhất (loại trừ nghi ngờ "chưa deploy").
+## 5. Quy trình deploy
 
-## 5. Quy trình deploy — vẫn dùng đúng cách cũ (xem CLAUDE.md mục 5/33)
+Vẫn `git push` thẳng `main`, Cloudflare tự deploy trong vài chục giây — phiên này đã tự động hóa
+việc xác nhận deploy xong bằng lệnh `curl` poll (chạy nền, tự báo khi nội dung mới xuất hiện trên
+site thật) sau MỖI lần push, không cần đợi PM tự vào Cloudflare Dashboard kiểm tra tab Deployments
+nữa như các phiên trước. Nên tiếp tục dùng cách này cho các phiên sau.
 
-Khác các phiên trước: **`git push` KHÔNG bị chặn quyền lần nào** trong cả 2 phiên này — mọi commit
-đẩy thẳng lên `main` thành công ngay, Cloudflare tự deploy trong vài chục giây (đã xác nhận qua
-tab "Deployments" trên Cloudflare Dashboard PM chụp gửi lúc debug khóa Supabase).
+## 6. Tài liệu tham khảo
 
-## 6. Tài liệu tham khảo (đọc theo thứ tự nếu cần)
-
-`CLAUDE.md` mục 35-40 (toàn bộ thay đổi 2 phiên gần nhất, đọc kỹ mục 38 trước khi động vào code
-thông báo) → file này → `05_Database/README.md` (file `10` là mới nhất, **BẮT BUỘC PM tự chạy**
-trước khi Phase 10 hoạt động — xem mục 1.1, đây là việc ưu tiên số 1).
+`CLAUDE.md` mục 35-43 (toàn bộ, đặc biệt mục 43 cho vấn đề Web Push đang treo) → file này → nếu cần
+lại thông tin chi tiết về per-device read tracking (mục 38)/backfill 7 ngày (mục 39)/bỏ nút bật-tắt
+push (mục 40) thì đọc trực tiếp trong `CLAUDE.md`, không cần tìm lại ở bản handover cũ (đã gom đủ).
