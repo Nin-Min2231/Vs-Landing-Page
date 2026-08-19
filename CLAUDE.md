@@ -1519,6 +1519,39 @@ im lặng, không có tín hiệu gì cho người dùng biết là đã thất 
 — xác nhận vẫn gọi đúng `POST push_subscriptions` để đồng bộ lại (trước đây sẽ KHÔNG gọi gì cả,
 đây chính là bug), (2) giả lập quyền bị từ chối — xác nhận hiện đúng toast lỗi, không gọi API nào.
 
+## 44. Review lại toàn bộ thay đổi phiên 14/8+18/8 — 2 lỗi thật tìm thêm được, đã sửa (2026-08-18)
+
+Sau khi làm xong mục 35-43, chạy 1 agent review riêng (không nhớ gì về quá trình code, chỉ đọc diff)
+để soát lại toàn bộ thay đổi 2 phiên — tìm thêm được 2 lỗi thật, cả 2 đã sửa ngay:
+
+**A. `sw-admin.js` — thiết bị chưa từng ghi `device_id` vào IndexedDB sẽ bị NHẬN LẶP LẠI thông báo
+cũ mỗi lần có push mới, thay vì bị bỏ sót (như tưởng lúc đầu):** ở `handlePush()`, nếu
+`idbGet('device_id')` trả về `null` (thiết bị đã cài PWA từ TRƯỚC Phase 10, Service Worker tự cập
+nhật bản mới ở tầng nền nhưng người dùng chưa mở lại `admin.html` lần nào để `admin.html` ghi
+`device_id` vào IndexedDB), code cũ coi `readIds` là rỗng — nghĩa là COI TẤT CẢ thông báo gần đây là
+"chưa đọc", nên cứ có 1 push mới tới là hiện lại luôn vài thông báo CŨ đã xem rồi, lặp đi lặp lại
+mỗi ~10 phút hễ có ai đó tạo thông báo mới bất kỳ loại nào. Đã sửa: nếu `deviceId` là `null` thì
+dùng luôn thông báo dự phòng chung `fallback()` (giống trường hợp lỗi refresh token) — AN TOÀN hơn
+là đoán sai trạng thái đã đọc theo hướng "hiện lại đồ cũ".
+
+**B. `admin.html` `exportTuVanExcel()` — bấm "Xuất Excel" im lặng không làm gì nếu CDN SheetJS tải
+lỗi:** bản CSV cũ (trước mục 37) không phụ thuộc thư viện ngoài nên không thể lỗi kiểu này; bản
+Excel mới nếu mạng chặn/lỗi lúc tải `<script src="...jsdelivr.net/npm/xlsx...">` thì biến `XLSX`
+sẽ không tồn tại, bấm nút ném lỗi JS không bắt được, người dùng (không biết lập trình) chỉ thấy nút
+"không phản ứng gì", không hiểu vì sao. Đã sửa: kiểm tra `typeof XLSX==='undefined'` trước, báo toast
+rõ ràng ("Không tải được thư viện xuất Excel...") + bọc `try/catch` quanh toàn bộ phần dựng file.
+
+**Đã test qua Claude Browser:** giả lập `XLSX===undefined` lúc gọi `exportTuVanExcel()` — xác nhận
+hiện đúng toast lỗi, không ném exception ra ngoài. `sw-admin.js` chỉ sửa qua đọc code + kiểm tra
+cú pháp (`node --check`) — không mô phỏng được Service Worker thật trong môi trường agent.
+
+**⚠️ Bài học cho các phiên sau:** sau 1 đợt code nhiều thay đổi dồn dập (như 2 phiên 14/8+18/8 này),
+nên chạy lại 1 lượt review độc lập (agent khác, không mang theo bối cảnh lúc code) trước khi coi là
+xong — agent review đã tìm ra 2 lỗi thật mà lúc code không phát hiện, dù mỗi thay đổi lúc đó đều đã
+tự test riêng lẻ (lỗi (A) chỉ lộ ra khi nhìn tổng thể luồng "thiết bị cũ + Service Worker tự cập
+nhật ngầm", lỗi (B) chỉ lộ ra khi nghĩ tới "CDN có thể lỗi" — cả 2 đều dễ bị bỏ sót nếu chỉ test
+đường happy-path bằng dữ liệu giả lập tự tay viết).
+
 **⚠️ Các nguyên nhân KHÁC có thể vẫn góp phần, KHÔNG kiểm chứng được từ code/máy chủ CI, cần PM tự
 kiểm tra trên đúng thiết bị thật đang test:**
 - **iPhone/Safari:** Web Push CHỈ hoạt động khi trang đã "Thêm vào màn hình chính" (Add to Home

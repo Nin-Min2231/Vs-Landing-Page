@@ -79,14 +79,21 @@ async function handlePush(){
     // may khac da doc khong duoc coi la may nay cung da doc. deviceId luu vao IndexedDB tu admin.html
     // (Service Worker khong doc duoc localStorage cua trang).
     const deviceId = await idbGet('device_id').catch(() => null);
+    // Nếu thiết bị này CHƯA từng ghi device_id vào IndexedDB (vd trang admin.html chưa được mở lại
+    // lần nào từ sau khi có Phase 10, nhưng Service Worker đã tự cập nhật bản mới ở tầng nền) —
+    // KHÔNG có cách nào biết thiết bị này đã đọc gì hay chưa. Coi TẤT CẢ là "chưa đọc" (readIds
+    // rỗng) sẽ khiến máy này bị lặp lại đúng vài thông báo cũ mỗi lần có push mới (thay vì chỉ
+    // báo đúng cái mới) — dùng luôn thông báo dự phòng chung (giống lúc lỗi refresh token) an toàn
+    // hơn là đoán sai trạng thái đã đọc.
+    if(!deviceId) return fallback();
     const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + tok.access_token };
     const [notifRes, readRes] = await Promise.all([
       fetch(SUPABASE_URL + '/rest/v1/notifications?select=id,noi_dung&order=created_at.desc&limit=30', { headers }),
-      deviceId ? fetch(SUPABASE_URL + '/rest/v1/notification_reads?device_id=eq.' + encodeURIComponent(deviceId) + '&select=notification_id', { headers }) : Promise.resolve(null)
+      fetch(SUPABASE_URL + '/rest/v1/notification_reads?device_id=eq.' + encodeURIComponent(deviceId) + '&select=notification_id', { headers })
     ]);
     if(!notifRes.ok) return fallback();
     const allRows = await notifRes.json();
-    const readIds = new Set(readRes && readRes.ok ? (await readRes.json()).map(r => r.notification_id) : []);
+    const readIds = new Set(readRes.ok ? (await readRes.json()).map(r => r.notification_id) : []);
     const rows = allRows.filter(n => !readIds.has(n.id)).slice(0, 5);
     if(!rows.length) return; // khong con gi chua doc (rieng may nay) -> im lang, khong hien gi ca
 
