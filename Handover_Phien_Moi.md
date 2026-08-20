@@ -1,36 +1,40 @@
-# Handover — Bàn giao sang phiên làm việc mới (2026-08-19, bản 9 — GHI ĐÈ toàn bộ bản cũ)
+# Handover — Bàn giao sang phiên làm việc mới (2026-08-20, bản 10 — GHI ĐÈ toàn bộ bản cũ)
 
-> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→8) — **không cần đọc lại bản cũ**, nội
+> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→9) — **không cần đọc lại bản cũ**, nội
 > dung quan trọng còn giá trị đã gom hết vào đây. Đọc theo đúng thứ tự: `CLAUDE.md` (toàn bộ, đặc
 > biệt mục 35-45) → file này → bắt tay vào **mục 1**.
 
 ## 0. Trạng thái ngay lúc viết file này
 
-- **✅ ĐÃ ĐÓNG HOÀN TOÀN vấn đề "thông báo không hoạt động" đã treo từ 10/8 (qua nhiều bản handover
-  liên tiếp):** nguyên nhân gốc THẬT SỰ là thiếu migration `09_supabase_setup_phase9.sql` (cột
-  `notifications.ref_parent_id`) — chưa từng được chạy trên Supabase từ lúc viết (10/8) tới khi phát
-  hiện qua Cloudflare Logs (19/8). PM đã chạy migration này, **xác nhận cả chuông trong trang VÀ
-  thông báo hệ thống trên điện thoại đều đã hoạt động đúng**. Chi tiết đầy đủ: `CLAUDE.md` mục 45.
-- Tiện thể sửa luôn `06_Backup_Tool/backup-supabase.mjs` (thiếu bảng `notification_reads` trong
-  danh sách backup + lỗi phân trang do bảng đó không có cột `id` đơn) — xem mục 45.
-- Nhánh làm việc: vẫn đẩy thẳng `main`, không bị chặn quyền push. Commit mới nhất: `77b6717`.
-- **Không còn việc gì đang treo khẩn cấp** tại thời điểm viết file này — mục 1 dưới đây là các việc
-  nên làm tiếp/theo dõi thêm, không phải sự cố cấp bách.
+- **✅ ĐÃ ĐÓNG HOÀN TOÀN vấn đề "thông báo không hoạt động" đã treo từ 10/8** (nguyên nhân gốc:
+  thiếu migration `09_supabase_setup_phase9.sql` — xem mục 2 dưới, đã có xác nhận thật từ PM).
+- **⚠️ VIỆC ĐANG TREO, ưu tiên số 1 phiên mới:** ngay sau khi sửa `06_Backup_Tool/backup-supabase.mjs`
+  (mục 3), PM chạy thử `Chay_Backup.bat` thì bị lỗi **HTTP 401 "Unregistered API key"** cho TẤT CẢ
+  18/18 bảng. Đây **KHÔNG PHẢI lỗi code** — chẩn đoán: file `06_Backup_Tool/backup-config.json`
+  (nằm trên máy PM, KHÔNG ở trong git vì bị `.gitignore` chặn — Claude Code không đọc/sửa được file
+  này) đang chứa khóa `SUPABASE_SERVICE_ROLE_KEY` CŨ, không khớp với khóa `service_role_12` mới đã
+  cập nhật lại trên Cloudflare lúc sửa vụ thông báo (mục 2, lớp 2). Đã hướng dẫn PM tự copy lại khóa
+  mới từ Supabase Dashboard → Project Settings → API Keys → "Secret keys" vào đúng file này rồi chạy
+  lại — **PM CHƯA xác nhận đã làm xong và chạy thử lại thành công chưa.**
+- Nhánh làm việc: vẫn đẩy thẳng `main`, không bị chặn quyền push. Commit mới nhất: `e9c9ee8`.
 
-## 1. Việc CẦN LÀM (không cấp bách, nhưng nên theo dõi)
+## 1. Việc CẦN LÀM NGAY
 
-1. **Xác nhận lại với PM sau vài ngày** rằng thông báo vẫn tiếp tục hoạt động ổn định (không chỉ
-   đúng lúc vừa sửa) — đặc biệt theo dõi xem lớp "quét lùi 7 ngày" (mục 39) có backfill đúng các hồ
-   sơ đến hạn trong khoảng 12-19/8 (thời gian bị lỗi) hay không, vì candidates cho các hồ sơ đó giờ
-   mới lần đầu insert thành công (trước đó luôn bị chặn bởi lỗi PGRST204 ở BƯỚC INSERT cuối, nghĩa
-   là **CHƯA CÓ dòng nào từng insert thành công cho các hồ sơ đó** — không bị chặn bởi ràng buộc
-   unique, nên backfill 7 ngày sẽ tự bắt đúng, nhưng nên xác nhận thực tế 1 lần).
-2. **Đọc kỹ bài học ở `CLAUDE.md` mục 45 + `05_Database/README.md`** trước khi thêm migration mới
+1. **Hỏi PM đã cập nhật lại `backup-config.json` và chạy lại `Chay_Backup.bat` chưa** — nếu chưa,
+   nhắc lại đúng 3 bước: mở file bằng Notepad → copy khóa `service_role_12` mới nhất từ Supabase
+   Dashboard (Project Settings → API Keys → Secret keys) dán đè vào → lưu file → chạy lại
+   `Chay_Backup.bat`. Nếu đã làm mà VẪN lỗi 401, khả năng khóa trên Supabase lại bị đổi/rotate tiếp
+   — cần PM xác nhận lại đúng khóa hiện tại đang hiển thị trên Supabase (không cần gửi giá trị khóa
+   cho Claude Code, chỉ cần biết đã copy đúng/mới nhất chưa).
+2. **Xác nhận lại với PM sau vài ngày** rằng thông báo (chuông + push điện thoại) vẫn tiếp tục hoạt
+   động ổn định (không chỉ đúng lúc vừa sửa) — đặc biệt theo dõi xem lớp "quét lùi 7 ngày" (mục 39)
+   có backfill đúng các hồ sơ đến hạn trong khoảng 12-19/8 (thời gian bị lỗi) hay không.
+3. **Đọc kỹ bài học ở `CLAUDE.md` mục 45 + `05_Database/README.md`** trước khi thêm migration mới
    bất kỳ: (a) migration viết xong PHẢI được xác nhận đã chạy THẬT trên Supabase trước khi coi là
    xong — không được để "cần làm ngay" của phase trước bị rớt mất khi viết đè handover bản mới; (b)
    thêm bảng mới thì phải đồng thời cập nhật `06_Backup_Tool/backup-supabase.mjs` (`TABLES` +
    `ORDER_BY` nếu bảng không có cột `id` đơn).
-3. Đã tạo 1 subagent tùy chỉnh `code-reviewer` tại `.claude/agents/code-reviewer.md` (tập trung lỗi
+4. Đã tạo 1 subagent tùy chỉnh `code-reviewer` tại `.claude/agents/code-reviewer.md` (tập trung lỗi
    logic + bảo mật, dùng `ReportFindings` để báo cáo) — **file này CHƯA được commit vào git** (PM
    chưa yêu cầu lưu lại). Subagent tùy chỉnh KHÔNG được nạp lại giữa phiên (chỉ đọc lúc bắt đầu
    phiên mới) — nếu cần dùng, phải là phiên chat MỚI, gọi qua Agent tool với `subagent_type:
@@ -62,17 +66,24 @@ sửa lớp 2 xong vẫn chưa hết lỗi — dễ khiến người debug (kể
 khi thực ra là 2 lỗi độc lập cộng lại. Khi 1 hệ thống "im lặng không báo lỗi" đã kéo dài NHIỀU NGÀY,
 đừng dừng lại sau khi sửa được 1 nguyên nhân — phải test thật lại từ đầu trước khi kết luận đã xong.
 
-## 3. Việc đã làm thêm trong phiên 19/8 (tiếp nối bản 8 — mục mới 45 trong `CLAUDE.md`)
+## 3. Việc đã làm thêm trong phiên 19-20/8 (tiếp nối bản 8 — mục mới 45 trong `CLAUDE.md`)
 
 Xem chi tiết đầy đủ ở `CLAUDE.md` mục 45 (đã viết kỹ, không lặp lại ở đây) — tóm tắt: chạy migration
 09 (PM tự chạy) → xác nhận thông báo hoạt động → tiện thể sửa `06_Backup_Tool/backup-supabase.mjs`
 (thêm bảng `notification_reads`, thêm `ORDER_BY` cho bảng không có cột `id` đơn) → cập nhật
 `05_Database/README.md`/`06_Backup_Tool/README.md`/`CLAUDE.md` để ghi lại bài học quy trình.
 
+PM chạy thử ngay sau đó (`Chay_Backup.bat`) → gặp lỗi 401 mới, KHÔNG liên quan tới phần code vừa
+sửa (đã xác nhận qua log: lỗi xảy ra ĐỀU cho cả 18/18 bảng, kể cả 17 bảng cũ không đổi gì) — chẩn
+đoán là do `backup-config.json` (file cấu hình cục bộ trên máy PM, ngoài phạm vi git) chưa được
+cập nhật khóa `service_role` mới — xem mục 0/1.
+
 ## 4. Cách đã test
 
 - `backup-supabase.mjs`: copy ra thư mục tạm NGOÀI dự án, mock `global.fetch`, xác nhận đúng URL
-  (bao gồm `order=`) cho cả 18 bảng, không đụng dữ liệu/mạng thật.
+  (bao gồm `order=`) cho cả 18 bảng, không đụng dữ liệu/mạng thật — xác nhận ĐÚNG PHẦN CODE.
+  **Chưa có 1 lượt backup THẬT nào chạy thành công trên máy PM với bản code mới** (lượt PM tự chạy
+  bị chặn bởi lỗi khóa cục bộ, không phải lỗi code) — cần PM xác nhận sau khi cập nhật khóa xong.
 - Việc sửa migration 09 là PM tự chạy trực tiếp trên Supabase — không phải thứ mô phỏng được, đã có
   xác nhận thật từ PM (chuông + điện thoại đều nhận được) — coi là ĐÃ XÁC MINH THẬT, khác với các
   tính năng trước đó (Phase 10, backfill...) chỉ mới test qua giả lập.
