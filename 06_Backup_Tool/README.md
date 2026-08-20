@@ -1,8 +1,8 @@
 # Tool backup dữ liệu Supabase về máy
 
-Công cụ này tải TOÀN BỘ dữ liệu (17 bảng: khách hàng, hồ sơ, tư vấn, tài chính, bài viết...) từ
-Supabase về máy tính, lưu thành file JSON + CSV (mở được bằng Excel/Notepad). Chạy tay khi nào
-muốn, không tự động.
+Công cụ này tải TOÀN BỘ dữ liệu (18 bảng: khách hàng, hồ sơ, tư vấn, tài chính, bài viết, thông
+báo...) từ Supabase về máy tính, lưu thành file JSON + CSV (mở được bằng Excel/Notepad). Chạy tay
+khi nào muốn, không tự động.
 
 ## Bước 1 — Chuẩn bị (chỉ làm 1 lần)
 
@@ -39,3 +39,12 @@ Trong thư mục con `backups/<ngày giờ>/`, ví dụ `backups/2026-08-12-1530
   đi đâu khác.
 - Muốn xóa bớt các bản backup cũ để đỡ chiếm dung lượng ổ đĩa thì xóa trực tiếp các thư mục con
   trong `backups/` là được, không ảnh hưởng gì tới dữ liệu thật trên Supabase.
+- **Khóa `service_role` dùng ở đây PHẢI luôn khớp với khóa đang cấu hình trên Cloudflare Worker**
+  (mục Bước 1) — nếu sau này khóa trên Cloudflare được đổi/cập nhật lại (vd do bị sai/hết hiệu lực,
+  đã từng xảy ra thật — xem `CLAUDE.md` mục 45), phải copy lại giá trị mới vào `backup-config.json`
+  ở đây, không thì tool sẽ báo lỗi `HTTP 401` cho toàn bộ bảng dù cấu trúc database vẫn đúng.
+- **Sự cố thật đã gặp (2026-08, xem `CLAUDE.md` mục 45):** chạy tool bị lỗi vì database có thêm 1
+  bảng mới (`notification_reads`, Phase 10) mà danh sách bảng trong `backup-supabase.mjs` chưa được
+  cập nhật theo — xem quy tắc bắt buộc ở `05_Database/README.md` mục "Quy tắc khi thêm migration
+  mới" để tránh lặp lại: **mỗi khi thêm bảng mới trong 1 migration, phải cập nhật luôn danh sách
+  `TABLES` (và `ORDER_BY` nếu bảng đó không có cột `id` đơn) trong `backup-supabase.mjs`.**

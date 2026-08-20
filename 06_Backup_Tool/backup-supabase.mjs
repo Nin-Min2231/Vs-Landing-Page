@@ -12,16 +12,27 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CONFIG_PATH = path.join(__dirname, 'backup-config.json');
 
-// Danh sach toan bo 17 bang hien co trong database (khop dung voi cac file 05_Database/*.sql) —
-// khi them bang moi trong 1 migration moi, nho them ten bang do vao day.
+// Danh sach toan bo 18 bang hien co trong database (khop dung voi cac file 05_Database/*.sql) —
+// ⚠️ khi them bang moi trong 1 migration moi, BAT BUOC them ten bang do vao day (xem
+// 05_Database/README.md muc "Quy tac khi them migration moi" - da ghi ro yeu cau nay tu 2026-08).
+// Neu bang moi KHONG co cot "id" don (vd dung khoa chinh ghep nhieu cot) thi phai khai bao them
+// vao ORDER_BY o duoi, khong thi tool se loi/phan trang sai (xem vi du notification_reads).
 const TABLES = [
   'leads', 'categories', 'posts',
   'danh_muc_nuoc', 'danh_muc_muc_dich', 'danh_muc_truong_nhom', 'danh_muc_doi_tac',
   'doi_tac', 'doi_tac_phi',
   'ho_so', 'ho_so_thanh_vien', 'ho_so_xu_ly_phat_sinh',
   'khoan_chi', 'khach_hang', 'dich_vu_gia',
-  'notifications', 'push_subscriptions'
+  'notifications', 'push_subscriptions', 'notification_reads'
 ];
+
+// Cot dung de ORDER BY luc phan trang (bat buoc phai co 1 cot/tap cot sap xep ON DINH, khong thi
+// phan trang bang Range header co the bi lap/thieu dong giua cac trang do Postgres khong dam bao
+// thu tu neu khong co ORDER BY). Mac dinh dung "id" cho moi bang - chi khai bao rieng o day cho
+// bang nao KHONG co cot "id" don (dung khoa chinh ghep nhieu cot).
+const ORDER_BY = {
+  notification_reads: 'notification_id.asc,device_id.asc'
+};
 
 function loadConfig() {
   let raw;
@@ -46,9 +57,10 @@ function loadConfig() {
 async function fetchAllRows(baseUrl, serviceRoleKey, table) {
   const rows = [];
   const pageSize = 1000;
+  const orderBy = ORDER_BY[table] || 'id.asc';
   let from = 0;
   while (true) {
-    const res = await fetch(`${baseUrl}/rest/v1/${table}?select=*&order=id.asc`, {
+    const res = await fetch(`${baseUrl}/rest/v1/${table}?select=*&order=${orderBy}`, {
       headers: {
         apikey: serviceRoleKey,
         Authorization: `Bearer ${serviceRoleKey}`,

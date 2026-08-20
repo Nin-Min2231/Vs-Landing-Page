@@ -1519,6 +1519,19 @@ im lặng, không có tín hiệu gì cho người dùng biết là đã thất 
 — xác nhận vẫn gọi đúng `POST push_subscriptions` để đồng bộ lại (trước đây sẽ KHÔNG gọi gì cả,
 đây chính là bug), (2) giả lập quyền bị từ chối — xác nhận hiện đúng toast lỗi, không gọi API nào.
 
+**⚠️ Các nguyên nhân KHÁC có thể vẫn góp phần, KHÔNG kiểm chứng được từ code/máy chủ CI, cần PM tự
+kiểm tra trên đúng thiết bị thật đang test:**
+- **iPhone/Safari:** Web Push CHỈ hoạt động khi trang đã "Thêm vào màn hình chính" (Add to Home
+  Screen) và mở TỪ ICON đó (không phải tab Safari thường) + iOS bản 16.4 trở lên. Mở qua tab Safari
+  thường thì `'PushManager' in window` sẽ luôn `false`, không có cách nào bật được bằng code.
+- **Android:** từ Android 13, hệ điều hành có thêm 1 lớp quyền thông báo CẤP HỆ THỐNG riêng cho
+  từng app/trình duyệt (Cài đặt → Ứng dụng → Chrome → Thông báo) — nếu quyền này bị tắt ở tầng OS,
+  web code không có cách nào ghi đè, permission JS vẫn báo `granted` nhưng hệ thống vẫn chặn hiện.
+- Khóa `VAPID_PRIVATE_KEY_JWK` trên Cloudflare Worker (đã xác nhận CÓ tồn tại qua ảnh chụp PM gửi
+  lúc debug mục 35, nhưng GIÁ TRỊ chưa từng verify) — nếu sai/hỏng, `worker.js` gọi push tới đúng
+  endpoint nhưng bị dịch vụ push (FCM/Mozilla...) trả lỗi 401/403, chỉ thấy được qua Cloudflare
+  Logs (Observability → Logs, bật lên rồi đợi 1 lượt cron ~10 phút, đúng lúc có thông báo mới).
+
 ## 44. Review lại toàn bộ thay đổi phiên 14/8+18/8 — 2 lỗi thật tìm thêm được, đã sửa (2026-08-18)
 
 Sau khi làm xong mục 35-43, chạy 1 agent review riêng (không nhớ gì về quá trình code, chỉ đọc diff)
@@ -1552,15 +1565,69 @@ tự test riêng lẻ (lỗi (A) chỉ lộ ra khi nhìn tổng thể luồng "t
 nhật ngầm", lỗi (B) chỉ lộ ra khi nghĩ tới "CDN có thể lỗi" — cả 2 đều dễ bị bỏ sót nếu chỉ test
 đường happy-path bằng dữ liệu giả lập tự tay viết).
 
-**⚠️ Các nguyên nhân KHÁC có thể vẫn góp phần, KHÔNG kiểm chứng được từ code/máy chủ CI, cần PM tự
-kiểm tra trên đúng thiết bị thật đang test:**
-- **iPhone/Safari:** Web Push CHỈ hoạt động khi trang đã "Thêm vào màn hình chính" (Add to Home
-  Screen) và mở TỪ ICON đó (không phải tab Safari thường) + iOS bản 16.4 trở lên. Mở qua tab Safari
-  thường thì `'PushManager' in window` sẽ luôn `false`, không có cách nào bật được bằng code.
-- **Android:** từ Android 13, hệ điều hành có thêm 1 lớp quyền thông báo CẤP HỆ THỐNG riêng cho
-  từng app/trình duyệt (Cài đặt → Ứng dụng → Chrome → Thông báo) — nếu quyền này bị tắt ở tầng OS,
-  web code không có cách nào ghi đè, permission JS vẫn báo `granted` nhưng hệ thống vẫn chặn hiện.
-- Khóa `VAPID_PRIVATE_KEY_JWK` trên Cloudflare Worker (đã xác nhận CÓ tồn tại qua ảnh chụp PM gửi
-  lúc debug mục 35, nhưng GIÁ TRỊ chưa từng verify) — nếu sai/hỏng, `worker.js` gọi push tới đúng
-  endpoint nhưng bị dịch vụ push (FCM/Mozilla...) trả lỗi 401/403, chỉ thấy được qua Cloudflare
-  Logs (Observability → Logs, bật lên rồi đợi 1 lượt cron ~10 phút, đúng lúc có thông báo mới).
+## 45. Tìm ra nguyên nhân gốc thật: thiếu migration Phase 9 → toàn bộ thông báo lỗi từ 11/8 (2026-08-19)
+
+**Kết luận cuối cùng cho vấn đề "thông báo không hoạt động" đã theo đuổi suốt mục 35/38/39/43/44:**
+sau khi đã sửa hết các lỗi code liên quan (timezone, backfill, per-device read, subscribePush,
+sw-admin.js...), PM vẫn báo test thật (đăng ký tư vấn ở trang chủ, đợi 20 phút) **KHÔNG có gì cả**
+— cả chuông trong trang lẫn điện thoại. Tra bảng `notifications` trên Supabase: dòng mới nhất vẫn
+là `id=117` từ **2026-08-11**, xác nhận **worker.js không tạo được BẤT KỲ thông báo nào** suốt hơn
+1 tuần — không phải lỗi push/hiển thị nữa, mà lỗi ngay ở bước sinh thông báo.
+
+**Truy ra bằng Cloudflare Observability → Logs** (bật "Logs" lên, đợi 1 lượt cron, đọc log thật —
+cách làm này nên áp dụng SỚM hơn cho các sự cố tương tự sau này, thay vì đoán qua nhiều vòng):
+```
+Supabase notifications?on_conflict=loai,ref_id,ref_ngay -> HTTP 400:
+{"code":"PGRST204","details":null,"hint":null,
+ "message":"Could not find the 'ref_parent_id' column of 'notifications' in the schema cache"}
+```
+**Nguyên nhân gốc: migration `05_Database/09_supabase_setup_phase9.sql` (thêm cột `ref_parent_id`,
+viết từ 2026-08-10 cùng lúc với code loại thông báo "Xử lý phát sinh") CHƯA TỪNG được chạy trên
+Supabase.** Vì `worker.js` gửi kèm `ref_parent_id` trong object của **CẢ 4 loại thông báo** (không
+chỉ riêng `xlps`, xem mục 34.C), thiếu đúng 1 cột này làm **toàn bộ** lượt insert (dù chỉ 1 loại có
+dữ liệu mới) bị PostgREST từ chối cả batch — giải thích tại sao ngay cả `dang_ky_moi` (không liên
+quan gì tới `ref_parent_id` về mặt ý nghĩa) cũng bị ảnh hưởng.
+
+**Vì sao bị bỏ sót lâu vậy — bài học về quy trình bàn giao:** Handover bản 6 (viết 2026-08-10) đã
+liệt kê rõ "cần chạy `09_supabase_setup_phase9.sql`" trong mục "Việc cần làm ngay", nhưng khi viết
+đè các bản handover sau (bản 7, bản 8 — cả 2 do phiên này viết, tập trung vào Phase 10/timezone/
+push mới) — **việc tồn đọng này không được mang qua**, coi như đã xong mà không xác nhận lại. Kết
+hợp với sự cố khóa `SUPABASE_SERVICE_ROLE_KEY` sai cùng thời điểm (mục 35) càng làm khó phân biệt
+"lỗi do khóa" hay "lỗi do thiếu migration" — cả 2 CÙNG tồn tại song song, sửa khóa xong vẫn chưa hết
+lỗi. **Quy tắc rút ra:** mỗi khi viết `Handover_Phien_Moi.md` bản mới (dù là "ghi đè hoàn toàn"),
+PHẢI tự hỏi "còn migration/thao tác thủ công nào của các phase TRƯỚC vẫn chưa xác nhận đã chạy
+xong chưa" trước khi bỏ qua — không tự động coi các mục cũ đã đóng chỉ vì bản mới không nhắc lại.
+Xem quy tắc mới thêm ở `05_Database/README.md`.
+
+**Đã khắc phục:** PM tự chạy `09_supabase_setup_phase9.sql` trong SQL Editor (file idempotent, an
+toàn) — PM xác nhận sau đó thông báo hoạt động đúng (cả chuông và điện thoại).
+
+**Việc phụ phát sinh — công cụ backup dữ liệu bị lỗi do cấu trúc DB thay đổi:** cùng lúc điều tra,
+phát hiện `06_Backup_Tool/backup-supabase.mjs` (script backup tay, xem mục "06_Backup_Tool") có 2
+vấn đề cần sửa:
+1. Danh sách bảng `TABLES` (17 bảng) chưa có bảng mới `notification_reads` (Phase 10) — backup bị
+   thiếu 1 bảng, không đồng bộ với schema DB hiện tại.
+2. `notification_reads` dùng khóa chính GHÉP (`notification_id`+`device_id`), KHÔNG có cột `id` đơn
+   như 17 bảng còn lại — hàm `fetchAllRows()` cũ hardcode `order=id.asc` để phân trang ổn định, nếu
+   thêm bảng này vào `TABLES` mà không sửa gì thêm sẽ lỗi (hoặc phân trang sai, có thể lặp/thiếu
+   dòng nếu Postgres không đảm bảo thứ tự khi không có `ORDER BY` xác định).
+
+**Đã sửa** `backup-supabase.mjs`: thêm `notification_reads` vào `TABLES` (giờ 18 bảng), thêm object
+`ORDER_BY` khai báo cột sắp xếp riêng cho bảng không có `id` đơn
+(`notification_reads: 'notification_id.asc,device_id.asc'`), `fetchAllRows()` đọc
+`ORDER_BY[table] || 'id.asc'` thay vì hardcode. Đã test bằng cách copy ra thư mục tạm NGOÀI dự án,
+mock `fetch`, xác nhận cả 18 bảng đều tạo đúng URL (17 bảng cũ vẫn `order=id.asc` như trước, bảng
+mới dùng đúng `order=notification_id.asc,device_id.asc`).
+
+**Đã cập nhật tài liệu để tránh lặp lại (PM yêu cầu):**
+- `05_Database/README.md` mục "Quy tắc khi thêm migration mới": thêm quy tắc bắt buộc — tạo bảng
+  mới PHẢI đồng thời cập nhật `TABLES`/`ORDER_BY` trong `backup-supabase.mjs`, không phải bước tự
+  động, dễ quên nếu chỉ nhớ chạy SQL.
+- `05_Database/README.md`: thêm hẳn 1 đoạn kể lại sự cố migration 09 bị bỏ sót làm bài học quy trình
+  bàn giao (xem trên).
+- `06_Backup_Tool/README.md`: cập nhật số bảng (17→18), thêm lưu ý khóa `service_role` dùng ở đây
+  phải luôn khớp với khóa trên Cloudflare Worker (nếu 1 bên đổi mà quên đổi bên kia sẽ lỗi 401 dù
+  cấu trúc DB không sai gì), dẫn link chéo sang mục này.
+- `backup-supabase.mjs` (comment đầu mảng `TABLES`): nhấn mạnh rõ 2 việc bắt buộc khi thêm bảng mới
+  (thêm vào `TABLES` + khai báo `ORDER_BY` nếu không có cột `id` đơn), không chỉ ghi chung "nhớ thêm
+  tên bảng" như bản cũ (quá mơ hồ, không nhắc tới trường hợp `ORDER_BY`).

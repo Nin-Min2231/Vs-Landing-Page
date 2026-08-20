@@ -34,11 +34,21 @@
     tránh máy A đọc làm máy B tưởng đã xem).
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
-project đang dùng đã qua đủ cả 4 phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy
-gần nhất (Claude Code sẽ báo rõ file nào khi hoàn thành 1 thay đổi cần migration). Tất cả 4 file
+project đang dùng đã qua đủ các phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy
+gần nhất (Claude Code sẽ báo rõ file nào khi hoàn thành 1 thay đổi cần migration). Tất cả file
 đều viết theo kiểu **idempotent** (dùng `if not exists`/`if exists`/`DO` block tự kiểm tra điều
-kiện) — chạy lại toàn bộ cả 4 file theo đúng thứ tự trên **không gây lỗi và không mất dữ liệu**,
+kiện) — chạy lại toàn bộ các file theo đúng thứ tự trên **không gây lỗi và không mất dữ liệu**,
 nếu nghi ngờ có sai lệch thì cứ chạy lại từ đầu cho chắc.
+
+**⚠️ Sự cố thật đã gặp (2026-08) — migration viết xong nhưng KHÔNG được chạy, không ai biết cho
+tới khi kiểm tra log lỗi thật:** file `09_supabase_setup_phase9.sql` (thêm cột `ref_parent_id`)
+được tạo cùng lúc với code cần cột đó, nhưng bị bỏ sót không chạy qua nhiều phiên làm việc/nhiều
+lần viết lại tài liệu bàn giao — hậu quả: **toàn bộ 4 loại thông báo bị lỗi âm thầm gần 10 ngày**
+(worker.js insert thất bại với lỗi PGRST204 "không tìm thấy cột", nhưng không hiện ra bất kỳ đâu
+ngoài log lỗi của Cloudflare Worker — xem `CLAUDE.md` mục 45). **Bài học:** 1 migration mới viết
+xong KHÔNG coi là "xong việc" nếu chưa xác nhận THẬT đã chạy trên Supabase — nếu không tự chạy
+được (Claude Code không có quyền), phải nêu rõ trong phần tóm tắt bàn giao mỗi phiên VÀ xác nhận
+lại ở phiên sau (không chỉ liệt kê 1 lần rồi quên khi viết đè bản bàn giao mới).
 
 ## Quy tắc khi thêm migration mới
 
@@ -54,3 +64,9 @@ nếu nghi ngờ có sai lệch thì cứ chạy lại từ đầu cho chắc.
   bọc lại đoạn liên quan trong file CŨ bằng điều kiện kiểm tra (`DO` block + `information_schema`)
   để file cũ vẫn an toàn khi chạy lại trên database đã qua migration mới, không chỉ sửa mỗi file
   mới rồi bỏ mặc file cũ.
+- **Nếu migration mới TẠO BẢNG MỚI:** bắt buộc cập nhật thêm `06_Backup_Tool/backup-supabase.mjs`
+  — thêm tên bảng vào mảng `TABLES`, và nếu bảng đó KHÔNG có cột `id` đơn (vd dùng khóa chính ghép
+  nhiều cột) thì khai báo thêm vào `ORDER_BY` trong file đó (không thì tool backup sẽ lỗi/phân
+  trang sai — sự cố thật đã gặp với bảng `notification_reads`, xem `06_Backup_Tool/README.md` và
+  `CLAUDE.md` mục 45). Đây là 1 bước RIÊNG, không tự động — dễ bị quên nếu chỉ nhớ chạy SQL mà
+  không rà lại tool backup.
