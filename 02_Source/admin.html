@@ -858,7 +858,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="dlg-section-title">Thông tin bài viết</div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Tiêu đề <span class="req-badge">Bắt buộc</span></label><input type="text" id="postTitle"></div>
-          <div class="dlg-field"><label>Danh mục</label><select id="postCat"></select></div>
+          <div class="dlg-field"><label>Danh mục <span class="req-badge">Bắt buộc</span></label><select id="postCat"></select></div>
           <div class="dlg-field"><label>Phân loại <span class="req-badge">Bắt buộc</span></label>
             <input type="text" id="postPhanLoai" list="postPhanLoaiList" placeholder="VD: Tin tức &amp; Kinh nghiệm xin Visa">
             <datalist id="postPhanLoaiList"></datalist>
@@ -2109,7 +2109,7 @@ async function loadCats(){
   try{
     CATS = await api('categories?select=*&order=name') || [];
     renderCats();
-    $('postCat').innerHTML = '<option value="">-- Không chọn --</option>'+
+    $('postCat').innerHTML = '<option value="">-- Chọn --</option>'+
       CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
     const fCat=$('fPostCat'), fCatCur=fCat.value;
     fCat.innerHTML = '<option value="">Tất cả danh mục</option>'+
@@ -2213,11 +2213,13 @@ function closePostModal(){ confirmCloseDialog('postOverlay', ()=>$('postOverlay'
 async function savePost(){
   const title=$('postTitle').value.trim();
   if(!title){ toast('Nhập tiêu đề bài viết','err'); return; }
+  const category_id=$('postCat').value;
+  if(!category_id){ toast('Chọn Danh mục','err'); return; }
   const phan_loai=$('postPhanLoai').value.trim();
   if(!phan_loai){ toast('Nhập Phân loại','err'); return; }
   const body={
     title,
-    category_id: $('postCat').value||null,
+    category_id,
     phan_loai,
     image_url: $('postImage').value.trim()||null,
     content: $('postContent').value,

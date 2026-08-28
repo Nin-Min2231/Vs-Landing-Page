@@ -996,8 +996,8 @@ function openPostDetail(i){
       <div class="meta">${new Date(p.created_at).toLocaleDateString('vi-VN')}</div>
       <div class="content">${esc(p.content||'')}</div>
     </div>`;
-  document.getElementById('postDetailBody').scrollTop = 0;
   document.getElementById('postOverlay').classList.add('show');
+  document.getElementById('postDetailBody').scrollTop = 0;
 }
 function closePostDetail(){ document.getElementById('postOverlay').classList.remove('show'); }
 document.getElementById('postOverlay').addEventListener('click', e=>{
