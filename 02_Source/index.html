@@ -1000,12 +1000,23 @@ document.getElementById('postOverlay').addEventListener('click', e=>{
 });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePostDetail(); });
 
-/* Tự khóa/mở cuộn trang chính theo trạng thái hiện/ẩn của popup bài viết */
+/* Tự khóa/mở cuộn trang chính theo trạng thái hiện/ẩn của popup bài viết.
+   Lưu lại vị trí cuộn TRƯỚC khi khóa: class "no-scroll" (overflow:hidden + height:100%) làm
+   scrollTop bị trình duyệt reset về 0 NGAY LÚC khóa (không phải lúc mở khóa) — nếu không tự lưu
+   và khôi phục lại thủ công, đóng dialog xong trang sẽ luôn nhảy về đầu dù trước đó đang cuộn ở
+   vị trí bất kỳ (đã xác nhận qua test: đọc 1 bài ở giữa/cuối trang, đóng dialog bị nhảy về đầu). */
 function initScrollLock(){
+  let savedScrollY = 0;
   const check = ()=>{
     const anyOpen = [...document.querySelectorAll('.post-overlay')].some(o=>o.classList.contains('show'));
+    const wasLocked = document.documentElement.classList.contains('no-scroll');
+    if(anyOpen && !wasLocked) savedScrollY = window.scrollY;
     document.documentElement.classList.toggle('no-scroll', anyOpen);
     document.body.classList.toggle('no-scroll', anyOpen);
+    if(!anyOpen && wasLocked){
+      document.documentElement.scrollTop = savedScrollY;
+      document.body.scrollTop = savedScrollY;
+    }
   };
   document.querySelectorAll('.post-overlay').forEach(el=>{
     new MutationObserver(check).observe(el, {attributes:true, attributeFilter:['class']});
