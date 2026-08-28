@@ -1013,7 +1013,11 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePostDetail()
    rồi khôi phục lại đúng scrollTop đã lưu — BẮT BUỘC dùng scrollTo({behavior:'instant'}) chứ
    không gán thẳng .scrollTop, vì <html> có scroll-behavior:smooth (dùng cho menu) áp dụng luôn cho
    MỌI thay đổi scrollTop kể cả gán bằng code, nên gán thẳng vẫn bị chạy hiệu ứng cuộn mượt từ đầu
-   trang xuống thay vì về thẳng tức thì (đã xác nhận qua test thật trên browser + điện thoại). */
+   trang xuống thay vì về thẳng tức thì (đã xác nhận qua test thật trên browser + điện thoại).
+   Bù thêm padding-right = đúng bề ngang thanh cuộn dọc: html.no-scroll{overflow:hidden} làm thanh
+   cuộn biến mất, khiến clientWidth giãn rộng thêm vài chục px trên trình duyệt desktop dùng thanh
+   cuộn cổ điển (không phải overlay scrollbar của macOS/di động) — không bù sẽ làm toàn trang giật
+   ngang nhẹ đúng lúc mở/đóng dialog, cùng bản chất với lỗi giật dọc đã sửa ở trên. */
 function initScrollLock(){
   let savedScrollY = 0;
   const check = ()=>{
@@ -1021,11 +1025,14 @@ function initScrollLock(){
     const wasLocked = document.documentElement.classList.contains('no-scroll');
     if(anyOpen && !wasLocked){
       savedScrollY = window.scrollY;
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      if(scrollbarWidth>0) document.documentElement.style.paddingRight = scrollbarWidth+'px';
       document.body.style.top = (-savedScrollY)+'px';
     }
     document.documentElement.classList.toggle('no-scroll', anyOpen);
     document.body.classList.toggle('no-scroll', anyOpen);
     if(!anyOpen && wasLocked){
+      document.documentElement.style.paddingRight = '';
       document.body.style.top = '';
       window.scrollTo({top: savedScrollY, left: 0, behavior: 'instant'});
     }

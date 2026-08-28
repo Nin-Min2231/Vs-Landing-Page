@@ -1631,3 +1631,76 @@ mới dùng đúng `order=notification_id.asc,device_id.asc`).
 - `backup-supabase.mjs` (comment đầu mảng `TABLES`): nhấn mạnh rõ 2 việc bắt buộc khi thêm bảng mới
   (thêm vào `TABLES` + khai báo `ORDER_BY` nếu không có cột `id` đơn), không chỉ ghi chung "nhớ thêm
   tên bảng" như bản cũ (quá mơ hồ, không nhắc tới trường hợp `ORDER_BY`).
+
+## 46. Landing page: sửa lỗi thật "bài viết theo Danh mục" bị treo từ 10/8 + dialog bài viết giật
+    khi mở/đóng + bắt buộc chọn Danh mục khi lưu bài viết (2026-08-21)
+
+**A. Nguyên nhân thật khiến section "Tin tức"/menu theo Danh mục biến mất khỏi trang chủ:** PM báo
+1 bài viết mới không hiện — điều tra ra không chỉ riêng bài đó mà **toàn bộ section "Tin tức" biến
+mất luôn**, dù dữ liệu/Danh mục hoàn toàn đúng. Nguyên nhân: script "DANH MỤC BÀI VIẾT ĐỘNG" (mục
+31.F, viết 6/8) gọi `closeMobileMenuOnClick(a)` cho mỗi menu item chèn động — hàm này **đã bị xóa**
+khi đổi cơ chế đóng menu mobile sang event delegation (mục 34.A, 10/8) nhưng quên dọn lời gọi orphan
+này. Hậu quả: mỗi lần tải trang, script build menu/section theo Danh mục chạy tới nhóm ĐẦU TIÊN
+(A-Z, "Thủ tục Visa") → tạo menu xong → gọi hàm không tồn tại → `ReferenceError` bị `catch` ở cuối
+IIFE nuốt âm thầm → dừng ngay tại đó, không tạo được section nào (kể cả "Thủ tục Visa"), và nhóm xử
+lý SAU đó ("Tin tức") không bao giờ được chạy tới — tính năng này treo **từ 10/8 tới nay** mà không
+ai biết vì không có console error hiển thị (bị nuốt), giống hệt kiểu sự cố "im lặng không báo lỗi"
+đã gặp ở mục 45. Đã sửa: xóa lời gọi orphan này (event delegation trên `#navLinks` đã tự lo việc
+đóng menu cho MỌI thẻ `<a>` kể cả link chèn động, không cần gọi riêng — xem mục 34.A).
+
+**⚠️ Bài học lặp lại (đã ghi ở mục 45):** khi xóa/đổi tên 1 hàm dùng chung, PHẢI grep toàn file tìm
+hết mọi nơi gọi tới hàm đó trước khi coi là xong — không chỉ sửa đúng chỗ đang làm việc. Lỗi này
+đặc biệt nguy hiểm vì nằm trong 1 IIFE có `try/catch` bọc ngoài nuốt lỗi (mục đích ban đầu là để 1
+lỗi tải bài viết không làm crash cả trang) — nhưng đồng thời cũng nuốt luôn lỗi lập trình thật, làm
+mất hoàn toàn tín hiệu debug. Nếu sau này thêm code mới trong các IIFE có try/catch tương tự (SEO,
+category sections...), cân nhắc `console.error(e)` bên trong `catch` (không ảnh hưởng người dùng
+cuối, chỉ hiện trong DevTools) thay vì nuốt hoàn toàn im lặng, để dễ debug hơn nếu tái diễn.
+
+**B. Dialog xem chi tiết bài viết bị giật khi mở/đóng — sửa qua 3 lượt (PM phản hồi từng lượt):**
+1. **Lượt 1** — đóng dialog nhảy về đầu trang: cơ chế khóa cuộn cũ `html.no-scroll,body.no-scroll
+   {overflow:hidden;height:100%}` làm trình duyệt reset `scrollTop` về 0 NGAY LÚC khóa (không phải
+   lúc mở khóa) — không thấy vì backdrop popup che, chỉ lộ ra khi đóng dialog. **Đã đổi hẳn kỹ
+   thuật khóa cuộn** sang `position:fixed` + `top` âm (mẫu chuẩn kiểu "body-scroll-lock"): lúc khóa
+   lưu `window.scrollY` rồi ghim `body{position:fixed}` đứng yên đúng vị trí bằng `top:-scrollY`
+   (không đụng gì tới `scrollTop` thật nên không có gì để nhảy); lúc mở khóa gỡ ghim + khôi phục lại
+   đúng `scrollTop` đã lưu.
+2. **Lượt 2** — khôi phục vị trí lúc đóng vẫn bị animation (không tức thì): `<html>` có
+   `scroll-behavior:smooth` (dùng cho menu) áp dụng luôn cho MỌI thay đổi `scrollTop` kể cả gán
+   bằng code, không chỉ `scrollTo()`/`scrollIntoView()`. Đổi sang
+   `window.scrollTo({top,left,behavior:'instant'})` — tham số `behavior` truyền tường minh luôn
+   thắng CSS `scroll-behavior`.
+3. **Lượt 3** — mở dialog không về đầu nội dung (giữ vị trí đọc dở từ lần mở trước): thứ tự cũ gán
+   `postDetailBody.scrollTop=0` TRƯỚC khi thêm class `show` (lúc dialog còn `display:none`, chưa
+   có layout thật). Đổi thứ tự: thêm `show` TRƯỚC, reset `scrollTop=0` SAU — đảm bảo reset diễn ra
+   khi dialog đã thật sự hiển thị.
+
+Sau khi review lại toàn bộ 3 lượt sửa (agent review riêng, xem quy tắc mục 44), phát hiện thêm 1
+vấn đề tồn tại từ TRƯỚC cả 3 lượt sửa trên (không phải regression mới, nhưng cùng khối CSS vừa
+động tới nên sửa luôn): `html.no-scroll{overflow:hidden}` làm thanh cuộn dọc biến mất, khiến nội
+dung giãn rộng thêm đúng bằng bề ngang thanh cuộn cũ trên desktop dùng thanh cuộn cổ điển (không
+ảnh hưởng mobile — dùng overlay scrollbar không chiếm layout, chiếm 70%+ traffic dự kiến của dự
+án) → giật ngang nhẹ lúc mở/đóng dialog. Đã bù bằng `padding-right` = đúng độ rộng thanh cuộn
+(`window.innerWidth - document.documentElement.clientWidth`) trong lúc khóa, xóa lúc mở khóa —
+kỹ thuật chuẩn các thư viện body-scroll-lock hay dùng.
+
+Toàn bộ logic khóa cuộn cuối cùng nằm trong `initScrollLock()` (cuối script `index.html`) — nếu
+sau này cần thêm 1 popup/dialog khác cũng cần khóa cuộn trang nền, thêm class `post-overlay` vào
+overlay đó (hàm `check()` tự quét MỌI `.post-overlay` đang `.show`, không hardcode riêng 1 dialog)
+hoặc copy nguyên khối `initScrollLock()`/CSS `.no-scroll` nếu overlay đó ở ngoài phạm vi này.
+
+**C. `admin.html` — tab "Bài viết", field "Danh mục" giờ BẮT BUỘC chọn:** đây chính là nguyên nhân
+gốc khiến bài viết ở mục A có thể được lưu mà KHÔNG gán Danh mục ngay từ đầu (dù bug ở mục A mới là
+lý do làm mất TOÀN BỘ section, không chỉ riêng bài đó) — trước đây field "Danh mục" trong dialog
+`postOverlay` không có nhãn "Bắt buộc" và không được validate, chỉ có "Phân loại"/"Tiêu đề" bắt
+buộc. Đã thêm `<span class="req-badge">Bắt buộc</span>` + chặn `savePost()` nếu chưa chọn (toast
+"Chọn Danh mục"), đổi placeholder `"-- Không chọn --"` → `"-- Chọn --"` cho khớp quy ước mọi field
+bắt buộc khác trong file (`optsFromDanhMuc()` và tương tự). **Lưu ý:** bài viết CŨ đã có sẵn
+`category_id=null` trong DB (tạo trước khi có validate này) không bị ảnh hưởng tự động — chỉ khi
+mở lại để sửa và bấm Lưu thì mới bị chặn buộc phải chọn Danh mục trước.
+
+**Đã test qua Claude Browser** (curl trực tiếp Supabase REST API để xác nhận dữ liệu, đọc/chạy lại
+từng đoạn script bằng `javascript_tool` để tái hiện đúng lỗi `ReferenceError`, dựng server tĩnh
+local `python -m http.server` để test bản sửa trước khi deploy) + **PM tự test trên browser thật
+và điện thoại xác nhận OK** cho cả 3 lượt sửa dialog. Đã chạy 1 lượt review độc lập theo quy tắc
+mục 44 sau khi PM xác nhận OK — tìm thêm đúng 1 vấn đề nhẹ (giật ngang do scrollbar, mục B) và đã
+sửa luôn trước khi merge.
