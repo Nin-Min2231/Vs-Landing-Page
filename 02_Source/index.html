@@ -1010,8 +1010,10 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePostDetail()
    trình duyệt reset scrollTop về 0 NGAY LÚC khóa, gây nhảy lên đầu lúc MỞ popup, thấy được vì
    backdrop trong suốt 60%). Lúc khóa: lưu window.scrollY rồi ghim body đứng yên đúng vị trí hiện
    tại bằng top âm — không đụng gì tới scrollTop thật nên không có gì để nhảy. Lúc mở khóa: bỏ ghim
-   rồi tự gán lại đúng scrollTop đã lưu (không dùng window.scrollTo để tránh bị hiệu ứng
-   scroll-behavior:smooth của <html> làm chạy cuộn có animation thay vì về thẳng tức thì). */
+   rồi khôi phục lại đúng scrollTop đã lưu — BẮT BUỘC dùng scrollTo({behavior:'instant'}) chứ
+   không gán thẳng .scrollTop, vì <html> có scroll-behavior:smooth (dùng cho menu) áp dụng luôn cho
+   MỌI thay đổi scrollTop kể cả gán bằng code, nên gán thẳng vẫn bị chạy hiệu ứng cuộn mượt từ đầu
+   trang xuống thay vì về thẳng tức thì (đã xác nhận qua test thật trên browser + điện thoại). */
 function initScrollLock(){
   let savedScrollY = 0;
   const check = ()=>{
@@ -1025,8 +1027,7 @@ function initScrollLock(){
     document.body.classList.toggle('no-scroll', anyOpen);
     if(!anyOpen && wasLocked){
       document.body.style.top = '';
-      document.documentElement.scrollTop = savedScrollY;
-      document.body.scrollTop = savedScrollY;
+      window.scrollTo({top: savedScrollY, left: 0, behavior: 'instant'});
     }
   };
   document.querySelectorAll('.post-overlay').forEach(el=>{
