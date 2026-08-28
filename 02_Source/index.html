@@ -949,7 +949,8 @@ function slugifyCatName(s){
       a.textContent = '📰 '+group.name;
       li.appendChild(a);
       if(faqLi) faqLi.parentNode.insertBefore(li, faqLi); else document.getElementById('navLinks').appendChild(li);
-      closeMobileMenuOnClick(a);
+      // Không cần gọi closeMobileMenuOnClick(a) riêng — listener delegation trên #navLinks
+      // (mục 34.A) đã tự đóng menu mobile cho MỌI thẻ <a> kể cả link chèn động này.
 
       // Section
       const section = document.createElement('section');
