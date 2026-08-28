@@ -310,6 +310,14 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .money-input{text-align:right}
 .money-readonly{background:#E6F8EB!important;color:#111418!important;text-align:right;
   font-weight:700;font-size:15px}
+
+/* ===== Danh sách tin nhắn trong dialog "Chi tiết hội thoại" (tab Quản lý Chat, Chat Box Release 1) ===== */
+.chat-msg-list{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.chat-msg-item{max-width:80%;padding:8px 12px;border-radius:10px;font-size:14px;line-height:1.5;
+  white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid var(--bd)}
+.chat-msg-item.role-assistant{align-self:flex-start}
+.chat-msg-item.role-user{align-self:flex-end;background:var(--pl)}
+.chat-msg-item .chat-msg-meta{font-size:11px;color:var(--mut);font-weight:600;margin-bottom:3px}
 .status-select.st-dxl{background:#FFF2E0}
 .status-select.st-dn{background:#FEF3C7}
 .status-select.st-dau{background:#DCFCE7}
@@ -517,6 +525,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
   <nav class="tabs">
     <button class="tab active" data-tab="dash" onclick="switchTab('dash')">📊 Dashboard</button>
     <button class="tab" data-tab="tuvan" onclick="switchTab('tuvan')">📞 Tư vấn</button>
+    <button class="tab" data-tab="chat" onclick="switchTab('chat')">💬 Quản lý Chat</button>
     <button class="tab" data-tab="hoso" onclick="switchTab('hoso')">🗃 Hồ sơ</button>
     <button class="tab" data-tab="khachhang" onclick="switchTab('khachhang')">👥 Thông tin khách hàng</button>
     <button class="tab" data-tab="taichinh" onclick="switchTab('taichinh')">💰 Tài chính</button>
@@ -611,6 +620,34 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <tbody id="tvBody"></tbody>
         </table>
         <div class="empty hidden" id="tvEmpty">Chưa có dữ liệu tư vấn</div>
+      </div>
+    </section>
+
+    <!-- ===== TAB QUẢN LÝ CHAT (Chat Box Release 1, 2026-08-28) ===== -->
+    <section id="tab-chat" class="hidden tab-scroll">
+      <div class="panel-head">
+        <h2>Quản lý Chat</h2>
+        <div class="filters">
+          <input type="search" id="fChatSearch" placeholder="Tìm tên / SĐT khách..." oninput="renderChatSessions()" style="width:200px">
+          <span class="filters-label">Từ ngày</span>
+          <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="fChatTuNgay" oninput="onDateInput(this)" onchange="renderChatSessions()" style="width:135px">
+          <span class="filters-label">đến</span>
+          <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="fChatDenNgay" oninput="onDateInput(this)" onchange="renderChatSessions()" style="width:135px">
+          <button class="btn btn-g" onclick="loadChatLogs()">↻ Tải lại</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th>
+            <th class="sortable" onclick="onSortClick('chat','thoigian',renderChatSessions)">Thời gian<span class="sort-ic" data-tbl="chat" data-col="thoigian"></span></th>
+            <th class="sortable" onclick="onSortClick('chat','khach',renderChatSessions)">Khách hàng<span class="sort-ic" data-tbl="chat" data-col="khach"></span></th>
+            <th class="sortable" onclick="onSortClick('chat','sotin',renderChatSessions)">Số tin nhắn<span class="sort-ic" data-tbl="chat" data-col="sotin"></span></th>
+            <th class="th-center">Thao tác</th>
+          </tr></thead>
+          <tbody id="chatBody"></tbody>
+        </table>
+        <div class="empty hidden" id="chatEmpty">Chưa có hội thoại nào</div>
       </div>
     </section>
 
@@ -923,6 +960,28 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <div class="modal-actions dlg-foot">
       <button class="btn btn-g" onclick="closeTvModal()">Đóng lại</button>
       <button class="btn btn-p" id="tvSaveBtn" onclick="saveTuVan()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL CHI TIẾT HỘI THOẠI (Quản lý Chat) ============
+     Dialog CHỈ ĐỌC (không có field nhập liệu nào) nên KHÔNG áp dụng snapshotDialog/confirmCloseDialog
+     (01_Docs/10_Chuan_Dialog_Chung.md mục 9.1 — quy tắc đó chỉ bắt buộc cho dialog có dữ liệu nhập). -->
+<div class="overlay hidden" id="chatDetailOverlay">
+  <div class="modal modal-lg dlg-standard">
+    <div class="dlg-head">
+      <h3 id="chatDetailTitle">Chi tiết hội thoại</h3>
+      <button type="button" class="modal-x" onclick="closeChatDetailModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="dlg-body">
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin phiên chat</div>
+        <div id="chatDetailInfo" style="font-size:14px;color:var(--mut)"></div>
+      </div>
+      <div class="chat-msg-list" id="chatDetailMsgs"></div>
+    </div>
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeChatDetailModal()">Đóng lại</button>
     </div>
   </div>
 </div>
@@ -1365,6 +1424,7 @@ let KHOAN_CHI = [], TC_ROWS = [];
 let KHACH_HANG = [];
 let DICH_VU_GIA = [];
 let NOTIFICATIONS = [];
+let CHAT_LOGS = [], CHAT_SESSIONS = [];
 const REMEMBER_KEY = 'tv_admin_refresh_token';
 /* ==== IndexedDB dùng chung với sw-admin.js (cùng tên db/store/key) — Service Worker KHÔNG đọc
    được localStorage của trang, chỉ đọc được IndexedDB, nên refresh token cần lưu thêm 1 bản ở
@@ -2063,9 +2123,10 @@ async function maybeAskPushPermission(){
 /* ==================== TAB ==================== */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
-  ['dash','tuvan','hoso','khachhang','taichinh','doitac','settings','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
+  ['dash','tuvan','chat','hoso','khachhang','taichinh','doitac','settings','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
   if(name==='dash') loadDashboard();
   if(name==='taichinh') loadTaiChinh();
+  if(name==='chat') loadChatLogs();
 }
 
 /* ==================== LEADS (Khách đăng ký — tab gốc Phase 1, giữ nguyên) ==================== */
@@ -2102,6 +2163,89 @@ function exportTuVanExcel(){
     XLSX.writeFile(wb, 'tu_van_'+tcToday()+'.xlsx');
     toast('Đã xuất '+LEADS.length+' dòng ra Excel');
   }catch(e){ toast('Lỗi xuất Excel: '+e.message,'err'); }
+}
+
+/* ==================== QUẢN LÝ CHAT (Chat Box Release 1, 2026-08-28) ====================
+   Không có bảng "sessions" riêng — mỗi phiên chat là 1 nhóm các dòng chat_logs cùng session_id
+   (session_id sinh ở client index.html, xem worker.js/index.html). Gom nhóm ngay tại client bằng
+   chatGroupSessions() sau khi tải toàn bộ chat_logs, không cần view/RPC riêng ở Supabase (bảng nhỏ,
+   phù hợp quy mô Release 1). Xem 08_Chatbox/Dac_ta_Trien_khai_Chatbox.md mục 6.3 (FR-CB-10,11,12). */
+async function loadChatLogs(){
+  try{
+    CHAT_LOGS = await api('chat_logs?select=*,leads(name,phone)&order=created_at.desc') || [];
+    renderChatSessions();
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải Quản lý Chat: '+e.message,'err'); }
+}
+function chatGroupSessions(){
+  const map = new Map();
+  for(const m of CHAT_LOGS){
+    if(!map.has(m.session_id)) map.set(m.session_id, { session_id:m.session_id, messages:[], lead:null, firstTime:m.created_at, lastTime:m.created_at });
+    const s = map.get(m.session_id);
+    s.messages.push(m);
+    if(m.created_at > s.lastTime) s.lastTime = m.created_at;
+    if(m.created_at < s.firstTime) s.firstTime = m.created_at;
+    if(m.leads) s.lead = m.leads; // join leads(name,phone) qua lead_id — null nếu phiên chưa để lại thông tin
+  }
+  return [...map.values()];
+}
+function renderChatSessions(){
+  CHAT_SESSIONS = chatGroupSessions();
+  const kw = $('fChatSearch').value.trim();
+  const tuNgay = toISODate($('fChatTuNgay').value.trim());
+  const denNgay = toISODate($('fChatDenNgay').value.trim());
+  let rows = CHAT_SESSIONS.filter(s=>{
+    if(kw){ // tìm không phân biệt dấu tiếng Việt, theo đúng quy tắc chung (vnNorm, xem CLAUDE.md mục 13)
+      const hay = (s.lead?.name||'')+' '+(s.lead?.phone||'');
+      if(!vnNorm(hay).includes(vnNorm(kw))) return false;
+    }
+    const d = (s.lastTime||'').slice(0,10);
+    if(tuNgay && d<tuNgay) return false;
+    if(denNgay && d>denNgay) return false;
+    return true;
+  });
+  rows.sort((a,b)=>(b.lastTime||'').localeCompare(a.lastTime||'')); // mặc định: phiên mới nhất trước
+  rows = applySort('chat', rows, {
+    thoigian: r=>r.lastTime||'',
+    khach: r=>r.lead ? (r.lead.name||'') : '',
+    sotin: r=>r.messages.length
+  });
+  $('chatEmpty').classList.toggle('hidden', rows.length>0);
+  $('chatBody').innerHTML = rows.map((s,i)=>{
+    const khach = s.lead
+      ? esc(s.lead.name||'')+(s.lead.phone?' – '+esc(s.lead.phone):'')
+      : '<span style="color:var(--mut)">Chưa để lại thông tin</span>';
+    return '<tr><td>'+(i+1)+'</td><td>'+fmtTime(s.lastTime)+'</td><td>'+khach+'</td><td>'+s.messages.length+'</td>'+
+      '<td class="td-actions">'+
+        '<button class="btn btn-p" onclick="openChatDetailModal(\''+s.session_id+'\')">Xem chi tiết</button>'+
+        '<button class="btn btn-d" onclick="delChatSession(\''+s.session_id+'\')">Xóa</button>'+
+      '</td></tr>';
+  }).join('');
+  applyRowLabels('chatBody');
+  updateSortIcons('chat');
+}
+function openChatDetailModal(sessionId){
+  const s = CHAT_SESSIONS.find(x=>x.session_id===sessionId);
+  if(!s) return;
+  const khach = s.lead ? esc(s.lead.name||'')+(s.lead.phone?' – '+esc(s.lead.phone):'') : 'Chưa để lại thông tin liên hệ';
+  $('chatDetailInfo').innerHTML = 'Khách hàng: <b>'+khach+'</b><br>Bắt đầu: '+fmtTime(s.firstTime)+' — Kết thúc: '+fmtTime(s.lastTime)+' — '+s.messages.length+' tin nhắn';
+  const msgs = [...s.messages].sort((a,b)=>(a.created_at||'').localeCompare(b.created_at||''));
+  $('chatDetailMsgs').innerHTML = msgs.map(m=>
+    '<div class="chat-msg-item role-'+(m.role==='user'?'user':'assistant')+'">'+
+      '<div class="chat-msg-meta">'+(m.role==='user'?'Khách':'Trợ lý AI')+' · '+fmtTime(m.created_at)+' · '+(m.lang==='en'?'EN':'VI')+'</div>'+
+      esc(m.message)+
+    '</div>'
+  ).join('');
+  $('chatDetailOverlay').classList.remove('hidden');
+}
+function closeChatDetailModal(){ $('chatDetailOverlay').classList.add('hidden'); }
+async function delChatSession(sessionId){
+  if(!await showConfirmPopup({message:'Xóa toàn bộ hội thoại này? Không thể hoàn tác.', danger:true})) return;
+  try{
+    await api('chat_logs?session_id=eq.'+encodeURIComponent(sessionId), {method:'DELETE', prefer:'return=minimal'});
+    closeChatDetailModal();
+    await loadChatLogs();
+    toast('Đã xóa hội thoại');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 
 /* ==================== CATEGORIES (Danh mục bài viết — giữ nguyên) ==================== */

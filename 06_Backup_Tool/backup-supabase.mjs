@@ -12,7 +12,7 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CONFIG_PATH = path.join(__dirname, 'backup-config.json');
 
-// Danh sach toan bo 18 bang hien co trong database (khop dung voi cac file 05_Database/*.sql) —
+// Danh sach toan bo 19 bang hien co trong database (khop dung voi cac file 05_Database/*.sql) —
 // ⚠️ khi them bang moi trong 1 migration moi, BAT BUOC them ten bang do vao day (xem
 // 05_Database/README.md muc "Quy tac khi them migration moi" - da ghi ro yeu cau nay tu 2026-08).
 // Neu bang moi KHONG co cot "id" don (vd dung khoa chinh ghep nhieu cot) thi phai khai bao them
@@ -23,7 +23,8 @@ const TABLES = [
   'doi_tac', 'doi_tac_phi',
   'ho_so', 'ho_so_thanh_vien', 'ho_so_xu_ly_phat_sinh',
   'khoan_chi', 'khach_hang', 'dich_vu_gia',
-  'notifications', 'push_subscriptions', 'notification_reads'
+  'notifications', 'push_subscriptions', 'notification_reads',
+  'chat_logs' // Phase 11 (Chat Box, Release 1) - khoa chinh don "id", khong can them vao ORDER_BY
 ];
 
 // Cot dung de ORDER BY luc phan trang (bat buoc phai co 1 cot/tap cot sap xep ON DINH, khong thi
