@@ -1704,3 +1704,116 @@ local `python -m http.server` để test bản sửa trước khi deploy) + **PM
 và điện thoại xác nhận OK** cho cả 3 lượt sửa dialog. Đã chạy 1 lượt review độc lập theo quy tắc
 mục 44 sau khi PM xác nhận OK — tìm thêm đúng 1 vấn đề nhẹ (giật ngang do scrollbar, mục B) và đã
 sửa luôn trước khi merge.
+
+## 47. Chat Box trang Home — Release 1 (2026-08-28, nhánh `feature/chatbox-release1`)
+
+**Bối cảnh:** PM yêu cầu phân tích khả thi rồi triển khai 1 Chat Box hỗ trợ khách hỏi về dịch vụ
+Visa trên `index.html`. Toàn bộ tài liệu (báo cáo khả thi, đặc tả kỹ thuật, chỉ dẫn thực thi) nằm ở
+`08_Chatbox/` — đọc `08_Chatbox/Chi_dan_Thuc_hien_Phat_trien_Chatbox.md` trước khi động vào bất kỳ
+phần nào của tính năng này, đặc biệt mục 1 (quy trình git bắt buộc: code trên nhánh riêng, chỉ merge
++ deploy production sau khi PM xác nhận rõ ràng "test OK"). **Phạm vi lượt này CHỈ Release 1 (Chat
+Box)** — Release 2 (chuyển toàn site sang song ngữ VI/EN) chưa làm, xem `08_Chatbox/Dac_ta_Trien_khai_Chatbox.md`
+mục 1.1/9 khi tới lượt đó.
+
+**A. Widget Chat Box (`index.html`)** — nút nổi góc dưới phải, đặt CAO HƠN `.float-contact` (khi
+đóng chiếm khoảng 20-78px tính từ đáy màn hình) để không đè nút Zalo/gọi/FB; không đụng
+`.scroll-top-btn` (bên trái). Mở Chat Box tự đóng `.float-contact` nếu đang xòe, tránh 2 cụm nút nổi
+chồng nhau. Khung chat có công tắc VI/EN RIÊNG của widget (không phải toggle ngôn ngữ toàn site của
+Release 2) — chỉ đổi ngôn ngữ nhãn 7 nút hỏi nhanh + placeholder, KHÔNG dịch lại lịch sử chat đã có
+(chatbot tự nhận diện ngôn ngữ theo từng câu hỏi, xem mục C).
+
+**7 nút hỏi nhanh trả lời TỨC THÌ, không gọi mạng** (đúng yêu cầu hiệu năng <100ms, khác hẳn ô hỏi
+tự do dùng AI chấp nhận 1-3s): 5 câu lấy y nguyên nội dung từ `<section id="faq">` (dịch tay sang
+tiếng Anh, không dùng AI dịch tự động — tránh sai lệch số liệu/điều khoản, cùng nguyên tắc JSON-LD
+FAQPage ở mục 12) + 1 nút "Bảng giá dịch vụ các nước" (đọc TRỰC TIẾP từ DOM `.card-service` đang
+hiển thị — đã được script "GIÁ DỊCH VỤ" cập nhật giá thật hoặc giữ fallback, nên luôn khớp 100% với
+những gì khách đang thấy, không cần gọi API riêng) + 1 nút "Để lại số điện thoại tư vấn" (mở form
+mini tên+SĐT ngay trong khung chat, validate bằng `isValidPhone()`/`normalizePhone()` có sẵn, gửi đi
+dưới dạng 1 tin nhắn tự do bình thường tới `/api/chat` — KHÔNG có endpoint riêng cho việc để lại
+thông tin liên hệ, server tự nhận diện SĐT trong tin nhắn). **Sửa nội dung FAQ ở `<section
+id="faq">` thì PHẢI sửa lại đồng bộ bản tiếng Việt trong mảng `CHATBOX_QUICK`** (giống nguyên tắc
+JSON-LD FAQPage) — bản tiếng Anh không bắt buộc sửa lại ngay nếu chỉ chỉnh nhỏ, nhưng nên rà soát.
+
+Toàn bộ text chèn vào khung chat (tin nhắn khách gõ tự do + câu trả lời AI) đi qua `chatboxEsc()`
+trước khi gắn `innerHTML` — **bắt buộc**, đây là nơi DUY NHẤT trong `index.html` hiển thị lại
+nguyên văn nội dung do người dùng tự gõ, chưa từng qua kiểm duyệt admin (khác hẳn `posts`/`leads`
+hiển thị ở nơi khác đều do admin nhập) — đã test xác nhận `<img src=x onerror=...>` bị escape thành
+chữ, không thực thi.
+
+**B. Route `/api/chat` (`worker.js`)** — thêm rẽ nhánh đầu `fetch()`, giữ nguyên 100% hành vi phục
+vụ file tĩnh cho mọi request khác (đúng nguyên tắc mục 33 khi thêm code Worker mới). `handleChat()`:
+1. Rate limit theo IP (`CF-Connecting-IP`), 8 câu hỏi/60 giây, đếm tạm trong `Map` ở bộ nhớ isolate
+   — **best-effort**, không phải giới hạn cứng tuyệt đối (isolate có thể bị Cloudflare hủy/khởi tạo
+   lại bất cứ lúc nào) nhưng đủ chống spam thông thường cho quy mô nhỏ hiện tại, đúng theo gợi ý
+   "Claude Code chọn cơ chế phù hợp" trong đặc tả — nếu sau này lưu lượng lớn hơn nhiều, cân nhắc
+   đếm ở Supabase/Durable Object để chính xác across toàn hạ tầng.
+2. Đọc `danh_muc_nuoc` (lệ phí/thời gian/checklist/ghi chú) + `dich_vu_gia` bằng
+   `SUPABASE_SERVICE_ROLE_KEY` (2 bảng này KHÔNG mở `anon` đọc, hoặc chỉ mở SELECT công khai riêng
+   cho landing page — route `/api/chat` không dùng `anon` key) để ghép vào system prompt — AI CHỈ
+   được dùng số liệu trong đó, không tự bịa (system prompt liệt kê rõ quy tắc này).
+3. Gọi Cloudflare Workers AI qua binding `env.AI` (đã thêm `[ai]` + `binding = "AI"` vào
+   `wrangler.toml` — cú pháp đã xác nhận lại qua tài liệu chính thức Cloudflare 2026-08-28, không
+   đoán theo hiểu biết cũ vì cấu hình Cloudflare từng đổi giữa các lần deploy dự án này, xem
+   `01_Docs/08_Ban_giao_Claude_Code.md` mục 3). **Model đã chọn: `@cf/meta/llama-3.1-8b-instruct-fast`**
+   — model đa ngôn ngữ (phù hợp trả lời song ngữ VI/EN, FR-CB-05), nhẹ/nhanh, phù hợp ngân sách free
+   tier 10.000 neuron/ngày (PM xác nhận không gắn thẻ thanh toán, không dùng AI trả phí).
+4. Lỗi/hết quota gọi AI (`try/catch` bọc quanh `chatCallAI()`) → rơi về tin nhắn fallback tĩnh song
+   ngữ mời gọi hotline/Zalo, KHÔNG throw lỗi trắng trang — đúng FR-CB-14.
+5. Ghi 2 dòng `chat_logs` (`role='user'`/`'assistant'`) mỗi lượt hỏi-đáp.
+
+**Nhận diện + lưu lead từ Chatbot (FR-CB-07):** `chatDetectAndCaptureLead()` dò SĐT hợp lệ trong tin
+nhắn bằng đúng quy tắc `isValidPhone()`/`normalizePhone()` của `index.html` (viết lại tương đương
+trong `worker.js` vì 2 file chạy 2 môi trường khác nhau, không import chung được) + dò tên theo vài
+mẫu câu thường gặp (heuristic, fallback "Khách từ Chatbot" nếu không dò được) → tạo `leads`
+(`nguon='Từ Chatbot'`). **Chống tạo lead trùng trong cùng 1 phiên:** trước khi tạo mới, luôn kiểm
+tra `chat_logs` của `session_id` đó đã có `lead_id` chưa (nếu khách lỡ gõ lại SĐT ở tin nhắn sau).
+Sau khi tạo lead mới, `PATCH` ngược `lead_id` cho **MỌI** dòng `chat_logs` cùng `session_id` (kể cả
+các dòng ghi TRƯỚC khi phát hiện SĐT) — đúng theo đặc tả mục 5.2 bước 7, để xem lại 1 phiên trong
+"Quản lý Chat" thấy đúng liên kết dù khách để lại SĐT ở tin nhắn thứ mấy. Đã sửa
+`generateNewNotifications()` (loại `'dang_ky_moi'`) từ `nguon=eq.'Từ Web'` → `nguon=in.("Từ
+Web","Từ Chatbot")` để lead từ Chatbot cũng lên chuông/Web Push admin (FR-CB-08).
+
+**C. Bảng `chat_logs` (`05_Database/11_supabase_setup_phase11.sql`)** — **khác 1 điểm so với SQL đề
+xuất trong đặc tả:** đặc tả đề xuất thêm policy cho phép `anon` INSERT trực tiếp (phòng trường hợp
+client gọi thẳng bằng `anon` key giống `leads` từ form công khai). Sau khi rà soát kiến trúc thực tế
+đã chọn — **toàn bộ ghi `chat_logs` đều đi qua `worker.js` bằng `SUPABASE_SERVICE_ROLE_KEY`** (bỏ
+qua RLS hoàn toàn), `index.html` KHÔNG bao giờ gọi thẳng `chat_logs` bằng `anon` key — nên đã **bỏ
+policy `anon` INSERT** đó, chỉ giữ policy `authenticated` (admin) toàn quyền đọc/sửa/xóa. Giảm bớt 1
+bề mặt cho phép ghi công khai không cần thiết, đúng tinh thần bảo mật ở đặc tả mục 3 ("Dữ liệu cá
+nhân... chỉ authenticated đọc/xóa được"). Đã thêm `chat_logs` vào `TABLES` của
+`06_Backup_Tool/backup-supabase.mjs` (khóa chính đơn `id`, không cần khai báo `ORDER_BY`).
+
+**D. Tab "Quản lý Chat" (`admin.html`, cạnh tab "Tư vấn")** — không có bảng "phiên chat" riêng ở
+Supabase; mỗi phiên được GOM NHÓM ngay tại client (`chatGroupSessions()`) từ toàn bộ `chat_logs` đã
+tải (`select=*,leads(name,phone)` — embed qua FK `lead_id`, giống cách `posts?select=*,categories(name)`
+đã làm) theo `session_id`. Danh sách: thời gian (tin mới nhất trong phiên), tên/SĐT nếu có lead hay
+"Chưa để lại thông tin", số tin nhắn, nút "Xem chi tiết"/"Xóa" — có sort theo cột (dùng chung
+`onSortClick`/`applySort`, tableKey mới `'chat'`, xem mục 31.G) + tìm theo tên/SĐT qua `vnNorm()`
+(mục 13) + lọc theo khoảng ngày (mask `dd/mm/yyyy` chuẩn, mục 19). Dialog "Chi tiết hội thoại"
+(`#chatDetailOverlay`) theo đúng `dlg-standard`/`dlg-head`/`dlg-body`/`dlg-foot`
+(`01_Docs/10_Chuan_Dialog_Chung.md`) nhưng **KHÔNG áp dụng `snapshotDialog`/`confirmCloseDialog`**
+(mục 23) vì đây là dialog THUẦN XEM, không có field nhập liệu nào — giống lý do `#khPickOverlay`
+không áp dụng. Xóa (`delChatSession`) dùng `showConfirmPopup({danger:true})` rồi `DELETE
+chat_logs?session_id=eq.<sid>` (xóa cả phiên cùng lúc, không xóa từng dòng tin nhắn lẻ).
+
+**Đã test:** `node --check` cho `worker.js` + toàn bộ script inline của `index.html`/`admin.html`
+(trích xuất qua regex `<script>` không kèm `type=`, không đụng khối JSON-LD). Unit test riêng 13
+case cho 3 hàm regex nhạy cảm nhất (`chatExtractPhone`/`chatExtractName`/`chatGuessLang`) bằng
+Node — 13/13 pass. Qua Claude Browser (`javascript_tool`, môi trường chạy nền/chưa composite nên
+KHÔNG dùng được `screenshot`/click thật theo tọa độ pixel — xem giới hạn đã ghi ở mục 20): xác nhận
+nút Chat Box mở/đóng, tự đóng `.float-contact`, 7 nút hỏi nhanh trả lời đúng nội dung tức thì, escape
+XSS cho tin nhắn tự do, toggle VI/EN đổi đúng nhãn, form để lại SĐT validate + gửi đúng định dạng
+tin nhắn, fallback đúng khi `/api/chat` không kết nối được (network fail dưới `file://`, đúng hành
+vi mong đợi). Ở `admin.html`: tab/dialog "Quản lý Chat" tồn tại đúng cấu trúc, gom nhóm phiên đúng,
+dialog chi tiết hiện đúng nội dung, sort/tìm kiếm đúng, `delChatSession` gọi đúng
+`DELETE chat_logs?session_id=eq...` (test bằng mock `api()`/`showConfirmPopup`, không đăng nhập
+Supabase thật). **CHƯA/KHÔNG thể test trong phiên này:** gọi thật tới Cloudflare Workers AI (không
+có `wrangler dev` — `npx wrangler --version` bị timeout ~60s trong môi trường sandbox, nghi do
+không có/rất chậm truy cập mạng ra `registry.npmjs.org`, thử cả với sandbox tắt vẫn timeout), migration
+`chat_logs` CHƯA được chạy trên Supabase project thật, và giao diện chat trên thiết bị/trình duyệt
+thật (đặc biệt vị trí nút trên mobile — do giới hạn compositing của Claude Browser đã nêu, không
+chắc chắn 100% dù đã review kỹ CSS bằng tay).
+
+**Đang ở nhánh `feature/chatbox-release1`, CHƯA merge vào `main`, CHƯA deploy production** — đúng
+quy trình bắt buộc ở `08_Chatbox/Chi_dan_Thuc_hien_Phat_trien_Chatbox.md` mục 1. Việc PM cần làm
+trước khi merge: xem `Handover_Phien_Moi.md`.
