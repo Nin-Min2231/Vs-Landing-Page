@@ -357,39 +357,29 @@ async function chatBuildGroundingText(env) {
     '\n\nBẢNG GIÁ DỊCH VỤ THEO QUỐC GIA:\n' + (giaText || '(chưa có dữ liệu)');
 }
 
-// replyLang được TÍNH SẴN từ trước (chatGuessLang, xem handleChat). ⚠️ Đã thử 2 cách và chỉ cách
-// thứ 2 mới hoạt động thật (kiểm chứng qua nhiều lượt gọi thật /api/chat trên production):
-// - Cách 1 (KHÔNG đủ): giữ nguyên toàn bộ prompt tiếng Việt, chỉ thêm 1 dòng chỉ thị "trả lời bằng
-//   tiếng Anh" ở cuối — model (@cf/meta/llama-3.1-8b-instruct-fast) vẫn trả lời tiếng Việt phần lớn
-//   thời gian, có vẻ bị "kéo" theo ngôn ngữ áp đảo của phần còn lại prompt (quy tắc + dữ liệu đều
-//   tiếng Việt) mạnh hơn 1 câu chỉ thị đơn lẻ.
-// - Cách 2 (ĐANG DÙNG, đã xác nhận hoạt động đúng cả 2 chiều VI/EN): viết HẲN 2 bản prompt riêng —
-//   khi replyLang==='en' thì TOÀN BỘ phần quy tắc/chỉ dẫn viết bằng tiếng Anh (chỉ phần "DỮ LIỆU
-//   THẬT" giữ nguyên tiếng Việt vì đó là dữ liệu gốc, không cần dịch) — áp đảo ngôn ngữ khung prompt
-//   giúp model bám đúng ngôn ngữ đầu ra hơn hẳn so với chỉ thêm 1 dòng chỉ thị. Nếu sau này đổi model
-//   khác, nên thử lại cách 1 xem có đủ không trước khi giữ nguyên độ phức tạp của cách 2.
-function chatBuildSystemPrompt(groundingText, replyLang) {
-  if (replyLang === 'en') {
-    return 'You are the virtual assistant of "Top Visa 5S", a visa service company in Da Nang, Vietnam (hotline 0935 887 922, Zalo zalo.me/0935887922).\n' +
-      'MANDATORY RULES:\n' +
-      '1. ONLY answer questions about Top Visa 5S visa services (visa types, requirements, documents, process, fees, processing time, FAQs). Politely decline anything outside this scope and suggest calling the hotline.\n' +
-      '2. ONLY use figures (fees, processing time, checklist, service prices) found in the "REAL DATA" section below. NEVER invent or guess numbers not present in that data.\n' +
-      '3. If unsure or the data is insufficient to answer accurately, say so clearly and invite the customer to call the hotline or Zalo for accurate advice — do not guess.\n' +
-      '4. Keep a friendly, concise tone (about 120 words max), use bullet points when listing several items.\n' +
-      '5. When the answer relates to a decision the customer must make (fee, documents, timing), always end with a hotline/Zalo suggestion.\n\n' +
-      'REAL DATA (the ONLY source you may use for fees/timing/checklist — written in Vietnamese, the source language; translate the figures into your English answer as needed):\n' +
-      groundingText +
-      '\n\nLANGUAGE INSTRUCTION (highest priority — must not be violated): the customer just wrote in ENGLISH. You MUST write your ENTIRE reply in ENGLISH only. Do not include any Vietnamese sentences.';
-  }
+// ⚠️ Lịch sử debug ngôn ngữ trả lời (FR-CB-05) — đã thử 2 cách qua system prompt và CẢ 2 ĐỀU
+// KHÔNG đủ tin cậy, kiểm chứng bằng gọi thật /api/chat nhiều lần trên production, không phải suy
+// đoán: (1) prompt tiếng Việt + 1 dòng chỉ thị "trả lời tiếng Anh" ở cuối — model vẫn trả lời tiếng
+// Việt hầu hết; (2) viết hẳn 2 bản prompt riêng (toàn bộ quy tắc bằng tiếng Anh khi cần trả lời
+// tiếng Anh) — VẪN có lúc trả lời tiếng Việt. Model @cf/meta/llama-3.1-8b-instruct-fast có vẻ bị
+// "kéo" theo ngôn ngữ của phần "DỮ LIỆU THẬT" (luôn là tiếng Việt, vì đó là dữ liệu gốc trong
+// Supabase) mạnh hơn hẳn chỉ dẫn ngôn ngữ, bất kể đặt chỉ dẫn ở đâu/viết bằng ngôn ngữ nào.
+// ĐÃ ĐỔI SANG CÁCH ĐÁNG TIN CẬY HƠN NHIỀU (xem handleChat): LUÔN sinh câu trả lời gốc bằng tiếng
+// Việt (chiều này luôn đúng, vì mọi thứ trong prompt đã là tiếng Việt) rồi DỊCH SANG TIẾNG ANH bằng
+// 1 lượt gọi AI riêng (chatTranslateToEnglish()) nếu replyLang==='en' — "dịch đoạn văn cho trước
+// sang tiếng Anh" là tác vụ đơn giản, tách biệt, mà model làm đúng gần như tuyệt đối, không còn bị
+// ngữ cảnh tiếng Việt của phần dữ liệu "kéo" nữa. Đánh đổi: câu hỏi tiếng Anh tốn thêm 1 lượt gọi
+// AI (thêm ~1-2s độ trễ) — chấp nhận được trong ngưỡng NFR (1-3s, có trạng thái loading).
+function chatBuildSystemPrompt(groundingText) {
   return 'Bạn là trợ lý ảo của công ty dịch vụ Visa "Top Visa 5S" tại Đà Nẵng, Việt Nam (hotline 0935 887 922, Zalo zalo.me/0935887922).\n' +
     'QUY TẮC BẮT BUỘC:\n' +
     '1. CHỈ trả lời câu hỏi liên quan dịch vụ Visa của Top Visa 5S (loại visa, điều kiện, hồ sơ, quy trình, chi phí, thời gian xử lý, câu hỏi thường gặp). Câu hỏi ngoài phạm vi này thì lịch sự từ chối và mời liên hệ hotline.\n' +
     '2. CHỈ được dùng số liệu (lệ phí, thời gian xét duyệt, checklist, giá dịch vụ) có trong phần "DỮ LIỆU THẬT" bên dưới. TUYỆT ĐỐI KHÔNG tự bịa/suy đoán số liệu không có trong dữ liệu này.\n' +
     '3. Nếu không chắc chắn hoặc dữ liệu không đủ để trả lời chính xác, hãy nói rõ là chưa chắc chắn và mời khách gọi hotline hoặc chat Zalo để được tư vấn chính xác — không đoán.\n' +
     '4. Giọng văn thân thiện, ngắn gọn (tối đa khoảng 120 từ), dùng gạch đầu dòng nếu liệt kê nhiều ý.\n' +
-    '5. Khi câu trả lời liên quan quyết định của khách (phí, hồ sơ, thời gian), luôn kết thúc bằng gợi ý liên hệ hotline/Zalo.\n\n' +
-    'DỮ LIỆU THẬT (nguồn duy nhất được phép dùng khi trả lời về phí/thời gian/checklist):\n' + groundingText +
-    '\n\nCHỈ THỊ NGÔN NGỮ (ưu tiên cao nhất, không được vi phạm): khách vừa gửi tin nhắn bằng TIẾNG VIỆT. Bạn PHẢI viết TOÀN BỘ câu trả lời bằng TIẾNG VIỆT.';
+    '5. Khi câu trả lời liên quan quyết định của khách (phí, hồ sơ, thời gian), luôn kết thúc bằng gợi ý liên hệ hotline/Zalo.\n' +
+    '6. Luôn viết câu trả lời bằng TIẾNG VIỆT (kể cả nếu khách hỏi bằng ngôn ngữ khác — hệ thống sẽ tự dịch lại nếu cần).\n\n' +
+    'DỮ LIỆU THẬT (nguồn duy nhất được phép dùng khi trả lời về phí/thời gian/checklist):\n' + groundingText;
 }
 
 async function chatCallAI(env, systemPrompt, userMessage) {
@@ -397,6 +387,20 @@ async function chatCallAI(env, systemPrompt, userMessage) {
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage }
+    ],
+    max_tokens: 400
+  });
+  const text = result && (result.response || result.result || '');
+  return typeof text === 'string' ? text.trim() : '';
+}
+
+// Dịch 1 đoạn văn tiếng Việt sang tiếng Anh — tác vụ ĐƠN GIẢN/TÁCH BIỆT nên đáng tin cậy hơn hẳn so
+// với việc bắt model vừa trả lời vừa tự nhớ đổi ngôn ngữ đầu ra (xem comment ở chatBuildSystemPrompt).
+async function chatTranslateToEnglish(env, viText) {
+  const result = await env.AI.run(CHAT_MODEL, {
+    messages: [
+      { role: 'system', content: 'You are a professional Vietnamese-to-English translator for a visa service company chatbot. Translate the given Vietnamese text into natural, friendly English. Keep all numbers, prices and phone numbers unchanged, and keep the company name "Top Visa 5S" unchanged. Output ONLY the English translation — no explanation, no quotes, no Vietnamese text.' },
+      { role: 'user', content: viText }
     ],
     max_tokens: 400
   });
@@ -434,15 +438,20 @@ async function handleChat(request, env) {
       body: JSON.stringify([{ session_id: sessionId, role: 'user', message, lang: langHint, lead_id: leadId }])
     }).catch(e => console.error('ghi chat_logs (user) lỗi:', e));
 
-    // Tính ngôn ngữ trả lời TRƯỚC khi gọi AI — dùng chung cho cả chỉ thị ngôn ngữ trong prompt lẫn
-    // tin nhắn fallback, đảm bảo 2 nơi luôn khớp nhau (không tính lại 2 lần dễ lệch).
+    // Tính ngôn ngữ trả lời TRƯỚC khi gọi AI — dùng cho cả bước dịch lẫn tin nhắn fallback.
     let reply;
     const replyLang = chatGuessLang(message, langHint);
     try {
       const grounding = await chatBuildGroundingText(env);
-      const systemPrompt = chatBuildSystemPrompt(grounding, replyLang);
-      const aiText = await chatCallAI(env, systemPrompt, message);
+      const systemPrompt = chatBuildSystemPrompt(grounding); // LUÔN sinh bản gốc tiếng Việt, xem comment ở chatBuildSystemPrompt
+      let aiText = await chatCallAI(env, systemPrompt, message);
       if (!aiText) throw new Error('AI trả về rỗng');
+      if (replyLang === 'en') {
+        const translated = await chatTranslateToEnglish(env, aiText).catch(e => { console.error('Dịch sang tiếng Anh lỗi:', e); return ''; });
+        if (translated) aiText = translated;
+        // dịch lỗi/rỗng -> vẫn dùng bản tiếng Việt còn hơn báo fallback (khách vẫn đọc được thông
+        // tin thật, chỉ là sai ngôn ngữ mong muốn — nhẹ hơn nhiều so với mất hẳn thông tin)
+      }
       reply = aiText;
     } catch (e) {
       console.error('Gọi Workers AI lỗi, dùng fallback:', e);
