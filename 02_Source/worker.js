@@ -357,15 +357,30 @@ async function chatBuildGroundingText(env) {
     '\n\nBẢNG GIÁ DỊCH VỤ THEO QUỐC GIA:\n' + (giaText || '(chưa có dữ liệu)');
 }
 
-// replyLang được TÍNH SẴN từ trước (chatGuessLang, xem handleChat) rồi ÉP thẳng vào cuối prompt —
-// đã test thật trên production thấy chỉ dặn chung chung "trả lời đúng ngôn ngữ câu hỏi" (đặt xen
-// giữa nhiều quy tắc khác + khối dữ liệu dài) không đủ để model tuân theo ổn định (hỏi tiếng Anh
-// nhưng model trả lời tiếng Việt) — đặt lại thành 1 CHỈ THỊ NGẮN, RÕ, RIÊNG BIỆT ở cuối cùng (ngay
-// trước khi model sinh câu trả lời) đáng tin cậy hơn nhiều so với xen vào giữa danh sách quy tắc.
+// replyLang được TÍNH SẴN từ trước (chatGuessLang, xem handleChat). ⚠️ Đã thử 2 cách và chỉ cách
+// thứ 2 mới hoạt động thật (kiểm chứng qua nhiều lượt gọi thật /api/chat trên production):
+// - Cách 1 (KHÔNG đủ): giữ nguyên toàn bộ prompt tiếng Việt, chỉ thêm 1 dòng chỉ thị "trả lời bằng
+//   tiếng Anh" ở cuối — model (@cf/meta/llama-3.1-8b-instruct-fast) vẫn trả lời tiếng Việt phần lớn
+//   thời gian, có vẻ bị "kéo" theo ngôn ngữ áp đảo của phần còn lại prompt (quy tắc + dữ liệu đều
+//   tiếng Việt) mạnh hơn 1 câu chỉ thị đơn lẻ.
+// - Cách 2 (ĐANG DÙNG, đã xác nhận hoạt động đúng cả 2 chiều VI/EN): viết HẲN 2 bản prompt riêng —
+//   khi replyLang==='en' thì TOÀN BỘ phần quy tắc/chỉ dẫn viết bằng tiếng Anh (chỉ phần "DỮ LIỆU
+//   THẬT" giữ nguyên tiếng Việt vì đó là dữ liệu gốc, không cần dịch) — áp đảo ngôn ngữ khung prompt
+//   giúp model bám đúng ngôn ngữ đầu ra hơn hẳn so với chỉ thêm 1 dòng chỉ thị. Nếu sau này đổi model
+//   khác, nên thử lại cách 1 xem có đủ không trước khi giữ nguyên độ phức tạp của cách 2.
 function chatBuildSystemPrompt(groundingText, replyLang) {
-  const langDirective = replyLang === 'en'
-    ? 'CHỈ THỊ NGÔN NGỮ (ưu tiên cao nhất, không được vi phạm): khách vừa gửi tin nhắn bằng TIẾNG ANH. Bạn PHẢI viết TOÀN BỘ câu trả lời bằng TIẾNG ANH, không được xen tiếng Việt.'
-    : 'CHỈ THỊ NGÔN NGỮ (ưu tiên cao nhất, không được vi phạm): khách vừa gửi tin nhắn bằng TIẾNG VIỆT. Bạn PHẢI viết TOÀN BỘ câu trả lời bằng TIẾNG VIỆT.';
+  if (replyLang === 'en') {
+    return 'You are the virtual assistant of "Top Visa 5S", a visa service company in Da Nang, Vietnam (hotline 0935 887 922, Zalo zalo.me/0935887922).\n' +
+      'MANDATORY RULES:\n' +
+      '1. ONLY answer questions about Top Visa 5S visa services (visa types, requirements, documents, process, fees, processing time, FAQs). Politely decline anything outside this scope and suggest calling the hotline.\n' +
+      '2. ONLY use figures (fees, processing time, checklist, service prices) found in the "REAL DATA" section below. NEVER invent or guess numbers not present in that data.\n' +
+      '3. If unsure or the data is insufficient to answer accurately, say so clearly and invite the customer to call the hotline or Zalo for accurate advice — do not guess.\n' +
+      '4. Keep a friendly, concise tone (about 120 words max), use bullet points when listing several items.\n' +
+      '5. When the answer relates to a decision the customer must make (fee, documents, timing), always end with a hotline/Zalo suggestion.\n\n' +
+      'REAL DATA (the ONLY source you may use for fees/timing/checklist — written in Vietnamese, the source language; translate the figures into your English answer as needed):\n' +
+      groundingText +
+      '\n\nLANGUAGE INSTRUCTION (highest priority — must not be violated): the customer just wrote in ENGLISH. You MUST write your ENTIRE reply in ENGLISH only. Do not include any Vietnamese sentences.';
+  }
   return 'Bạn là trợ lý ảo của công ty dịch vụ Visa "Top Visa 5S" tại Đà Nẵng, Việt Nam (hotline 0935 887 922, Zalo zalo.me/0935887922).\n' +
     'QUY TẮC BẮT BUỘC:\n' +
     '1. CHỈ trả lời câu hỏi liên quan dịch vụ Visa của Top Visa 5S (loại visa, điều kiện, hồ sơ, quy trình, chi phí, thời gian xử lý, câu hỏi thường gặp). Câu hỏi ngoài phạm vi này thì lịch sự từ chối và mời liên hệ hotline.\n' +
@@ -374,7 +389,7 @@ function chatBuildSystemPrompt(groundingText, replyLang) {
     '4. Giọng văn thân thiện, ngắn gọn (tối đa khoảng 120 từ), dùng gạch đầu dòng nếu liệt kê nhiều ý.\n' +
     '5. Khi câu trả lời liên quan quyết định của khách (phí, hồ sơ, thời gian), luôn kết thúc bằng gợi ý liên hệ hotline/Zalo.\n\n' +
     'DỮ LIỆU THẬT (nguồn duy nhất được phép dùng khi trả lời về phí/thời gian/checklist):\n' + groundingText +
-    '\n\n' + langDirective;
+    '\n\nCHỈ THỊ NGÔN NGỮ (ưu tiên cao nhất, không được vi phạm): khách vừa gửi tin nhắn bằng TIẾNG VIỆT. Bạn PHẢI viết TOÀN BỘ câu trả lời bằng TIẾNG VIỆT.';
 }
 
 async function chatCallAI(env, systemPrompt, userMessage) {
