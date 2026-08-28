@@ -1,7 +1,9 @@
-// Cloudflare Worker — việc nền cho trang quản trị Top Visa 5S (xem CLAUDE.md mục 33).
+// Cloudflare Worker — việc nền cho trang quản trị Top Visa 5S (xem CLAUDE.md mục 33) + API Chat Box
+// trang Home (xem CLAUDE.md mục "Chat Box"/08_Chatbox/, Release 1, 2026-08-28).
 //
-// 1) fetch(): GIỮ NGUYÊN hành vi phục vụ file tĩnh cũ (index.html/admin.html/assets/...) —
-//    không đổi gì với khách truy cập landing page hay admin đăng nhập bình thường.
+// 1) fetch(): route '/api/chat' (POST) -> handleChat() (Chat Box); MỌI request khác GIỮ NGUYÊN hành
+//    vi phục vụ file tĩnh cũ (index.html/admin.html/assets/...) — không đổi gì với khách truy cập
+//    landing page hay admin đăng nhập bình thường.
 // 2) scheduled(): chạy định kỳ theo [triggers] crons trong wrangler.toml — quét ho_so/leads,
 //    tự tạo "thông báo" mới (bảng notifications) rồi gửi Web Push tới các thiết bị đã đăng ký
 //    (bảng push_subscriptions), để chuông thông báo trong admin.html luôn có dữ liệu mới NGAY CẢ
@@ -13,7 +15,11 @@
 
 export default {
   async fetch(request, env) {
-    return env.ASSETS.fetch(request);
+    const url = new URL(request.url);
+    if (url.pathname === '/api/chat' && request.method === 'POST') {
+      return handleChat(request, env);
+    }
+    return env.ASSETS.fetch(request); // hành vi cũ — GIỮ NGUYÊN cho mọi request khác
   },
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runNotificationJob(env));
@@ -96,11 +102,12 @@ async function generateNewNotifications(env) {
   } catch (e) { console.error('generateNewNotifications nhac_tuvan lỗi:', e); }
 
   try {
-    // 'dang_ky_moi': khách tự đăng ký từ form công khai index.html (nguon='Từ Web'). Giới hạn 200
-    // dòng mới nhất — đủ rộng để không bỏ sót nếu Worker lỡ dừng vài ngày, vẫn nhẹ cho DB; dòng đã
-    // có thông báo rồi tự bị bỏ qua nhờ ràng buộc unique khi upsert bên dưới.
+    // 'dang_ky_moi': khách tự đăng ký — từ form công khai index.html (nguon='Từ Web') HOẶC từ Chat
+    // Box trang Home (nguon='Từ Chatbot', thêm 2026-08-28, xem 08_Chatbox/). Giới hạn 200 dòng mới
+    // nhất — đủ rộng để không bỏ sót nếu Worker lỡ dừng vài ngày, vẫn nhẹ cho DB; dòng đã có thông
+    // báo rồi tự bị bỏ qua nhờ ràng buộc unique khi upsert bên dưới.
     const moiRows = await supa(env,
-      'leads?select=id,name,country,created_at&nguon=eq.' + encodeURIComponent('Từ Web') +
+      'leads?select=id,name,country,created_at&nguon=in.' + encodeURIComponent('("Từ Web","Từ Chatbot")') +
       '&order=created_at.desc&limit=200');
     for (const l of moiRows || []) {
       candidates.push({
@@ -229,5 +236,203 @@ async function sendWebPush(env, sub) {
     const err = new Error('push endpoint -> HTTP ' + res.status);
     err.status = res.status;
     throw err;
+  }
+}
+
+/* ==================== CHAT BOX — route /api/chat (Release 1, 2026-08-28) ====================
+   Xem 08_Chatbox/Dac_ta_Trien_khai_Chatbox.md mục 5 (nguồn spec đầy đủ). Tóm tắt luồng handleChat():
+   1. Rate limit theo IP (bộ nhớ tạm trong isolate — best-effort, đủ dùng cho quy mô nhỏ hiện tại).
+   2. Ghi tin nhắn khách vào chat_logs.
+   3. Nhận diện SĐT hợp lệ trong tin nhắn -> tạo lead (nguon='Từ Chatbot') nếu phiên này CHƯA có lead.
+   4. Đọc dữ liệu Visa thật (danh_muc_nuoc/dich_vu_gia) bằng service role, ghép system prompt, gọi
+      Cloudflare Workers AI (env.AI.run) — lỗi/hết quota thì rơi về tin nhắn fallback tĩnh, KHÔNG
+      throw lỗi trắng trang.
+   5. Ghi tin nhắn trả lời vào chat_logs, trả JSON { reply, lang, lead_captured } về client. ==== */
+
+const CHAT_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast'; // model đa ngôn ngữ, nhẹ, phù hợp free tier
+const CHAT_RATE_LIMIT_MAX = 8;          // tối đa 8 câu hỏi
+const CHAT_RATE_LIMIT_WINDOW_MS = 60000; // mỗi 60 giây / mỗi IP
+const CHAT_FALLBACK_VI = 'Hiện hệ thống đang bận, vui lòng gọi hotline 0935 887 922 hoặc chat Zalo (zalo.me/0935887922) để được tư vấn ngay.';
+const CHAT_FALLBACK_EN = 'Our system is a bit busy right now. Please call hotline +84 935 887 922 or chat via Zalo (zalo.me/0935887922) for immediate help.';
+const CHAT_RATE_LIMIT_MSG_VI = 'Bạn đang gửi câu hỏi hơi nhanh, vui lòng chờ một chút rồi thử lại — hoặc gọi hotline 0935 887 922 để được hỗ trợ ngay.';
+const CHAT_RATE_LIMIT_MSG_EN = 'You are sending messages a bit too fast — please wait a moment, or call hotline +84 935 887 922 for immediate help.';
+
+// Map IP -> mảng timestamp câu hỏi gần đây. Worker isolate có thể bị hủy/khởi tạo lại bất cứ lúc
+// nào (Cloudflare tự quản lý) nên đây CHỈ là rate limit "best-effort" trong phạm vi 1 isolate đang
+// sống — đủ chống spam thông thường cho quy mô nhỏ hiện tại của dự án, không phải giới hạn cứng
+// tuyệt đối across toàn bộ hạ tầng (nếu cần chính xác 100% phải lưu đếm ở Supabase/Durable Object).
+const chatRateLimitMap = new Map();
+function chatCheckRateLimit(ip) {
+  const now = Date.now();
+  const recent = (chatRateLimitMap.get(ip) || []).filter(t => now - t < CHAT_RATE_LIMIT_WINDOW_MS);
+  recent.push(now);
+  chatRateLimitMap.set(ip, recent);
+  if (chatRateLimitMap.size > 5000) { // dọn bớt map để không phình to mãi nếu isolate sống lâu
+    for (const [k, v] of chatRateLimitMap) {
+      if (!v.some(t => now - t < CHAT_RATE_LIMIT_WINDOW_MS)) chatRateLimitMap.delete(k);
+    }
+  }
+  return recent.length <= CHAT_RATE_LIMIT_MAX;
+}
+
+function chatJson(obj, status = 200) {
+  return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
+}
+
+// Dò ngôn ngữ câu hỏi bằng dấu tiếng Việt — chỉ dùng để chọn NGÔN NGỮ CỦA TIN NHẮN FALLBACK khi AI
+// lỗi (AI thật sự tự nhận diện ngôn ngữ khi trả lời bình thường, xem system prompt bên dưới).
+function chatGuessLang(text, hint) {
+  if (/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text || '')) return 'vi';
+  if (hint === 'en') return 'en';
+  return 'vi';
+}
+
+// Dò số điện thoại VN hợp lệ trong 1 đoạn tin nhắn tự do — cùng quy tắc với isValidPhone()/
+// normalizePhone() trong index.html (0(3|5|7|8|9) + 8 số, chấp nhận cả dạng +84).
+function chatExtractPhone(text) {
+  const candidates = (text || '').match(/(\+84|0)[\s.\-]?\d[\s.\-\d]{7,11}\d/g) || [];
+  for (const raw of candidates) {
+    let p = raw.replace(/[\s.\-()]/g, '');
+    if (p.startsWith('+84')) p = '0' + p.slice(3);
+    if (/^0(3|5|7|8|9)\d{8}$/.test(p)) return p;
+  }
+  return null;
+}
+// Dò tên khách theo vài mẫu câu thường gặp (heuristic, không bắt buộc chính xác tuyệt đối) — nếu
+// không dò được, dùng tên mặc định "Khách từ Chatbot" (không để trống cột name của leads).
+function chatExtractName(text) {
+  const t = (text || '');
+  let m = t.match(/t[êe]n\s*(?:t[ôo]i|m[ìi]nh)?\s*(?:l[àa]|:)\s*([^\d,.;\n]{2,40})/i);
+  if (m) return m[1].trim();
+  m = t.match(/(?:my name is|i am|i'm)\s+([^\d,.;\n]{2,40})/i);
+  if (m) return m[1].trim();
+  return null;
+}
+
+// Tạo lead từ hội thoại nếu phát hiện SĐT hợp lệ VÀ phiên chat này CHƯA từng tạo lead — tránh tạo
+// trùng lead nếu khách gõ lại số điện thoại ở tin nhắn sau. Nếu tạo lead mới, gán lead_id ngược lại
+// cho MỌI dòng chat_logs cùng session_id (kể cả các dòng đã ghi trước đó) theo đúng yêu cầu spec.
+async function chatDetectAndCaptureLead(env, sessionId, message) {
+  const existing = await supa(env,
+    'chat_logs?select=lead_id&session_id=eq.' + encodeURIComponent(sessionId) +
+    '&lead_id=not.is.null&limit=1'
+  ).catch(() => null);
+  if (existing && existing.length) return existing[0].lead_id;
+
+  const phone = chatExtractPhone(message);
+  if (!phone) return null;
+  const name = chatExtractName(message) || 'Khách từ Chatbot';
+  const created = await supa(env, 'leads', {
+    method: 'POST',
+    body: JSON.stringify([{ name, phone, nguon: 'Từ Chatbot' }])
+  });
+  const leadId = created && created[0] && created[0].id;
+  if (leadId) {
+    await supa(env, 'chat_logs?session_id=eq.' + encodeURIComponent(sessionId), {
+      method: 'PATCH', body: JSON.stringify({ lead_id: leadId }), prefer: 'return=minimal'
+    }).catch(() => {});
+  }
+  return leadId || null;
+}
+
+// Đọc dữ liệu Visa THẬT để ground câu trả lời AI — bằng service role (danh_muc_nuoc KHÔNG mở anon
+// đọc, xem CLAUDE.md/đặc tả mục 4.3). Bộ dữ liệu nhỏ (dưới 20 nước) nên lấy toàn bộ, không lọc theo
+// từ khóa câu hỏi (lọc theo tên quốc gia không đáng tin do dấu/viết tắt tiếng Việt).
+async function chatBuildGroundingText(env) {
+  const [nuocRows, giaRows] = await Promise.all([
+    supa(env, 'danh_muc_nuoc?select=ten,le_phi,thoi_gian_xet_duyet,checklist,ghi_chu&order=ten').catch(() => []),
+    supa(env, 'dich_vu_gia?select=quoc_gia,gia&order=quoc_gia').catch(() => [])
+  ]);
+  const nuocText = (nuocRows || []).map(n => [
+    '- ' + (n.ten || '?'),
+    n.le_phi != null ? 'lệ phí lãnh sự khoảng ' + Number(n.le_phi).toLocaleString('vi-VN') + 'đ' : null,
+    n.thoi_gian_xet_duyet ? 'thời gian xét duyệt: ' + n.thoi_gian_xet_duyet : null,
+    n.checklist ? 'checklist hồ sơ: ' + n.checklist : null,
+    n.ghi_chu ? 'ghi chú: ' + n.ghi_chu : null
+  ].filter(Boolean).join('; ')).join('\n');
+  const giaText = (giaRows || []).map(g =>
+    '- ' + g.quoc_gia + ': ' + (g.gia != null && Number(g.gia) > 0 ? 'phí dịch vụ từ ' + Number(g.gia).toLocaleString('vi-VN') + 'đ' : 'liên hệ báo giá')
+  ).join('\n');
+  return 'DANH SÁCH QUỐC GIA (lệ phí/thời gian/checklist):\n' + (nuocText || '(chưa có dữ liệu)') +
+    '\n\nBẢNG GIÁ DỊCH VỤ THEO QUỐC GIA:\n' + (giaText || '(chưa có dữ liệu)');
+}
+
+function chatBuildSystemPrompt(groundingText) {
+  return 'Bạn là trợ lý ảo của công ty dịch vụ Visa "Top Visa 5S" tại Đà Nẵng, Việt Nam (hotline 0935 887 922, Zalo zalo.me/0935887922).\n' +
+    'QUY TẮC BẮT BUỘC:\n' +
+    '1. CHỈ trả lời câu hỏi liên quan dịch vụ Visa của Top Visa 5S (loại visa, điều kiện, hồ sơ, quy trình, chi phí, thời gian xử lý, câu hỏi thường gặp). Câu hỏi ngoài phạm vi này thì lịch sự từ chối và mời liên hệ hotline.\n' +
+    '2. CHỈ được dùng số liệu (lệ phí, thời gian xét duyệt, checklist, giá dịch vụ) có trong phần "DỮ LIỆU THẬT" bên dưới. TUYỆT ĐỐI KHÔNG tự bịa/suy đoán số liệu không có trong dữ liệu này.\n' +
+    '3. Nếu không chắc chắn hoặc dữ liệu không đủ để trả lời chính xác, hãy nói rõ là chưa chắc chắn và mời khách gọi hotline hoặc chat Zalo để được tư vấn chính xác — không đoán.\n' +
+    '4. Trả lời ĐÚNG NGÔN NGỮ của tin nhắn khách vừa gửi: khách hỏi tiếng Việt thì trả lời tiếng Việt, khách hỏi tiếng Anh thì trả lời tiếng Anh.\n' +
+    '5. Giọng văn thân thiện, ngắn gọn (tối đa khoảng 120 từ), dùng gạch đầu dòng nếu liệt kê nhiều ý.\n' +
+    '6. Khi câu trả lời liên quan quyết định của khách (phí, hồ sơ, thời gian), luôn kết thúc bằng gợi ý liên hệ hotline/Zalo.\n\n' +
+    'DỮ LIỆU THẬT (nguồn duy nhất được phép dùng khi trả lời về phí/thời gian/checklist):\n' + groundingText;
+}
+
+async function chatCallAI(env, systemPrompt, userMessage) {
+  const result = await env.AI.run(CHAT_MODEL, {
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ],
+    max_tokens: 400
+  });
+  const text = result && (result.response || result.result || '');
+  return typeof text === 'string' ? text.trim() : '';
+}
+
+async function handleChat(request, env) {
+  try {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    if (!chatCheckRateLimit(ip)) {
+      const lang = chatGuessLang('', 'vi');
+      return chatJson({ reply: lang === 'en' ? CHAT_RATE_LIMIT_MSG_EN : CHAT_RATE_LIMIT_MSG_VI, lang, rate_limited: true });
+    }
+
+    let body;
+    try { body = await request.json(); } catch (e) { return chatJson({ error: 'bad_request' }, 400); }
+    const sessionId = (body && body.session_id || '').toString().slice(0, 100);
+    const message = (body && body.message || '').toString().trim().slice(0, 1000);
+    const langHint = (body && body.lang_hint === 'en') ? 'en' : 'vi';
+    if (!sessionId || !message) return chatJson({ error: 'missing_fields' }, 400);
+
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) { // chưa cấu hình secret -> vẫn trả fallback, không lỗi trắng trang
+      const lang = chatGuessLang(message, langHint);
+      return chatJson({ reply: lang === 'en' ? CHAT_FALLBACK_EN : CHAT_FALLBACK_VI, lang });
+    }
+
+    // Tạo/tra lead TRƯỚC khi ghi chat_logs để có thể gán lead_id ngay từ dòng đầu tiên.
+    let leadId = null;
+    try { leadId = await chatDetectAndCaptureLead(env, sessionId, message); }
+    catch (e) { console.error('chatDetectAndCaptureLead lỗi:', e); }
+
+    await supa(env, 'chat_logs', {
+      method: 'POST', prefer: 'return=minimal',
+      body: JSON.stringify([{ session_id: sessionId, role: 'user', message, lang: langHint, lead_id: leadId }])
+    }).catch(e => console.error('ghi chat_logs (user) lỗi:', e));
+
+    let reply, replyLang;
+    try {
+      const grounding = await chatBuildGroundingText(env);
+      const systemPrompt = chatBuildSystemPrompt(grounding);
+      const aiText = await chatCallAI(env, systemPrompt, message);
+      if (!aiText) throw new Error('AI trả về rỗng');
+      reply = aiText;
+      replyLang = chatGuessLang(message, langHint);
+    } catch (e) {
+      console.error('Gọi Workers AI lỗi, dùng fallback:', e);
+      replyLang = chatGuessLang(message, langHint);
+      reply = replyLang === 'en' ? CHAT_FALLBACK_EN : CHAT_FALLBACK_VI;
+    }
+
+    await supa(env, 'chat_logs', {
+      method: 'POST', prefer: 'return=minimal',
+      body: JSON.stringify([{ session_id: sessionId, role: 'assistant', message: reply, lang: replyLang, lead_id: leadId }])
+    }).catch(e => console.error('ghi chat_logs (assistant) lỗi:', e));
+
+    return chatJson({ reply, lang: replyLang, lead_captured: !!leadId });
+  } catch (e) {
+    console.error('handleChat lỗi ngoài dự kiến:', e);
+    return chatJson({ reply: CHAT_FALLBACK_VI, lang: 'vi' });
   }
 }

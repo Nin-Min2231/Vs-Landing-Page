@@ -13,3 +13,11 @@ binding = "ASSETS"
 # (+ VAPID_SUBJECT tùy chọn). VAPID_PUBLIC_KEY hardcode thẳng trong worker.js vì khóa CÔNG KHAI.
 [triggers]
 crons = ["*/10 * * * *"]
+
+# Workers AI binding (Chat Box Release 1, 08_Chatbox/) — cho phép worker.js gọi env.AI.run(...) để
+# trả lời câu hỏi Visa. KHÔNG cần API key dạng chuỗi (khác OpenAI/Gemini) — Cloudflare tự cấp quyền
+# theo tài khoản đang deploy Worker này, dùng luôn được ở tầng Free (10.000 neuron/ngày). Cú pháp
+# xác nhận lại 2026-08-28 theo tài liệu chính thức Cloudflare Workers AI tại thời điểm code (có thể
+# đã đổi so với các lần deploy trước, xem 01_Docs/08_Ban_giao_Claude_Code.md mục 3).
+[ai]
+binding = "AI"
