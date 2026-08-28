@@ -357,16 +357,24 @@ async function chatBuildGroundingText(env) {
     '\n\nBẢNG GIÁ DỊCH VỤ THEO QUỐC GIA:\n' + (giaText || '(chưa có dữ liệu)');
 }
 
-function chatBuildSystemPrompt(groundingText) {
+// replyLang được TÍNH SẴN từ trước (chatGuessLang, xem handleChat) rồi ÉP thẳng vào cuối prompt —
+// đã test thật trên production thấy chỉ dặn chung chung "trả lời đúng ngôn ngữ câu hỏi" (đặt xen
+// giữa nhiều quy tắc khác + khối dữ liệu dài) không đủ để model tuân theo ổn định (hỏi tiếng Anh
+// nhưng model trả lời tiếng Việt) — đặt lại thành 1 CHỈ THỊ NGẮN, RÕ, RIÊNG BIỆT ở cuối cùng (ngay
+// trước khi model sinh câu trả lời) đáng tin cậy hơn nhiều so với xen vào giữa danh sách quy tắc.
+function chatBuildSystemPrompt(groundingText, replyLang) {
+  const langDirective = replyLang === 'en'
+    ? 'CHỈ THỊ NGÔN NGỮ (ưu tiên cao nhất, không được vi phạm): khách vừa gửi tin nhắn bằng TIẾNG ANH. Bạn PHẢI viết TOÀN BỘ câu trả lời bằng TIẾNG ANH, không được xen tiếng Việt.'
+    : 'CHỈ THỊ NGÔN NGỮ (ưu tiên cao nhất, không được vi phạm): khách vừa gửi tin nhắn bằng TIẾNG VIỆT. Bạn PHẢI viết TOÀN BỘ câu trả lời bằng TIẾNG VIỆT.';
   return 'Bạn là trợ lý ảo của công ty dịch vụ Visa "Top Visa 5S" tại Đà Nẵng, Việt Nam (hotline 0935 887 922, Zalo zalo.me/0935887922).\n' +
     'QUY TẮC BẮT BUỘC:\n' +
     '1. CHỈ trả lời câu hỏi liên quan dịch vụ Visa của Top Visa 5S (loại visa, điều kiện, hồ sơ, quy trình, chi phí, thời gian xử lý, câu hỏi thường gặp). Câu hỏi ngoài phạm vi này thì lịch sự từ chối và mời liên hệ hotline.\n' +
     '2. CHỈ được dùng số liệu (lệ phí, thời gian xét duyệt, checklist, giá dịch vụ) có trong phần "DỮ LIỆU THẬT" bên dưới. TUYỆT ĐỐI KHÔNG tự bịa/suy đoán số liệu không có trong dữ liệu này.\n' +
     '3. Nếu không chắc chắn hoặc dữ liệu không đủ để trả lời chính xác, hãy nói rõ là chưa chắc chắn và mời khách gọi hotline hoặc chat Zalo để được tư vấn chính xác — không đoán.\n' +
-    '4. Trả lời ĐÚNG NGÔN NGỮ của tin nhắn khách vừa gửi: khách hỏi tiếng Việt thì trả lời tiếng Việt, khách hỏi tiếng Anh thì trả lời tiếng Anh.\n' +
-    '5. Giọng văn thân thiện, ngắn gọn (tối đa khoảng 120 từ), dùng gạch đầu dòng nếu liệt kê nhiều ý.\n' +
-    '6. Khi câu trả lời liên quan quyết định của khách (phí, hồ sơ, thời gian), luôn kết thúc bằng gợi ý liên hệ hotline/Zalo.\n\n' +
-    'DỮ LIỆU THẬT (nguồn duy nhất được phép dùng khi trả lời về phí/thời gian/checklist):\n' + groundingText;
+    '4. Giọng văn thân thiện, ngắn gọn (tối đa khoảng 120 từ), dùng gạch đầu dòng nếu liệt kê nhiều ý.\n' +
+    '5. Khi câu trả lời liên quan quyết định của khách (phí, hồ sơ, thời gian), luôn kết thúc bằng gợi ý liên hệ hotline/Zalo.\n\n' +
+    'DỮ LIỆU THẬT (nguồn duy nhất được phép dùng khi trả lời về phí/thời gian/checklist):\n' + groundingText +
+    '\n\n' + langDirective;
 }
 
 async function chatCallAI(env, systemPrompt, userMessage) {
@@ -411,17 +419,18 @@ async function handleChat(request, env) {
       body: JSON.stringify([{ session_id: sessionId, role: 'user', message, lang: langHint, lead_id: leadId }])
     }).catch(e => console.error('ghi chat_logs (user) lỗi:', e));
 
-    let reply, replyLang;
+    // Tính ngôn ngữ trả lời TRƯỚC khi gọi AI — dùng chung cho cả chỉ thị ngôn ngữ trong prompt lẫn
+    // tin nhắn fallback, đảm bảo 2 nơi luôn khớp nhau (không tính lại 2 lần dễ lệch).
+    let reply;
+    const replyLang = chatGuessLang(message, langHint);
     try {
       const grounding = await chatBuildGroundingText(env);
-      const systemPrompt = chatBuildSystemPrompt(grounding);
+      const systemPrompt = chatBuildSystemPrompt(grounding, replyLang);
       const aiText = await chatCallAI(env, systemPrompt, message);
       if (!aiText) throw new Error('AI trả về rỗng');
       reply = aiText;
-      replyLang = chatGuessLang(message, langHint);
     } catch (e) {
       console.error('Gọi Workers AI lỗi, dùng fallback:', e);
-      replyLang = chatGuessLang(message, langHint);
       reply = replyLang === 'en' ? CHAT_FALLBACK_EN : CHAT_FALLBACK_VI;
     }
 
