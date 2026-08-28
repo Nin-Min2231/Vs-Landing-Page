@@ -140,8 +140,13 @@ const COMPANY_ADDRESS   = "303 Âu Cơ, Liên Chiểu, Đà Nẵng";
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{font-family:var(--font);color:var(--color-text);background:var(--color-bg);font-size:16px;line-height:1.6}
-/* Khóa cuộn trang chính khi popup bài viết đang mở (xem initScrollLock() cuối script) */
-html.no-scroll,body.no-scroll{overflow:hidden;height:100%}
+/* Khóa cuộn trang chính khi popup bài viết đang mở (xem initScrollLock() cuối script).
+   Dùng position:fixed + top âm (thay vì overflow:hidden;height:100% cũ) để KHÔNG làm mất/nhảy
+   vị trí cuộn thật lúc khóa — overflow:hidden;height:100% làm trình duyệt reset scrollTop về 0
+   NGAY LÚC khóa (thấy rõ vì backdrop popup trong suốt 60%), còn cách này giữ nguyên vị trí đang
+   xem trên màn hình suốt lúc mở popup, JS chỉ cần khôi phục lại scrollTop thật lúc đóng. */
+html.no-scroll{overflow:hidden}
+body.no-scroll{position:fixed;width:100%;overflow:hidden}
 img{max-width:100%}
 .container{max-width:1200px;margin:0 auto;padding:0 var(--sp-3)}
 section{padding:var(--sp-10) 0}
@@ -1001,19 +1006,25 @@ document.getElementById('postOverlay').addEventListener('click', e=>{
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePostDetail(); });
 
 /* Tự khóa/mở cuộn trang chính theo trạng thái hiện/ẩn của popup bài viết.
-   Lưu lại vị trí cuộn TRƯỚC khi khóa: class "no-scroll" (overflow:hidden + height:100%) làm
-   scrollTop bị trình duyệt reset về 0 NGAY LÚC khóa (không phải lúc mở khóa) — nếu không tự lưu
-   và khôi phục lại thủ công, đóng dialog xong trang sẽ luôn nhảy về đầu dù trước đó đang cuộn ở
-   vị trí bất kỳ (đã xác nhận qua test: đọc 1 bài ở giữa/cuối trang, đóng dialog bị nhảy về đầu). */
+   Dùng kỹ thuật position:fixed + top âm (KHÔNG dùng overflow:hidden;height:100% — cách đó làm
+   trình duyệt reset scrollTop về 0 NGAY LÚC khóa, gây nhảy lên đầu lúc MỞ popup, thấy được vì
+   backdrop trong suốt 60%). Lúc khóa: lưu window.scrollY rồi ghim body đứng yên đúng vị trí hiện
+   tại bằng top âm — không đụng gì tới scrollTop thật nên không có gì để nhảy. Lúc mở khóa: bỏ ghim
+   rồi tự gán lại đúng scrollTop đã lưu (không dùng window.scrollTo để tránh bị hiệu ứng
+   scroll-behavior:smooth của <html> làm chạy cuộn có animation thay vì về thẳng tức thì). */
 function initScrollLock(){
   let savedScrollY = 0;
   const check = ()=>{
     const anyOpen = [...document.querySelectorAll('.post-overlay')].some(o=>o.classList.contains('show'));
     const wasLocked = document.documentElement.classList.contains('no-scroll');
-    if(anyOpen && !wasLocked) savedScrollY = window.scrollY;
+    if(anyOpen && !wasLocked){
+      savedScrollY = window.scrollY;
+      document.body.style.top = (-savedScrollY)+'px';
+    }
     document.documentElement.classList.toggle('no-scroll', anyOpen);
     document.body.classList.toggle('no-scroll', anyOpen);
     if(!anyOpen && wasLocked){
+      document.body.style.top = '';
       document.documentElement.scrollTop = savedScrollY;
       document.body.scrollTop = savedScrollY;
     }
