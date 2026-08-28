@@ -414,6 +414,77 @@ footer a:hover{color:#fff}
   animation:pulse 2s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,122,41,.5)}70%{box-shadow:0 0 0 14px rgba(255,122,41,0)}100%{box-shadow:0 0 0 0 rgba(255,122,41,0)}}
 
+/* ==================== CHAT BOX (Release 1, 2026-08-28 — xem CLAUDE.md / 08_Chatbox/) ====================
+   Vị trí: fixed, góc dưới phải, đặt CAO HƠN .float-contact (bottom:20px, cao 58px lúc đóng -> chiếm
+   khoảng 20-78px) để không đè lên nút Zalo/gọi/FB khi .float-contact đang đóng (FR-CB-01). Không
+   đụng .scroll-top-btn (nằm bên trái, left:16px). Khi mở Chat Box, tự đóng .float-contact (xem JS)
+   để tránh 2 cụm nút nổi cùng xoè ra chồng nhau. */
+.chatbox-toggle{position:fixed;right:16px;bottom:90px;z-index:220;width:58px;height:58px;border-radius:50%;
+  background:var(--color-primary);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:var(--shadow-md);
+  display:flex;align-items:center;justify-content:center;transition:.2s}
+.chatbox-toggle:hover{background:var(--color-primary-dark);transform:translateY(-3px)}
+.chatbox-toggle .badge-dot{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;
+  background:var(--color-accent);border:2px solid #fff}
+.chatbox-panel{position:fixed;right:16px;bottom:158px;z-index:219;width:380px;max-width:calc(100vw - 32px);
+  height:min(70vh,560px);background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
+  display:flex;flex-direction:column;overflow:hidden;opacity:0;pointer-events:none;transform:translateY(12px);
+  transition:.2s}
+.chatbox-panel.open{opacity:1;pointer-events:auto;transform:translateY(0)}
+.chatbox-head{background:var(--color-primary);color:#fff;padding:14px 16px;display:flex;align-items:center;
+  justify-content:space-between;flex-shrink:0}
+.chatbox-head-title{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+.chatbox-head-actions{display:flex;align-items:center;gap:8px}
+.chatbox-lang{display:flex;background:rgba(255,255,255,.18);border-radius:var(--radius-full);padding:2px}
+.chatbox-lang button{border:none;background:transparent;color:#fff;font-size:11px;font-weight:700;
+  padding:4px 8px;border-radius:var(--radius-full);cursor:pointer;opacity:.75}
+.chatbox-lang button.active{background:#fff;color:var(--color-primary);opacity:1}
+.chatbox-close{background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;
+  padding:4px}
+.chatbox-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--color-bg-alt)}
+.chatbox-msg{max-width:85%;padding:10px 13px;border-radius:var(--radius-md);font-size:14px;line-height:1.5;
+  white-space:pre-wrap;word-break:break-word}
+.chatbox-msg.bot{align-self:flex-start;background:#fff;color:var(--color-text);box-shadow:var(--shadow-sm);
+  border-bottom-left-radius:4px}
+.chatbox-msg.user{align-self:flex-end;background:var(--color-primary);color:#fff;border-bottom-right-radius:4px}
+.chatbox-msg-cta{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.chatbox-msg-cta a{font-size:12px;font-weight:700;text-decoration:none;padding:5px 10px;border-radius:var(--radius-full);
+  background:var(--color-primary-light);color:var(--color-primary-dark)}
+.chatbox-typing{align-self:flex-start;display:flex;gap:4px;padding:12px 14px;background:#fff;border-radius:var(--radius-md);
+  box-shadow:var(--shadow-sm)}
+.chatbox-typing span{width:6px;height:6px;border-radius:50%;background:var(--color-text-muted);
+  animation:chatboxBlink 1.2s infinite}
+.chatbox-typing span:nth-child(2){animation-delay:.2s}
+.chatbox-typing span:nth-child(3){animation-delay:.4s}
+@keyframes chatboxBlink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.chatbox-quick{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;flex-shrink:0}
+.chatbox-quick button{border:1px solid var(--color-primary);background:#fff;color:var(--color-primary);
+  font-size:12px;font-weight:600;padding:6px 10px;border-radius:var(--radius-full);cursor:pointer;text-align:left}
+.chatbox-quick button:hover{background:var(--color-primary-light)}
+.chatbox-quick button.lead-action{border-color:var(--color-accent);color:var(--color-accent-dark)}
+.chatbox-foot{border-top:1px solid var(--color-border);padding:10px;display:flex;gap:8px;flex-shrink:0;background:#fff}
+.chatbox-foot input{flex:1;border:1px solid var(--color-border);border-radius:var(--radius-full);padding:10px 14px;
+  font-size:14px;font-family:var(--font);outline:none}
+.chatbox-foot input:focus{border-color:var(--color-primary)}
+.chatbox-foot button{width:40px;height:40px;border-radius:50%;border:none;background:var(--color-primary);
+  color:#fff;font-size:16px;cursor:pointer;flex-shrink:0}
+.chatbox-foot button:disabled{opacity:.5;cursor:not-allowed}
+.chatbox-leadform{background:#fff;border-radius:var(--radius-md);padding:12px;box-shadow:var(--shadow-sm);
+  align-self:stretch;max-width:100%}
+.chatbox-leadform label{font-size:12px;font-weight:600;color:var(--color-text-muted);display:block;margin:8px 0 4px}
+.chatbox-leadform label:first-child{margin-top:0}
+.chatbox-leadform input{width:100%;border:1px solid var(--color-border);border-radius:var(--radius-sm);
+  padding:8px 10px;font-size:14px;font-family:var(--font)}
+.chatbox-leadform-actions{display:flex;gap:8px;margin-top:10px}
+.chatbox-leadform-actions button{flex:1;padding:8px;border-radius:var(--radius-sm);border:none;font-size:13px;
+  font-weight:700;cursor:pointer}
+.chatbox-leadform-actions .send{background:var(--color-accent);color:#fff}
+.chatbox-leadform-actions .cancel{background:var(--color-bg-alt);color:var(--color-text-muted)}
+
+@media (max-width:767px){
+  .chatbox-toggle{bottom:84px;right:14px;width:54px;height:54px;font-size:22px}
+  .chatbox-panel{right:0;bottom:0;left:0;top:0;width:100%;max-width:100%;height:100%;border-radius:0}
+}
+
 /* ==================== TABLET (768–1023px) ==================== */
 @media (max-width:1023px){
   .grid-services{grid-template-columns:repeat(3,1fr)}
@@ -756,6 +827,30 @@ footer a:hover{color:#fff}
 <!-- ==================== NÚT LÊN ĐẦU TRANG ==================== -->
 <button class="scroll-top-btn" id="scrollTopBtn" aria-label="Lên đầu trang" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆</button>
 
+<!-- ==================== CHAT BOX (Release 1, 2026-08-28) ====================
+     Xem CLAUDE.md / 08_Chatbox/. Nút nổi + khung chat, chỉ HIỂN THỊ (rỗng lúc tải trang) — toàn bộ
+     hành vi (mở/đóng, câu hỏi nhanh trả lời tức thời, gọi /api/chat cho câu hỏi tự do, để lại thông
+     tin liên hệ) nằm trong script cuối trang (khu vực "CHAT BOX"). -->
+<button class="chatbox-toggle" id="chatboxToggle" aria-label="Mở Chat hỗ trợ" onclick="chatboxToggleOpen()">💬</button>
+<div class="chatbox-panel" id="chatboxPanel" role="dialog" aria-label="Chat hỗ trợ Top Visa 5S">
+  <div class="chatbox-head">
+    <div class="chatbox-head-title">🤖 <span id="chatboxTitle">Trợ lý Top Visa 5S</span></div>
+    <div class="chatbox-head-actions">
+      <div class="chatbox-lang" id="chatboxLangSwitch">
+        <button type="button" class="active" data-lang="vi" onclick="chatboxSetLang('vi')">VI</button>
+        <button type="button" data-lang="en" onclick="chatboxSetLang('en')">EN</button>
+      </div>
+      <button type="button" class="chatbox-close" onclick="chatboxClose()" aria-label="Đóng">✕</button>
+    </div>
+  </div>
+  <div class="chatbox-body" id="chatboxBody"></div>
+  <div class="chatbox-quick" id="chatboxQuick"></div>
+  <form class="chatbox-foot" id="chatboxForm">
+    <input type="text" id="chatboxInput" maxlength="500" autocomplete="off" placeholder="Nhập câu hỏi của bạn...">
+    <button type="submit" id="chatboxSendBtn" aria-label="Gửi">➤</button>
+  </form>
+</div>
+
 <!-- ==================== CHI TIẾT BÀI VIẾT (POPUP) ==================== -->
 <div class="post-overlay" id="postOverlay">
   <div class="post-modal">
@@ -897,6 +992,7 @@ initScrollSpy();
     if(!res.ok) return;
     const rows = await res.json();
     const gia = new Map(rows.map(r=>[r.quoc_gia, r.gia]));
+    window.__DVG_PRICES__ = gia; // cache lại để Chat Box (mục "CHAT BOX" cuối script) dùng ngay, không gọi API lần 2
     document.querySelectorAll('.price[data-country]').forEach(el=>{
       const country = el.dataset.country;
       if(!gia.has(country)) return; // chưa cấu hình nước này ở admin -> giữ giá fallback trong HTML
@@ -1140,6 +1236,215 @@ document.getElementById('leadForm').addEventListener('submit', async function(e)
     btn.disabled = false; btn.textContent = 'Gửi tư vấn →';
   }
 });
+
+/* ==================== CHAT BOX (Release 1, 2026-08-28) ====================
+   Xem CLAUDE.md / 08_Chatbox/Dac_ta_Trien_khai_Chatbox.md mục 6.1. 2 loại câu trả lời:
+   - Câu hỏi nhanh (chatboxQuickClick): trả lời TỨC THÌ bằng nội dung có sẵn (copy từ FAQ tĩnh +
+     giá dịch vụ đang hiển thị trên trang) — KHÔNG gọi mạng, đúng yêu cầu hiệu năng <100ms.
+   - Câu hỏi tự do (chatboxSendFree): gọi POST /api/chat (Cloudflare Workers AI, xem worker.js) —
+     có trạng thái "đang trả lời...", chấp nhận độ trễ 1-3s, có fallback khi lỗi mạng/server. ==== */
+function chatboxEsc(s){
+  return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function chatboxGetSessionId(){
+  try{
+    let sid = sessionStorage.getItem('tv5s_chat_sid');
+    if(!sid){ sid = (crypto.randomUUID ? crypto.randomUUID() : 'sid-'+Date.now()+'-'+Math.random().toString(16).slice(2)); sessionStorage.setItem('tv5s_chat_sid', sid); }
+    return sid;
+  }catch(e){ return 'sid-'+Date.now()+'-'+Math.random().toString(16).slice(2); } // phòng sessionStorage bị chặn (ẩn danh nghiêm ngặt...)
+}
+const CHATBOX_SESSION_ID = chatboxGetSessionId();
+let chatboxLang = 'vi', chatboxInited = false, chatboxLeadNotified = false, chatboxSending = false;
+
+/* Câu hỏi nhanh (~7 nút, song ngữ) — nội dung 5 câu FAQ lấy đúng y nguyên từ <section id="faq">
+   (dịch tay sang tiếng Anh, không dùng AI dịch tự động để tránh sai lệch số liệu/điều khoản, xem
+   08_Chatbox/Dac_ta_Trien_khai_Chatbox.md mục 7). Sửa nội dung FAQ ở <section id="faq"> thì nhớ
+   sửa lại đồng bộ ở đây (bản vi) — giống nguyên tắc đã áp dụng cho JSON-LD FAQPage (CLAUDE.md mục 12). */
+const CHATBOX_QUICK = [
+  { type:'faq', vi:{ q:'Thời gian xin visa mất bao lâu?',
+      a:'Tùy quốc gia: Đài Loan 5–7 ngày, Nhật/Hàn 7–10 ngày làm việc, Trung Quốc 4–7 ngày, Schengen 15–20 ngày, Mỹ tùy lịch phỏng vấn. Chúng tôi sẽ báo thời gian cụ thể khi tư vấn.' },
+    en:{ q:'How long does visa processing take?',
+      a:'It depends on the country: Taiwan 5–7 days, Japan/Korea 7–10 working days, China 4–7 days, Schengen 15–20 days, and the US depends on the interview schedule. We will confirm the exact timeline during consultation.' } },
+  { type:'faq', vi:{ q:'Trượt visa có mất phí dịch vụ không?',
+      a:'Với hồ sơ được chuyên viên đánh giá đủ điều kiện trước khi nộp, nếu trượt visa bạn KHÔNG phải trả phí dịch vụ. Một số hồ sơ có yếu tố rủi ro cao (tài chính/hồ sơ chưa đủ mạnh) có thể phát sinh thêm phí xử lý — chuyên viên sẽ tư vấn và báo phí cụ thể bằng văn bản trước khi bạn quyết định, không phát sinh bất ngờ. Riêng phí lãnh sự theo quy định từng nước, không hoàn lại dù đậu hay trượt.' },
+    en:{ q:'If my visa is rejected, do I still pay the service fee?',
+      a:'For applications our consultants assess as eligible before submission, you do NOT pay the service fee if the visa is rejected. Some higher-risk applications (weaker finances/documents) may involve an extra processing fee — our consultant will always quote this in writing before you decide, no surprises. The consular fee follows each country’s own rules and is non-refundable either way.' } },
+  { type:'faq', vi:{ q:'Tôi cần chuẩn bị những giấy tờ gì?',
+      a:'Cơ bản gồm: hộ chiếu còn hạn 6 tháng, ảnh thẻ, giấy tờ chứng minh công việc và tài chính. Danh sách chi tiết khác nhau theo từng nước — chuyên viên sẽ gửi checklist đầy đủ khi tư vấn.' },
+    en:{ q:'What documents do I need to prepare?',
+      a:'Basic requirements: a passport valid for at least 6 months, passport photos, and proof of employment and finances. The detailed checklist varies by country — our consultant will send you the full list during consultation.' } },
+  { type:'faq', vi:{ q:'Hồ sơ tài chính yếu có xin được visa không?',
+      a:'Vẫn có phương án. Chuyên viên sẽ đánh giá hồ sơ thực tế và tư vấn cách bổ sung, chọn loại visa và quốc gia phù hợp để tăng khả năng đậu, không khai gian thông tin.' },
+    en:{ q:'Can I still apply with weak financial documents?',
+      a:'Yes, there are still options. Our consultant will review your actual documents and advise how to strengthen them, and help choose the right visa type/country to improve approval chances — without falsifying any information.' } },
+  { type:'faq', vi:{ q:'Chi phí dịch vụ gồm những gì?',
+      a:'Báo giá trọn gói gồm: phí lãnh sự + phí dịch vụ (tư vấn, dịch thuật, khai form, đặt lịch). Không phát sinh thêm. Bạn nhận báo giá chi tiết bằng văn bản trước khi quyết định.' },
+    en:{ q:'What’s included in the service fee?',
+      a:'The all-in quote includes: the consular fee + our service fee (consultation, translation, form filling, appointment booking). No hidden extras — you’ll get a detailed written quote before deciding.' } },
+  { type:'price', vi:{ q:'Bảng giá dịch vụ các nước?' }, en:{ q:'Price list by country?' } },
+  { type:'lead', vi:{ q:'☎️ Để lại số điện thoại tư vấn' }, en:{ q:'☎️ Leave your phone number' } }
+];
+
+function chatboxCtaHtml(lang){
+  const callLabel = lang==='en' ? '📞 Call hotline' : '📞 Gọi hotline';
+  const zaloLabel = '💬 Zalo';
+  return '<div class="chatbox-msg-cta">'+
+    '<a href="tel:'+HOTLINE+'" class="js-tel-link">'+callLabel+'</a>'+
+    '<a href="https://zalo.me/'+ZALO_PHONE+'" target="_blank" rel="noopener" class="js-zalo-link">'+zaloLabel+'</a>'+
+    '</div>';
+}
+function chatboxAddMsg(role, text, opts={}){
+  const body = document.getElementById('chatboxBody');
+  const div = document.createElement('div');
+  div.className = 'chatbox-msg '+(role==='user'?'user':'bot');
+  div.innerHTML = chatboxEsc(text) + (opts.cta ? chatboxCtaHtml(opts.lang||chatboxLang) : '');
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+function chatboxShowTyping(){
+  const body = document.getElementById('chatboxBody');
+  const div = document.createElement('div');
+  div.className = 'chatbox-typing'; div.id = 'chatboxTypingIndicator';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  body.appendChild(div); body.scrollTop = body.scrollHeight;
+}
+function chatboxHideTyping(){ const t=document.getElementById('chatboxTypingIndicator'); if(t) t.remove(); }
+
+/* Giá dịch vụ hiển thị trong nút bấm nhanh — đọc TRỰC TIẾP từ các thẻ .card-service đang hiển thị
+   trên trang (đã được script "GIÁ DỊCH VỤ" ở trên cập nhật đúng giá thật nếu tải được, hoặc giữ giá
+   fallback tĩnh nếu lỗi mạng) — không gọi API riêng, luôn khớp 100% với giá khách đang thấy trên
+   trang, trả lời tức thời theo đúng yêu cầu hiệu năng. */
+function chatboxPriceListText(lang){
+  const lines = [...document.querySelectorAll('.card-service')].map(c=>{
+    const name = c.querySelector('h3')?.textContent?.trim()||'';
+    const price = c.querySelector('.price')?.textContent?.trim()||'';
+    return '• '+name+': '+price;
+  });
+  const body = lines.join('\n');
+  return lang==='en'
+    ? 'Price list by country (service fee):\n'+body+'\n\n(Country names are shown in Vietnamese for now — English names coming soon.)'
+    : 'Bảng giá dịch vụ theo quốc gia:\n'+body;
+}
+
+function chatboxRenderQuick(){
+  const wrap = document.getElementById('chatboxQuick');
+  wrap.innerHTML = CHATBOX_QUICK.map((item,i)=>
+    '<button type="button" class="'+(item.type==='lead'?'lead-action':'')+'" onclick="chatboxQuickClick('+i+')">'+chatboxEsc(item[chatboxLang].q)+'</button>'
+  ).join('');
+}
+function chatboxQuickClick(i){
+  const item = CHATBOX_QUICK[i];
+  chatboxAddMsg('user', item[chatboxLang].q);
+  if(item.type==='lead'){ chatboxShowLeadForm(); return; }
+  const answer = item.type==='price' ? chatboxPriceListText(chatboxLang) : item[chatboxLang].a;
+  chatboxAddMsg('bot', answer, {cta:true});
+}
+
+/* Form để lại tên/SĐT ngay trong khung chat — gửi đi dưới dạng 1 tin nhắn tự do bình thường tới
+   /api/chat (KHÔNG tạo endpoint riêng), server tự nhận diện SĐT hợp lệ trong tin nhắn để tạo lead
+   (nguon='Từ Chatbot', xem worker.js handleChat/chatDetectAndCaptureLead) — đúng theo đặc tả mục 5.2. */
+function chatboxShowLeadForm(){
+  if(document.getElementById('chatboxLeadForm')) return;
+  const body = document.getElementById('chatboxBody');
+  const wrap = document.createElement('div');
+  wrap.className = 'chatbox-leadform'; wrap.id = 'chatboxLeadForm';
+  const L = chatboxLang==='en'
+    ? { name:'Full name', phone:'Phone number', send:'Send', cancel:'Cancel' }
+    : { name:'Họ và tên', phone:'Số điện thoại', send:'Gửi', cancel:'Hủy' };
+  wrap.innerHTML =
+    '<label>'+L.name+'</label><input type="text" id="chatboxLeadName" maxlength="60">'+
+    '<label>'+L.phone+'</label><input type="tel" id="chatboxLeadPhone" maxlength="15">'+
+    '<div class="chatbox-leadform-actions">'+
+      '<button type="button" class="send" onclick="chatboxSubmitLeadForm()">'+L.send+'</button>'+
+      '<button type="button" class="cancel" onclick="chatboxCancelLeadForm()">'+L.cancel+'</button>'+
+    '</div>';
+  body.appendChild(wrap);
+  body.scrollTop = body.scrollHeight;
+}
+function chatboxCancelLeadForm(){ const f=document.getElementById('chatboxLeadForm'); if(f) f.remove(); }
+function chatboxSubmitLeadForm(){
+  const name = document.getElementById('chatboxLeadName').value.trim();
+  const phone = normalizePhone(document.getElementById('chatboxLeadPhone').value.trim());
+  if(name.length<2 || !isValidPhone(phone)){
+    showToast(chatboxLang==='en' ? 'Please enter a valid name and phone number.' : 'Vui lòng nhập đúng họ tên và số điện thoại.', 'error');
+    return;
+  }
+  chatboxCancelLeadForm();
+  const text = chatboxLang==='en'
+    ? 'I would like to leave my contact info. Name: '+name+'. Phone: '+phone+'.'
+    : 'Tôi muốn để lại thông tin liên hệ. Họ tên: '+name+'. Số điện thoại: '+phone+'.';
+  chatboxSendFree(text);
+}
+
+async function chatboxSendFree(text){
+  chatboxAddMsg('user', text);
+  chatboxSending = true;
+  document.getElementById('chatboxSendBtn').disabled = true;
+  chatboxShowTyping();
+  try{
+    const res = await fetch('/api/chat', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ session_id: CHATBOX_SESSION_ID, message: text, lang_hint: chatboxLang })
+    });
+    const data = await res.json().catch(()=>null);
+    chatboxHideTyping();
+    if(!res.ok || !data || !data.reply) throw new Error('bad_response');
+    chatboxAddMsg('bot', data.reply, { cta:true, lang: data.lang||chatboxLang });
+    if(data.lead_captured && !chatboxLeadNotified){
+      chatboxLeadNotified = true;
+      chatboxAddMsg('bot', chatboxLang==='en'
+        ? '✅ We’ve saved your contact info — our consultant will call you back soon!'
+        : '✅ Đã ghi nhận thông tin liên hệ của bạn — chuyên viên sẽ gọi lại sớm nhé!');
+    }
+  }catch(e){
+    chatboxHideTyping();
+    chatboxAddMsg('bot', chatboxLang==='en'
+      ? 'Sorry, we could not connect right now. Please call hotline +84 935 887 922 or chat via Zalo.'
+      : 'Xin lỗi, hiện không kết nối được. Vui lòng gọi hotline 0935 887 922 hoặc chat Zalo để được hỗ trợ ngay.', { cta:true });
+  }finally{
+    chatboxSending = false;
+    document.getElementById('chatboxSendBtn').disabled = false;
+  }
+}
+document.getElementById('chatboxForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  if(chatboxSending) return;
+  const input = document.getElementById('chatboxInput');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  chatboxSendFree(text);
+});
+
+function chatboxSetLang(lang){
+  chatboxLang = lang==='en' ? 'en' : 'vi';
+  document.querySelectorAll('#chatboxLangSwitch button').forEach(b=>b.classList.toggle('active', b.dataset.lang===chatboxLang));
+  document.getElementById('chatboxInput').placeholder = chatboxLang==='en' ? 'Type your question...' : 'Nhập câu hỏi của bạn...';
+  document.getElementById('chatboxTitle').textContent = chatboxLang==='en' ? 'Top Visa 5S Assistant' : 'Trợ lý Top Visa 5S';
+  chatboxRenderQuick(); // chỉ đổi ngôn ngữ câu hỏi nhanh + placeholder — KHÔNG dịch lại lịch sử chat
+  // đã có (chatbot tự nhận diện ngôn ngữ theo TỪNG câu hỏi, FR-CB-05 — không phụ thuộc công tắc này)
+}
+function chatboxInit(){
+  chatboxInited = true;
+  chatboxAddMsg('bot', chatboxLang==='en'
+    ? 'Hi! I’m the Top Visa 5S virtual assistant 🤖 Tap a quick question below or type your own — I can help with visa types, requirements, process, fees and processing time.'
+    : 'Xin chào! Mình là trợ lý ảo của Top Visa 5S 🤖 Bạn có thể bấm 1 câu hỏi nhanh bên dưới hoặc gõ câu hỏi tự do — mình có thể hỗ trợ về loại visa, điều kiện, quy trình, chi phí và thời gian xử lý.');
+  chatboxRenderQuick();
+}
+function chatboxToggleOpen(){
+  const panel = document.getElementById('chatboxPanel');
+  const opening = !panel.classList.contains('open');
+  if(opening){
+    panel.classList.add('open');
+    const fc = document.getElementById('floatContact'); if(fc) fc.classList.remove('open'); // tránh 2 cụm nút nổi chồng nhau
+    if(!chatboxInited) chatboxInit();
+    setTimeout(()=>{ const inp=document.getElementById('chatboxInput'); if(inp) inp.focus(); }, 200);
+  } else {
+    panel.classList.remove('open');
+  }
+}
+function chatboxClose(){ document.getElementById('chatboxPanel').classList.remove('open'); }
 </script>
 </body>
 </html>
