@@ -473,7 +473,12 @@ footer a:hover{color:#fff}
   font-size:12px;font-weight:600;padding:6px 12px;border-radius:var(--radius-full);cursor:pointer;
   white-space:nowrap;flex-shrink:0}
 .chatbox-quick button:hover{background:var(--color-primary-light)}
-.chatbox-quick button.lead-action{border-color:var(--color-accent);color:var(--color-accent-dark)}
+/* Nút "Để lại số điện thoại tư vấn" — CỐ ĐỊNH ngay trên ô nhập (không nằm trong hàng cuộn ngang
+   .chatbox-quick nữa, PM phản hồi 2026-08-29 cần dễ thấy/dễ bấm hơn là lẫn trong hàng cuộn). */
+.chatbox-lead-cta{flex-shrink:0;width:100%;border:none;border-top:1px solid var(--color-border);
+  background:var(--color-accent);color:#fff;font-size:13px;font-weight:700;padding:10px 14px;
+  cursor:pointer;text-align:center}
+.chatbox-lead-cta:hover{background:var(--color-accent-dark)}
 .chatbox-foot{border-top:1px solid var(--color-border);padding:10px;display:flex;gap:8px;flex-shrink:0;background:#fff}
 .chatbox-foot input{flex:1;border:1px solid var(--color-border);border-radius:var(--radius-full);padding:10px 14px;
   font-size:14px;font-family:var(--font);outline:none}
@@ -858,6 +863,7 @@ footer a:hover{color:#fff}
   </div>
   <div class="chatbox-quick" id="chatboxQuick"></div>
   <div class="chatbox-body" id="chatboxBody"></div>
+  <button type="button" class="chatbox-lead-cta" id="chatboxLeadCtaBtn" onclick="chatboxShowLeadForm()">☎️ <span id="chatboxLeadCtaLabel">Để lại số điện thoại tư vấn</span></button>
   <form class="chatbox-foot" id="chatboxForm">
     <input type="text" id="chatboxInput" maxlength="500" autocomplete="off" placeholder="Nhập câu hỏi của bạn...">
     <button type="submit" id="chatboxSendBtn" aria-label="Gửi">➤</button>
@@ -1294,9 +1300,10 @@ const CHATBOX_QUICK = [
       a:'Báo giá trọn gói gồm: phí lãnh sự + phí dịch vụ (tư vấn, dịch thuật, khai form, đặt lịch). Không phát sinh thêm. Bạn nhận báo giá chi tiết bằng văn bản trước khi quyết định.' },
     en:{ q:'What’s included in the service fee?',
       a:'The all-in quote includes: the consular fee + our service fee (consultation, translation, form filling, appointment booking). No hidden extras — you’ll get a detailed written quote before deciding.' } },
-  { type:'price', vi:{ q:'Bảng giá dịch vụ các nước?' }, en:{ q:'Price list by country?' } },
-  { type:'lead', vi:{ q:'☎️ Để lại số điện thoại tư vấn' }, en:{ q:'☎️ Leave your phone number' } }
+  { type:'price', vi:{ q:'Bảng giá dịch vụ các nước?' }, en:{ q:'Price list by country?' } }
 ];
+// Nút "Để lại số điện thoại tư vấn" KHÔNG còn nằm trong hàng cuộn ngang này nữa — đã tách thành
+// nút CỐ ĐỊNH riêng ngay trên ô nhập (#chatboxLeadCtaBtn, xem chatboxSetLang() để đổi nhãn VI/EN).
 
 function chatboxCtaHtml(lang){
   const callLabel = lang==='en' ? '📞 Call hotline' : '📞 Gọi hotline';
@@ -1342,13 +1349,12 @@ function chatboxPriceListText(lang){
 function chatboxRenderQuick(){
   const wrap = document.getElementById('chatboxQuick');
   wrap.innerHTML = CHATBOX_QUICK.map((item,i)=>
-    '<button type="button" class="'+(item.type==='lead'?'lead-action':'')+'" onclick="chatboxQuickClick('+i+')">'+chatboxEsc(item[chatboxLang].q)+'</button>'
+    '<button type="button" onclick="chatboxQuickClick('+i+')">'+chatboxEsc(item[chatboxLang].q)+'</button>'
   ).join('');
 }
 function chatboxQuickClick(i){
   const item = CHATBOX_QUICK[i];
   chatboxAddMsg('user', item[chatboxLang].q);
-  if(item.type==='lead'){ chatboxShowLeadForm(); return; }
   const answer = item.type==='price' ? chatboxPriceListText(chatboxLang) : item[chatboxLang].a;
   chatboxAddMsg('bot', answer, {cta:true});
 }
@@ -1435,6 +1441,7 @@ function chatboxSetLang(lang){
   document.querySelectorAll('#chatboxLangSwitch button').forEach(b=>b.classList.toggle('active', b.dataset.lang===chatboxLang));
   document.getElementById('chatboxInput').placeholder = chatboxLang==='en' ? 'Type your question...' : 'Nhập câu hỏi của bạn...';
   document.getElementById('chatboxTitle').textContent = chatboxLang==='en' ? 'Top Visa 5S Assistant' : 'Trợ lý Top Visa 5S';
+  document.getElementById('chatboxLeadCtaLabel').textContent = chatboxLang==='en' ? 'Leave your phone number' : 'Để lại số điện thoại tư vấn';
   chatboxRenderQuick(); // chỉ đổi ngôn ngữ câu hỏi nhanh + placeholder — KHÔNG dịch lại lịch sử chat
   // đã có (chatbot tự nhận diện ngôn ngữ theo TỪNG câu hỏi, FR-CB-05 — không phụ thuộc công tắc này)
 }
@@ -1458,6 +1465,16 @@ function chatboxToggleOpen(){
   }
 }
 function chatboxClose(){ document.getElementById('chatboxPanel').classList.remove('open'); }
+// Đóng khung chat khi bấm ra ngoài (PM yêu cầu 2026-08-29) — cùng mẫu đã dùng cho #floatContact
+// (mục "NÚT LIÊN HỆ NỔI" phía trên): loại trừ chính panel + nút toggle để không tự đóng ngay lúc
+// vừa bấm mở, hoặc đóng nhầm khi đang thao tác bên trong khung chat (gõ input, bấm nút...).
+document.addEventListener('click', function(e){
+  const panel = document.getElementById('chatboxPanel');
+  const toggle = document.getElementById('chatboxToggle');
+  if(!panel.classList.contains('open')) return;
+  if(panel.contains(e.target) || toggle.contains(e.target)) return;
+  chatboxClose();
+});
 </script>
 </body>
 </html>

@@ -627,7 +627,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <section id="tab-chat" class="hidden tab-scroll">
       <div class="panel-head">
         <h2>Quản lý Chat</h2>
-        <div class="filters">
+        <div class="filters filters-hoso" style="align-items:center">
           <input type="search" id="fChatSearch" placeholder="Tìm tên / SĐT khách..." oninput="renderChatSessions()" style="width:200px">
           <span class="filters-label">Từ ngày</span>
           <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="fChatTuNgay" oninput="onDateInput(this)" onchange="renderChatSessions()" style="width:135px">
@@ -2239,7 +2239,7 @@ function openChatDetailModal(sessionId){
 }
 function closeChatDetailModal(){ $('chatDetailOverlay').classList.add('hidden'); }
 async function delChatSession(sessionId){
-  if(!await showConfirmPopup({message:'Xóa toàn bộ hội thoại này? Không thể hoàn tác.', danger:true})) return;
+  if(!await showConfirmPopup({message:'Xóa toàn bộ hội thoại này? Không thể hoàn tác.'})) return;
   try{
     await api('chat_logs?session_id=eq.'+encodeURIComponent(sessionId), {method:'DELETE', prefer:'return=minimal'});
     closeChatDetailModal();
