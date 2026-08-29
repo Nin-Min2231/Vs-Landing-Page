@@ -420,11 +420,19 @@ footer a:hover{color:#fff}
    đụng .scroll-top-btn (nằm bên trái, left:16px). Khi mở Chat Box, tự đóng .float-contact (xem JS)
    để tránh 2 cụm nút nổi cùng xoè ra chồng nhau. */
 .chatbox-toggle{position:fixed;right:16px;bottom:90px;z-index:220;width:58px;height:58px;border-radius:50%;
-  background:var(--color-primary);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:var(--shadow-md);
-  display:flex;align-items:center;justify-content:center;transition:.2s}
-.chatbox-toggle:hover{background:var(--color-primary-dark);transform:translateY(-3px)}
+  background:var(--color-primary);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:var(--shadow-md);
+  display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s;
+  animation:chatboxToggleWiggle 4s ease-in-out infinite}
+.chatbox-toggle:hover{background:var(--color-primary-dark)}
 .chatbox-toggle .badge-dot{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;
   background:var(--color-accent);border:2px solid #fff}
+/* Nút nổi "lắc lư" định kỳ để thu hút chú ý (giống tinh thần @keyframes pulse của .float-main) —
+   phần lớn thời gian đứng yên, chỉ lắc nhẹ vài trăm ms mỗi ~4 giây, không gây rối mắt liên tục. */
+@keyframes chatboxToggleWiggle{
+  0%,80%,100%{transform:rotate(0) translateY(0)}
+  83%{transform:rotate(-12deg) translateY(-2px)} 86%{transform:rotate(10deg) translateY(-2px)}
+  89%{transform:rotate(-8deg)} 92%{transform:rotate(6deg)} 95%{transform:rotate(0)}
+}
 .chatbox-panel{position:fixed;right:16px;bottom:158px;z-index:219;width:380px;max-width:calc(100vw - 32px);
   height:min(70vh,560px);background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
   display:flex;flex-direction:column;overflow:hidden;opacity:0;pointer-events:none;transform:translateY(12px);
@@ -456,9 +464,14 @@ footer a:hover{color:#fff}
 .chatbox-typing span:nth-child(2){animation-delay:.2s}
 .chatbox-typing span:nth-child(3){animation-delay:.4s}
 @keyframes chatboxBlink{0%,80%,100%{opacity:.25}40%{opacity:1}}
-.chatbox-quick{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;flex-shrink:0}
+/* Hàng gợi ý câu hỏi nhanh — ĐẶT TRÊN cùng (ngay dưới header), cuộn NGANG 1 dòng duy nhất để không
+   chiếm nhiều chỗ của khung tin nhắn bên dưới (PM phản hồi 2026-08-29: bản đầu xếp dọc 7 nút full-
+   width choán gần hết khung chat) — vuốt ngang để xem hết 7 nút, không xuống dòng. */
+.chatbox-quick{display:flex;flex-wrap:nowrap;gap:6px;padding:10px 14px;flex-shrink:0;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid var(--color-border);background:#fff}
 .chatbox-quick button{border:1px solid var(--color-primary);background:#fff;color:var(--color-primary);
-  font-size:12px;font-weight:600;padding:6px 10px;border-radius:var(--radius-full);cursor:pointer;text-align:left}
+  font-size:12px;font-weight:600;padding:6px 12px;border-radius:var(--radius-full);cursor:pointer;
+  white-space:nowrap;flex-shrink:0}
 .chatbox-quick button:hover{background:var(--color-primary-light)}
 .chatbox-quick button.lead-action{border-color:var(--color-accent);color:var(--color-accent-dark)}
 .chatbox-foot{border-top:1px solid var(--color-border);padding:10px;display:flex;gap:8px;flex-shrink:0;background:#fff}
@@ -831,7 +844,7 @@ footer a:hover{color:#fff}
      Xem CLAUDE.md / 08_Chatbox/. Nút nổi + khung chat, chỉ HIỂN THỊ (rỗng lúc tải trang) — toàn bộ
      hành vi (mở/đóng, câu hỏi nhanh trả lời tức thời, gọi /api/chat cho câu hỏi tự do, để lại thông
      tin liên hệ) nằm trong script cuối trang (khu vực "CHAT BOX"). -->
-<button class="chatbox-toggle" id="chatboxToggle" aria-label="Mở Chat hỗ trợ" onclick="chatboxToggleOpen()">💬</button>
+<button class="chatbox-toggle" id="chatboxToggle" aria-label="Mở Chat hỗ trợ" onclick="chatboxToggleOpen()">🤖</button>
 <div class="chatbox-panel" id="chatboxPanel" role="dialog" aria-label="Chat hỗ trợ Top Visa 5S">
   <div class="chatbox-head">
     <div class="chatbox-head-title">🤖 <span id="chatboxTitle">Trợ lý Top Visa 5S</span></div>
@@ -843,8 +856,8 @@ footer a:hover{color:#fff}
       <button type="button" class="chatbox-close" onclick="chatboxClose()" aria-label="Đóng">✕</button>
     </div>
   </div>
-  <div class="chatbox-body" id="chatboxBody"></div>
   <div class="chatbox-quick" id="chatboxQuick"></div>
+  <div class="chatbox-body" id="chatboxBody"></div>
   <form class="chatbox-foot" id="chatboxForm">
     <input type="text" id="chatboxInput" maxlength="500" autocomplete="off" placeholder="Nhập câu hỏi của bạn...">
     <button type="submit" id="chatboxSendBtn" aria-label="Gửi">➤</button>
