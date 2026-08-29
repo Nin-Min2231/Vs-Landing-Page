@@ -35,13 +35,8 @@
 
 ## 1. Việc nên theo dõi / còn tồn đọng (không cấp bách nhưng CHƯA xong)
 
-1. **⚠️ Xóa dữ liệu THỬ NGHIỆM do Claude Code tạo ra lúc tự test bằng `curl` trên production** (CHƯA
-   XÁC NHẬN PM đã xóa hay chưa — đây là mục cần kiểm tra ĐẦU TIÊN ở phiên sau nếu PM chưa xác nhận
-   trong hội thoại):
-   - Tab **"Quản lý Chat"**: nhiều phiên chat có `session_id` bắt đầu `TEST-verify-...` (khoảng 7-8
-     phiên, sinh ra lúc kiểm tra route `/api/chat`, hành vi song ngữ, và grounding dữ liệu).
-   - Tab **"Tư vấn"**: 1 lead tên **"TEST xoá sau"**, SĐT **`0909000111`**, nguồn "Từ Chatbot" (sinh
-     ra lúc test tính năng để lại thông tin liên hệ).
+1. ~~Xóa dữ liệu THỬ NGHIỆM do Claude Code tạo ra lúc tự test bằng `curl` trên production~~ — **✅ PM
+   xác nhận đã xóa xong (2026-08-29)**, không còn tồn đọng.
 2. **Đối chiếu độ chính xác câu trả lời dài của AI** (vd hỏi "cần giấy tờ gì cho visa Nhật Bản" ra
    câu trả lời khá chi tiết) **với đúng nội dung field "Checklist hồ sơ" PM đã nhập ở admin.html**
    (Cài đặt chung → Nước đến → Nhật Bản) — Claude Code không có quyền đọc bảng `danh_muc_nuoc` bằng

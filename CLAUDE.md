@@ -1874,9 +1874,8 @@ trước khi báo PM — hỏi tiếng Anh nhưng AI (`@cf/meta/llama-3.1-8b-ins
   phải đổi màu tùy ý.
 
 **Trạng thái cuối phiên (2026-08-29):** đã merge `main` + deploy `topvisa5s.com`, PM tự test trực
-tiếp và xác nhận OK (bao gồm cả 2 vòng chỉnh UI trên). **Còn tồn đọng, chưa xác nhận:** (1) xóa dữ
-liệu THỬ NGHIỆM do Claude Code tạo ra lúc tự test qua `curl` — các phiên `chat_logs` có `session_id`
-bắt đầu `TEST-verify-...` (tab "Quản lý Chat") và 1 lead tên "TEST xoá sau" SĐT `0909000111` (tab
-"Tư vấn"); (2) đối chiếu checklist hồ sơ AI trả lời với dữ liệu thật đã cấu hình (xem mục F); (3)
-Release 2 (chuyển ngữ toàn site) chưa bắt đầu, xem mục 1.1/9 `Dac_ta_Trien_khai_Chatbox.md` khi PM
-yêu cầu làm tiếp.
+tiếp và xác nhận OK (bao gồm cả 2 vòng chỉnh UI trên). Dữ liệu THỬ NGHIỆM do Claude Code tạo ra lúc
+tự test qua `curl` (phiên `chat_logs` `session_id` bắt đầu `TEST-verify-...`, lead "TEST xoá sau" SĐT
+`0909000111`) **PM đã xác nhận xóa xong** cùng ngày. **Còn tồn đọng:** (1) đối chiếu checklist hồ sơ
+AI trả lời với dữ liệu thật đã cấu hình (xem mục F); (2) Release 2 (chuyển ngữ toàn site) chưa bắt
+đầu, xem mục 1.1/9 `Dac_ta_Trien_khai_Chatbox.md` khi PM yêu cầu làm tiếp.
