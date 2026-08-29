@@ -32,6 +32,11 @@
 10. `10_supabase_setup_phase10.sql` — Phase 10: bảng mới `notification_reads` (trạng thái "đã đọc"
     tính riêng theo từng thiết bị/trình duyệt, thay cho cờ `is_read` chung trên `notifications` —
     tránh máy A đọc làm máy B tưởng đã xem).
+11. `11_supabase_setup_phase11.sql` — Phase 11 (2026-08-29, **đã chạy trên production**): bảng mới
+    `chat_logs` (lịch sử hội thoại Chat Box trang Home, Release 1) — chỉ `authenticated` (admin)
+    đọc/xóa được qua tab "Quản lý Chat"; ghi bằng `SUPABASE_SERVICE_ROLE_KEY` từ `worker.js` (route
+    `/api/chat`), không mở policy `anon` insert (khác đề xuất ban đầu trong đặc tả — xem CLAUDE.md
+    mục 47).
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
 project đang dùng đã qua đủ các phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy

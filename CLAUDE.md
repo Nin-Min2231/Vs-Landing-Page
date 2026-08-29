@@ -1814,6 +1814,69 @@ không có/rất chậm truy cập mạng ra `registry.npmjs.org`, thử cả v�
 thật (đặc biệt vị trí nút trên mobile — do giới hạn compositing của Claude Browser đã nêu, không
 chắc chắn 100% dù đã review kỹ CSS bằng tay).
 
-**Đang ở nhánh `feature/chatbox-release1`, CHƯA merge vào `main`, CHƯA deploy production** — đúng
-quy trình bắt buộc ở `08_Chatbox/Chi_dan_Thuc_hien_Phat_trien_Chatbox.md` mục 1. Việc PM cần làm
-trước khi merge: xem `Handover_Phien_Moi.md`.
+**E. Đã merge vào `main` + deploy production ngay trong cùng phiên (2026-08-29), khác quy trình gốc
+ở mục 1 — lý do có chủ đích, không phải bỏ qua bước:** PM phản hồi không có cách nào tự dựng môi
+trường test riêng (không biết dùng `wrangler dev`), và yêu cầu thẳng "deploy lên trang Home để tôi
+test luôn". Coi đây là "xác nhận rõ ràng từ PM bằng lời trong hội thoại" theo đúng tinh thần mục 1
+(dù không đúng y nguyên câu chữ gợi ý "test OK") — hợp lý vì cách duy nhất PM có thể tự test là trên
+production thật. Quy trình rút gọn còn: push nhánh feature lên GitHub (PM đồng ý) → merge → push
+`main` → Cloudflare tự deploy → PM tự test trực tiếp trên `topvisa5s.com`, có gì hỏng sửa tiếp bằng
+cách push thẳng `main` (đúng quy ước sẵn có của dự án, không tạo lại nhánh feature cho mỗi lần sửa
+nhỏ trong lúc đang debug cùng 1 tính năng vừa deploy).
+
+**F. Lỗi thật phát hiện NGAY LÚC test trên production — AI trả lời sai ngôn ngữ (FR-CB-05), sửa qua
+3 lượt mới ổn định:** dùng `curl` gọi thẳng `/api/chat` thật (không phải giả lập) để tự kiểm tra
+trước khi báo PM — hỏi tiếng Anh nhưng AI (`@cf/meta/llama-3.1-8b-instruct-fast`) trả lời tiếng Việt.
+- **Lượt 1 (KHÔNG đủ):** thêm 1 dòng chỉ thị "trả lời tiếng Anh" ở cuối prompt tiếng Việt — vẫn ra
+  tiếng Việt khi test lại.
+- **Lượt 2 (VẪN KHÔNG đủ):** viết hẳn 2 bản prompt riêng (toàn bộ quy tắc bằng tiếng Anh khi cần trả
+  lời tiếng Anh) — áp đảo ngôn ngữ khung prompt nhưng model VẪN thỉnh thoảng ra tiếng Việt khi test
+  lại nhiều câu khác nhau.
+- **Lượt 3 (ĐÃ ỔN ĐỊNH, đang dùng):** đổi hẳn kiến trúc — LUÔN sinh câu trả lời gốc bằng tiếng Việt
+  (chiều này model luôn đúng, vì mọi thứ trong prompt vốn đã tiếng Việt), rồi nếu khách hỏi tiếng
+  Anh thì DỊCH sang tiếng Anh bằng 1 lượt gọi AI RIÊNG chỉ làm đúng 1 việc "dịch đoạn văn này sang
+  tiếng Anh" (`chatTranslateToEnglish()`) — tác vụ dịch đơn giản/tách biệt đáng tin cậy hơn hẳn so
+  với bắt model vừa trả lời vừa tự nhớ đổi ngôn ngữ đầu ra. Đã test lại nhiều câu hỏi VI/EN khác
+  nhau qua `curl` thật, đều ra đúng ngôn ngữ. **Bài học:** với model nhỏ/nhanh (`*-fast` variant),
+  đừng chỉ tin 1 lần test — chỉ thị ngôn ngữ ĐẶT Ở ĐÂU/VIẾT BẰNG NGÔN NGỮ NÀO trong prompt có thể
+  KHÔNG đủ để thắng được "lực kéo" ngôn ngữ của phần dữ liệu grounding chiếm phần lớn prompt; tách
+  việc "trả lời" và "đổi ngôn ngữ" thành 2 bước AI riêng biệt là cách chắc chắn hơn nhiều.
+- **Đã kiểm tra thêm hành vi grounding (không bịa số liệu):** hỏi về 1 nước KHÔNG có trong dữ liệu
+  thật (test bằng "Iceland") → AI trả lời đúng "không có thông tin, mời gọi hotline" thay vì bịa số
+  — cho thấy quy tắc "không bịa" trong prompt hoạt động tốt trong thực tế, không chỉ trên giấy.
+- **Đã test thành công lead capture thật trên production** (dữ liệu rõ ràng đánh dấu TEST, xem mục
+  1.3 `Chi_dan_Thuc_hien_Phat_trien_Chatbox.md`): gửi tin nhắn có tên+SĐT → `lead_captured:true`,
+  xác nhận đúng luồng `chatDetectAndCaptureLead()` hoạt động trên dữ liệu thật.
+- **⚠️ Chưa xác nhận 100%:** độ chính xác của câu trả lời dài (vd checklist hồ sơ Nhật Bản) — AI trả
+  lời khá chi tiết, không có cách nào từ phía Claude Code kiểm chứng nó khớp đúng 100% với field
+  "Checklist hồ sơ" PM đã nhập ở admin.html hay không (không có quyền đọc `danh_muc_nuoc` bằng anon
+  key). Đã nhắc PM tự đối chiếu 1 lần — quan trọng vì đây là đúng loại rủi ro "bịa thông tin pháp
+  lý" mà CLAUDE.md mục 8/10 cấm tuyệt đối.
+
+**G. 2 vòng phản hồi UI từ PM sau khi tự test trên production (2026-08-29), đều đã sửa + deploy:**
+- *Vòng 1:* (1) tab "Quản lý Chat" dời từ cạnh "Tư vấn" sang trước tab "Danh mục" (giữa "Cài đặt
+  chung" và "Danh mục"); (2) icon nút Chat nổi đổi từ 💬 sang 🤖 (khớp icon PM đã thấy ưng ý trong
+  header khung chat) + thêm animation "lắc lư" định kỳ (`@keyframes chatboxToggleWiggle`, ~4s/lần,
+  đứng yên phần lớn thời gian — cùng tinh thần `@keyframes pulse` của `.float-main`); (3) đổi thứ tự
+  trong khung chat — hàng gợi ý câu hỏi nhanh (`.chatbox-quick`) chuyển lên TRÊN cùng (ngay dưới
+  header) và đổi từ xếp dọc 6-7 nút full-width (choán hết khung chat) sang **1 hàng cuộn NGANG gọn**
+  (`flex-wrap:nowrap;overflow-x:auto`), khung tin nhắn (`.chatbox-body`) chuyển xuống dưới sát ô
+  nhập.
+- *Vòng 2:* (1) khung chat tự đóng khi bấm ra ngoài (`click` listener trên `document`, loại trừ
+  click trong `#chatboxPanel`/`#chatboxToggle` — cùng mẫu đã dùng cho `#floatContact`); (2) nút "Để
+  lại số điện thoại tư vấn" tách hẳn khỏi hàng cuộn ngang, thành 1 nút **CỐ ĐỊNH** riêng
+  (`#chatboxLeadCtaBtn`, màu cam nổi bật) đặt ngay trên ô nhập — luôn thấy, không cần cuộn tìm; (3)
+  `admin.html` tab "Quản lý Chat": filter "Từ ngày...đến" đổi class `filters` → `filters filters-hoso`
+  + `align-items:center` (đúng mẫu Tài chính đang dùng) để canh giữa label/ô nhập theo chiều dọc;
+  (4) bỏ `danger:true` ở `showConfirmPopup()` của `delChatSession()` — phát hiện đây là dialog xóa
+  DUY NHẤT trong toàn bộ `admin.html` đang dùng nút "Đồng ý" màu đỏ (`btn-d`), mọi nơi xóa khác trong
+  hệ thống đều dùng mặc định màu xanh (`btn-p`) — sửa lại cho đồng bộ đúng theo yêu cầu PM, không
+  phải đổi màu tùy ý.
+
+**Trạng thái cuối phiên (2026-08-29):** đã merge `main` + deploy `topvisa5s.com`, PM tự test trực
+tiếp và xác nhận OK (bao gồm cả 2 vòng chỉnh UI trên). **Còn tồn đọng, chưa xác nhận:** (1) xóa dữ
+liệu THỬ NGHIỆM do Claude Code tạo ra lúc tự test qua `curl` — các phiên `chat_logs` có `session_id`
+bắt đầu `TEST-verify-...` (tab "Quản lý Chat") và 1 lead tên "TEST xoá sau" SĐT `0909000111` (tab
+"Tư vấn"); (2) đối chiếu checklist hồ sơ AI trả lời với dữ liệu thật đã cấu hình (xem mục F); (3)
+Release 2 (chuyển ngữ toàn site) chưa bắt đầu, xem mục 1.1/9 `Dac_ta_Trien_khai_Chatbox.md` khi PM
+yêu cầu làm tiếp.

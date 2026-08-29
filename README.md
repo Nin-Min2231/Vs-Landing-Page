@@ -308,6 +308,33 @@ Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 33-34.
       riêng cho phần này, chỉ mới xác nhận chuông trong trang.
 - [x] Xóa dữ liệu thử nghiệm ("Nguyễn Văn Test") trong tab "Tư vấn" — đã xóa.
 
+## Chat Box hỗ trợ khách trên trang chủ (2026-08-29)
+
+Thêm 1 khung Chat hỗ trợ ngay trên trang chủ — bấm icon 🤖 góc dưới phải để mở. Có 6 câu hỏi nhanh
+trả lời tức thời (không cần chờ) + 1 nút "Để lại số điện thoại tư vấn" luôn hiện sẵn trên ô nhập, và
+ô hỏi tự do dùng AI (miễn phí, không tốn chi phí vận hành) trả lời đúng tiếng Việt/tiếng Anh theo
+câu khách gõ, chỉ dùng đúng số liệu thật đã cấu hình trong hệ thống (không tự bịa số liệu). Khách để
+lại số điện thoại trong khung chat sẽ tự động thành 1 khách tư vấn mới, lên chuông thông báo như
+bình thường. Bấm ra ngoài khung chat sẽ tự đóng lại.
+
+Trang quản trị có thêm tab "💬 Quản lý Chat" (cạnh "Cài đặt chung") để xem lại/xóa từng cuộc trò
+chuyện.
+
+Chi tiết kỹ thuật đầy đủ (kể cả quá trình sửa lỗi AI trả lời sai ngôn ngữ lúc test thật): `CLAUDE.md`
+mục 47. Tài liệu phân tích/đặc tả gốc ở thư mục `08_Chatbox/`.
+
+- [x] Đã chạy `05_Database/11_supabase_setup_phase11.sql` trong Supabase SQL Editor (PM tự chạy,
+      2026-08-29).
+- [x] Không cần thêm secret/API key nào trên Cloudflare — phần AI dùng miễn phí theo tài khoản có
+      sẵn, không tốn phí (trong hạn mức miễn phí 10.000 neuron/ngày).
+- [x] Đã deploy lên `topvisa5s.com`, PM tự test trực tiếp trên production và xác nhận OK (2026-08-29).
+- [ ] **Nhớ xóa dữ liệu THỬ NGHIỆM** đã tạo ra lúc Claude Code tự test trên production (các phiên
+      chat tên bắt đầu `TEST-verify-...` trong tab "Quản lý Chat", và 1 khách tên "TEST xoá sau" SĐT
+      0909000111 trong tab "Tư vấn") — chưa xác nhận PM đã xóa hay chưa, xem `Handover_Phien_Moi.md`.
+- [ ] Release 2 (cho phép khách chuyển toàn trang sang tiếng Anh, admin nhập thêm bản tiếng Anh cho
+      bài viết/giá/thông tin quốc gia) **CHƯA làm** — khi cần, đọc lại
+      `08_Chatbox/Dac_ta_Trien_khai_Chatbox.md` mục 1.1/9, không cần phân tích lại từ đầu.
+
 ## Muốn sửa nội dung?
 
 Gửi file cho Claude kèm yêu cầu, ví dụ: "Đổi giá visa Nhật thành 1.800.000đ", "Thêm quốc gia Singapore", "Đổi màu chủ đạo sang xanh lá" — sau đó deploy lại theo Bước 5 trong hướng dẫn.

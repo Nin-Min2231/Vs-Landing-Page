@@ -1,8 +1,8 @@
 # Tool backup dữ liệu Supabase về máy
 
-Công cụ này tải TOÀN BỘ dữ liệu (18 bảng: khách hàng, hồ sơ, tư vấn, tài chính, bài viết, thông
-báo...) từ Supabase về máy tính, lưu thành file JSON + CSV (mở được bằng Excel/Notepad). Chạy tay
-khi nào muốn, không tự động.
+Công cụ này tải TOÀN BỘ dữ liệu (19 bảng: khách hàng, hồ sơ, tư vấn, tài chính, bài viết, thông
+báo, lịch sử hội thoại Chat Box...) từ Supabase về máy tính, lưu thành file JSON + CSV (mở được
+bằng Excel/Notepad). Chạy tay khi nào muốn, không tự động.
 
 ## Bước 1 — Chuẩn bị (chỉ làm 1 lần)
 
