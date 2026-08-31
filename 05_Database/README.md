@@ -37,6 +37,10 @@
     đọc/xóa được qua tab "Quản lý Chat"; ghi bằng `SUPABASE_SERVICE_ROLE_KEY` từ `worker.js` (route
     `/api/chat`), không mở policy `anon` insert (khác đề xuất ban đầu trong đặc tả — xem CLAUDE.md
     mục 47).
+12. `12_supabase_setup_phase12.sql` — Phase 12 (2026-08-31): bảng mới `danh_gia_khach_hang`
+    (Feedback khách hàng từ Facebook) — quản lý qua admin.html (Cài đặt chung), `anon` chỉ SELECT
+    (hiển thị động ở section "Khách hàng nói gì về chúng tôi" trên `index.html`), `authenticated`
+    toàn quyền CRUD. Xem CLAUDE.md mục 48.
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
 project đang dùng đã qua đủ các phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy

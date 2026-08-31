@@ -136,6 +136,7 @@ Xem hàm `hsStatusSelectClass()`/`updateHoSoStatusColor()` trong `admin.html` l�
 | Khách hàng (Thông tin khách hàng, Phase 4) | `#khOverlay` | 1 nhóm (Thông tin khách hàng) | modal-lg, ít field nên chỉ 1 section |
 | Nước đến (Cài đặt chung, Phase 6, 2026-08) | `#nuocOverlay` | 1 nhóm (Thông tin nước đến) | modal-lg, có `money-input` (Lệ phí) + 2 textarea giới hạn ký tự (`maxlength`) cho Checklist (1000)/Ghi chú (500). Nút mở dialog trong list gọi là "Chi tiết" (không phải "Sửa") — dùng chung cho cả xem lẫn sửa, xem CLAUDE.md mục 22 |
 | Chi tiết hội thoại (Quản lý Chat, Chat Box Release 1, 2026-08-28) | `#chatDetailOverlay` | 1 nhóm (Thông tin phiên chat) + 1 khối `.chat-msg-list` riêng (không phải `.dlg-section`, xem CLAUDE.md mục 47) | modal-lg, **KHÔNG áp dụng `snapshotDialog`/`confirmCloseDialog`** (mục 9.1) vì dialog THUẦN XEM, không có field nhập liệu — chỉ có nút "Đóng lại", không có nút "Lưu" |
+| Feedback từ khách hàng (Cài đặt chung, 2026-08-31) | `#dgkhOverlay` | 1 nhóm (Thông tin feedback) | modal-lg, copy đúng khuôn CRUD của "Dịch vụ Visa các quốc gia" (`#dvgOverlay`) — 4 field: Tên Facebook/URL (bắt buộc, cùng 1 `.dlg-row`), Nội dung (bắt buộc, textarea), Ghi chú (tùy chọn, textarea, chỉ nội bộ không hiển thị công khai). Xem CLAUDE.md mục 48 |
 
 Khi tạo dialog mới trong tương lai, thêm 1 dòng vào bảng này để danh sách luôn cập nhật.
 

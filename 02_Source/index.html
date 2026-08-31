@@ -269,6 +269,13 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 .reviewer-info{text-align:left}
 .reviewer .name{font-weight:700;font-size:15px}
 .reviewer .type{font-size:13px;color:var(--color-text-muted)}
+/* Feedback khách hàng lấy động từ admin (mục "FEEDBACK KHÁCH HÀNG ĐỘNG" cuối script) — tên/avatar
+   là link thật ra Facebook (bấm mở đúng URL đánh giá đã cấu hình ở admin), khác 2 review tĩnh cũ
+   (không phải link) nên cần thêm màu/hover riêng cho trạng thái "có thể bấm". */
+.reviewer .name a{color:var(--color-text);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.reviewer .name a:hover{color:var(--color-primary);text-decoration:underline}
+.reviewer .name .ext-ic{font-size:12px;color:var(--color-primary)}
+a.avatar{text-decoration:none;cursor:pointer}
 .review-source{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--color-text-muted);
   margin-top:var(--sp-3);background:var(--color-bg-alt);padding:5px 12px;border-radius:var(--radius-full)}
 .slider-arrow{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;
@@ -935,44 +942,69 @@ function initScrollSpy(){
 }
 initScrollSpy();
 
-/* ==================== SLIDER ĐÁNH GIÁ (Khách hàng nói gì) ==================== */
-(function(){
+/* ==================== SLIDER ĐÁNH GIÁ (Khách hàng nói gì) ====================
+   initReviewsSlider() — đổi từ IIFE thành hàm dùng lại được (giống initScrollSpy()) vì cần gọi LẠI
+   sau khi script "FEEDBACK KHÁCH HÀNG ĐỘNG" (phía dưới) thay nội dung #reviewsTrack bằng dữ liệu
+   thật từ admin — dots/số slide phải tính lại theo đúng số slide MỚI.
+   ⚠️ #reviewsTrack/#reviewPrev/#reviewNext/#reviewsSlider là node CỐ ĐỊNH trong suốt vòng đời trang
+   (chỉ nội dung BÊN TRONG track bị thay bằng innerHTML, bản thân các node này không bị tạo lại) —
+   nếu gắn listener (`addEventListener`) vào chúng ở MỌI lần gọi hàm sẽ bị gắn TRÙNG khi gọi lần 2,
+   khiến 1 lần bấm/vuốt kích hoạt 2 lần. Giải quyết bằng cờ `reviewsSliderInited` (module-level, chỉ
+   gắn listener đúng 1 LẦN DUY NHẤT) + state `index`/`timer` cũng đưa ra module-level để các listener
+   gắn từ lần gọi ĐẦU vẫn thao tác đúng trên state MỚI NHẤT ở các lần gọi SAU. */
+let reviewsSliderInited = false;
+let reviewsIndex = 0, reviewsTimer = null;
+function reviewsSlides(){
+  const track = document.getElementById('reviewsTrack');
+  return track ? Array.from(track.children) : [];
+}
+function reviewsUpdate(){
+  const track = document.getElementById('reviewsTrack');
+  const dotsWrap = document.getElementById('reviewDots');
+  if(!track) return;
+  track.style.transform = 'translateX(-' + (reviewsIndex * 100) + '%)';
+  Array.from(dotsWrap.children).forEach((d, i) => d.classList.toggle('active', i === reviewsIndex));
+}
+function reviewsGoTo(i){
+  const n = reviewsSlides().length;
+  if(!n) return;
+  reviewsIndex = ((i % n) + n) % n;
+  reviewsUpdate();
+  reviewsRestartAutoplay();
+}
+function reviewsRestartAutoplay(){
+  clearInterval(reviewsTimer);
+  if(reviewsSlides().length > 1) reviewsTimer = setInterval(() => reviewsGoTo(reviewsIndex + 1), 6000);
+}
+function initReviewsSlider(){
   const track = document.getElementById('reviewsTrack');
   if(!track) return;
-  const slides = Array.from(track.children);
+  const slides = reviewsSlides();
   if(!slides.length) return;
   const dotsWrap = document.getElementById('reviewDots');
   const prevBtn  = document.getElementById('reviewPrev');
   const nextBtn  = document.getElementById('reviewNext');
   const slider   = document.getElementById('reviewsSlider');
-  let index = 0, timer = null;
 
+  dotsWrap.innerHTML = ''; // dọn dots cũ (nếu gọi lại lần 2 sau khi thay slide động)
   slides.forEach((_, i) => {
     const dot = document.createElement('button');
     dot.type = 'button';
     dot.setAttribute('aria-label', 'Xem đánh giá số ' + (i + 1));
-    dot.addEventListener('click', () => goTo(i));
+    dot.addEventListener('click', () => reviewsGoTo(i));
     dotsWrap.appendChild(dot);
   });
-  const dots = Array.from(dotsWrap.children);
+  reviewsIndex = 0;
 
-  function update(){
-    track.style.transform = 'translateX(-' + (index * 100) + '%)';
-    dots.forEach((d, i) => d.classList.toggle('active', i === index));
-  }
-  function goTo(i){
-    index = (i + slides.length) % slides.length;
-    update();
-    restartAutoplay();
-  }
-  function restartAutoplay(){
-    clearInterval(timer);
-    if(slides.length > 1) timer = setInterval(() => goTo(index + 1), 6000);
-  }
+  const multi = slides.length > 1;
+  prevBtn.style.display = multi ? '' : 'none';
+  nextBtn.style.display = multi ? '' : 'none';
+  dotsWrap.style.display = multi ? '' : 'none';
 
-  if(slides.length > 1){
-    prevBtn.addEventListener('click', () => goTo(index - 1));
-    nextBtn.addEventListener('click', () => goTo(index + 1));
+  if(!reviewsSliderInited){
+    reviewsSliderInited = true;
+    prevBtn.addEventListener('click', () => reviewsGoTo(reviewsIndex - 1));
+    nextBtn.addEventListener('click', () => reviewsGoTo(reviewsIndex + 1));
 
     // Vuốt trái/phải trên điện thoại
     let startX = null;
@@ -980,23 +1012,19 @@ initScrollSpy();
     track.addEventListener('touchend', e => {
       if(startX === null) return;
       const dx = e.changedTouches[0].clientX - startX;
-      if(Math.abs(dx) > 40) goTo(dx < 0 ? index + 1 : index - 1);
+      if(Math.abs(dx) > 40) reviewsGoTo(reviewsIndex + (dx < 0 ? 1 : -1));
       startX = null;
     }, {passive:true});
 
     // Rê chuột vào thì tạm dừng tự động chuyển slide
-    slider.addEventListener('mouseenter', () => clearInterval(timer));
-    slider.addEventListener('mouseleave', restartAutoplay);
-  } else {
-    // Chỉ 1 đánh giá: ẩn nút mũi tên và chấm tròn, không cần tự động chuyển
-    prevBtn.style.display = 'none';
-    nextBtn.style.display = 'none';
-    dotsWrap.style.display = 'none';
+    slider.addEventListener('mouseenter', () => clearInterval(reviewsTimer));
+    slider.addEventListener('mouseleave', reviewsRestartAutoplay);
   }
 
-  update();
-  restartAutoplay();
-})();
+  reviewsUpdate();
+  reviewsRestartAutoplay();
+}
+initReviewsSlider();
 
 /* ==================== GIÁ DỊCH VỤ (từ admin.html — Cài đặt chung, Phase 7) ====================
    Giá "Từ x đ" trong HTML chỉ là fallback tĩnh — cập nhật lại đúng giá thật đang cấu hình ở admin
@@ -1019,6 +1047,45 @@ initScrollSpy();
       el.textContent = (g!=null && Number(g)>0) ? 'Từ '+Number(g).toLocaleString('vi-VN')+'đ' : 'Liên hệ báo giá';
     });
   }catch(e){ /* im lặng bỏ qua nếu không tải được, giữ giá fallback trong HTML */ }
+})();
+
+/* ==================== FEEDBACK KHÁCH HÀNG ĐỘNG (từ admin.html — Cài đặt chung, 2026-08-31) ====
+   2 review viết cứng trong <div id="reviewsTrack"> (mục "ĐÁNH GIÁ" phía trên) chỉ là FALLBACK —
+   nếu tải được ít nhất 1 dòng feedback thật từ Supabase (bảng danh_gia_khach_hang, anon chỉ
+   SELECT, xem 05_Database/12_supabase_setup_phase12.sql), THAY THẲNG toàn bộ nội dung track bằng
+   dữ liệu thật rồi khởi động lại slider (initReviewsSlider(), mục "SLIDER ĐÁNH GIÁ" phía trên) —
+   ⚠️ hàm đó đã được viết để gọi lại an toàn (không gắn trùng listener). Lỗi mạng/chưa cấu hình
+   Supabase/bảng rỗng (PM CHƯA thêm feedback nào qua admin) -> giữ nguyên 2 review tĩnh cũ, không
+   ảnh hưởng phần còn lại trang. Nguồn yêu cầu: 09_Facebook/request.md. */
+(async function(){
+  if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  const escFb = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  try{
+    const res = await fetch(SUPABASE_URL+'/rest/v1/danh_gia_khach_hang?select=ten_facebook,noi_dung,url,created_at&order=created_at.desc',{
+      headers:{ 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY }
+    });
+    if(!res.ok) return;
+    const rows = await res.json();
+    if(!rows.length) return; // PM chưa thêm feedback nào qua admin -> giữ nguyên 2 review tĩnh cũ
+
+    const track = document.getElementById('reviewsTrack');
+    if(!track) return;
+    track.innerHTML = rows.map(r=>{
+      const initial = escFb((r.ten_facebook||'?').trim().charAt(0).toUpperCase() || '?');
+      const d = r.created_at ? new Date(r.created_at) : null;
+      const monthYear = d ? String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear() : '';
+      return '<div class="review-slide"><div class="card-review">'+
+        '<div class="stars">★★★★★</div>'+
+        '<p class="quote">"'+escFb(r.noi_dung)+'"</p>'+
+        '<div class="reviewer">'+
+          '<a class="avatar" href="'+escFb(r.url)+'" target="_blank" rel="noopener" aria-label="Xem đánh giá trên Facebook">'+initial+'</a>'+
+          '<div class="reviewer-info"><div class="name"><a href="'+escFb(r.url)+'" target="_blank" rel="noopener">'+escFb(r.ten_facebook)+' <span class="ext-ic">↗</span></a></div></div>'+
+        '</div>'+
+        '<div class="review-source">📘 Đánh giá thật trên Facebook'+(monthYear?' · '+monthYear:'')+'</div>'+
+      '</div></div>';
+    }).join('');
+    initReviewsSlider();
+  }catch(e){ /* im lặng bỏ qua nếu không tải được, giữ 2 review tĩnh cũ trong HTML */ }
 })();
 
 /* ==================== DANH MỤC BÀI VIẾT ĐỘNG (menu + section theo Danh mục) ====================

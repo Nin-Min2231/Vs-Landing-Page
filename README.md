@@ -335,6 +335,23 @@ mục 47. Tài liệu phân tích/đặc tả gốc ở thư mục `08_Chatbox/`
       bài viết/giá/thông tin quốc gia) **CHƯA làm** — khi cần, đọc lại
       `08_Chatbox/Dac_ta_Trien_khai_Chatbox.md` mục 1.1/9, không cần phân tích lại từ đầu.
 
+## Feedback khách hàng quản lý qua trang quản trị (2026-08-31)
+
+Trang quản trị (Cài đặt chung) có thêm khối "📘 Feedback từ khách hàng" — tự thêm/sửa/xóa các đánh
+giá thật lấy từ Facebook (Tên Facebook, Nội dung, URL, Ghi chú riêng chỉ mình bạn thấy). Trang chủ
+tự lấy đúng nội dung này để hiển thị ở mục "Khách hàng nói gì về chúng tôi", bấm vào tên khách sẽ mở
+đúng bài đánh giá thật trên Facebook của họ.
+
+Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 48.
+
+- [ ] **Cần chạy `05_Database/12_supabase_setup_phase12.sql` trong Supabase SQL Editor trước khi
+      dùng** (tạo bảng mới) — Claude Code không tự chạy được bước này.
+- [x] Đã thêm khối quản lý + hiển thị động, đã test bằng dữ liệu giả lập (chưa test với dữ liệu
+      thật/đăng nhập admin thật).
+- **⚠️ Lưu ý quan trọng:** 2 review hiện đang hiển thị (Anh Võ Kiên, Pon Tí Tởn) sẽ **tự động biến
+      mất** khỏi trang chủ ngay khi bạn thêm feedback ĐẦU TIÊN qua trang quản trị — muốn giữ lại,
+      hãy tự nhập lại 2 review đó qua trang quản trị trước (hoặc cùng lúc thêm review mới).
+
 ## Muốn sửa nội dung?
 
 Gửi file cho Claude kèm yêu cầu, ví dụ: "Đổi giá visa Nhật thành 1.800.000đ", "Thêm quốc gia Singapore", "Đổi màu chủ đạo sang xanh lá" — sau đó deploy lại theo Bước 5 trong hướng dẫn.

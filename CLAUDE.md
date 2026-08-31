@@ -1879,3 +1879,61 @@ tự test qua `curl` (phiên `chat_logs` `session_id` bắt đầu `TEST-verify-
 `0909000111`) **PM đã xác nhận xóa xong** cùng ngày. **Còn tồn đọng:** (1) đối chiếu checklist hồ sơ
 AI trả lời với dữ liệu thật đã cấu hình (xem mục F); (2) Release 2 (chuyển ngữ toàn site) chưa bắt
 đầu, xem mục 1.1/9 `Dac_ta_Trien_khai_Chatbox.md` khi PM yêu cầu làm tiếp.
+
+## 48. Feedback khách hàng (đánh giá Facebook) quản lý qua admin — thay 2 review viết cứng (2026-08-31)
+
+**Bối cảnh:** PM yêu cầu qua `09_Facebook/request.md` — section "Khách hàng nói gì về chúng tôi" ở
+`index.html` trước đây chỉ có 2 review viết cứng trong HTML (xem mục 8, lịch sử "3 review mẫu → 2
+review thật"), không có link ra Facebook thật. PM muốn quản lý được (CRUD) qua `admin.html` và khi
+khách bấm vào tên Facebook thì mở đúng URL đánh giá thật.
+
+**A. Bảng mới `danh_gia_khach_hang`** (`05_Database/12_supabase_setup_phase12.sql`) — 4 cột đúng y
+theo yêu cầu: `ten_facebook`/`noi_dung`/`url` (bắt buộc, hiển thị công khai), `ghi_chu` (tùy chọn,
+**CHỈ nội bộ** — không đưa lên landing page). RLS giống hệt `dich_vu_gia` (mục 31.D): `anon` chỉ
+SELECT, `authenticated` toàn quyền CRUD. **Không thêm cột đánh giá sao (rating)** dù card hiển thị
+có `.stars` — giữ nguyên tĩnh `★★★★★` cho mọi feedback (không có trong 4 field PM yêu cầu, không tự
+ý thêm field ngoài phạm vi). **Không thêm cột thứ tự hiển thị** — public site tự sắp theo
+`created_at desc` (mới thêm lên đầu), đơn giản, không có trong yêu cầu.
+
+**B. Admin (`admin.html`, tab "Cài đặt chung")** — thêm 1 khối `.cat-block-full` mới (`.c-danhgia`)
+ngay dưới khối "Dịch vụ Visa các quốc gia" (copy đúng khuôn CRUD của khối đó —
+`loadDichVuGia`/`openDvGiaModal`/`saveDvGia`/`delDvGia` — đổi tên thành `loadDanhGiaKhachHang`/
+`openDanhGiaModal`/`saveDanhGia`/`delDanhGia`). Dialog `#dgkhOverlay` theo đúng `dlg-standard`
+(`01_Docs/10_Chuan_Dialog_Chung.md`), `modal-lg`, 1 `dlg-section`, có `snapshotDialog`/
+`confirmCloseDialog` (mục 23, bắt buộc vì có field nhập liệu). Cột "Nội dung"/"URL"/"Ghi chú" trong
+list dùng `.text-trunc` (mục 22) — hiện đủ khi hover qua `title`. Không cần `isRecordInUse` trước
+khi xóa — không bảng nào tham chiếu tới, giống các bảng "lá" khác (mục 14). Đã thêm
+`loadDanhGiaKhachHang()` vào `Promise.all([...])` ở CẢ 2 luồng đăng nhập (đăng nhập thường + tự
+đăng nhập lại) — thiếu 1 trong 2 chỗ sẽ làm dữ liệu chỉ nạp đúng sau lần đăng nhập thủ công, không
+nạp lại khi mở app lần sau bằng "Ghi nhớ đăng nhập" (lỗi từng gặp mẫu tương tự ở các bảng khác).
+
+**C. `index.html` — hiển thị động, có fallback:** 2 review viết cứng trong `#reviewsTrack` (mục
+"ĐÁNH GIÁ") **VẪN GIỮ NGUYÊN trong HTML** làm fallback — script mới ("FEEDBACK KHÁCH HÀNG ĐỘNG",
+cuối trang) fetch `danh_gia_khach_hang` bằng `anon` key; nếu có ít nhất 1 dòng, **THAY THẲNG** toàn
+bộ nội dung `#reviewsTrack` bằng dữ liệu thật (không merge/giữ lại 2 review cũ) rồi gọi lại
+`initReviewsSlider()`. Nếu bảng rỗng (PM chưa thêm feedback nào)/lỗi mạng → giữ nguyên 2 review tĩnh
+cũ, đúng tinh thần fallback đã dùng cho giá dịch vụ (mục 31.D) và bài viết (mục 31.F). **PM cần biết:
+2 review cũ ("Anh Võ Kiên", "Pon Tí Tởn") sẽ TỰ ĐỘNG BIẾN MẤT khỏi trang chủ ngay khi PM thêm dòng
+feedback ĐẦU TIÊN qua admin** — nếu muốn giữ lại, PM cần tự nhập lại 2 dòng đó qua admin (Claude Code
+không tự ý insert dữ liệu mẫu vào bảng mới, theo đúng mục 10).
+
+**⚠️ Refactor quan trọng — `initReviewsSlider()` đổi từ IIFE thành hàm gọi lại được nhiều lần an
+toàn:** bản gốc là 1 IIFE chạy đúng 1 lần lúc tải trang. Vì giờ cần gọi LẦN 2 sau khi script động
+thay nội dung `#reviewsTrack`, nếu chỉ đơn giản bọc lại thành hàm rồi gọi 2 lần sẽ **gắn TRÙNG**
+listener trên `#reviewPrev`/`#reviewNext`/`#reviewsSlider`/`#reviewsTrack` (các node này KHÔNG bị
+tạo lại giữa 2 lần gọi, chỉ nội dung con của `#reviewsTrack` bị `innerHTML` ghi đè) — 1 lần bấm/vuốt
+sẽ kích hoạt 2 lần (nhảy 2 slide). Đã sửa bằng cờ module-level `reviewsSliderInited` (chỉ gắn
+listener đúng 1 LẦN DUY NHẤT trong suốt vòng đời trang) + đưa `reviewsIndex`/`reviewsTimer` ra
+module-level (để các listener gắn từ lần gọi ĐẦU vẫn thao tác đúng trên state MỚI của lần gọi SAU).
+**Đã test xác nhận qua Claude Browser:** bấm Next 1 lần trước khi thay slide động → tăng đúng 1 bước;
+mô phỏng thay 3 slide động + gọi lại `initReviewsSlider()` → dots/index reset đúng theo số slide mới;
+bấm Next 1 lần SAU khi gọi lại → vẫn chỉ tăng đúng 1 bước (không bị nhân đôi do listener trùng).
+**Nếu sau này cần thêm 1 slider khác cũng phải nạp lại dữ liệu động nhiều lần trong vòng đời trang,
+áp dụng đúng mẫu này** (cờ "đã gắn listener" + state module-level), đừng lặp lại lỗi IIFE-gọi-lại.
+
+**Đã test:** `node --check` cho cả 2 file; qua Claude Browser (mock `api()`/dữ liệu): admin CRUD đủ
+4 thao tác (tải danh sách, mở dialog sửa đổ đúng dữ liệu, validate chặn lưu khi thiếu Tên, lưu đúng
+PATCH đúng id, đóng dialog sạch không hỏi xác nhận thừa); slider trang chủ như mô tả ở trên. **CHƯA
+test:** chạy migration `12_supabase_setup_phase12.sql` trên Supabase thật, và luồng thật (không mock)
+từ lúc PM thêm 1 feedback qua admin tới lúc thấy đúng trên landing page — cần deploy + PM tự xác
+nhận, giống quy trình đã áp dụng cho Chat Box (mục 47).

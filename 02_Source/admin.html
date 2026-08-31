@@ -832,6 +832,28 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div class="empty hidden" id="dvgEmpty">Chưa có dữ liệu</div>
         </div>
       </div>
+      <!-- "Feedback từ khách hàng" (2026-08-31, nguồn: 09_Facebook/request.md) — thay cho 2 đánh giá
+           viết cứng trong index.html trước đây (section "Khách hàng nói gì về chúng tôi"). Bấm vào
+           tên Facebook trên landing page sẽ mở đúng URL đánh giá thật đã nhập ở đây. -->
+      <div class="cat-block-full c-danhgia">
+        <div class="cat-block-full-head">
+          <h3>📘 Feedback từ khách hàng</h3>
+          <button class="btn btn-p" onclick="openDanhGiaModal()">+ Thêm</button>
+        </div>
+        <div class="tbl-wrap">
+          <table style="min-width:600px">
+            <thead><tr>
+              <th class="sortable" onclick="onSortClick('dgkh','ten',renderDanhGiaKhachHang)">Tên Facebook<span class="sort-ic" data-tbl="dgkh" data-col="ten"></span></th>
+              <th>Nội dung</th>
+              <th>URL</th>
+              <th>Ghi chú</th>
+              <th class="th-center">Thao tác</th>
+            </tr></thead>
+            <tbody id="dgkhBody"></tbody>
+          </table>
+          <div class="empty hidden" id="dgkhEmpty">Chưa có feedback nào</div>
+        </div>
+      </div>
     </section>
 
     <!-- ===== TAB POSTS ===== -->
@@ -1277,6 +1299,36 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
   </div>
 </div>
 
+<!-- ============ MODAL FEEDBACK TỪ KHÁCH HÀNG (Cài đặt chung) ============ -->
+<div class="overlay hidden" id="dgkhOverlay">
+  <div class="modal modal-lg dlg-standard">
+    <div class="dlg-head">
+      <h3 id="dgkhModalTitle">Thêm feedback</h3>
+      <button type="button" class="modal-x" onclick="closeDanhGiaModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="dlg-body">
+      <input type="hidden" id="dgkhId">
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin feedback</div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide"><label>Tên Facebook khách hàng <span class="req-badge">Bắt buộc</span></label><input type="text" id="dgkhTen" maxlength="100"></div>
+          <div class="dlg-field dlg-field-wide"><label>URL Facebook <span class="req-badge">Bắt buộc</span></label><input type="url" id="dgkhUrl" placeholder="https://facebook.com/..."></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide"><label>Nội dung đánh giá <span class="req-badge">Bắt buộc</span></label><textarea id="dgkhNoiDung" rows="3" maxlength="1000" style="width:100%"></textarea></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide"><label>Ghi chú (nội bộ, không hiển thị công khai)</label><textarea id="dgkhGhiChu" rows="2" maxlength="500" style="width:100%"></textarea></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeDanhGiaModal()">Đóng lại</button>
+      <button class="btn btn-p" id="dgkhSaveBtn" onclick="saveDanhGia()">Lưu</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL KHOẢN CHI (Tài chính) ============ -->
 <div class="overlay hidden" id="chiOverlay">
   <div class="modal modal-lg dlg-standard">
@@ -1425,6 +1477,7 @@ let KHACH_HANG = [];
 let DICH_VU_GIA = [];
 let NOTIFICATIONS = [];
 let CHAT_LOGS = [], CHAT_SESSIONS = [];
+let DANH_GIA_KH = [];
 const REMEMBER_KEY = 'tv_admin_refresh_token';
 /* ==== IndexedDB dùng chung với sw-admin.js (cùng tên db/store/key) — Service Worker KHÔNG đọc
    được localStorage của trang, chỉ đọc được IndexedDB, nên refresh token cần lưu thêm 1 bản ở
@@ -1885,7 +1938,7 @@ $('loginForm').addEventListener('submit', async e=>{
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia()]);
+    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia(), loadDanhGiaKhachHang()]);
     loadPosts();
     loadDashboard();
     startNotifPolling();
@@ -1920,7 +1973,7 @@ async function trySilentLogin(){
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia()]);
+    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia(), loadDanhGiaKhachHang()]);
     loadPosts();
     loadDashboard();
     startNotifPolling();
@@ -2553,6 +2606,72 @@ async function delDvGia(id){
   try{
     await api('dich_vu_gia?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadDichVuGia(); toast('Đã xóa');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+}
+
+/* ==== "Feedback từ khách hàng" (Cài đặt chung, 2026-08-31, nguồn 09_Facebook/request.md) — hiển
+   thị động ở index.html section "Khách hàng nói gì về chúng tôi" (thay 2 review viết cứng cũ, xem
+   CLAUDE.md mục 48). "Ghi chú" CHỈ dùng nội bộ, không gửi lên landing page (anon chỉ SELECT được cả
+   cột, landing page tự chọn không hiển thị cột này — xem index.html). Không cần isRecordInUse
+   trước khi xóa — không bảng nào tham chiếu tới, giống các bảng "lá" khác (CLAUDE.md mục 14). ==== */
+async function loadDanhGiaKhachHang(){
+  try{
+    DANH_GIA_KH = await api('danh_gia_khach_hang?select=*&order=created_at.desc') || [];
+    renderDanhGiaKhachHang();
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải feedback khách hàng: '+e.message,'err'); }
+}
+function renderDanhGiaKhachHang(){
+  const rows = applySort('dgkh', DANH_GIA_KH, {ten:x=>x.ten_facebook||''});
+  $('dgkhEmpty').classList.toggle('hidden', rows.length>0);
+  $('dgkhBody').innerHTML = rows.map(x=>`
+    <tr>
+      <td><b>${esc(x.ten_facebook)}</b></td>
+      <td><span class="text-trunc" title="${esc(x.noi_dung)}">${esc(x.noi_dung)}</span></td>
+      <td><a class="text-trunc" href="${esc(x.url)}" target="_blank" rel="noopener" title="${esc(x.url)}">${esc(x.url)}</a></td>
+      <td><span class="text-trunc" title="${esc(x.ghi_chu||'')}">${esc(x.ghi_chu||'–')}</span></td>
+      <td class="td-actions">
+        <button class="btn btn-p" onclick="openDanhGiaModal(${x.id})">Sửa</button>
+        <button class="btn btn-d" onclick="delDanhGia(${x.id})">Xóa</button>
+      </td>
+    </tr>`).join('');
+  applyRowLabels('dgkhBody');
+  updateSortIcons('dgkh');
+}
+function openDanhGiaModal(id){
+  const x = id ? DANH_GIA_KH.find(r=>r.id===id) : null;
+  $('dgkhModalTitle').textContent = x ? 'Sửa feedback' : 'Thêm feedback';
+  $('dgkhId').value = x?.id||'';
+  $('dgkhTen').value = x?.ten_facebook||'';
+  $('dgkhUrl').value = x?.url||'';
+  $('dgkhNoiDung').value = x?.noi_dung||'';
+  $('dgkhGhiChu').value = x?.ghi_chu||'';
+  $('dgkhOverlay').classList.remove('hidden');
+  snapshotDialog('dgkhOverlay');
+}
+function closeDanhGiaModal(){ confirmCloseDialog('dgkhOverlay', ()=>$('dgkhOverlay').classList.add('hidden')); }
+async function saveDanhGia(){
+  const ten_facebook = $('dgkhTen').value.trim();
+  const url = $('dgkhUrl').value.trim();
+  const noi_dung = $('dgkhNoiDung').value.trim();
+  if(!ten_facebook){ toast('Vui lòng nhập Tên Facebook khách hàng','err'); return; }
+  if(!url){ toast('Vui lòng nhập URL Facebook','err'); return; }
+  if(!noi_dung){ toast('Vui lòng nhập Nội dung đánh giá','err'); return; }
+  const body = { ten_facebook, url, noi_dung, ghi_chu: $('dgkhGhiChu').value.trim()||null };
+  const id = $('dgkhId').value;
+  const btn = $('dgkhSaveBtn'); btn.disabled=true;
+  try{
+    if(id) await api('danh_gia_khach_hang?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
+    else await api('danh_gia_khach_hang',{method:'POST',body:JSON.stringify(body)});
+    snapshotDialog('dgkhOverlay');
+    closeDanhGiaModal(); loadDanhGiaKhachHang(); toast(id?'Đã cập nhật':'Đã thêm');
+  }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
+  finally{ btn.disabled=false; }
+}
+async function delDanhGia(id){
+  if(!await showConfirmPopup({message:'Xóa feedback này? Không thể hoàn tác.'})) return;
+  try{
+    await api('danh_gia_khach_hang?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadDanhGiaKhachHang(); toast('Đã xóa');
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 
