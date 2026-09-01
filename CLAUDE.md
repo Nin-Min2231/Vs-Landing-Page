@@ -43,10 +43,15 @@ Visa-Landing-Page/
 ├── 01_Docs/                        ← tài liệu thiết kế/kế hoạch (nguồn sự thật cho spec)
 │   └── Visa-Landing-Page_Tai_lieu.xlsx   ← đọc cái này trước, dễ nhất
 ├── 02_Source/                      ← TOÀN BỘ CODE Ở ĐÂY
-│   ├── index.html                  ← landing page (HTML+CSS+JS trong 1 file)
-│   ├── admin.html                  ← trang quản trị (HTML+CSS+JS trong 1 file, phần lớn công sức nằm ở đây)
-│   ├── robots.txt, sitemap.xml     ← SEO (mục 12)
-│   └── assets/                     ← logo.png, favicon.png, qr-zalo.png (đã xử lý, không sửa lại)
+│   ├── worker.js                   ← Cloudflare Worker (route động + job nền, mục 33/T1/T9) — KHÔNG public
+│   ├── wrangler.toml                ← cấu hình deploy Cloudflare — KHÔNG public
+│   ├── package.json                 ← chỉ khai devDependency wrangler — KHÔNG public
+│   └── public/                     ← ⭐ (2026-09) CHỈ thư mục này được `[assets]` phục vụ ra Internet, xem mục 52
+│       ├── index.html               ← landing page (HTML+CSS+JS trong 1 file)
+│       ├── admin.html               ← trang quản trị (HTML+CSS+JS trong 1 file, phần lớn công sức nằm ở đây)
+│       ├── robots.txt, sitemap.xml  ← SEO (mục 12)
+│       ├── admin-manifest.webmanifest, sw-admin.js ← PWA admin + Web Push (mục 33)
+│       └── assets/                  ← logo.png, favicon.png, qr-zalo.png (đã xử lý, không sửa lại)
 ├── 03_Information/                 ← DỮ LIỆU THẬT của công ty — nguồn duy nhất đáng tin
 │   ├── Information.md               ← tên công ty, SĐT, địa chỉ, email, link Facebook
 │   ├── logo.jpg                     ← logo gốc (chưa xử lý — bản đã xử lý ở 02_Source/assets/logo.png)
@@ -2083,3 +2088,176 @@ lỗi thì khách vẫn thấy giá đúng, không có đường nào ra giá sa
 sau khi đổi "Từ" → "Tổng từ" theo đúng yêu cầu Bước 3, chữ "từ" trong "Tổng từ" viết thường (không
 còn là "Từ" hoa đứng đầu) nên câu lệnh cũ không match được nữa. Dùng lại đúng tinh thần (đếm đúng 7)
 bằng: `grep -oE 'data-country="[^"]*">(Tổng từ [0-9.]*đ|Liên hệ báo giá)'` rồi đếm dòng có "Tổng từ".
+
+## 51. T6 — câu dự phòng chatbox khi AI lỗi/hết quota (2026-09-01)
+
+**Phát hiện lúc đọc code:** cơ chế `try/catch` quanh lời gọi AI (`chatCallAI` bọc `env.AI.run`) **đã
+tồn tại sẵn** từ Release 1 Chat Box (`handleChat()`, `worker.js`) — không phải làm mới từ đầu. Vấn
+đề thật là câu dự phòng cũ (`CHAT_FALLBACK_VI`/`CHAT_FALLBACK_EN`) mời khách **chat Zalo**, trong khi
+kế hoạch SEO T6 yêu cầu mời **để lại số điện thoại** (khớp đúng nút có sẵn "Để lại số điện thoại tư
+vấn" trong khung chat) — đã sửa lại đúng y nguyên câu tiếng Việt yêu cầu, và viết thêm bản tiếng Anh
+tương đương (chatbox vốn song ngữ VI/EN từ Release 1). Chỉ đổi 2 hằng số, **không đụng `index.html`**
+— đúng yêu cầu "không đổi giao diện chatbox".
+
+**3 nơi dùng chung 2 hằng số này** (tự động hưởng câu mới, không cần sửa thêm): lỗi gọi AI thật sự
+(`chatCallAI` ném lỗi — bao gồm cả trường hợp vượt hạn 10.000 neuron/ngày free tier, Cloudflare trả
+lỗi ngay chứ không "treo"), thiếu `SUPABASE_SERVICE_ROLE_KEY` (chưa cấu hình secret), và lỗi ngoài dự
+kiến ở `handleChat` (catch ngoài cùng).
+
+**Đã nghiệm thu bằng cách mô phỏng lỗi AI thật** (không sửa binding `AI` trên Cloudflare Dashboard —
+không có quyền truy cập, và làm vậy sẽ ảnh hưởng chatbox thật đang chạy cho khách): viết script Node
+import THẲNG `worker.js` làm ES module, mock `global.fetch` (mọi gọi Supabase trả rỗng hợp lệ ngay)
+và `env.AI.run` ném lỗi, rồi gọi trực tiếp `export default.fetch()` y hệt 1 request POST `/api/chat`
+thật. Kết quả: phản hồi sau **3ms** (dưới xa ngưỡng 3 giây), HTTP 200, `reply` đúng y nguyên câu yêu
+cầu, có số hotline, có mời để lại số điện thoại. Đã đọc lại phần client (`index.html`
+`chatboxSendFree()`): `chatboxHideTyping()` luôn được gọi ngay khi nhận phản hồi (cả nhánh thành
+công lẫn lỗi mạng), không có delay/retry nào — nên dấu "…" không bao giờ treo mãi, khớp đúng
+nghiệm thu.
+
+**Không đụng đến:** câu dự phòng khi **kết nối mạng phía client thất bại** (`chatboxSendFree()` catch
+ở `index.html`, dòng ~1513-1517, vẫn mời Zalo) — đây là lỗi khác hẳn (worker/network không tới được,
+không phải AI lỗi), ngoài phạm vi T6 và vi phạm "không đổi giao diện chatbox" nếu động vào.
+
+## 52. An ninh: `worker.js`/`wrangler.toml`/`package.json` từng bị public — chuyển file tĩnh vào
+    `02_Source/public/` (2026-09-01)
+
+**Sự cố phát hiện:** `[assets] directory = "."` trong `wrangler.toml` trỏ thẳng vào `02_Source/`, nên
+Cloudflare phục vụ ra Internet **TOÀN BỘ** nội dung thư mục này — không chỉ `index.html`/`admin.html`
+mà cả `worker.js` (toàn bộ source code Worker), `wrangler.toml` (cấu hình + comment nội bộ), và
+`package.json`. Xác nhận bằng `curl https://topvisa5s.com/worker.js` (và 2 file kia) → **200, tải
+được nguyên văn**. Đã kiểm tra kỹ: **không có secret thật nào bị lộ**
+(`SUPABASE_SERVICE_ROLE_KEY`/`VAPID_PRIVATE_KEY_JWK` chỉ đặt qua Cloudflare Dashboard, không có
+trong file nào) — nhưng vẫn lộ logic nội bộ (ngưỡng rate-limit chatbox, model AI, lịch cron, comment
+lịch sử debug), rủi ro thông tin cho kẻ tấn công dò hệ thống.
+
+**Đã chọn Phương án A (chuyển file, không phải chặn từng tên trong `worker.js`)** — lý do: chặn theo
+danh sách tên file cụ thể trong `worker.js` là kiểu **blocklist**, dễ quên cập nhật khi thêm file
+nguồn mới sau này (script deploy, `.env.example`...) → lại lộ tiếp mà không ai biết, đúng kiểu rủi ro
+"quên 1 bước, im lặng không báo lỗi" dự án từng gặp (mục 34.B, 45). Chuyển hẳn cấu trúc là an toàn
+theo mặc định: file mới thêm ở `02_Source/` (ngoài `public/`) tự động không public, không cần nhớ gì.
+
+**Đã làm:**
+1. `git mv` 7 mục sau vào `02_Source/public/`: `index.html`, `admin.html`, `robots.txt`,
+   `sitemap.xml`, `admin-manifest.webmanifest`, `sw-admin.js`, `assets/` (16 file con) — dùng `git mv`
+   để Git nhận đúng là **rename**, giữ lịch sử file.
+2. `worker.js`, `wrangler.toml`, `package.json` **giữ nguyên** ở gốc `02_Source/`.
+3. `wrangler.toml`: đổi `directory = "."` → `directory = "./public"` — đây là **CHỖ DUY NHẤT** cần
+   sửa code (đã rà toàn bộ dự án bằng agent riêng để tìm mọi tham chiếu đường dẫn trước khi làm, xem
+   dưới).
+4. Cập nhật cây thư mục ở mục 4 (trên) cho khớp cấu trúc mới.
+
+**Vì sao KHÔNG cần sửa gì trong `index.html`/`admin.html`/`sw-admin.js`/`admin-manifest.webmanifest`/
+`robots.txt`:** đã rà soát kỹ trước khi move — mọi tham chiếu qua lại giữa các file này đều dùng
+đường dẫn **tương đối** (`assets/logo.svg`, `admin-manifest.webmanifest`, `sw-admin.js`) hoặc
+**root-relative** (`/admin.html`, `/`) chứ không hardcode `02_Source/...`, nên khi cả nhóm file cùng
+chuyển vào `public/` một lượt, mọi tham chiếu vẫn đúng nguyên vẹn — `public/` trở thành root mới được
+serve, `/` vẫn ra `public/index.html`, `assets/logo.svg` từ `public/index.html` vẫn đúng ra
+`public/assets/logo.svg`. URL tuyệt đối dạng `https://topvisa5s.com/...` (og:image, sitemap...) vốn
+là domain production, không phải path ổ đĩa, cũng không bị ảnh hưởng.
+
+**⚠️ Các mục lịch sử CŨ trong file này (8, 12, 13, 14, 26, 32...) vẫn ghi đường dẫn kiểu
+`02_Source/index.html`, `02_Source/admin.html`, `02_Source/assets/...`** — đây là tường thuật lịch
+sử tại THỜI ĐIỂM viết mục đó (trước khi có `public/`), **cố tình không sửa lại** để giữ đúng bối cảnh
+lúc quyết định — chỉ mục 4 (cấu trúc hiện tại) và mục này mới là nguồn đúng nhất về đường dẫn hiện
+tại. Khi đọc các mục cũ, tự hiểu ngầm cộng thêm `public/` vào giữa `02_Source/` và tên file nếu đó là
+1 trong 7 mục đã chuyển (loại trừ `worker.js`).
+
+**⚠️ Ảnh hưởng tới `10_SEO/11_Ke_hoach_sau_xac_nhan.md`** (bộ tài liệu thực thi SEO, các task T3-T19
+CHƯA làm) — file đó ghi đường dẫn cần sửa là `02_Source/index.html`, `02_Source/worker.js`,
+`02_Source/assets/` (kiểu cũ). Đây là file bên ngoài, không thuộc phạm vi Claude Code tự sửa (thuộc
+"bộ 4 file thực thi" của PM) — **khi làm các task còn lại của kế hoạch SEO, tự hiểu ngầm quy tắc
+cộng `public/` ở trên**, không cần đợi PM sửa lại file kế hoạch.
+
+**Chưa test được cục bộ** (không có `wrangler dev` khả dụng trong sandbox — `npx wrangler` timeout do
+mạng, đã ghi nhận từ trước ở mục 47) — việc `directory = "./public"` có hoạt động đúng trên Cloudflare
+Workers Static Assets hay không **chỉ xác nhận được sau khi deploy thật**: `/`, `/admin.html` phải
+vẫn 200 đúng nội dung, còn `/worker.js`, `/wrangler.toml`, `/package.json` phải chuyển sang 404.
+
+## 53. T3 — CLS (width/height 20 ảnh), favicon nhẹ, giảm Google Fonts, WebP QR (2026-09-01)
+
+**Bước 1 — liệt kê 20 thẻ `<img>` + kích thước thật TRƯỚC khi sửa** (bắt buộc theo yêu cầu, đã in ra
+cho PM xem trước khi động vào code): đếm chính xác 20 thẻ trong `index.html` (không đụng
+`admin.html` cho phần ảnh — nó không bị Google crawl/index, `robots.txt` đã chặn, CWV không áp dụng
+cho nó). Đã lấy kích thước file gốc thật (Pillow cho PNG, đọc `viewBox`/`width`/`height` attr cho
+SVG) VÀ kích thước hiển thị thật theo CSS đang áp dụng (không dùng số cũ trong kế hoạch SEO vì CSS
+đã đổi nhiều lần từ lúc viết kế hoạch, xem mục 26/32):
+
+| Vị trí | Ảnh | CSS quy định | width/height dùng |
+|---|---|---|---|
+| Logo nav + footer (2 thẻ) | `logo.svg` (thật 520×420) | `.logo img{height:40px;width:auto}` → 50×40 | 50 / 40 |
+| 7 cờ hero | `flags/*.svg` (thật ~900×600 hoặc tương đương 3:2) | `.flag-ico{width:32px;height:22px}` | 32 / 22 |
+| 7 cờ card dịch vụ | `flags/*.svg` (cùng file, dùng lại) | `.card-service .flag img{width:56px;height:38px}` | 56 / 38 |
+| QR form đăng ký | `qr-zalo.png` (thật 360×360, 100.603B) | `.qr-box img{width:140px;height:140px}` | 140 / 140 |
+| QR footer | `qr-zalo.png` (cùng file) | inline `style="width:110px"` (nguồn vuông → cao tự 110) | 110 / 110 |
+| Thumbnail bài viết (JS template, ~dòng 1186) | `p.image_url` (Supabase, đổi theo từng bài) | `.card-post .thumb{width:100%;aspect-ratio:2.3/1}` | 400 / 174 (đúng tỉ lệ 2.3:1 — **không dùng 400×225 (16:9) như bản kế hoạch cũ**, CSS đã đổi ratio ở mục 32.C.1 sau khi viết kế hoạch) |
+| Ảnh popup chi tiết bài viết (JS template, ~dòng 1208) | `p.image_url` | `.post-modal-scroll img{width:100%;max-height:280px}`, popup ẩn mặc định | 640 / 280 (chỉ mang tính placeholder tỉ lệ — popup không hiện lúc tải trang nên không ảnh hưởng CLS thật) |
+
+Riêng 2 dòng có **2 kích thước CSS khác nhau cho CÙNG 1 file `qr-zalo.png`** (140×140 ở form, 110×110
+ở footer) — dùng đúng số của TỪNG vị trí, không gộp chung 1 số cho cả 2 (khác khuyến nghị "110×110"
+chung chung trong bản kế hoạch cũ, đã kiểm tra CSS thật thay vì copy nguyên số cũ).
+
+**Bước 2 — favicon nhẹ:** dùng Pillow thu nhỏ (LANCZOS) chính 2 file ĐANG DÙNG làm icon (không tạo
+lại từ logo gốc thô) để giữ nguyên 100% thiết kế đã duyệt — `favicon.png` (512×512, 55.401B) →
+`favicon-32.png` (32×32, **1.280B**); `logo-backup.png` (512×512, 37.132B, đang dùng cho
+apple-touch-icon) → `apple-touch-180.png` (180×180, **8.813B**, đúng khuyến nghị kích thước Apple).
+Sửa đúng 2 dòng `<link>` trong `index.html` VÀ 2 dòng tương ứng trong `admin.html` — **giữ nguyên**
+dòng `<link rel="icon" type="image/svg+xml" href="assets/logo.svg">`. **QUAN TRỌNG — KHÔNG xóa/đổi**
+`favicon.png`/`logo-backup.png` gốc: 2 file 512×512 này **vẫn cần thiết** cho
+`admin-manifest.webmanifest` (icon PWA "Add to Home Screen" cần độ phân giải cao để không bị vỡ nét
+trên màn hình điện thoại) — chỉ đổi 4 dòng `<link>` trỏ icon nhỏ trong `<head>`, không đụng
+`admin-manifest.webmanifest`.
+
+**Bước 3 — giảm Google Fonts:** `index.html` dòng 111: `wght@400;600;700;800` →
+`wght@400;700` (2 weight thay vì 4, giảm số request/kích thước font phải tải). Đã quét TOÀN BỘ
+`<style>` trước khi đổi URL — tìm thấy đúng 21 chỗ `font-weight:600` hoặc `font-weight:800`, đổi hết
+về `font-weight:700` (nếu để sót, trình duyệt phải tự "giả lập đậm" bằng weight không khớp, chữ sẽ
+xấu hơn). **KHÔNG đụng `admin.html`** (dòng font-weight riêng, dùng Google Fonts URL riêng của nó) —
+admin không bị Google index/crawl, ngoài phạm vi Core Web Vitals công khai.
+
+**Bước 4 — WebP cho QR:** tạo `qr-zalo.webp` bằng Pillow — **dùng `lossless=True`, KHÔNG dùng
+lossy/quality=90** dù thử nghiệm cho thấy kích thước gần như y hệt (41.526B lossless vs 41.436B
+lossy quality=90, chênh <100 byte) — QR code là hoa văn đen/trắng cần giữ SẮC NÉT tuyệt đối để máy
+quét đọc được, nén lossy dù nhẹ vẫn có rủi ro làm mờ viền module QR, không đáng đánh đổi lấy chưa tới
+100 byte. Kết quả: 100.603B (PNG) → 41.526B (WebP), giảm 59%. Bọc cả 2 chỗ dùng `qr-zalo.png` trong
+`<picture><source type="image/webp">...<img>...</picture>` — CSS chọn ảnh (`.qr-box img`, inline
+`style`) vẫn áp dụng đúng vì là CSS descendant selector, không bị `<picture>` chen vào phá vỡ.
+**GIỮ NGUYÊN `og-image.png` dạng PNG** — không đụng, theo đúng yêu cầu (Zalo/1 số app đọc share-image
+WebP không tốt).
+
+**Nghiệm thu đã chạy:**
+- `favicon.png` 55KB cũ **không còn xuất hiện trong bất kỳ thẻ `<link>` nào** (cả `index.html` lẫn
+  `admin.html`) — đã `grep` xác nhận rỗng; vẫn còn dùng đúng trong `admin-manifest.webmanifest`
+  (đúng ý đồ, không phải sót).
+- `grep -oE "<img[^>]*>" index.html | grep -c "width="` = **20/20** — không thẻ nào bị sót.
+- HTML cân bằng thẻ (`html.parser` Python, riêng `<picture>` mở/đóng khớp 2/2).
+- `node --check` toàn bộ `<script>` inline OK.
+- Test qua Claude Browser (local `file://`): layout không vỡ khi zoom xem icon cờ hero, nhưng **ảnh
+  cục bộ không load được qua `file://` trong sandbox công cụ này** (giới hạn công cụ đã gặp nhiều
+  lần trong phiên — `naturalWidth:0` dù không có lỗi console) — không phải lỗi code, sẽ xác nhận lại
+  bằng ảnh thật trên production sau khi deploy.
+
+**Đo Core Web Vitals — theo đúng yêu cầu "Lighthouse trước/sau", nhưng đổi phương pháp vì
+`npx lighthouse` KHÔNG chạy được trong sandbox** (timeout mạng ra `registry.npmjs.org`, cùng vấn đề
+đã gặp với `wrangler` — xem mục 47). **Đã đo trực tiếp bằng Performance API thật của trình duyệt
+trên chính production `topvisa5s.com` TRƯỚC khi deploy T3** (số liệu dưới đây là mốc "trước" thật,
+đo trên máy/mạng hiện tại, không phải giả lập):
+- `domContentLoaded`: 1181ms · `load` event: 2013ms · `FCP`: 2580ms
+- `LCP`: **không lấy được** — `PerformanceObserver({type:'largest-contentful-paint', buffered:true})`
+  trả `null` dù chờ đủ lâu; đây là giới hạn của trình duyệt tự động hoá dùng trong công cụ này (cùng
+  họ giới hạn với `window.innerWidth=0` đã ghi nhận ở mục 20), **không phải trang không có LCP**.
+  Không tự bịa số để lấp chỗ trống này.
+- `CLS` đo được lúc đó: 0 (bình thường — trang lúc "trước" đã tải xong ổn định trước khi script đo
+  chạy, không bắt được đúng khoảnh khắc ảnh nhảy lúc tải ban đầu; giá trị 0 KHÔNG có nghĩa T3 vô ích
+  — xem bằng chứng cấu trúc bên dưới mới là căn cứ chính).
+- Google Fonts CSS: `wght@400;600;700;800` (4 weight) · favicon `<link>`: `assets/favicon.png`.
+- **20/20 ảnh KHÔNG có `width`/`height`** lúc "trước" (0/20) — đây là bằng chứng CẤU TRÚC trực tiếp
+  và chắc chắn nhất cho việc cải thiện CLS (cơ chế: trình duyệt không biết trước khoảng trống cần
+  giữ chỗ cho ảnh → khi ảnh tải xong, nội dung bên dưới bị đẩy dịch), độc lập với việc đo `CLS` bằng
+  số có bắt được đúng khoảnh khắc hay không.
+- **Số "sau" khi deploy** — xem lại phần cuối mục này sau khi PM xác nhận deploy (chưa deploy tại
+  thời điểm viết đoạn Bước 1-4 ở trên).
+
+**⚠️ Không đặt pass/fail tuyệt đối vào số trên** — đúng cảnh báo trong kế hoạch SEO T3: trang có
+~10 lượt/ngày nên PageSpeed Insights/CrUX chưa có dữ liệu thật, số Lighthouse-mô-phỏng (hay ở đây là
+Performance API đo trực tiếp) chỉ đủ để SO SÁNH tương đối trước/sau, không phải con số cuối cùng.
+Số liệu thật (28 ngày dữ liệu CrUX) chỉ đọc được sau khi có đủ traffic thật.

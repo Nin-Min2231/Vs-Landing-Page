@@ -3,7 +3,15 @@ compatibility_date = "2026-07-30"
 main = "worker.js"
 
 [assets]
-directory = "."
+# 2026-09, an ninh — đổi "." thành "./public": trước đây "." trỏ thẳng vào 02_Source/ nên TOÀN BỘ
+# thư mục bị phục vụ công khai, kể cả worker.js/wrangler.toml/package.json (source code + cấu hình
+# nội bộ, không có secret thật nhưng lộ logic/ngưỡng rate-limit/lịch cron) — phát hiện lúc kiểm tra
+# https://topvisa5s.com/worker.js vẫn tải được nguyên văn. Đã chuyển toàn bộ file thật sự cần công
+# khai (index.html, admin.html, robots.txt, sitemap.xml, admin-manifest.webmanifest, sw-admin.js,
+# assets/) vào public/, còn worker.js/wrangler.toml/package.json giữ ở ngoài — mặc định an toàn: file
+# nguồn mới thêm sau này ở 02_Source/ (ngoài public/) tự động KHÔNG public, không cần nhớ chặn thủ
+# công từng file.
+directory = "./public"
 binding = "ASSETS"
 # run_worker_first = true (2026-09, T1 kế hoạch SEO): mặc định Cloudflare phục vụ file tĩnh khớp
 # đường dẫn (vd "/" -> index.html) THẲNG từ edge, bỏ qua hẳn worker.js/fetch() — phát hiện lúc test

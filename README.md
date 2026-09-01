@@ -19,19 +19,21 @@ Visa-Landing-Page/
 │   ├── 06_Cong_nghe_de_xuat.md    So sánh công nghệ + lý do chọn
 │   ├── 07_Huong_dan_Deploy.md     Hướng dẫn domain, hosting, deploy, backup ⭐
 │   └── Visa-Landing-Page_Tai_lieu.xlsx   Bản Excel gộp cả 7 tài liệu trên (dễ đọc/in)
-├── 02_Source/                 ← source code
-│   ├── index.html                 Landing page (mở bằng trình duyệt xem ngay)
-│   ├── admin.html                 Trang quản trị (cần cấu hình Supabase)
-│   └── assets/                    Logo, favicon, QR Zalo (deploy kèm 2 file HTML)
+├── 02_Source/                 ← source code (worker.js/wrangler.toml/package.json — KHÔNG public)
+│   └── public/                    ⭐ (2026-09) CHỈ thư mục này được deploy công khai, xem CLAUDE.md mục 52
+│       ├── index.html                 Landing page (mở bằng trình duyệt xem ngay)
+│       ├── admin.html                 Trang quản trị (cần cấu hình Supabase)
+│       └── assets/                    Logo, favicon, QR Zalo (deploy kèm 2 file HTML)
 ├── 03_Information/            ← thông tin gốc công ty (logo, QR, Information.md — nguồn dữ liệu thật)
 └── 05_Database/               ← ⭐ TOÀN BỘ script SQL cần chạy trên Supabase (đọc README.md trong đây)
 ```
 
-> ⚠️ Khi deploy Cloudflare Pages: kéo thả cả 2 file HTML **và thư mục `assets`** (giữ nguyên tên).
+> ⚠️ Deploy qua Cloudflare Worker (`wrangler deploy`/git integration), KHÔNG còn kéo thả thủ công như
+> Cloudflare Pages trước đây — xem `CLAUDE.md` mục 3 + 52.
 
 ## Bắt đầu nhanh (3 việc cần làm)
 
-1. **Xem thử ngay:** nháy đúp `02_Source/index.html` — trang chạy được luôn (form chưa gửi được vì chưa nối Supabase).
+1. **Xem thử ngay:** nháy đúp `02_Source/public/index.html` — trang chạy được luôn (form chưa gửi được vì chưa nối Supabase).
 2. **Kích hoạt form + admin:** làm theo `01_Docs/07_Huong_dan_Deploy.md` → Bước 1 (tạo Supabase, ~15 phút).
 3. **Đưa lên Internet:** làm tiếp Bước 3 (Cloudflare Pages, kéo thả file, ~10 phút).
 

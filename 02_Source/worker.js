@@ -302,8 +302,11 @@ async function sendWebPush(env, sub) {
 const CHAT_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast'; // model đa ngôn ngữ, nhẹ, phù hợp free tier
 const CHAT_RATE_LIMIT_MAX = 8;          // tối đa 8 câu hỏi
 const CHAT_RATE_LIMIT_WINDOW_MS = 60000; // mỗi 60 giây / mỗi IP
-const CHAT_FALLBACK_VI = 'Hiện hệ thống đang bận, vui lòng gọi hotline 0935 887 922 hoặc chat Zalo (zalo.me/0935887922) để được tư vấn ngay.';
-const CHAT_FALLBACK_EN = 'Our system is a bit busy right now. Please call hotline +84 935 887 922 or chat via Zalo (zalo.me/0935887922) for immediate help.';
+// Câu dự phòng khi env.AI.run lỗi/hết quota (T6, kế hoạch SEO) — cố tình mời "để lại số điện
+// thoại" (khớp đúng nút có sẵn "Để lại số điện thoại tư vấn" trong khung chat, xem index.html) thay
+// vì mời Zalo như bản trước — không đổi giao diện chatbox, chỉ đổi nội dung câu dự phòng.
+const CHAT_FALLBACK_VI = 'Hệ thống đang bận, bạn vui lòng gọi 0935 887 922 hoặc để lại số điện thoại, chuyên viên sẽ gọi lại ngay.';
+const CHAT_FALLBACK_EN = 'Our system is currently busy. Please call 0935 887 922, or leave your phone number and our specialist will call you back right away.';
 const CHAT_RATE_LIMIT_MSG_VI = 'Bạn đang gửi câu hỏi hơi nhanh, vui lòng chờ một chút rồi thử lại — hoặc gọi hotline 0935 887 922 để được hỗ trợ ngay.';
 const CHAT_RATE_LIMIT_MSG_EN = 'You are sending messages a bit too fast — please wait a moment, or call hotline +84 935 887 922 for immediate help.';
 

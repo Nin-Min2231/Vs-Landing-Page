@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
+Disallow: /sw-admin.js
+Disallow: /admin-manifest.webmanifest
 
 Sitemap: https://topvisa5s.com/sitemap.xml
