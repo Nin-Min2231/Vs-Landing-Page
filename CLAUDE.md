@@ -2031,3 +2031,55 @@ request (redirect, kiểm tra hostname, log...) đều PHẢI có `run_worker_fi
 `topvisa5s.nguyennc1357.workers.dev` sau khi đã có domain thật không — trả lời: **không xóa**, vì
 đúng mục đích của redirect 301 T1 là giữ subdomain sống để link cũ (lịch sử duyệt web, tin nhắn cũ
 còn lưu URL này) vẫn dùng được, chỉ tự động đưa về domain chính thay vì lỗi trắng trang.
+
+## 50. T9 — đồng bộ 8 số giá fallback + SSR giá trang chủ (2026-09-01)
+
+**Bối cảnh:** PM đã cấu hình giá thật trong admin từ trước, trang chủ hiển thị đúng giá cho khách
+có JavaScript (script "GIÁ DỊCH VỤ" đọc `dich_vu_gia`). Việc còn lại là 8 số cứng viết sẵn trong
+HTML (chỉ 3 nhóm không chạy JS mới thấy: bộ quét link Facebook/Zalo, Bing, lượt crawl đầu của
+Googlebot) và PM đã xác nhận 01/09/2026 giá là **TỔNG ĐÃ GỒM PHÍ LÃNH SỰ**.
+
+**Bước 1 — đọc `dich_vu_gia` qua REST API bằng `SUPABASE_ANON_KEY` (đã công khai trong
+`index.html`) trước khi sửa gì:** 8 dòng — Nhật Bản 3.300.000 · Hàn Quốc 2.600.000 · Đài Loan
+3.000.000 · Trung Quốc 3.100.000 · Schengen (châu Âu) 5.700.000 · Mỹ 6.200.000 · Úc 6.800.000 ·
+Khác `null`. **Không ghi gì vào database** — chỉ SELECT.
+
+**Bước 2+3 (`index.html`, 8 card dịch vụ ~dòng 632-639):**
+- Sửa 8 số cứng khớp đúng bảng trên (nước "Khác" giữ nguyên "Liên hệ báo giá").
+- Đổi chữ **"Từ X đ" → "Tổng từ X đ"** cho 7 card có giá (áp dụng cả static HTML lẫn script client
+  đọc `dich_vu_gia`, mục "GIÁ DỊCH VỤ" cuối trang) — PM xác nhận chữ "Từ" đứng một mình dễ gây cảm
+  giác sợ phát sinh thêm.
+- Thêm `<div class="price-note">Đã gồm phí lãnh sự + phí dịch vụ, không phát sinh thêm</div>` ngay
+  dưới mỗi `.price` — **CHỈ ở 7 card có giá thật, KHÔNG thêm cho card "Quốc gia khác"** (quyết định
+  có chủ đích ngoài văn bản gốc: "Liên hệ báo giá" không có tổng số nào để mô tả là "đã gồm", thêm
+  dòng đó vào sẽ gây khó hiểu). CSS mới `.card-service .price-note` (font nhỏ, màu `--color-text-muted`,
+  dùng token có sẵn). Script client cũng được sửa để **ẩn/hiện `.price-note` theo đúng còn/mất giá**
+  (`nextElementSibling` + toggle `display:none`) — phòng khi PM đổi 1 nước từ có giá sang `gia=null`
+  sau này, dòng cam kết không bị "mồ côi" hiển thị sai.
+
+**Bước 4 (`worker.js`) — SSR đè giá thật vào HTML trước khi trả về, route `/`:** thêm hàm
+`renderHomepageWithLivePrices()` — `Promise.all` giữa `env.ASSETS.fetch(request)` (HTML gốc) và
+`supa(env, 'dich_vu_gia?select=quoc_gia,gia')` (dùng lại helper `supa()` có sẵn, chạy bằng
+`SUPABASE_SERVICE_ROLE_KEY` **đã cấu hình sẵn trên Worker** — **KHÔNG** dùng `SUPABASE_ANON_KEY` vì
+biến đó không tồn tại phía Worker, tránh lặp lại bài học "quên thêm 1 biến nên job im lặng không
+chạy" ở mục 34.B), rồi `.replace()` từng `data-country="<nước>">...</div>` bằng regex (có escape
+ký tự đặc biệt cho tên nước chứa ngoặc như "Schengen (châu Âu)") — chỉ nước `gia` hợp lệ (>0) mới bị
+thay, nước `null` giữ nguyên "Liên hệ báo giá" viết sẵn. Lỗi bất kỳ (Supabase down...) → `catch` rơi
+về `env.ASSETS.fetch(request)` gốc — do Bước 2 đã sửa số fallback tĩnh thành đúng số thật, dù SSR
+lỗi thì khách vẫn thấy giá đúng, không có đường nào ra giá sai. Gắn vào `fetch()` ngay sau check
+`/api/chat`, chỉ áp dụng `pathname === '/' && method === 'GET'`.
+
+**Đã kiểm tra kỹ trước khi tin tưởng (chưa deploy khi viết mục này):**
+- `node --check worker.js` OK; toàn bộ `<script>` inline `index.html` parse được bằng `new Function()`.
+- Test riêng logic regex-replace bằng Node với dữ liệu giả lập (giá trị khác hoàn toàn số thật, để
+  chắc chắn "khớp" không phải trùng hợp) — xác nhận cả 7/7 nước match đúng, kể cả trường hợp khó
+  nhất "Schengen (châu Âu)" có dấu ngoặc trong tên (đã escape regex đúng).
+- Test qua Claude Browser (mở file tĩnh, JS chạy nhưng fetch Supabase fail do CORS trên `file://`
+  nên rơi về đúng fallback tĩnh — mô phỏng chính xác trường hợp "tắt JavaScript"): 7 giá + 7 dòng
+  "Đã gồm phí lãnh sự..." hiện đúng, card "Quốc gia khác" đúng "Liên hệ báo giá" không có dòng note
+  thừa, layout không vỡ, console sạch.
+
+**⚠️ Nghiệm thu gốc trong kế hoạch dùng `grep -o 'Từ [0-9.]*đ'` — không còn đúng nữa vì đổi chữ:**
+sau khi đổi "Từ" → "Tổng từ" theo đúng yêu cầu Bước 3, chữ "từ" trong "Tổng từ" viết thường (không
+còn là "Từ" hoa đứng đầu) nên câu lệnh cũ không match được nữa. Dùng lại đúng tinh thần (đếm đúng 7)
+bằng: `grep -oE 'data-country="[^"]*">(Tổng từ [0-9.]*đ|Liên hệ báo giá)'` rồi đếm dòng có "Tổng từ".

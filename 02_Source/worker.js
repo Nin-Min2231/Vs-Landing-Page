@@ -27,6 +27,17 @@ export default {
     if (url.pathname === '/api/chat' && request.method === 'POST') {
       return handleChat(request, env);
     }
+    // Trang chủ: SSR đè giá thật từ dich_vu_gia vào HTML trước khi trả về (kế hoạch SEO T9) — để
+    // Facebook/Zalo/Bing/lượt crawl đầu của Googlebot (không chạy JS) đọc đúng giá ngay từ đầu,
+    // không còn phụ thuộc script phía client. Lỗi bất kỳ (Supabase down...) -> rơi về hành vi cũ
+    // (serve file tĩnh nguyên bản, đã có giá đúng làm fallback tĩnh) chứ không làm hỏng trang.
+    if (url.pathname === '/' && request.method === 'GET') {
+      try {
+        return await renderHomepageWithLivePrices(request, env);
+      } catch (e) {
+        return env.ASSETS.fetch(request);
+      }
+    }
     return env.ASSETS.fetch(request); // hành vi cũ — GIỮ NGUYÊN cho mọi request khác
   },
   async scheduled(event, env, ctx) {
@@ -54,6 +65,37 @@ async function supa(env, path, opts = {}) {
   if (!res.ok) throw new Error('Supabase ' + path + ' -> HTTP ' + res.status + ': ' + await res.text());
   const txt = await res.text();
   return txt ? JSON.parse(txt) : null;
+}
+
+/* ==================== SSR GIÁ DỊCH VỤ TRANG CHỦ (kế hoạch SEO T9, 2026-09) ====================
+   Đọc dich_vu_gia qua supa() có sẵn (chạy bằng SUPABASE_SERVICE_ROLE_KEY, đã cấu hình sẵn trên
+   Worker này — KHÔNG cần thêm biến môi trường mới, tránh lặp lại bài học "quên thêm 1 biến nên
+   job im lặng không chạy gì" ở CLAUDE.md mục 34.B) rồi .replace() thẳng vào HTML tĩnh, CHỈ với
+   nước có gia hợp lệ (>0) — nước gia=null (hiện tại là "Khác") giữ nguyên "Liên hệ báo giá" viết
+   sẵn trong HTML, không đụng tới. Script phía client (mục "GIÁ DỊCH VỤ" trong index.html) vẫn chạy
+   sau đó như cũ (đọc lại đúng y kết quả này, không đổi gì cho người dùng có JS) — 2 lớp này độc
+   lập nhau, chỉ khác đối tượng phục vụ: SSR cho khách/bot KHÔNG chạy JS, client-side JS cho trình
+   duyệt thường (phòng khi SSR lỗi/giá đổi ngay sau khi trang đã tải). */
+function escapeRegExpLiteral(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+async function renderHomepageWithLivePrices(request, env) {
+  const [assetRes, rows] = await Promise.all([
+    env.ASSETS.fetch(request),
+    supa(env, 'dich_vu_gia?select=quoc_gia,gia')
+  ]);
+  if (!assetRes.ok) return assetRes;
+  let html = await assetRes.text();
+  for (const row of (rows || [])) {
+    if (row.gia == null || Number(row.gia) <= 0) continue; // giữ "Liên hệ báo giá" tĩnh
+    const priceText = 'Tổng từ ' + Number(row.gia).toLocaleString('vi-VN') + 'đ';
+    const re = new RegExp('(data-country="' + escapeRegExpLiteral(row.quoc_gia) + '">)[^<]*(</div>)');
+    html = html.replace(re, '$1' + priceText + '$2');
+  }
+  const headers = new Headers();
+  headers.set('Content-Type', assetRes.headers.get('Content-Type') || 'text/html;charset=UTF-8');
+  headers.set('Cache-Control', 'public, max-age=300');
+  return new Response(html, { status: assetRes.status, headers });
 }
 
 /* ==================== BƯỚC 1: SINH THÔNG BÁO MỚI (bỏ qua nếu đã có) ====================

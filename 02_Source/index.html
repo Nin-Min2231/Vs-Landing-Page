@@ -241,7 +241,8 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 .card-service .flag img{width:56px;height:38px;object-fit:cover;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.2)}
 .card-service h3{font-size:20px;font-weight:700;margin:var(--sp-1) 0 4px}
 .card-service p{font-size:14px;color:var(--color-text-muted);flex:1}
-.card-service .price{color:var(--color-primary);font-weight:700;margin:var(--sp-1) 0 var(--sp-2)}
+.card-service .price{color:var(--color-primary);font-weight:700;margin:var(--sp-1) 0 4px}
+.card-service .price-note{font-size:11px;color:var(--color-text-muted);line-height:1.3;margin:0 0 var(--sp-2)}
 .card-service .btn{padding:10px 0;font-size:14px;width:100%}
 
 /* ==================== BENEFITS ==================== */
@@ -629,19 +630,20 @@ footer a:hover{color:#fff}
     <h2 class="section-title">Dịch vụ Visa các quốc gia</h2>
     <p class="section-sub">Chọn quốc gia bạn muốn đến — chúng tôi lo phần còn lại</p>
     <div class="grid-services">
-      <div class="card-service"><div class="flag"><img src="assets/flags/jp.svg" alt="Cờ Nhật Bản"></div><h3>Visa Nhật Bản</h3><p>Du lịch, công tác, thăm thân, kỹ năng đặc định</p><div class="price" data-country="Nhật Bản">Từ 1.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Nhật Bản')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/kr.svg" alt="Cờ Hàn Quốc"></div><h3>Visa Hàn Quốc</h3><p>Du lịch, công tác, visa 5 năm nhiều lần</p><div class="price" data-country="Hàn Quốc">Từ 1.400.000đ</div><button class="btn btn-outline" onclick="pickCountry('Hàn Quốc')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/tw.svg" alt="Cờ Đài Loan"></div><h3>Visa Đài Loan</h3><p>Du lịch, công tác, e-visa Quan Hồng</p><div class="price" data-country="Đài Loan">Từ 1.200.000đ</div><button class="btn btn-outline" onclick="pickCountry('Đài Loan')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/cn.svg" alt="Cờ Trung Quốc"></div><h3>Visa Trung Quốc</h3><p>Du lịch, thương mại, nhiều lần nhập cảnh</p><div class="price" data-country="Trung Quốc">Từ 1.800.000đ</div><button class="btn btn-outline" onclick="pickCountry('Trung Quốc')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/eu.svg" alt="Cờ Schengen/Châu Âu"></div><h3>Visa Schengen</h3><p>26 nước châu Âu — Pháp, Đức, Ý, Hà Lan...</p><div class="price" data-country="Schengen (châu Âu)">Từ 4.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Schengen (châu Âu)')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/us.svg" alt="Cờ Mỹ"></div><h3>Visa Mỹ</h3><p>Du lịch B1/B2, phỏng vấn, gia hạn</p><div class="price" data-country="Mỹ">Từ 5.500.000đ</div><button class="btn btn-outline" onclick="pickCountry('Mỹ')">Tư vấn ngay</button></div>
-      <div class="card-service"><div class="flag"><img src="assets/flags/au.svg" alt="Cờ Úc"></div><h3>Visa Úc</h3><p>Du lịch, thăm thân, công tác online</p><div class="price" data-country="Úc">Từ 4.000.000đ</div><button class="btn btn-outline" onclick="pickCountry('Úc')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/jp.svg" alt="Cờ Nhật Bản"></div><h3>Visa Nhật Bản</h3><p>Du lịch, công tác, thăm thân, kỹ năng đặc định</p><div class="price" data-country="Nhật Bản">Tổng từ 3.300.000đ</div><div class="price-note">Đã gồm phí lãnh sự + phí dịch vụ, không phát sinh thêm</div><button class="btn btn-outline" onclick="pickCountry('Nhật Bản')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/kr.svg" alt="Cờ Hàn Quốc"></div><h3>Visa Hàn Quốc</h3><p>Du lịch, công tác, visa 5 năm nhiều lần</p><div class="price" data-country="Hàn Quốc">Tổng từ 2.600.000đ</div><div class="price-note">Đã gồm phí lãnh sự + phí dịch vụ, không phát sinh thêm</div><button class="btn btn-outline" onclick="pickCountry('Hàn Quốc')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/tw.svg" alt="Cờ Đài Loan"></div><h3>Visa Đài Loan</h3><p>Du lịch, công tác, e-visa Quan Hồng</p><div class="price" data-country="Đài Loan">Tổng từ 3.000.000đ</div><div class="price-note">Đã gồm phí lãnh sự + phí dịch vụ, không phát sinh thêm</div><button class="btn btn-outline" onclick="pickCountry('Đài Loan')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/cn.svg" alt="Cờ Trung Quốc"></div><h3>Visa Trung Quốc</h3><p>Du lịch, thương mại, nhiều lần nhập cảnh</p><div class="price" data-country="Trung Quốc">Tổng từ 3.100.000đ</div><div class="price-note">Đã gồm phí lãnh sự + phí dịch vụ, không phát sinh thêm</div><button class="btn btn-outline" onclick="pickCountry('Trung Quốc')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/eu.svg" alt="Cờ Schengen/Châu Âu"></div><h3>Visa Schengen</h3><p>26 nước châu Âu — Pháp, Đức, Ý, Hà Lan...</p><div class="price" data-country="Schengen (châu Âu)">Tổng từ 5.700.000đ</div><div class="price-note">Đã gồm phí lãnh sự + phí dịch vụ, không phát sinh thêm</div><button class="btn btn-outline" onclick="pickCountry('Schengen (châu Âu)')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/us.svg" alt="Cờ Mỹ"></div><h3>Visa Mỹ</h3><p>Du lịch B1/B2, phỏng vấn, gia hạn</p><div class="price" data-country="Mỹ">Tổng từ 6.200.000đ</div><div class="price-note">Đã gồm phí lãnh sự + phí dịch vụ, không phát sinh thêm</div><button class="btn btn-outline" onclick="pickCountry('Mỹ')">Tư vấn ngay</button></div>
+      <div class="card-service"><div class="flag"><img src="assets/flags/au.svg" alt="Cờ Úc"></div><h3>Visa Úc</h3><p>Du lịch, thăm thân, công tác online</p><div class="price" data-country="Úc">Tổng từ 6.800.000đ</div><div class="price-note">Đã gồm phí lãnh sự + phí dịch vụ, không phát sinh thêm</div><button class="btn btn-outline" onclick="pickCountry('Úc')">Tư vấn ngay</button></div>
       <div class="card-service"><div class="flag">🌏</div><h3>Quốc gia khác</h3><p>Canada, Anh, New Zealand, Dubai...</p><div class="price" data-country="Khác">Liên hệ báo giá</div><button class="btn btn-outline" onclick="pickCountry('Khác')">Tư vấn ngay</button></div>
     </div>
-    <!-- Giá "Từ x đ" ở trên chỉ là fallback tĩnh khi chưa tải được dữ liệu — giá THẬT lấy từ bảng
-         "Dịch vụ Visa các quốc gia" (Cài đặt chung, admin.html → bảng dich_vu_gia, Phase 7, 2026-08)
-         qua script tự cập nhật cuối trang (xem data-country ở mỗi .price). Muốn đổi giá: vào
-         admin.html, KHÔNG sửa số ở đây. -->
+    <!-- Giá "Tổng từ x đ" ở trên chỉ là fallback tĩnh khi chưa tải được dữ liệu — giá THẬT lấy từ
+         bảng "Dịch vụ Visa các quốc gia" (Cài đặt chung, admin.html → bảng dich_vu_gia, Phase 7,
+         2026-08) qua script tự cập nhật cuối trang (xem data-country ở mỗi .price), và worker.js
+         cũng SSR đè đúng số này trước khi trả trang (T9, 2026-09) — Muốn đổi giá: vào admin.html,
+         KHÔNG sửa số ở đây. -->
   </div>
 </section>
 
@@ -1041,9 +1043,13 @@ function initReviewsSlider(){
 initReviewsSlider();
 
 /* ==================== GIÁ DỊCH VỤ (từ admin.html — Cài đặt chung, Phase 7) ====================
-   Giá "Từ x đ" trong HTML chỉ là fallback tĩnh — cập nhật lại đúng giá thật đang cấu hình ở admin
-   qua bảng dich_vu_gia (anon chỉ SELECT, xem 05_Database/07_supabase_setup_phase7.sql). Lỗi mạng/
-   chưa cấu hình Supabase -> im lặng giữ nguyên giá fallback, không ảnh hưởng phần còn lại trang. */
+   Giá "Tổng từ x đ" trong HTML chỉ là fallback tĩnh — cập nhật lại đúng giá thật đang cấu hình ở
+   admin qua bảng dich_vu_gia (anon chỉ SELECT, xem 05_Database/07_supabase_setup_phase7.sql). Lỗi
+   mạng/chưa cấu hình Supabase -> im lặng giữ nguyên giá fallback, không ảnh hưởng phần còn lại
+   trang. "Tổng từ" (không phải "Từ") + dòng .price-note ngay dưới ("Đã gồm phí lãnh sự...") vì PM
+   xác nhận 01/09/2026 giá là TỔNG ĐÃ GỒM PHÍ LÃNH SỰ (kế hoạch SEO T9/Phần C) — .price-note chỉ ẩn
+   hiện theo còn/mất giá, KHÔNG tự tạo mới, vì hiện tại chỉ 7/8 nước có giá thật (nước "Khác" luôn
+   `gia=null` nên không có dòng ghi chú này trong HTML gốc). */
 (async function(){
   if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
   try{
@@ -1058,7 +1064,10 @@ initReviewsSlider();
       const country = el.dataset.country;
       if(!gia.has(country)) return; // chưa cấu hình nước này ở admin -> giữ giá fallback trong HTML
       const g = gia.get(country);
-      el.textContent = (g!=null && Number(g)>0) ? 'Từ '+Number(g).toLocaleString('vi-VN')+'đ' : 'Liên hệ báo giá';
+      const coGia = g!=null && Number(g)>0;
+      el.textContent = coGia ? 'Tổng từ '+Number(g).toLocaleString('vi-VN')+'đ' : 'Liên hệ báo giá';
+      const note = el.nextElementSibling;
+      if(note && note.classList.contains('price-note')) note.style.display = coGia ? '' : 'none';
     });
   }catch(e){ /* im lặng bỏ qua nếu không tải được, giữ giá fallback trong HTML */ }
 })();
