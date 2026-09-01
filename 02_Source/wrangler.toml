@@ -5,6 +5,13 @@ main = "worker.js"
 [assets]
 directory = "."
 binding = "ASSETS"
+# run_worker_first = true (2026-09, T1 kế hoạch SEO): mặc định Cloudflare phục vụ file tĩnh khớp
+# đường dẫn (vd "/" -> index.html) THẲNG từ edge, bỏ qua hẳn worker.js/fetch() — phát hiện lúc test
+# redirect 301 workers.dev->topvisa5s.com: request tới "/" trên workers.dev vẫn trả 200 trang chủ
+# bình thường, không bao giờ chạm được đoạn code redirect. Bật cờ này để MỌI request (kể cả trang
+# tĩnh) luôn chạy qua worker.js trước — bắt buộc để redirect hoạt động, và cũng cần cho các route
+# động sau này (T4 /blog, T14 /visa-<slug>) hoạt động đúng trên mọi hostname.
+run_worker_first = true
 
 # Chạy job nền cứ mỗi 10 phút: quét ho_so/leads sinh thông báo (Trả kết quả hôm nay / Nhắc tư vấn
 # hôm nay / Khách đăng ký mới) + gửi Web Push cho các thiết bị đã bật thông báo đẩy trong admin.html.
