@@ -2254,8 +2254,35 @@ trên chính production `topvisa5s.com` TRƯỚC khi deploy T3** (số liệu d�
   và chắc chắn nhất cho việc cải thiện CLS (cơ chế: trình duyệt không biết trước khoảng trống cần
   giữ chỗ cho ảnh → khi ảnh tải xong, nội dung bên dưới bị đẩy dịch), độc lập với việc đo `CLS` bằng
   số có bắt được đúng khoảnh khắc hay không.
-- **Số "sau" khi deploy** — xem lại phần cuối mục này sau khi PM xác nhận deploy (chưa deploy tại
-  thời điểm viết đoạn Bước 1-4 ở trên).
+- **Số "sau" khi deploy** (đo cùng cách, cùng máy/mạng, ngay sau khi deploy commit `33d13b4`):
+  `domContentLoaded`: 517ms rồi 236ms ở lần đo lặp lại (so với 1181ms "trước") · `loadEvent`: 843ms
+  rồi 427ms (so với 2013ms "trước") · `FCP`: **không bắt được lần nào** (mảng `performance
+  .getEntriesByType('paint')` rỗng ở lần đo "sau" — xác nhận thêm đây là giới hạn API Paint Timing
+  của trình duyệt tự động hoá trong công cụ này, không phải trang không paint được) · `LCP`: vẫn
+  không lấy được, cùng lý do đã ghi ở trên.
+  **Lưu ý quan trọng về độ tin cậy của riêng 2 số `domContentLoaded`/`loadEvent`:** đo 2 lần liên
+  tiếp ở "sau" ra 2 kết quả khác nhau khá nhiều (517→236, 843→427) chỉ vì Cloudflare cache nóng dần
+  lên qua từng lần — **không xem đây là con số "X% nhanh hơn" đáng tin cậy**, chỉ là tín hiệu định
+  hướng nhẹ (cả 2 lần đo "sau" đều thấp hơn hẳn "trước", không có lần nào cao hơn).
+- **Bằng chứng chắc chắn nhất vẫn là bằng chứng CẤU TRÚC** (không phụ thuộc cache/thời điểm đo):
+  `imgsWithWidthHeight` 0/20 (tính trên 20 thẻ tĩnh) → **30/30** (tính trên toàn bộ ảnh trong DOM,
+  kể cả bản JS nhân bản của slider đánh giá — xác nhận width/height được kế thừa đúng khi JS
+  `cloneNode` các thẻ gốc); Google Fonts CSS URL đổi đúng `wght@400;600;700;800` → `wght@400;700`;
+  `<link rel="icon" type="image/png">` đổi đúng `favicon.png` → `favicon-32.png`.
+- **Đã xác nhận thêm trên production (không chỉ code):** cả 7 cờ dịch vụ tải thành công
+  (`imgLoaded:true`), render đúng khớp 100% kích thước CSS quy định (56×38px), logo render đúng
+  (natural 520×420 → rendered 50×40, không méo); `<picture>` QR chọn đúng nguồn `qr-zalo.webp` khi
+  thật sự được kích hoạt tải (test bằng cách gỡ `loading="lazy"` + `cloneNode` để buộc trình duyệt
+  đánh giá lại — `currentSrc` ra đúng `.webp`, `naturalSize` đúng 360×360) — lý do phải test kiểu
+  này: công cụ trình duyệt tự động hoá dùng để test không tự kích hoạt được Intersection Observer
+  của `loading="lazy"` (cùng họ giới hạn "không compositing khung nhìn thật" đã ghi ở mục 20/47),
+  nên đo trực tiếp `imgLoaded` mà không gỡ lazy sẽ luôn ra `false` — đã xác nhận riêng 2 file
+  `qr-zalo.png`/`qr-zalo.webp` tồn tại đúng qua `fetch()` trực tiếp trước khi kết luận đây là giới
+  hạn công cụ chứ không phải lỗi thật.
+- **An ninh (Phương án A) đã xác nhận đúng trên production:** `/worker.js`, `/wrangler.toml`,
+  `/package.json` → cả 3 đều 404; `/`, `/admin.html`, `/assets/*` vẫn 200 đúng nội dung (đã so
+  checksum MD5 file `favicon-32.png` local vs production, khớp 100%); redirect `workers.dev` (T1)
+  không bị ảnh hưởng.
 
 **⚠️ Không đặt pass/fail tuyệt đối vào số trên** — đúng cảnh báo trong kế hoạch SEO T3: trang có
 ~10 lượt/ngày nên PageSpeed Insights/CrUX chưa có dữ liệu thật, số Lighthouse-mô-phỏng (hay ở đây là
