@@ -342,15 +342,15 @@ giá thật lấy từ Facebook (Tên Facebook, Nội dung, URL, Ghi chú riêng
 tự lấy đúng nội dung này để hiển thị ở mục "Khách hàng nói gì về chúng tôi", bấm vào tên khách sẽ mở
 đúng bài đánh giá thật trên Facebook của họ.
 
+Mỗi feedback còn có "Tháng/Năm đánh giá" (bạn tự chọn đúng tháng/năm thật của đánh giá đó, không
+nhất thiết là ngày bạn nhập vào hệ thống) — trang chủ hiển thị đúng "Đánh giá thật trên Facebook ·
+mm - yyyy" theo đây.
+
 Chi tiết kỹ thuật đầy đủ: `CLAUDE.md` mục 48.
 
-- [ ] **Cần chạy `05_Database/12_supabase_setup_phase12.sql` trong Supabase SQL Editor trước khi
-      dùng** (tạo bảng mới) — Claude Code không tự chạy được bước này.
-- [x] Đã thêm khối quản lý + hiển thị động, đã test bằng dữ liệu giả lập (chưa test với dữ liệu
-      thật/đăng nhập admin thật).
-- **⚠️ Lưu ý quan trọng:** 2 review hiện đang hiển thị (Anh Võ Kiên, Pon Tí Tởn) sẽ **tự động biến
-      mất** khỏi trang chủ ngay khi bạn thêm feedback ĐẦU TIÊN qua trang quản trị — muốn giữ lại,
-      hãy tự nhập lại 2 review đó qua trang quản trị trước (hoặc cùng lúc thêm review mới).
+- [x] Đã chạy `05_Database/12_supabase_setup_phase12.sql` trong Supabase SQL Editor (PM tự chạy,
+      2026-09-01, gồm cả phần gốc và phần bổ sung "Tháng/Năm").
+- [x] PM tự test trực tiếp trên production và xác nhận OK (2026-09-01).
 
 ## Muốn sửa nội dung?
 

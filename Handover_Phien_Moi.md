@@ -1,87 +1,72 @@
-# Handover — Bàn giao sang phiên làm việc mới (2026-08-29, bản 13 — GHI ĐÈ toàn bộ bản cũ)
+# Handover — Bàn giao sang phiên làm việc mới (2026-09-01, bản 14 — GHI ĐÈ toàn bộ bản cũ)
 
-> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→12) — **không cần đọc lại bản cũ**, nội
+> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→13) — **không cần đọc lại bản cũ**, nội
 > dung quan trọng còn giá trị đã gom hết vào đây. Đọc theo đúng thứ tự: `CLAUDE.md` (toàn bộ, đặc
-> biệt mục 47) → file này → bắt tay vào **mục 1**.
+> biệt mục 47-48) → file này → bắt tay vào **mục 1**.
 
 ## 0. Trạng thái ngay lúc viết file này
 
-- **✅ ĐÃ DEPLOY THẬT lên production: Chat Box Release 1** (hỗ trợ khách hỏi về dịch vụ Visa ngay
-  trên trang chủ `topvisa5s.com` + tab "Quản lý Chat" trong trang quản trị). PM đã tự test trực tiếp
-  trên production và xác nhận OK, kể cả 2 vòng chỉnh sửa giao diện theo phản hồi thực tế. Xem chi
-  tiết đầy đủ ở `CLAUDE.md` mục 47 (đặc biệt mục F — lỗi AI trả lời sai ngôn ngữ phát hiện lúc test
-  thật, sửa qua 3 lượt mới ổn định; mục G — 2 vòng phản hồi UI).
-- **Tóm tắt việc đã làm trong phiên này** (bắt đầu từ yêu cầu "đọc handover + làm folder 08_Chatbox"):
-  1. Đọc toàn bộ tài liệu `08_Chatbox/` (yêu cầu gốc, báo cáo khả thi, đặc tả kỹ thuật, chỉ dẫn thực
-     thi) + khảo sát source code hiện tại trước khi code.
-  2. Tạo nhánh `feature/chatbox-release1`, code theo đúng 3 nhóm (A: widget `index.html`, B: route
-     `/api/chat` trong `worker.js` + migration `chat_logs`, C: tab "Quản lý Chat" trong `admin.html`).
-  3. PM chạy xong migration `05_Database/11_supabase_setup_phase11.sql`, yêu cầu deploy thẳng lên
-     production để tự test (không có cách tự dựng môi trường test riêng) → merge `main` + push
-     (Cloudflare tự deploy).
-  4. Test thật bằng `curl` gọi `/api/chat` trên production → phát hiện lỗi AI trả lời sai ngôn ngữ,
-     sửa qua 3 lượt (xem CLAUDE.md mục 47.F) mới ổn định.
-  5. PM tự test trên `topvisa5s.com` + trang quản trị, gửi 2 vòng phản hồi UI kèm ảnh chụp thực tế
-     (vị trí tab, icon nút chat, bố cục khung chat, canh giữa filter, màu nút xác nhận) — đã sửa +
-     deploy hết cả 2 vòng (xem CLAUDE.md mục 47.G).
-  6. PM xác nhận "test xong" → cập nhật lại tài liệu (`CLAUDE.md`, `README.md`,
-     `05_Database/README.md`, `06_Backup_Tool/README.md`) cho khớp trạng thái thật.
-- **Nhánh làm việc:** đã merge `feature/chatbox-release1` vào `main`, từ đó đẩy thẳng tiếp `main`
-  cho mọi lượt sửa nhỏ trong lúc debug cùng tính năng vừa deploy (đúng quy ước cũ của dự án "vẫn đẩy
-  thẳng `main`, không bị chặn quyền push"). Nhánh `feature/chatbox-release1` vẫn còn trên GitHub
-  (đã merge xong, an toàn để xóa dọn dẹp nếu PM muốn — **chưa tự ý xóa** vì PM chưa yêu cầu).
-- Commit mới nhất tính tới lúc viết file này: `ca44e4c` (UI Chat Box vòng 2) + các commit cập nhật
-  tài liệu ngay sau đó.
+- **✅ ĐÃ ĐÓNG HOÀN TOÀN cả 2 tính năng lớn của đợt này — PM đã tự test trên production và xác nhận
+  OK cho cả 2, không còn việc gì tồn đọng/cấp bách.**
+  1. **Chat Box Release 1** (hỗ trợ khách hỏi dịch vụ Visa ngay trên trang chủ, xem `CLAUDE.md` mục
+     47) — widget chat + AI trả lời (Cloudflare Workers AI, miễn phí) + tự tạo lead khi khách để lại
+     SĐT + tab "Quản lý Chat" trong trang quản trị. Đã qua 2 vòng chỉnh UI theo phản hồi PM (vị trí
+     tab, icon nút chat, bố cục khung chat, canh giữa filter, màu nút xác nhận) + sửa 1 lỗi thật
+     (AI trả lời sai ngôn ngữ, sửa qua 3 lượt mới ổn định — bài học quan trọng, xem mục 47.F).
+  2. **Feedback khách hàng từ Facebook** (thay 2 review viết cứng cũ trên trang chủ, xem `CLAUDE.md`
+     mục 48) — khối CRUD "📘 Feedback từ khách hàng" trong trang quản trị (Cài đặt chung), có thêm
+     field "Tháng/Năm đánh giá" (PM tự chọn đúng tháng/năm thật, không phải ngày tạo dòng). Trang
+     chủ tự lấy dữ liệu này hiển thị, bấm tên khách mở đúng URL Facebook thật.
+- **Không còn việc gì đang treo/cấp bách tại thời điểm viết file này.**
+- Nhánh làm việc: đẩy thẳng `main`, không bị chặn quyền push. Commit mới nhất: `e4b62c2` (cùng các
+  commit chỉnh tài liệu ngay sau khi viết xong bản handover này).
 
-## 1. Việc nên theo dõi / còn tồn đọng (không cấp bách nhưng CHƯA xong)
+## 1. Việc nên theo dõi (không cấp bách)
 
-1. ~~Xóa dữ liệu THỬ NGHIỆM do Claude Code tạo ra lúc tự test bằng `curl` trên production~~ — **✅ PM
-   xác nhận đã xóa xong (2026-08-29)**, không còn tồn đọng.
-2. **Đối chiếu độ chính xác câu trả lời dài của AI** (vd hỏi "cần giấy tờ gì cho visa Nhật Bản" ra
-   câu trả lời khá chi tiết) **với đúng nội dung field "Checklist hồ sơ" PM đã nhập ở admin.html**
-   (Cài đặt chung → Nước đến → Nhật Bản) — Claude Code không có quyền đọc bảng `danh_muc_nuoc` bằng
-   `anon` key nên không tự đối chiếu được. Test grounding khác (hỏi về nước không có dữ liệu, vd
-   "Iceland") cho kết quả tốt (AI thành thật nói không có thông tin, không bịa số) nên khả năng cao
-   là ổn, nhưng **chưa được xác nhận 100%** cho trường hợp cụ thể này — đây là loại rủi ro
-   "bịa thông tin pháp lý" mà `CLAUDE.md` mục 8/10 cấm tuyệt đối, ưu tiên kiểm tra sớm.
-3. Theo dõi dashboard Cloudflare Workers AI vài ngày đầu — đảm bảo không vượt quota free 10.000
-   neuron/ngày ngoài dự kiến.
-4. **Release 2** (cho phép khách chuyển toàn trang sang tiếng Anh, admin nhập thêm bản dịch tiếng
-   Anh cho bài viết/giá/thông tin quốc gia) **CHƯA làm** — chỉ bắt đầu khi PM yêu cầu rõ, đọc lại
-   `08_Chatbox/Dac_ta_Trien_khai_Chatbox.md` mục 1.1/4.4/6.2-6.4/7-9 khi tới lúc, không cần phân
-   tích lại từ đầu.
+1. **Release 2 của Chat Box** (cho phép khách chuyển toàn trang sang tiếng Anh + admin nhập bản
+   dịch tiếng Anh cho bài viết/giá/thông tin quốc gia) — **CHƯA làm**, chỉ bắt đầu khi PM yêu cầu rõ
+   trong hội thoại. Khi tới lúc, đọc lại `08_Chatbox/Dac_ta_Trien_khai_Chatbox.md` mục 1.1/4.4/
+   6.2-6.4/7-9 — không cần phân tích lại từ đầu, tài liệu đã có sẵn đầy đủ.
+2. **Theo dõi dashboard Cloudflare Workers AI vài ngày** — đảm bảo Chat Box không vượt quota free
+   10.000 neuron/ngày ngoài dự kiến (mới deploy 2026-08-29, còn khá mới).
+3. Model AI hiện dùng cho Chat Box: `@cf/meta/llama-3.1-8b-instruct-fast` — nếu sau này cần đổi
+   model khác (vd nếu Cloudflare ngừng hỗ trợ, hoặc PM muốn chất lượng trả lời tốt hơn), đọc kỹ bài
+   học ở `CLAUDE.md` mục 47.F trước khi đổi cách xử lý song ngữ (đã thử 2 cách qua prompt đều KHÔNG
+   đủ tin cậy với model hiện tại, cách đang dùng là "luôn sinh tiếng Việt rồi dịch riêng sang tiếng
+   Anh nếu cần" — model khác có thể cần cách tiếp cận khác, đừng giả định lại y hệt).
+4. **2 review cũ ("Anh Võ Kiên", "Pon Tí Tởn") không còn hiển thị trên trang chủ** kể từ khi PM thêm
+   feedback thật qua trang quản trị (đúng theo thiết kế — trang chủ giờ ưu tiên dữ liệu động từ
+   admin, 2 review cũ trong HTML chỉ còn là fallback dự phòng khi bảng rỗng/lỗi mạng). Nếu PM muốn
+   2 review cũ đó xuất hiện lại, cần tự thêm chúng qua trang quản trị (Claude Code không tự ý chèn
+   lại — dữ liệu mẫu không được tự ý insert, xem `CLAUDE.md` mục 10).
+5. Có 1 thư mục mới xuất hiện ở gốc dự án: `10_SEO/` — **CHƯA có yêu cầu nào liên quan tới thư mục
+   này trong phiên này**, chỉ mới thấy xuất hiện trong `git status` (untracked). Nếu phiên sau PM
+   nhắc tới, đọc file `.md` bên trong (theo đúng mẫu `08_Chatbox/`/`09_Facebook/` đã dùng) trước khi
+   code — đừng tự suy đoán nội dung nếu chưa đọc.
 
 ## 2. Cách đã test/xác nhận
 
-- Trước khi deploy: `node --check` cho `worker.js` + toàn bộ script inline `index.html`/`admin.html`;
-  unit test riêng 13 case cho 3 hàm regex nhạy cảm nhất (dò SĐT/tên/ngôn ngữ); Claude Browser
-  (`javascript_tool`, môi trường chạy nền không composite được nên không dùng được `screenshot`) để
-  test logic UI bằng cách gọi hàm trực tiếp + mock dữ liệu/`api()`.
-- **Sau khi deploy: test THẬT bằng `curl` gọi thẳng `/api/chat` trên `topvisa5s.com`** — đây là lần
-  đầu tiên dự án này test 1 tính năng mới bằng cách gọi thẳng production ngay sau deploy (thay vì
-  chỉ tin vào test cục bộ) — cách này giúp bắt được lỗi ngôn ngữ thật mà mọi test cục bộ trước đó
-  không phát hiện ra (vì cần gọi thật tới Cloudflare Workers AI, không mô phỏng được). **Bài học:
-  với tính năng có gọi AI/dịch vụ ngoài mà không thể giả lập cục bộ, nên chủ động test thật bằng
-  `curl` NGAY SAU KHI deploy (dùng dữ liệu/`session_id` rõ ràng đánh dấu TEST), đừng đợi PM tự phát
-  hiện lỗi.**
-- PM tự test trực tiếp trên `topvisa5s.com` (điện thoại + trình duyệt) + trang quản trị, gửi phản
-  hồi kèm ảnh chụp màn hình thực tế qua 2 vòng — mỗi vòng đều đã sửa + deploy lại + tự kiểm tra qua
-  Claude Browser trước khi báo lại PM.
+- Cả 2 tính năng đều theo đúng quy trình đã hình thành trong đợt này: code → `node --check` +
+  Claude Browser (mock dữ liệu/`api()`) → **tự test thêm bằng `curl` gọi thẳng production sau khi
+  deploy** (đặc biệt quan trọng với Chat Box vì có gọi AI ngoài, không giả lập được cục bộ) → PM tự
+  test trên trình duyệt/điện thoại thật, phản hồi qua hội thoại (đôi khi kèm ảnh chụp màn hình thật)
+  → sửa tiếp nếu cần → PM xác nhận OK.
+- **Bài học quy trình quan trọng nhất của đợt này** (áp dụng cho mọi tính năng lớn sau này có gọi
+  dịch vụ ngoài/API mới): đừng chỉ tin vào test cục bộ/mock — chủ động gọi thẳng production bằng
+  `curl` NGAY SAU KHI deploy (dùng dữ liệu/`session_id` rõ ràng đánh dấu TEST) để tự bắt lỗi trước
+  khi PM phát hiện. Lỗi "AI trả lời sai ngôn ngữ" ở Chat Box chỉ lộ ra theo cách này.
 
 ## 3. Quy trình deploy
 
-Vẫn `git push` thẳng `main`, Cloudflare tự deploy — tiếp tục dùng cách tự poll `curl`/`until` sau
-mỗi lần push để xác nhận deploy xong (khoảng 20-30 giây/lần). **Điểm khác so với các phiên fix nhỏ
-trước đây:** tính năng Chat Box (lớn hơn, rủi ro cao hơn — có endpoint API mới, bảng dữ liệu mới, có
-gọi AI ngoài) được code trên 1 nhánh riêng (`feature/chatbox-release1`) trước, chỉ merge vào `main`
-sau khi PM xác nhận rõ ràng muốn deploy để tự test — đúng theo yêu cầu PM đặt ra riêng cho lượt này
-(`08_Chatbox/Chi_dan_Thuc_hien_Phat_trien_Chatbox.md` mục 1). **Gợi ý cho phiên sau:** nếu làm tiếp
-1 tính năng lớn/rủi ro tương tự (đổi schema DB, thêm API mới, tích hợp dịch vụ ngoài), nên tiếp tục
-theo mẫu "nhánh riêng → PM xác nhận → merge" này; còn sửa lỗi nhỏ/tinh chỉnh UI như thường ngày thì
-vẫn đẩy thẳng `main` như quy ước cũ của dự án.
+Vẫn `git push` thẳng `main`, Cloudflare tự deploy (build/deploy xong trong khoảng 20-30 giây) — tiếp
+tục dùng cách tự poll `curl`/`until` sau mỗi lần push để xác nhận deploy xong, không cần đợi PM tự
+kiểm tra Dashboard. **Lưu ý khi poll bằng `curl` cho `admin.html`:** Cloudflare tự redirect
+`/admin.html` → `/admin` (307), nếu curl không theo redirect (`-L`) sẽ chỉ thấy response rỗng —
+dùng `curl -sL` hoặc gọi thẳng path `/admin` (không có đuôi `.html`) để tránh nhầm tưởng chưa deploy
+xong (đã tự vướng lỗi này 1 lần trong phiên, tốn thời gian debug nhầm chỗ).
 
 ## 4. Tài liệu tham khảo
 
-`CLAUDE.md` mục 47 (toàn bộ chi tiết kỹ thuật: thiết kế, quyết định RLS, model AI, quá trình sửa lỗi
-ngôn ngữ, 2 vòng phản hồi UI) → `08_Chatbox/` (tài liệu phân tích/đặc tả gốc, đọc khi cần làm Release
-2 hoặc hiểu lại bối cảnh ban đầu) → file này.
+`CLAUDE.md` mục 47 (Chat Box, đầy đủ chi tiết + bài học ngôn ngữ AI) + mục 48 (Feedback khách hàng)
+→ `08_Chatbox/` (tài liệu phân tích/đặc tả gốc Chat Box, cần khi làm Release 2) + `09_Facebook/`
+(yêu cầu gốc Feedback khách hàng) → file này.

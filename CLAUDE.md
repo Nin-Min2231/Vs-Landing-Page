@@ -1949,9 +1949,7 @@ toàn chạy lại cả file dù đã chạy phần đầu trước đó. Admin:
 cũ tạo trước khi có 2 cột này, vd dòng "Pon Tí Tởn" PM thêm trước khi có yêu cầu này) — đã test xác
 nhận qua Claude Browser cả 2 nhánh format đều đúng.
 
-**Đã xác nhận qua production thật (curl):** `05_Database/12_supabase_setup_phase12.sql` (phần gốc)
-đã được PM chạy — bảng `danh_gia_khach_hang` tồn tại kèm 1 dòng thật ("Pon Tí Tởn"). **CHƯA xác
-nhận:** PM chạy lại file để có 2 cột `thang`/`nam` mới nối thêm (đã tự kiểm tra qua `curl` gọi thẳng
-`index.html` thấy `res.ok` trả về 400 do PostgREST chưa nhận diện được 2 cột này — đúng như dự kiến,
-trang vẫn chạy bình thường nhờ fallback về 2 review tĩnh, không crash) — cần PM chạy lại SQL rồi tự
-xác nhận, giống quy trình đã áp dụng cho Chat Box (mục 47).
+**Trạng thái cuối phiên (2026-09-01):** PM đã chạy lại `05_Database/12_supabase_setup_phase12.sql`
+(cả phần gốc lẫn phần `alter table` nối thêm cột `thang`/`nam`) và **tự test xác nhận OK** trên
+production — tính năng "Feedback từ khách hàng" (mục A-D) coi như đã đóng hoàn toàn, không còn việc
+tồn đọng nào cần theo dõi tiếp cho tính năng này.
