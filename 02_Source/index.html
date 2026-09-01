@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1B6EF3">
 <title>Top Visa 5S – Dịch vụ Visa trọn gói, tỷ lệ đậu cao</title>
 <meta name="description" content="Top Visa 5S – dịch vụ làm visa Nhật Bản, Hàn Quốc, Đài Loan, Trung Quốc, Schengen, Mỹ, Úc trọn gói. Cam kết đậu visa mới thu phí dịch vụ, tư vấn miễn phí, xử lý nhanh, hỗ trợ 24/7.">
 <!-- Xác minh quyền sở hữu Google Search Console (property URL prefix https://topvisa5s.com,
@@ -170,6 +171,13 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 .promo-bar .container{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
 .promo-bar .promo-sub{font-weight:400;opacity:.92;font-size:13px}
 @media (max-width:767px){.promo-bar{font-size:12.5px;padding:8px 0}.promo-bar .promo-sub{display:block;width:100%}}
+
+/* ==================== SKIP LINK (NFR-07 — accessibility) ====================
+   Ẩn ngoài màn hình mặc định, chỉ hiện khi được focus bằng phím Tab (người dùng bàn phím/trình
+   đọc màn hình bấm Tab lần đầu khi vào trang) — giúp bỏ qua navbar, nhảy thẳng tới #noi-dung. */
+.skip-link{position:absolute;left:-9999px;top:0;z-index:1000;background:var(--color-primary);
+  color:#fff;padding:12px 20px;border-radius:0 0 var(--radius-md) 0;font-weight:600;text-decoration:none}
+.skip-link:focus{left:0}
 
 /* ==================== NAVBAR ==================== */
 .navbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);
@@ -548,6 +556,8 @@ footer a:hover{color:#fff}
 </head>
 <body>
 
+<a href="#noi-dung" class="skip-link">Bỏ qua tới nội dung</a>
+
 <!-- ==================== PROMO BAR ==================== -->
 <div class="promo-bar">
   <div class="container">
@@ -574,6 +584,8 @@ footer a:hover{color:#fff}
   </div>
 </nav>
 
+<main id="noi-dung">
+
 <!-- ==================== HERO / BANNER ==================== -->
 <header class="hero" id="banner">
   <div class="container hero-grid">
@@ -590,8 +602,8 @@ footer a:hover{color:#fff}
       </div>
       <div class="badges">
         <div class="badge badge-accent"><b>✓</b> Đậu mới thu phí</div>
-        <div class="badge"><b>✓</b> 5000+ hồ sơ thành công</div> <!-- [THAY_THẾ] số liệu thật -->
-        <div class="badge"><b>✓</b> 98% tỷ lệ đậu visa</div>     <!-- [THAY_THẾ] số liệu thật -->
+        <div class="badge"><b>✓</b> 5000+ hồ sơ đã xử lý (tính đến 08/2026)</div>
+        <div class="badge"><b>✓</b> 98% hồ sơ đủ điều kiện được cấp visa</div>
         <div class="badge"><b>✓</b> Hỗ trợ 24/7</div>
       </div>
     </div>
@@ -801,6 +813,8 @@ footer a:hover{color:#fff}
     </div>
   </div>
 </section>
+
+</main>
 
 <!-- ==================== FOOTER ==================== -->
 <footer id="footer">

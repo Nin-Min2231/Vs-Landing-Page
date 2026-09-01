@@ -16,6 +16,14 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // Redirect 301 vĩnh viễn workers.dev -> domain chính, giữ nguyên pathname+search.
+    // KHÔNG có ngoại lệ nào (vd ?preview=1) — mọi ngoại lệ tạo ra 1 URL sống trên workers.dev với
+    // nội dung đầy đủ, đúng cái redirect này sinh ra để tránh (rủi ro Google lập chỉ mục domain phụ
+    // nếu link lọt ra ngoài). Cần test trên workers.dev thì dùng preview deployment
+    // (`wrangler versions upload`), không mở lỗ trên production (xem CLAUDE.md, kế hoạch SEO T1).
+    if (url.hostname.endsWith('.workers.dev')) {
+      return Response.redirect('https://topvisa5s.com' + url.pathname + url.search, 301);
+    }
     if (url.pathname === '/api/chat' && request.method === 'POST') {
       return handleChat(request, env);
     }

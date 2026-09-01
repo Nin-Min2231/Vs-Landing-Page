@@ -157,7 +157,7 @@ Tìm bằng cách grep `[THAY_THẾ]` trong `02_Source/index.html`:
 
 | Vị trí | Placeholder | Cần gì |
 |---|---|---|
-| Badge hero | "5000+ hồ sơ", "98% đậu" | ⬜ Vẫn thiếu — số liệu thật, bịa số ở đây có thể vi phạm chính sách quảng cáo |
+| Badge hero | "5000+ hồ sơ", "98% đậu" | ✅ Đã xong (2026-09-01, T7 kế hoạch SEO) — PM cấp số thật, xem mục 49 |
 | Section dịch vụ | Giá "Từ x đ" mỗi quốc gia | ⬜ Vẫn thiếu bảng giá THẬT — nhưng từ Phase 7 (2026-08-06) đã có nơi để PM tự cập nhật (admin.html → Cài đặt chung → "Dịch vụ Visa các quốc gia", xem mục 31), không cần Claude Code sửa code nữa. Số hiện tại vẫn là placeholder cũ. |
 | Section đánh giá | ~~3 review mẫu~~ | ✅ Đã xong — đã thay bằng 2 review thật lấy từ Facebook công ty (xem `01_Docs/09_Noi_dung_Dang_bai.md`) |
 | Footer | ~~Số GPKD~~ | ✅ Đã bỏ theo yêu cầu người dùng (2026-07-31) — footer không còn hiển thị dòng GPKD nữa, chỉ còn "© 2026 Top Visa." Nếu sau này có số GPKD thật, hỏi người dùng có muốn thêm lại không. |
@@ -1953,3 +1953,58 @@ nhận qua Claude Browser cả 2 nhánh format đều đúng.
 (cả phần gốc lẫn phần `alter table` nối thêm cột `thang`/`nam`) và **tự test xác nhận OK** trên
 production — tính năng "Feedback từ khách hàng" (mục A-D) coi như đã đóng hoàn toàn, không còn việc
 tồn đọng nào cần theo dõi tiếp cho tính năng này.
+
+## 49. Kế hoạch SEO `10_SEO/11_Ke_hoach_sau_xac_nhan.md` — T7, T1, T2 (2026-09-01)
+
+**Bối cảnh:** bắt đầu thực thi bộ kế hoạch SEO "BẢN FINAL" ở `10_SEO/` (đọc file
+`11_Ke_hoach_sau_xac_nhan.md` mục 0 trước khi làm bất kỳ task nào trong bộ này — 8 ràng buộc bắt
+buộc, gồm cả yêu cầu tự kiểm 3 điều sau mỗi lần deploy). Phiên này chỉ làm 3 task đầu theo đúng thứ
+tự yêu cầu: T7 → T1 → T2. Các task còn lại (T3-T19) **chưa làm**, xem tiếp file kế hoạch khi được
+giao tiếp.
+
+**A. T7 — 2 badge số liệu hero (`index.html` dòng ~593-594):** PM xác nhận 5000+ là số thật, 98%
+là số thật NHƯNG chỉ đúng với hồ sơ đủ điều kiện — đổi thành `"5000+ hồ sơ đã xử lý (tính đến
+08/2026)"` và `"98% hồ sơ đủ điều kiện được cấp visa"` (cụm "đủ điều kiện" bắt buộc phải có ngay
+trong badge, tránh bị hiểu là cam kết tỷ lệ đậu tuyệt đối — dễ vi phạm chính sách quảng cáo), xóa 2
+comment `<!-- [THAY_THẾ] -->`. Đã cập nhật lại mục 8 (bảng placeholder) ở trên — hàng "Badge hero"
+chuyển sang ✅.
+
+**B. T1 — `worker.js`, 2 việc:**
+1. **Redirect 301 `*.workers.dev` → `topvisa5s.com`:** thêm ngay đầu `fetch()`, sau
+   `const url = new URL(request.url)`, trước check `/api/chat` — điều kiện
+   `url.hostname.endsWith('.workers.dev')` → `Response.redirect('https://topvisa5s.com'+url.pathname+url.search, 301)`.
+   **CHỦ Ý không có ngoại lệ `?preview=1`** (bản kế hoạch trước có đề xuất này rồi bị loại ở bản
+   FINAL) — bất kỳ ngoại lệ nào cũng tạo ra 1 URL sống đầy đủ nội dung trên `workers.dev`, đúng cái
+   redirect này sinh ra để tránh (rủi ro Google lập chỉ mục domain phụ nếu link lọt ra ngoài). Cần
+   test trên `workers.dev` thì dùng preview deployment (`wrangler versions upload`), không mở lỗ
+   trên production.
+2. **Canonical bỏ `url.search`:** kiểm tra kỹ lúc làm — `worker.js` **hiện chưa có route nào dựng
+   HTML động** (chỉ `/api/chat` trả JSON + passthrough file tĩnh), nên không có canonical nào cần
+   sửa ngay bây giờ. Canonical duy nhất của site là dòng tĩnh trong `index.html`
+   (`href="https://topvisa5s.com/"`, không query — đã đúng từ trước vì hardcode). **Ràng buộc
+   "canonical = `url.origin+url.pathname`, bỏ hẳn `url.search`" sẽ áp dụng khi làm T4 (`/blog`)
+   và T14 (`/visa-<slug>`)** — lúc đó route dựng `<head>` động thì PHẢI dựng canonical theo đúng
+   công thức này, không copy `url.search` vào. Không đụng `robots.txt` (không thêm
+   `Disallow: /*?` — bị cấm rõ trong kế hoạch vì sẽ chặn Googlebot đọc canonical).
+
+**C. T2 — semantic HTML + accessibility (`index.html`):**
+- Bọc `<main id="noi-dung">` ngay sau `</nav>`, đóng `</main>` ngay trước `<footer id="footer">` —
+  đúng 1 thẻ `<main>` duy nhất trên trang (promo-bar + navbar nằm NGOÀI main, đúng — không phải nội
+  dung chính).
+- Thêm `<a href="#noi-dung" class="skip-link">Bỏ qua tới nội dung</a>` ngay đầu `<body>`, CSS mới
+  `.skip-link`/`.skip-link:focus` (ẩn ngoài màn hình mặc định `left:-9999px`, hiện khi focus bằng
+  Tab `left:0`) — thêm vào khu vực CSS gần "PROMO BAR", trước "NAVBAR".
+- Thêm `<meta name="theme-color" content="#1B6EF3">` vào `<head>` — dùng đúng `--color-primary`
+  khai trong `:root` (không bịa màu mới).
+- Đã test qua Claude Browser thật (không chỉ đọc code): Tab lần đầu khi vào trang → skip-link hiện
+  đúng góc trên trái; layout hero/badge/footer không xê dịch so với trước khi sửa; `grep` xác nhận
+  đúng 1 cặp `<main>`/`</main>`.
+
+**Đã kiểm tra cú pháp:** `node --check worker.js` OK; toàn bộ khối `<script>` inline của
+`index.html` parse được bằng `new Function()` (không lỗi cú pháp).
+
+**⚠️ Chưa deploy trong phiên này** — 3 nghiệm thu cần domain thật (redirect `workers.dev` thật,
+`curl` kiểm canonical không dính `?utm_source`, và ràng buộc số 8 "tự kiểm 3 điều sau deploy": trang
+chủ render đủ/gửi form thành công/admin đăng nhập được) **chưa chạy được**, phải chờ sau khi code
+này được commit + push lên `main` (Cloudflare tự deploy). Xem lại diff trước khi push — đây là thay
+đổi ảnh hưởng production thật.
