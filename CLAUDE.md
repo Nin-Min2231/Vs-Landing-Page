@@ -2003,8 +2003,31 @@ chuyển sang ✅.
 **Đã kiểm tra cú pháp:** `node --check worker.js` OK; toàn bộ khối `<script>` inline của
 `index.html` parse được bằng `new Function()` (không lỗi cú pháp).
 
-**⚠️ Chưa deploy trong phiên này** — 3 nghiệm thu cần domain thật (redirect `workers.dev` thật,
-`curl` kiểm canonical không dính `?utm_source`, và ràng buộc số 8 "tự kiểm 3 điều sau deploy": trang
-chủ render đủ/gửi form thành công/admin đăng nhập được) **chưa chạy được**, phải chờ sau khi code
-này được commit + push lên `main` (Cloudflare tự deploy). Xem lại diff trước khi push — đây là thay
-đổi ảnh hưởng production thật.
+**Đã deploy + kiểm tra trên production (2026-09-01, cùng ngày):** push `main` (commit `67dd102`),
+Cloudflare tự deploy. Ràng buộc số 8: (1) trang chủ render đủ — xác nhận qua Claude Browser (giá
+dịch vụ/đánh giá/blog tải động đúng, console sạch ở tab mới hoàn toàn — 1 lỗi 404 thấy lúc đầu chỉ
+là log sót từ tab test khác, không phải lỗi thật); (2) gửi form thành công — test thật trên
+production, đã tạo 1 lead đánh dấu `"TEST xoá sau..."`/SĐT `0909000111`, PM cần tự xóa qua admin;
+(3) admin đăng nhập được — Claude Code không có mật khẩu admin nên chỉ xác nhận `/admin` tải đúng
+cấu trúc (form đăng nhập hiện ra, console sạch), PM cần tự đăng nhập xác nhận.
+
+**⚠️ Lỗi thật phát hiện lúc kiểm tra redirect 301 — sửa bằng `run_worker_first` (commit `8218ef9`,
+cùng ngày):** test trực tiếp `https://topvisa5s.nguyennc1357.workers.dev/` (PM cung cấp đúng URL
+qua ảnh chụp Cloudflare Dashboard — tài liệu cũ ghi nhầm `topvisa.nguyennc1357.workers.dev`, có vẻ
+sót lại từ trước khi mua domain thật) vẫn trả về **200 trang chủ bình thường thay vì 301** dù code
+redirect đã đúng logic. Nguyên nhân: `[assets]` trong `wrangler.toml` **mặc định phục vụ file tĩnh
+khớp đường dẫn (`/` → `index.html`) THẲNG từ edge, bỏ qua hẳn `worker.js`/`fetch()`** — nên request
+`/` trên `workers.dev` không bao giờ chạm được đoạn code redirect. Đã thêm
+`run_worker_first = true` vào `[assets]` — bắt buộc để MỌI request (kể cả trang tĩnh) luôn chạy qua
+`worker.js` trước. Đã re-verify toàn diện sau khi bật cờ này (vì ảnh hưởng routing của CẢ site, không
+chỉ workers.dev): redirect giữ đúng pathname+search (`/admin.html?x=1` → `https://topvisa5s.com/admin.html?x=1`),
+domain chính `/`/`/admin.html`/`/api/chat`/static assets/canonical **đều không đổi hành vi** (đã
+`curl` + browser thật xác nhận từng cái). **Bài học:** Cloudflare Workers Static Assets có hành vi
+"asset khớp thì bypass Worker" theo mặc định — bất kỳ logic nào trong `fetch()` cần chạy cho MỌI
+request (redirect, kiểm tra hostname, log...) đều PHẢI có `run_worker_first = true`, nếu không sẽ
+"đúng code nhưng không bao giờ chạy" cho các đường dẫn khớp file tĩnh — im lặng, không báo lỗi gì.
+
+**Quyết định giữ nguyên `workers.dev` subdomain (không xóa), theo yêu cầu PM:** PM hỏi có nên xóa
+`topvisa5s.nguyennc1357.workers.dev` sau khi đã có domain thật không — trả lời: **không xóa**, vì
+đúng mục đích của redirect 301 T1 là giữ subdomain sống để link cũ (lịch sử duyệt web, tin nhắn cũ
+còn lưu URL này) vẫn dùng được, chỉ tự động đưa về domain chính thay vì lỗi trắng trang.
