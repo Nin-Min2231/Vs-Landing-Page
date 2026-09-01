@@ -1933,7 +1933,25 @@ bấm Next 1 lần SAU khi gọi lại → vẫn chỉ tăng đúng 1 bước (k
 
 **Đã test:** `node --check` cho cả 2 file; qua Claude Browser (mock `api()`/dữ liệu): admin CRUD đủ
 4 thao tác (tải danh sách, mở dialog sửa đổ đúng dữ liệu, validate chặn lưu khi thiếu Tên, lưu đúng
-PATCH đúng id, đóng dialog sạch không hỏi xác nhận thừa); slider trang chủ như mô tả ở trên. **CHƯA
-test:** chạy migration `12_supabase_setup_phase12.sql` trên Supabase thật, và luồng thật (không mock)
-từ lúc PM thêm 1 feedback qua admin tới lúc thấy đúng trên landing page — cần deploy + PM tự xác
-nhận, giống quy trình đã áp dụng cho Chat Box (mục 47).
+PATCH đúng id, đóng dialog sạch không hỏi xác nhận thừa); slider trang chủ như mô tả ở trên.
+
+**D. Bổ sung "Tháng/Năm đánh giá" (2026-09-01, cùng ngày PM tự chạy Phase 12 gốc + tự thêm feedback
+đầu tiên qua admin):** PM yêu cầu thêm field để chọn đúng THÁNG/NĂM thật của đánh giá (không phải
+ngày tạo dòng trong hệ thống — PM có thể nhập bù các đánh giá cũ), landing page hiển thị
+"Đánh giá thật trên Facebook · mm - yyyy" lấy từ đó. Vì bảng `danh_gia_khach_hang` **ĐÃ CÓ SẴN 1
+dòng dữ liệu thật** lúc này (PM đã chạy Phase 12 gốc trước khi có yêu cầu này), 2 cột mới `thang`/
+`nam` phải NULLABLE (không ép NOT NULL) — nối thêm 1 khối `alter table add column if not exists`
+vào CUỐI file `12_supabase_setup_phase12.sql` cũ (không tạo file Phase 13 riêng, đúng quy tắc
+05_Database/README.md "nối vào cuối file nếu thay đổi nhỏ liên quan trực tiếp phase gần nhất") — an
+toàn chạy lại cả file dù đã chạy phần đầu trước đó. Admin: dialog thêm 2 field bắt buộc (Tháng —
+`<select>` 1-12; Năm — `<input type=number>`, mặc định năm hiện tại khi thêm mới). `index.html`:
+ưu tiên `thang`/`nam` nếu có, CHỈ fallback sang tháng/năm của `created_at` khi thiếu (dòng dữ liệu
+cũ tạo trước khi có 2 cột này, vd dòng "Pon Tí Tởn" PM thêm trước khi có yêu cầu này) — đã test xác
+nhận qua Claude Browser cả 2 nhánh format đều đúng.
+
+**Đã xác nhận qua production thật (curl):** `05_Database/12_supabase_setup_phase12.sql` (phần gốc)
+đã được PM chạy — bảng `danh_gia_khach_hang` tồn tại kèm 1 dòng thật ("Pon Tí Tởn"). **CHƯA xác
+nhận:** PM chạy lại file để có 2 cột `thang`/`nam` mới nối thêm (đã tự kiểm tra qua `curl` gọi thẳng
+`index.html` thấy `res.ok` trả về 400 do PostgREST chưa nhận diện được 2 cột này — đúng như dự kiến,
+trang vẫn chạy bình thường nhờ fallback về 2 review tĩnh, không crash) — cần PM chạy lại SQL rồi tự
+xác nhận, giống quy trình đã áp dụng cho Chat Box (mục 47).
