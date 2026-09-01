@@ -1061,7 +1061,7 @@ initReviewsSlider();
   if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
   const escFb = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   try{
-    const res = await fetch(SUPABASE_URL+'/rest/v1/danh_gia_khach_hang?select=ten_facebook,noi_dung,url,created_at&order=created_at.desc',{
+    const res = await fetch(SUPABASE_URL+'/rest/v1/danh_gia_khach_hang?select=ten_facebook,noi_dung,url,thang,nam,created_at&order=created_at.desc',{
       headers:{ 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY }
     });
     if(!res.ok) return;
@@ -1072,8 +1072,12 @@ initReviewsSlider();
     if(!track) return;
     track.innerHTML = rows.map(r=>{
       const initial = escFb((r.ten_facebook||'?').trim().charAt(0).toUpperCase() || '?');
-      const d = r.created_at ? new Date(r.created_at) : null;
-      const monthYear = d ? String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear() : '';
+      // Ưu tiên tháng/năm THẬT do admin tự chọn (PM có thể nhập bù đánh giá cũ từ lâu, không phải
+      // lúc nào cũng khớp ngày tạo dòng) — chỉ khi thiếu (dữ liệu cũ trước khi có 2 cột này) mới
+      // dùng tạm tháng/năm của created_at làm phương án dự phòng, xem CLAUDE.md mục 48.
+      let monthYear = '';
+      if(r.thang && r.nam) monthYear = String(r.thang).padStart(2,'0')+' - '+r.nam;
+      else if(r.created_at){ const d = new Date(r.created_at); monthYear = String(d.getMonth()+1).padStart(2,'0')+' - '+d.getFullYear(); }
       return '<div class="review-slide"><div class="card-review">'+
         '<div class="stars">★★★★★</div>'+
         '<p class="quote">"'+escFb(r.noi_dung)+'"</p>'+

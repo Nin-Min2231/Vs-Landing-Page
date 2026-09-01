@@ -846,6 +846,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
               <th class="sortable" onclick="onSortClick('dgkh','ten',renderDanhGiaKhachHang)">Tên Facebook<span class="sort-ic" data-tbl="dgkh" data-col="ten"></span></th>
               <th>Nội dung</th>
               <th>URL</th>
+              <th class="sortable" onclick="onSortClick('dgkh','thangnam',renderDanhGiaKhachHang)">Tháng/Năm<span class="sort-ic" data-tbl="dgkh" data-col="thangnam"></span></th>
               <th>Ghi chú</th>
               <th class="th-center">Thao tác</th>
             </tr></thead>
@@ -1313,6 +1314,10 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="dlg-row">
           <div class="dlg-field dlg-field-wide"><label>Tên Facebook khách hàng <span class="req-badge">Bắt buộc</span></label><input type="text" id="dgkhTen" maxlength="100"></div>
           <div class="dlg-field dlg-field-wide"><label>URL Facebook <span class="req-badge">Bắt buộc</span></label><input type="url" id="dgkhUrl" placeholder="https://facebook.com/..."></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Tháng đánh giá <span class="req-badge">Bắt buộc</span></label><select id="dgkhThang"></select></div>
+          <div class="dlg-field"><label>Năm đánh giá <span class="req-badge">Bắt buộc</span></label><input type="number" id="dgkhNam" inputmode="numeric" min="2000" max="2100" placeholder="vd: 2025"></div>
         </div>
         <div class="dlg-row">
           <div class="dlg-field dlg-field-wide"><label>Nội dung đánh giá <span class="req-badge">Bắt buộc</span></label><textarea id="dgkhNoiDung" rows="3" maxlength="1000" style="width:100%"></textarea></div>
@@ -2621,13 +2626,14 @@ async function loadDanhGiaKhachHang(){
   }catch(e){ if(e.message!=='401') toast('Lỗi tải feedback khách hàng: '+e.message,'err'); }
 }
 function renderDanhGiaKhachHang(){
-  const rows = applySort('dgkh', DANH_GIA_KH, {ten:x=>x.ten_facebook||''});
+  const rows = applySort('dgkh', DANH_GIA_KH, {ten:x=>x.ten_facebook||'', thangnam:x=>(x.nam||0)*100+(x.thang||0)});
   $('dgkhEmpty').classList.toggle('hidden', rows.length>0);
   $('dgkhBody').innerHTML = rows.map(x=>`
     <tr>
       <td><b>${esc(x.ten_facebook)}</b></td>
       <td><span class="text-trunc" title="${esc(x.noi_dung)}">${esc(x.noi_dung)}</span></td>
       <td><a class="text-trunc" href="${esc(x.url)}" target="_blank" rel="noopener" title="${esc(x.url)}">${esc(x.url)}</a></td>
+      <td>${x.thang&&x.nam ? String(x.thang).padStart(2,'0')+' - '+x.nam : '<span style="color:var(--mut)">Chưa chọn</span>'}</td>
       <td><span class="text-trunc" title="${esc(x.ghi_chu||'')}">${esc(x.ghi_chu||'–')}</span></td>
       <td class="td-actions">
         <button class="btn btn-p" onclick="openDanhGiaModal(${x.id})">Sửa</button>
@@ -2643,6 +2649,9 @@ function openDanhGiaModal(id){
   $('dgkhId').value = x?.id||'';
   $('dgkhTen').value = x?.ten_facebook||'';
   $('dgkhUrl').value = x?.url||'';
+  $('dgkhThang').innerHTML = '<option value="">-- Chọn --</option>'+
+    Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${x?.thang===m?'selected':''}>Tháng ${String(m).padStart(2,'0')}</option>`).join('');
+  $('dgkhNam').value = x?.nam || new Date().getFullYear(); // mặc định năm hiện tại khi thêm mới, đỡ phải gõ tay
   $('dgkhNoiDung').value = x?.noi_dung||'';
   $('dgkhGhiChu').value = x?.ghi_chu||'';
   $('dgkhOverlay').classList.remove('hidden');
@@ -2653,10 +2662,14 @@ async function saveDanhGia(){
   const ten_facebook = $('dgkhTen').value.trim();
   const url = $('dgkhUrl').value.trim();
   const noi_dung = $('dgkhNoiDung').value.trim();
+  const thang = $('dgkhThang').value ? Number($('dgkhThang').value) : null;
+  const nam = $('dgkhNam').value.trim() ? Number($('dgkhNam').value) : null;
   if(!ten_facebook){ toast('Vui lòng nhập Tên Facebook khách hàng','err'); return; }
   if(!url){ toast('Vui lòng nhập URL Facebook','err'); return; }
+  if(!thang){ toast('Vui lòng chọn Tháng đánh giá','err'); return; }
+  if(!nam || nam<2000 || nam>2100){ toast('Vui lòng nhập đúng Năm đánh giá (vd: 2025)','err'); return; }
   if(!noi_dung){ toast('Vui lòng nhập Nội dung đánh giá','err'); return; }
-  const body = { ten_facebook, url, noi_dung, ghi_chu: $('dgkhGhiChu').value.trim()||null };
+  const body = { ten_facebook, url, thang, nam, noi_dung, ghi_chu: $('dgkhGhiChu').value.trim()||null };
   const id = $('dgkhId').value;
   const btn = $('dgkhSaveBtn'); btn.disabled=true;
   try{

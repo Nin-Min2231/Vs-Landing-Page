@@ -28,6 +28,24 @@ create policy "anon_read_danh_gia_khach_hang" on public.danh_gia_khach_hang for 
 drop policy if exists "auth_all_danh_gia_khach_hang" on public.danh_gia_khach_hang;
 create policy "auth_all_danh_gia_khach_hang" on public.danh_gia_khach_hang for all to authenticated using (true) with check (true);
 
--- ✅ Hết migration Phase 12 — sẵn sàng chạy trong SQL Editor.
+-- ✅ Hết migration Phase 12 gốc — sẵn sàng chạy trong SQL Editor.
 -- Việc bắt buộc kèm theo: đã thêm 'danh_gia_khach_hang' vào mảng TABLES trong
 -- 06_Backup_Tool/backup-supabase.mjs (khóa chính đơn "id", không cần khai báo thêm ORDER_BY).
+
+-- ============================================================
+-- Nối thêm (2026-09-01, cùng Phase 12 — thay đổi nhỏ liên quan trực tiếp, theo đúng quy tắc ở
+-- 05_Database/README.md): thêm "Tháng/Năm" cho mỗi feedback — PM tự chọn tháng/năm THẬT của đánh
+-- giá đó (không phải ngày tạo dòng trong hệ thống, vì PM có thể nhập bù các đánh giá cũ từ lâu).
+-- index.html hiển thị "Đánh giá thật trên Facebook mm - yyyy" lấy từ 2 cột này — nếu để trống (dữ
+-- liệu cũ nhập trước khi có 2 cột này) thì tự dùng tạm tháng/năm của created_at làm phương án dự
+-- phòng, xem CLAUDE.md mục 48. NULLABLE (không ép NOT NULL) vì đã có sẵn dòng dữ liệu thật trước đó
+-- (PM đã chạy Phase 12 gốc + thêm feedback đầu tiên) — ép NOT NULL sẽ làm lỗi ngay dòng có sẵn.
+-- ============================================================
+alter table public.danh_gia_khach_hang
+  add column if not exists thang smallint,
+  add column if not exists nam smallint;
+
+comment on column public.danh_gia_khach_hang.thang is 'Tháng THẬT của đánh giá (1-12, PM tự chọn) — dùng hiển thị "mm - yyyy" trên landing page, không phải tháng tạo dòng.';
+comment on column public.danh_gia_khach_hang.nam is 'Năm THẬT của đánh giá (PM tự chọn) — dùng hiển thị "mm - yyyy" trên landing page, không phải năm tạo dòng.';
+
+-- ✅ Hết phần nối thêm — an toàn chạy lại cả file (kể cả đã chạy phần gốc từ trước).
