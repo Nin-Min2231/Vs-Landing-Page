@@ -2524,3 +2524,80 @@ cũ cũng có `<urlset>` — tưởng đã deploy xong nhưng thực ra đang đ
 đúng đã deploy xong.
 
 T5 coi như hoàn tất và đã xác nhận sống đúng trên production.
+
+## 57. T11 — 3 trang pháp lý: Chính sách bảo mật, Điều khoản dịch vụ, Liên hệ (2026-09-02)
+
+**Region Supabase (T27):** PM xác nhận project đặt **NGOÀI Việt Nam** — Chính sách bảo mật nêu rõ
+điều này ở mục 4 (nơi lưu trữ dữ liệu). **Chưa xác định được region cụ thể (vd Singapore)** — PM
+tự xem tại Supabase Dashboard → Project Settings → General → Region nếu muốn ghi chính xác hơn.
+
+**3 file tĩnh mới** (`02_Source/public/chinh-sach-bao-mat.html`, `dieu-khoan-dich-vu.html`,
+`lien-he.html`) — dựng bằng script Node 1 lần (không lưu lại script, chỉ dùng lúc tạo) trích
+**nguyên văn** `<style>` + `<nav class="navbar">` + `<footer id="footer">` từ chính `index.html`
+(đã sửa xong footer/form trước khi trích, xem dưới) — đảm bảo khớp 100% design system, không tự
+viết CSS mới. Mỗi trang tự thêm: hamburger menu mobile + nút lên đầu trang (copy đúng JS gốc từ
+`index.html`, không copy toàn bộ `<script>` gốc vì phần lớn phục vụ form/slider/chatbox không có
+trên các trang này).
+
+**⚠️ Canonical dùng path KHÔNG đuôi `.html`** (`https://topvisa5s.com/chinh-sach-bao-mat`, không
+phải `/chinh-sach-bao-mat.html`) — Cloudflare Static Assets tự **307-redirect** mọi file `.html`
+sang bản không đuôi (đã xác nhận hành vi này từ trước qua `/admin.html`→`/admin`, xem mục 55/T21).
+Nếu đặt canonical là bản `.html` sẽ tạo vòng redirect+canonical lệch nhau. Toàn bộ link nội bộ
+(footer, form, sitemap) đều dùng đúng path không đuôi này.
+
+**A. Chính sách bảo mật:**
+- Căn cứ pháp lý: **Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15** (hiệu lực 01/01/2026) +
+  **Nghị định 356/2025/NĐ-CP** — **KHÔNG** nhắc Nghị định 13/2023 (đã bị thay thế, đã `grep` xác
+  nhận 0 lần xuất hiện).
+- Dữ liệu thu thập: chỉ nêu đúng 2 nguồn CÓ THẬT đọc trực tiếp từ code — form "Đăng ký tư vấn miễn
+  phí" (Họ tên/SĐT/Email không bắt buộc/Quốc gia/Ghi chú, khớp `index.html` dòng ~781-810 và payload
+  POST `leads` dòng ~1353) + Chat Box (nội dung tin nhắn `chat_logs`, và có thể tạo `leads` nếu
+  khách tự để lại SĐT/tên trong khung chat, xem mục 47.B). Không bịa thêm nguồn nào khác.
+- Có đủ 2 nội dung T11 yêu cầu bổ sung: **quyền RÚT LẠI ĐỒNG Ý** (mục 5) + **nêu rõ dữ liệu có thể
+  lưu trên hạ tầng nước ngoài** (mục 4, do T27 xác nhận ngoài VN).
+
+**B. Điều khoản dịch vụ:**
+- Chính sách "Đậu Visa Mới Thu Phí Dịch Vụ" (mục 3) **copy nguyên văn** từ khối `.usp-highlight`
+  trong hero `index.html` — không viết lại/diễn giải khác đi.
+- **KHÔNG** nhắc "đã đăng ký kinh doanh" hay số GPKD ở bất kỳ đâu (đã `grep -ci "giấy phép|GPKD"`
+  cả 3 file → 0 kết quả) — đúng vì PM xác nhận trước đó chưa có giấy phép kinh doanh (xem mục 8).
+
+**C. Liên hệ:** nhúng Google Maps qua `<iframe src="https://www.google.com/maps?q=<địa chỉ>&output=embed">`
+(không cần API key/billing) cho "303 Âu Cơ, Liên Chiểu, Đà Nẵng" + JSON-LD `LocalBusiness`
+(name/address/telephone/email/url/sameAs) + nút CTA "Đăng ký tư vấn miễn phí" trỏ về
+`/#dang-ky` (dùng lại đúng form ở trang chủ, **không** tạo form trùng lặp trên trang này — tránh
+phải bảo trì 2 nơi cùng logic submit). **KHÔNG thêm** `openingHours`/`geo` vào schema — T10 (giờ
+làm việc + toạ độ từ GBP) **vẫn đang chờ PM cấp**, không tự bịa.
+
+**D. Sửa `index.html`:** thêm 3 link vào `.copyright` (dòng dưới footer, không đổi `.footer-grid`
+4 cột hiện có — tránh phải restructure CSS grid); đổi dòng "🔒 Thông tin của bạn được bảo mật tuyệt
+đối" thành link tới `/chinh-sach-bao-mat`, thêm 1 dòng mới ngay trên nó: "Bằng việc gửi thông tin,
+bạn đồng ý với Chính sách bảo mật" (link cùng trang) — cả 2 nằm cạnh nút submit form.
+
+**E. Sửa `worker.js` (liên quan T5):** `TRUSTED_STATIC_PAGES` (mục 56) đổi từ path có `.html` sang
+path KHÔNG đuôi — lúc viết T5 các file này CHƯA tồn tại nên chưa lộ ra lỗi; nếu giữ nguyên `.html`,
+`getExistingTrustedPages()` sẽ luôn nhận về `307` (không phải `2xx`) cho file thật sự tồn tại, khiến
+`res.ok` sai thành `false` — 3 trang không bao giờ được liệt kê vào sitemap dù đã publish. Phát hiện
+lúc rà lại logic trước khi deploy hôm nay, sửa trước khi lỗi kịp xảy ra trên production.
+
+**Đã test trước khi deploy:** `node --check` (cả 3 file mới + `index.html` + `worker.js`); HTML
+cân bằng thẻ bằng `python3 html.parser` (cả 4 file); LocalBusiness JSON-LD parse hợp lệ bằng
+`json.loads`; mở cả 4 trang qua Claude Browser (`get_page_text`/`javascript_tool`) xác nhận đúng
+canonical/H1=1/footer/link/không GPKD.
+
+**Đã deploy + xác nhận trên production (commit `0804af3`):** cả 3 URL (không đuôi `.html`) → 200;
+`.html` → 307 redirect đúng; canonical đúng path không đuôi; footer + link cạnh form hoạt động;
+**sitemap.xml TỰ ĐỘNG hiện thêm đúng 3 URL này ngay lần crawl kế tiếp** — xác nhận đúng thiết kế
+"tự động, không cần sửa lại" đã viết ở T5 (mục 56), không cần đổi gì thêm ngoài fix ở mục E; mở
+`/lien-he` bằng Claude Browser thật (không phải `file://`) — logo/Google Maps iframe load đúng, menu
+hamburger mobile hoạt động (test bằng cách bấm qua `javascript_tool`, resize viewport 375×812). Hồi
+quy: `/`, `/blog`, `/admin` vẫn 200; `/worker.js`/`/wrangler.toml` vẫn 404; `robots.txt` vẫn đúng
+dòng `Sitemap:`; trang 404 (T21) vẫn hoạt động.
+
+**Còn thiếu (đã nói rõ với PM, không tự làm):** trang `gioi-thieu.html` **CHƯA làm** — chờ PM cấp
+nội dung câu chuyện công ty + ảnh đội ngũ/văn phòng (T11b). **Nội dung pháp lý ở 2 trang Chính sách
+bảo mật/Điều khoản dịch vụ mới chỉ là bản do Claude Code soạn theo đúng luật/nghị định đã dẫn — nên
+cho người có chuyên môn pháp lý rà lại trước khi chính thức công bố rộng rãi**, đúng khuyến nghị đã
+có sẵn trong kế hoạch SEO T11.
+
+T11 coi như hoàn tất (trừ `gioi-thieu.html`) và đã xác nhận sống đúng trên production.
