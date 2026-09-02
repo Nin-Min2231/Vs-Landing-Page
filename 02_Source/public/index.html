@@ -438,14 +438,14 @@ footer a:hover{color:#fff}
    để tránh 2 cụm nút nổi cùng xoè ra chồng nhau. */
 .chatbox-toggle{position:fixed;right:16px;bottom:90px;z-index:220;width:58px;height:58px;border-radius:50%;
   background:var(--color-primary);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:var(--shadow-md);
-  display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s,opacity .2s;
+  display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s,bottom .25s ease;
   animation:chatboxToggleWiggle 4s ease-in-out infinite}
 /* .float-contact.open xoè 3 nút (Gọi điện/Chat Zalo/Facebook) LÊN TRÊN nút chính, cao tới hơn
    150px từ đáy màn hình — đè lên đúng vùng .chatbox-toggle (90-148px). Chiều "chatbox mở thì tự
-   đóng float-contact" đã có sẵn (chatboxToggleOpen()), còn chiều ngược lại (float-contact mở thì
-   ẩn chatbox-toggle) qua class này, gắn/gỡ ở JS "NÚT NỔI" — đối xứng, tránh 2 cụm nút nổi chồng
-   nhau ở CẢ 2 chiều bấm. */
-.chatbox-toggle.is-hidden-by-float{opacity:0;pointer-events:none;transform:scale(.6)}
+   đóng float-contact" đã có sẵn (chatboxToggleOpen()), còn chiều ngược lại: JS "NÚT NỔI" tự đo
+   chiều cao thật của .float-contact rồi gán inline style.bottom để ĐẨY chatbox-toggle lên đứng
+   NGAY TRÊN "Gọi điện" (không ẩn đi) — bỏ style.bottom (chuỗi rỗng) để nó tự quay lại đúng vị trí
+   mặc định 90px ở trên khi thu gọn lại. */
 .chatbox-toggle:hover{background:var(--color-primary-dark)}
 .chatbox-toggle .badge-dot{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;
   background:var(--color-accent);border:2px solid #fff}
@@ -1283,19 +1283,29 @@ document.querySelectorAll('.faq-q').forEach(btn=>{
 
 /* ==================== NÚT NỔI ==================== */
 const floatContact = document.getElementById('floatContact');
+// Đẩy nút Chat Box lên đứng NGAY TRÊN "Gọi điện" khi cụm liên hệ đang xoè (không ẩn đi) — đo
+// offsetHeight THẬT của .float-contact (luôn cố định dù đang xoè hay thu, vì .float-item chỉ ẩn
+// bằng opacity chứ không display:none nên không đổi layout) + cộng "bottom" gốc của nó, tránh
+// hardcode số cố định (sẽ sai lệch nếu sau này .float-contact đổi bottom/gap/thêm bớt nút).
+function pushChatboxAboveFloat(push){
+  const cbToggle = document.getElementById('chatboxToggle');
+  if(!cbToggle) return;
+  if(push){
+    const fcBottom = parseFloat(getComputedStyle(floatContact).bottom) || 20;
+    cbToggle.style.bottom = (fcBottom + floatContact.offsetHeight + 10) + 'px';
+  } else {
+    cbToggle.style.bottom = ''; // trả về đúng vị trí mặc định trong CSS (90px desktop / 84px mobile)
+  }
+}
 document.getElementById('floatToggle').addEventListener('click', e=>{
   e.stopPropagation();
   floatContact.classList.toggle('open');
-  // Ẩn nút Chat Box lúc cụm nút liên hệ đang xoè, tránh đè lên "Facebook" — xem CSS
-  // .chatbox-toggle.is-hidden-by-float. Chiều ngược lại (mở Chat Box) đã có sẵn ở chatboxToggleOpen().
-  const cbToggle = document.getElementById('chatboxToggle');
-  if(cbToggle) cbToggle.classList.toggle('is-hidden-by-float', floatContact.classList.contains('open'));
+  pushChatboxAboveFloat(floatContact.classList.contains('open'));
 });
 document.addEventListener('click', e=>{
   if(floatContact.classList.contains('open') && !floatContact.contains(e.target)){
     floatContact.classList.remove('open');
-    const cbToggle = document.getElementById('chatboxToggle');
-    if(cbToggle) cbToggle.classList.remove('is-hidden-by-float');
+    pushChatboxAboveFloat(false);
   }
 });
 
@@ -1463,6 +1473,13 @@ function chatboxPriceListText(lang){
     const price = c.querySelector('.price')?.textContent?.trim()||'';
     return '• '+name+': '+price;
   });
+  if(!lines.length){
+    // Trang không có .card-service (vd chinh-sach-bao-mat.html/dieu-khoan-dich-vu.html/lien-he.html
+    // dùng chung script Chat Box với trang chủ) — trỏ khách về đúng nơi có giá thật thay vì trả rỗng.
+    return lang==='en'
+      ? 'Please see the full price list on our homepage: https://topvisa5s.com/#dich-vu'
+      : 'Vui lòng xem bảng giá đầy đủ tại trang chủ: https://topvisa5s.com/#dich-vu';
+  }
   const body = lines.join('\n');
   return lang==='en'
     ? 'Price list by country (service fee):\n'+body+'\n\n(Country names are shown in Vietnamese for now — English names coming soon.)'
@@ -1580,7 +1597,11 @@ function chatboxToggleOpen(){
   const opening = !panel.classList.contains('open');
   if(opening){
     panel.classList.add('open');
-    const fc = document.getElementById('floatContact'); if(fc) fc.classList.remove('open'); // tránh 2 cụm nút nổi chồng nhau
+    const fc = document.getElementById('floatContact');
+    if(fc && fc.classList.contains('open')){
+      fc.classList.remove('open'); // tránh 2 cụm nút nổi chồng nhau
+      pushChatboxAboveFloat(false); // fc đang mở lúc bấm (icon đang bị đẩy lên) -> trả lại vị trí gốc
+    }
     if(!chatboxInited) chatboxInit();
     setTimeout(()=>{ const inp=document.getElementById('chatboxInput'); if(inp) inp.focus(); }, 200);
   } else {
