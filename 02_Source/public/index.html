@@ -1122,21 +1122,23 @@ initReviewsSlider();
    Lỗi thật: trang chủ có nhiều khối chèn ĐỘNG sau khi tải (Danh mục bài viết, Feedback khách hàng)
    làm chiều cao trang tăng lên NGAY TRONG LÚC trình duyệt đang tự cuộn tới #hash lúc tải trang —
    2 cú cuộn (của trình duyệt và của JS sửa lại sau) tranh nhau, cú của trình duyệt luôn thắng phần
-   cuối nên trôi tới tận đáy trang dù JS đã can thiệp (đã tự kiểm chứng qua nhiều lượt đo trên
-   production — kể cả thử tắt hẳn scroll-behavior:smooth để cuộn tức thì vẫn KHÔNG đủ, nguồn cuộn
-   của trình duyệt phải bị LOẠI HẲN chứ không chỉ đổi animation). Script đầu <head> đã tự xoá #hash
-   khỏi URL NGAY LÚC ĐẦU (history.replaceState, giữ giá trị gốc ở window.__initialHash__) để chặn
-   hẳn cú cuộn tự động đó — hàm này giờ là nơi DUY NHẤT thật sự cuộn, gọi SAU KHI 2 khối chèn động
-   đã tải xong (thành công hay lỗi/rỗng đều gọi, xem finally ở 2 IIFE) nên luôn ra đúng vị trí cuối
-   cùng, tôn trọng scroll-margin-top (mục "NAVBAR") nên không bị .navbar sticky che. */
+   cuối nên trôi tới tận đáy trang dù JS đã can thiệp. Sửa 2 lớp:
+   1) Script đầu <head> tự xoá #hash khỏi URL NGAY LÚC ĐẦU (history.replaceState, giữ giá trị gốc
+      ở window.__initialHash__) — chặn hẳn cú cuộn tự động của trình duyệt (nguồn cuộn thứ nhất).
+   2) Hàm này — nguồn cuộn DUY NHẤT còn lại — BẮT BUỘC dùng behavior:'instant' (không phải để mặc
+      định 'smooth' của html{scroll-behavior:smooth}) — cùng lý do đã áp dụng cho việc khôi phục vị
+      trí cuộn ở initScrollLock() (mục "CHI TIẾT BÀI VIẾT"): cuộn mượt (animation) bị gọi 2 LẦN (từ
+      finally của CẢ 2 khối chèn động, xem dưới) có thể chồng lấn/đuổi theo nhau nếu 1 khối vẫn
+      đang tải khi khối kia đã xong — cuộn tức thì loại bỏ hẳn khả năng này, mỗi lần gọi là 1 bước
+      dứt khoát, lần gọi SAU CÙNG (khi cả 2 khối đã chắc chắn tải xong) luôn cho ra đúng vị trí
+      cuối cùng. Tôn trọng scroll-margin-top (mục "NAVBAR") nên không bị .navbar sticky che. */
 function fixInitialHashScroll(){
   const hash = window.__initialHash__;
   if(!hash) return;
   let target;
   try{ target = document.querySelector(hash); }catch(e){ return; } // hash không hợp lệ làm selector
   if(!target) return;
-  target.scrollIntoView({block:'start'}); // scroll-behavior:smooth (CSS mặc định) vẫn áp dụng — an
-  // toàn ở bước này vì không còn cú cuộn nào khác tranh chấp, mượt mà cho người dùng.
+  target.scrollIntoView({block:'start', behavior:'instant'});
 }
 
 /* ==================== FEEDBACK KHÁCH HÀNG ĐỘNG (từ admin.html — Cài đặt chung, 2026-08-31) ====
