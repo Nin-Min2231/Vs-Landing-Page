@@ -451,11 +451,12 @@ ${chrome.footer}
       sitemap — <lastmod> là tùy chọn).
    2. "/blog" — lastmod = updated_at MỚI NHẤT trong các bài published (đã fetch sẵn ở bước 4, không
       cần query thêm) — đây là ngày THẬT vì nội dung /blog thay đổi đúng theo đó, không phải fabricate.
-   3. "Trang tin cậy" (T11 — chinh-sach-bao-mat.html/dieu-khoan-dich-vu.html/lien-he.html) CHƯA làm ở
-      thời điểm viết T5 -> dò tồn tại THẬT qua env.ASSETS.fetch() (HEAD each file), chỉ đưa vào
-      sitemap nếu trả 200. Khi T11 xong và các file được thêm vào public/, sitemap TỰ ĐỘNG hiện
-      thêm URL ngay lần crawl kế tiếp, không cần quay lại sửa file này — không có <lastmod> đáng tin
-      (asset chỉ có Last-Modified theo lần deploy, không phản ánh đúng "lần sửa NỘI DUNG").
+   3. Các trang tĩnh khác đáng lập chỉ mục (EXTRA_STATIC_PAGES — 3 trang pháp lý T11 +
+      /cong-cu/uoc-tinh-chi-phi-visa T16, danh sách sẽ còn dài thêm ở T15/T17 sau này) -> dò tồn
+      tại THẬT qua env.ASSETS.fetch() (HEAD each file), chỉ đưa vào sitemap nếu trả 200. Nhờ đó
+      thêm 1 trang tĩnh mới vào public/ sau này chỉ cần thêm đúng 1 dòng path vào mảng dưới đây,
+      sitemap TỰ ĐỘNG hiện thêm URL ngay lần crawl kế tiếp — không có <lastmod> đáng tin (asset chỉ
+      có Last-Modified theo lần deploy, không phản ánh đúng "lần sửa NỘI DUNG").
    4. Trang quốc gia ĐÃ publish (T13 xong — bảng đã có, T14 route /visa-<slug> CHƯA làm) — query
       noi_dung_quoc_gia?published=eq.true bọc try/catch giống hệt cơ chế đã dùng ở trang 404 (T21,
       xem getPublishedCountryLinks()): bảng chưa tồn tại/lỗi khác -> mảng rỗng, không throw.
@@ -467,14 +468,17 @@ ${chrome.footer}
    CHỈ sinh <loc>+<lastmod> — bỏ hẳn <changefreq>/<priority> (Google công bố rõ bỏ qua 2 thẻ này,
    sinh ra là công sức vô ích, xem kế hoạch SEO T5). <lastmod> chỉ xuất hiện khi có giá trị THẬT —
    không tự bịa ngày cho URL không có nguồn dữ liệu tin cậy. */
-// Dùng path KHÔNG đuôi ".html" — khớp đúng canonical thật của 3 trang (T11, 2026-09) và cách
-// Cloudflare Static Assets phục vụ chúng: request ".html" bị 307-redirect sang bản không đuôi
+// Dùng path KHÔNG đuôi ".html" — khớp đúng canonical thật của các trang này (T11, 2026-09) và
+// cách Cloudflare Static Assets phục vụ chúng: request ".html" bị 307-redirect sang bản không đuôi
 // (đã xác nhận qua hành vi /admin.html -> /admin), nên dò tồn tại bằng path ".html" sẽ luôn ra
 // res.ok=false (307 không phải 2xx) dù file có tồn tại thật — dò đúng path không đuôi mới chính xác.
-const TRUSTED_STATIC_PAGES = ['/chinh-sach-bao-mat', '/dieu-khoan-dich-vu', '/lien-he'];
+const EXTRA_STATIC_PAGES = [
+  '/chinh-sach-bao-mat', '/dieu-khoan-dich-vu', '/lien-he', // T11
+  '/cong-cu/uoc-tinh-chi-phi-visa' // T16
+];
 
-async function getExistingTrustedPages(env, request) {
-  const results = await Promise.all(TRUSTED_STATIC_PAGES.map(async p => {
+async function getExistingExtraPages(env, request) {
+  const results = await Promise.all(EXTRA_STATIC_PAGES.map(async p => {
     try {
       const res = await env.ASSETS.fetch(new Request(new URL(p, request.url), { method: 'HEAD' }));
       return res.ok ? p : null;
@@ -502,8 +506,8 @@ function sitemapUrlXml(loc, lastmod) {
 
 async function renderSitemap(request, env) {
   const origin = new URL(request.url).origin;
-  const [trustedPages, countries, posts] = await Promise.all([
-    getExistingTrustedPages(env, request),
+  const [extraPages, countries, posts] = await Promise.all([
+    getExistingExtraPages(env, request),
     getPublishedCountriesForSitemap(env),
     // KHÔNG catch ở đây (khác 2 nguồn phụ trên) — posts là nội dung CHÍNH của sitemap, lỗi thật
     // (vd Supabase down) nên rơi ra ngoài cho catch ở fetch() trả 500, thay vì âm thầm phát sinh
@@ -522,7 +526,7 @@ async function renderSitemap(request, env) {
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
   xml += sitemapUrlXml(origin + '/', '');
   xml += sitemapUrlXml(origin + '/blog', latestPostDate);
-  for (const p of trustedPages) xml += sitemapUrlXml(origin + p, '');
+  for (const p of extraPages) xml += sitemapUrlXml(origin + p, '');
   for (const c of countries) xml += sitemapUrlXml(origin + '/' + c.slug, (c.updated_at || '').slice(0, 10));
   for (const p of (posts || [])) {
     const href = origin + '/blog/' + (p.slug || 'bai-viet') + '-' + p.id;
