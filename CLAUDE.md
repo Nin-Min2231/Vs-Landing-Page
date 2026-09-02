@@ -2370,3 +2370,35 @@ deploy.
 **⚠️ Việc CHƯA làm (đã ghi rõ trong kế hoạch, để dành cho sau):** việc 6 của T4 ("mỗi bài blog nối
 1-2 internal link về trang quốc gia liên quan") — kế hoạch tự ghi chú "làm được sau T14" (trang quốc
 gia chưa tồn tại), không phải bị bỏ sót.
+
+**Đã deploy + kiểm tra trên production (2026-09-02, commit `18da0ea`):**
+
+**⚠️ Lỗi thật phát hiện lúc tự kiểm — 2 route mới trả 404 với request HEAD (sửa bằng commit
+`f37284b`, cùng ngày):** `curl -I` (gửi HEAD) tới `/blog` và `/blog/<slug>-<id>` ra 404, dù `curl`
+thường (GET) ra đúng 200. Nguyên nhân: điều kiện route chỉ khớp `request.method === 'GET'`, HEAD rơi
+xuống `env.ASSETS.fetch()` — trang chủ `/` không bị lỗi này vì còn `index.html` làm file tĩnh dự
+phòng, còn `/blog`/`/blog/<slug>-<id>` **không có file tĩnh tương ứng nào** trong `public/` nên rơi
+xuống là 404 thật. Đã sửa: đổi điều kiện thành `request.method === 'GET' || request.method ===
+'HEAD'` cho cả 2 route. **Bài học:** route SSR nào không có file tĩnh dự phòng thì PHẢI tự nhận cả
+HEAD, không thể dựa vào hành vi "tình cờ đúng" như trang chủ.
+
+**Kết quả kiểm tra sau khi sửa xong (toàn bộ trên `topvisa5s.com` thật):**
+- `/blog`: 12 `<article>` (đúng 12 bài đã publish), canonical đúng, `Content-Type`/`Cache-Control`
+  đúng, cả GET lẫn HEAD đều 200.
+- `/blog/le-obon-2026-...-1` (bài thật, nội dung dài có emoji): 200, canonical đúng, nội dung đầy đủ
+  qua `get_page_text` khớp 100% dữ liệu DB, ảnh cover load đẹp trên trình duyệt thật.
+- Sai slug (`/blog/tieu-de-sai-1`) → 301 đúng URL thật; chỉ có id không slug (`/blog/1`) → 301 đúng
+  URL thật; id không tồn tại (`/blog/bai-viet-99999`) → 404.
+- **Google Rich Results Test thật** (`search.google.com/test/rich-results`, dán đúng URL bài Obon):
+  "Crawled successfully", **"1 valid item detected"** cho Articles, tiêu đề trích xuất đúng y hệt
+  bài thật — đủ điều kiện rich results. Có "1 non-critical issue" (không phải lỗi — giao diện Google
+  Search Console khó thao tác sâu hơn qua công cụ trình duyệt tự động để đọc đúng chữ cảnh báo, nhưng
+  "non-critical" đã đủ nghĩa "không báo lỗi Article" theo đúng nghiệm thu kế hoạch).
+- Card trang chủ: xác nhận cả 12 card đều đã là `<a href="/blog/...">` thật trên production. Bấm
+  thử 1 card thật (`.click()` trực tiếp lên đúng element, tránh sai lệch tọa độ do trang đã cuộn) →
+  popup mở đúng, đúng tiêu đề/danh mục/nội dung, KHÔNG rời trang.
+- Hồi quy: trang chủ/`admin.html` vẫn 200; `worker.js`/`wrangler.toml`/`package.json` vẫn 404 (an
+  ninh Phương án A không bị ảnh hưởng); redirect `workers.dev` (T1) vẫn hoạt động; `/api/chat` vẫn
+  route đúng; giá SSR trang chủ (T9) và favicon mới (T3) không đổi.
+
+T4 coi như hoàn tất và đã xác nhận sống đúng trên production.
