@@ -41,6 +41,14 @@
     (Feedback khách hàng từ Facebook) — quản lý qua admin.html (Cài đặt chung), `anon` chỉ SELECT
     (hiển thị động ở section "Khách hàng nói gì về chúng tôi" trên `index.html`), `authenticated`
     toàn quyền CRUD. Xem CLAUDE.md mục 48.
+13. `13_supabase_setup_phase13.sql` — Phase 13 (2026-09-02, **đã chạy trên production**, kế hoạch
+    SEO T4): `posts` thêm cột `slug` + `updated_at` (trigger tự cập nhật), backfill slug cho bài
+    đã có — phục vụ route SSR `/blog` + `/blog/<slug>-<id>`. Xem CLAUDE.md mục 54.
+14. `14_supabase_setup_phase14.sql` — Phase 14 (kế hoạch SEO T13): bảng mới `noi_dung_quoc_gia`
+    (nội dung SEO 7 trang quốc gia `/visa-<slug>`, T14 làm sau khi có nội dung chuyên môn thật) —
+    quản lý qua admin.html (Cài đặt chung), `anon` chỉ SELECT khi `published=true`, `authenticated`
+    toàn quyền CRUD. Gộp thêm cột `posts.tac_gia` + `noi_dung_quoc_gia.tac_gia` (T20, byline chuyên
+    viên — để trống chờ PM cấp tên). Xem CLAUDE.md mục 58.
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
 project đang dùng đã qua đủ các phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy

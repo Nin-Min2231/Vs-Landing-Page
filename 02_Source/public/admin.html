@@ -311,6 +311,18 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .money-readonly{background:#E6F8EB!important;color:#111418!important;text-align:right;
   font-weight:700;font-size:15px}
 
+/* ===== Khối H2 / FAQ động trong dialog "Nội dung quốc gia" (kế hoạch SEO T13) — mỗi khối là 1
+   "card" nhỏ có thể xóa riêng, không phải bảng con lưu API riêng như Thành viên nhóm/Xử lý phát
+   sinh (dữ liệu ở đây chỉ tồn tại trong bộ nhớ JS cho tới khi bấm Lưu cả dialog, gộp thành 1 mảng
+   JSON gửi đi cùng lúc — xem nqgKhoiNoiDung/nqgFaqList). ===== */
+.nqg-block-item{border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:#fff}
+.nqg-block-item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.nqg-block-item-head b{color:#0752A3;font-size:13px}
+.nqg-char-count{font-size:11px;color:var(--mut);margin-top:3px;text-align:right}
+.nqg-preview{border:1px dashed var(--bd);border-radius:8px;padding:14px 16px;margin-top:10px;background:var(--bg)}
+.nqg-preview h4{font-size:15px;color:#0752A3;margin-bottom:6px}
+.nqg-preview .nqg-preview-h2{font-weight:700;margin:10px 0 4px}
+
 /* ===== Danh sách tin nhắn trong dialog "Chi tiết hội thoại" (tab Quản lý Chat, Chat Box Release 1) ===== */
 .chat-msg-list{display:flex;flex-direction:column;gap:8px;margin-top:16px}
 .chat-msg-item{max-width:80%;padding:8px 12px;border-radius:10px;font-size:14px;line-height:1.5;
@@ -855,6 +867,30 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div class="empty hidden" id="dgkhEmpty">Chưa có feedback nào</div>
         </div>
       </div>
+      <!-- "Nội dung quốc gia" (kế hoạch SEO T13, 2026-09) — nguồn nội dung cho route SSR
+           /visa-<slug> (T14, LÀM SAU khi có bài viết chuyên môn thật từ chuyên viên — bảng này
+           CHỈ chuẩn bị chỗ nhập/duyệt nội dung trước). "Quốc gia" trong dialog giới hạn đúng 7
+           nước đang có card dịch vụ trên trang chủ (NQG_COUNTRIES, khớp DVG_COUNTRIES trừ "Khác")
+           để ten_nuoc join đúng dich_vu_gia.quoc_gia. -->
+      <div class="cat-block-full c-nqg">
+        <div class="cat-block-full-head">
+          <h3>🗺️ Nội dung quốc gia (trang /visa-...)</h3>
+          <button class="btn btn-p" onclick="openNqgModal()">+ Thêm</button>
+        </div>
+        <div class="tbl-wrap">
+          <table style="min-width:600px">
+            <thead><tr>
+              <th class="sortable" onclick="onSortClick('nqg','nuoc',renderNoiDungQuocGia)">Quốc gia<span class="sort-ic" data-tbl="nqg" data-col="nuoc"></span></th>
+              <th>Tiêu đề SEO</th>
+              <th class="sortable" onclick="onSortClick('nqg','thutu',renderNoiDungQuocGia)">Thứ tự<span class="sort-ic" data-tbl="nqg" data-col="thutu"></span></th>
+              <th>Trạng thái</th>
+              <th class="th-center">Thao tác</th>
+            </tr></thead>
+            <tbody id="nqgBody"></tbody>
+          </table>
+          <div class="empty hidden" id="nqgEmpty">Chưa có nội dung quốc gia nào — bấm "+ Thêm" để bắt đầu nhập cho từng nước</div>
+        </div>
+      </div>
     </section>
 
     <!-- ===== TAB POSTS ===== -->
@@ -1330,6 +1366,74 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <div class="modal-actions dlg-foot">
       <button class="btn btn-g" onclick="closeDanhGiaModal()">Đóng lại</button>
       <button class="btn btn-p" id="dgkhSaveBtn" onclick="saveDanhGia()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL NỘI DUNG QUỐC GIA (Cài đặt chung, kế hoạch SEO T13) ============ -->
+<div class="overlay hidden" id="nqgOverlay">
+  <div class="modal modal-xl dlg-standard">
+    <div class="dlg-head">
+      <h3 id="nqgModalTitle">Thêm nội dung quốc gia</h3>
+      <button type="button" class="modal-x" onclick="closeNqgModal()" aria-label="Đóng">✕</button>
+    </div>
+    <div class="dlg-body">
+      <input type="hidden" id="nqgId">
+      <div class="dlg-section">
+        <div class="dlg-section-title">Thông tin cơ bản</div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Quốc gia <span class="req-badge">Bắt buộc</span></label><select id="nqgTenNuoc" onchange="onNqgTenNuocChange()"></select></div>
+          <div class="dlg-field"><label>Đường dẫn (tự sinh)</label><input type="text" id="nqgSlug" readonly style="background:#F1F5F9;color:var(--mut)"></div>
+          <div class="dlg-field"><label>Thứ tự hiển thị</label><input type="number" id="nqgThuTu" inputmode="numeric" min="0" placeholder="0"></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide">
+            <label>Tiêu đề SEO (thẻ title)</label>
+            <input type="text" id="nqgTitleSeo" maxlength="70" oninput="nqgUpdateCharCount('nqgTitleSeo','nqgTitleSeoLen',50,60)">
+            <div class="nqg-char-count" id="nqgTitleSeoLen">0 ký tự (khuyến nghị 50-60)</div>
+          </div>
+          <div class="dlg-field dlg-field-wide">
+            <label>Mô tả SEO (meta description)</label>
+            <textarea id="nqgMetaDesc" rows="2" maxlength="180" style="width:100%" oninput="nqgUpdateCharCount('nqgMetaDesc','nqgMetaDescLen',140,160)"></textarea>
+            <div class="nqg-char-count" id="nqgMetaDescLen">0 ký tự (khuyến nghị 140-160)</div>
+          </div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide"><label>Tiêu đề H1</label><input type="text" id="nqgH1" placeholder="vd: Dịch vụ Visa Nhật Bản trọn gói"></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field dlg-field-wide"><label>Đoạn mở đầu (~100 từ)</label><textarea id="nqgMoDau" rows="3" style="width:100%"></textarea></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label>Thời gian xử lý</label><input type="text" id="nqgThoiGianXuLy" placeholder="Chờ chuyên viên xác nhận (T18)"></div>
+          <div class="dlg-field dlg-field-wide"><label>Người viết (byline — chờ PM cấp tên/chức danh, để trống nếu chưa có)</label><input type="text" id="nqgTacGia" placeholder="vd: Nguyễn Văn A · Chuyên viên tư vấn visa, 5 năm kinh nghiệm"></div>
+        </div>
+        <div class="dlg-row">
+          <div class="dlg-field"><label><input type="checkbox" id="nqgPublished" style="width:auto"> Xuất bản (khách và Google xem được)</label></div>
+        </div>
+      </div>
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Nội dung chi tiết (các khối H2)</div>
+        <div id="nqgKhoiNoiDungList"></div>
+        <button type="button" class="btn btn-g" onclick="addNqgKhoiNoiDung()">+ Thêm khối H2</button>
+      </div>
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Câu hỏi thường gặp (FAQ)</div>
+        <div id="nqgFaqList"></div>
+        <button type="button" class="btn btn-g" onclick="addNqgFaq()">+ Thêm câu hỏi</button>
+      </div>
+
+      <div class="dlg-section">
+        <div class="dlg-section-title">Xem trước</div>
+        <button type="button" class="btn btn-g" id="nqgPreviewBtn" onclick="toggleNqgPreview()">👁 Xem trước</button>
+        <div class="nqg-preview hidden" id="nqgPreviewBox"></div>
+      </div>
+    </div>
+    <div class="modal-actions dlg-foot">
+      <button class="btn btn-g" onclick="closeNqgModal()">Đóng lại</button>
+      <button class="btn btn-p" id="nqgSaveBtn" onclick="saveNqgModal()">Lưu</button>
     </div>
   </div>
 </div>
@@ -1943,7 +2047,7 @@ $('loginForm').addEventListener('submit', async e=>{
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia(), loadDanhGiaKhachHang()]);
+    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia(), loadDanhGiaKhachHang(), loadNoiDungQuocGia()]);
     loadPosts();
     loadDashboard();
     startNotifPolling();
@@ -1978,7 +2082,7 @@ async function trySilentLogin(){
     $('whoami').textContent = data.user?.email||'';
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia(), loadDanhGiaKhachHang()]);
+    await Promise.all([loadLeads(), loadCats(), loadDanhMuc(), loadDoiTac(), loadHoSo(), loadKhachHang(), loadDichVuGia(), loadDanhGiaKhachHang(), loadNoiDungQuocGia()]);
     loadPosts();
     loadDashboard();
     startNotifPolling();
@@ -2685,6 +2789,195 @@ async function delDanhGia(id){
   try{
     await api('danh_gia_khach_hang?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     loadDanhGiaKhachHang(); toast('Đã xóa');
+  }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
+}
+
+/* ==== "Nội dung quốc gia" (Cài đặt chung, kế hoạch SEO T13) — nguồn nội dung cho route SSR
+   /visa-<slug> (T14, LÀM SAU khi có bài viết chuyên môn thật từ chuyên viên — màn này CHỈ để
+   nhập/duyệt trước, Claude Code KHÔNG tự viết nội dung chuyên môn thay chuyên viên). NQG_COUNTRIES
+   là danh sách CỐ ĐỊNH đúng 7 nước đang có card dịch vụ + giá trên trang chủ (khớp DVG_COUNTRIES
+   trừ "Khác" — "Khác" không có 1 trang riêng) để ten_nuoc join đúng dich_vu_gia.quoc_gia ở T14.
+   Không cần isRecordInUse trước khi xóa — chưa có bảng nào tham chiếu tới (T14 chỉ ĐỌC theo slug,
+   không có FK), giống các bảng "lá" khác (mục 14).
+
+   Khối H2 (khoi_noi_dung) và FAQ (faq) là 2 mảng JSON lưu THẲNG trong 1 dòng — KHÁC với Thành viên
+   nhóm/Xử lý phát sinh (bảng con riêng, mỗi dòng có id + API riêng): ở đây KHÔNG cần state JS đồng
+   bộ qua oninput — mỗi khối là 1 ".nqg-block-item" trong DOM, "Xóa" chỉ gỡ đúng phần tử đó
+   (removeNqgBlock), và lúc Lưu mới đọc lại TOÀN BỘ giá trị hiện có trong DOM
+   (collectNqgKhoiNoiDung()/collectNqgFaq()) rồi gộp thành mảng gửi đi 1 lần — đơn giản hơn hẳn vì
+   không phải giữ 2 nguồn sự thật (mảng JS + DOM) đồng bộ với nhau. */
+const NQG_COUNTRIES = ['Nhật Bản','Hàn Quốc','Đài Loan','Trung Quốc','Schengen (châu Âu)','Mỹ','Úc'];
+let NQG_LIST = [];
+
+// Bỏ dấu tiếng Việt + xử lý riêng "đ" (không tách được bằng NFD, cùng cách đã dùng cho slug bài
+// viết ở migration 13/slugifyCatName()) rồi nối bằng "-", tiền tố "visa-".
+function nqgSlugify(ten){
+  return 'visa-' + (ten||'').toLowerCase()
+    .replace(/đ/g,'d')
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/(^-+)|(-+$)/g,'');
+}
+
+async function loadNoiDungQuocGia(){
+  try{
+    NQG_LIST = await api('noi_dung_quoc_gia?select=*&order=thu_tu') || [];
+    renderNoiDungQuocGia();
+  }catch(e){ if(e.message!=='401') toast('Lỗi tải nội dung quốc gia: '+e.message,'err'); }
+}
+function renderNoiDungQuocGia(){
+  const rows = applySort('nqg', NQG_LIST, {nuoc:x=>x.ten_nuoc||'', thutu:x=>x.thu_tu||0});
+  $('nqgEmpty').classList.toggle('hidden', rows.length>0);
+  $('nqgBody').innerHTML = rows.map(x=>`
+    <tr>
+      <td><b>${esc(x.ten_nuoc)}</b></td>
+      <td><span class="text-trunc" title="${esc(x.title_seo||'')}">${esc(x.title_seo||'– Chưa đặt –')}</span></td>
+      <td>${x.thu_tu ?? 0}</td>
+      <td>${x.published ? '✅ Đã xuất bản' : '📝 Nháp'}</td>
+      <td class="td-actions">
+        <button class="btn btn-p" onclick="openNqgModal(${x.id})">Chi tiết</button>
+        <button class="btn btn-d" onclick="delNqg(${x.id})">Xóa</button>
+      </td>
+    </tr>`).join('');
+  applyRowLabels('nqgBody');
+  updateSortIcons('nqg');
+}
+
+function openNqgModal(id){
+  const x = id ? NQG_LIST.find(r=>r.id===id) : null;
+  $('nqgModalTitle').textContent = x ? 'Chi tiết: '+x.ten_nuoc : 'Thêm nội dung quốc gia';
+  $('nqgId').value = x?.id||'';
+
+  // Chỉ cho chọn nước CHƯA có dòng nào khác — tránh trùng slug (unique). Sửa dòng có sẵn thì khóa
+  // hẳn select (đổi nước coi như tạo trang khác, không phải sửa trang hiện tại).
+  const usedByOthers = NQG_LIST.filter(r=>r.id!==x?.id).map(r=>r.ten_nuoc);
+  const available = NQG_COUNTRIES.filter(c=>!usedByOthers.includes(c));
+  $('nqgTenNuoc').innerHTML = '<option value="">-- Chọn --</option>' +
+    available.map(c=>`<option ${x&&x.ten_nuoc===c?'selected':''}>${esc(c)}</option>`).join('');
+  $('nqgTenNuoc').disabled = !!x;
+
+  $('nqgSlug').value = x?.slug || '';
+  $('nqgTitleSeo').value = x?.title_seo || '';
+  $('nqgMetaDesc').value = x?.meta_description || '';
+  $('nqgH1').value = x?.h1 || '';
+  $('nqgMoDau').value = x?.mo_dau || '';
+  $('nqgThoiGianXuLy').value = x?.thoi_gian_xu_ly || '';
+  $('nqgTacGia').value = x?.tac_gia || '';
+  $('nqgThuTu').value = x?.thu_tu ?? '';
+  $('nqgPublished').checked = x?.published || false;
+  nqgUpdateCharCount('nqgTitleSeo','nqgTitleSeoLen',50,60);
+  nqgUpdateCharCount('nqgMetaDesc','nqgMetaDescLen',140,160);
+
+  $('nqgKhoiNoiDungList').innerHTML = '';
+  (x?.khoi_noi_dung||[]).forEach(b=>addNqgKhoiNoiDung(b.h2, b.noi_dung_html));
+  $('nqgFaqList').innerHTML = '';
+  (x?.faq||[]).forEach(f=>addNqgFaq(f.cau_hoi, f.tra_loi));
+
+  $('nqgPreviewBox').classList.add('hidden');
+  $('nqgPreviewBtn').textContent = '👁 Xem trước';
+  $('nqgOverlay').classList.remove('hidden');
+  snapshotDialog('nqgOverlay');
+}
+function closeNqgModal(){ confirmCloseDialog('nqgOverlay', ()=>$('nqgOverlay').classList.add('hidden')); }
+
+function onNqgTenNuocChange(){
+  $('nqgSlug').value = nqgSlugify($('nqgTenNuoc').value);
+}
+function nqgUpdateCharCount(inputId, countId, min, max){
+  const len = $(inputId).value.length;
+  const el = $(countId);
+  el.textContent = len + ' ký tự (khuyến nghị ' + min + '-' + max + ')';
+  el.style.color = (len>=min && len<=max) ? 'var(--ok)' : 'var(--mut)';
+}
+
+/* -- Khối H2 + FAQ: xem comment đầu khối này để hiểu vì sao không cần state JS đồng bộ -- */
+function nqgRenumberBlocks(){
+  document.querySelectorAll('#nqgKhoiNoiDungList .nqg-block-item b').forEach((b,i)=>b.textContent='Khối H2 #'+(i+1));
+  document.querySelectorAll('#nqgFaqList .nqg-block-item b').forEach((b,i)=>b.textContent='Câu hỏi #'+(i+1));
+}
+function removeNqgBlock(btn){ btn.closest('.nqg-block-item').remove(); nqgRenumberBlocks(); }
+function addNqgKhoiNoiDung(h2='', html=''){
+  const idx = $('nqgKhoiNoiDungList').children.length;
+  $('nqgKhoiNoiDungList').insertAdjacentHTML('beforeend', `
+    <div class="nqg-block-item">
+      <div class="nqg-block-item-head"><b>Khối H2 #${idx+1}</b><button type="button" class="btn btn-d" style="padding:4px 10px" onclick="removeNqgBlock(this)">Xóa</button></div>
+      <div class="dlg-field" style="margin-bottom:8px"><label>Tiêu đề H2</label><input type="text" class="nqg-h2-title" value="${esc(h2)}"></div>
+      <div class="dlg-field"><label>Nội dung — gõ HTML cơ bản được (vd &lt;p&gt;, &lt;b&gt;, &lt;ul&gt;&lt;li&gt;); nên mở đầu bằng 1 đoạn 40-60 từ trả lời thẳng câu hỏi rồi mới diễn giải chi tiết — dễ được trích dẫn hơn, xem kế hoạch SEO T14/T24</label><textarea class="nqg-h2-content" rows="5" style="width:100%">${esc(html)}</textarea></div>
+    </div>`);
+}
+function addNqgFaq(cauHoi='', traLoi=''){
+  const idx = $('nqgFaqList').children.length;
+  $('nqgFaqList').insertAdjacentHTML('beforeend', `
+    <div class="nqg-block-item">
+      <div class="nqg-block-item-head"><b>Câu hỏi #${idx+1}</b><button type="button" class="btn btn-d" style="padding:4px 10px" onclick="removeNqgBlock(this)">Xóa</button></div>
+      <div class="dlg-field" style="margin-bottom:8px"><label>Câu hỏi</label><input type="text" class="nqg-faq-q" value="${esc(cauHoi)}"></div>
+      <div class="dlg-field"><label>Trả lời</label><textarea class="nqg-faq-a" rows="3" style="width:100%">${esc(traLoi)}</textarea></div>
+    </div>`);
+}
+function collectNqgKhoiNoiDung(){
+  return [...document.querySelectorAll('#nqgKhoiNoiDungList .nqg-block-item')].map(el=>({
+    h2: el.querySelector('.nqg-h2-title').value.trim(),
+    noi_dung_html: el.querySelector('.nqg-h2-content').value.trim()
+  })).filter(b=>b.h2 || b.noi_dung_html); // bỏ khối bấm "+ Thêm" nhầm rồi không điền gì
+}
+function collectNqgFaq(){
+  return [...document.querySelectorAll('#nqgFaqList .nqg-block-item')].map(el=>({
+    cau_hoi: el.querySelector('.nqg-faq-q').value.trim(),
+    tra_loi: el.querySelector('.nqg-faq-a').value.trim()
+  })).filter(f=>f.cau_hoi || f.tra_loi);
+}
+
+// "Xem trước" — không có route /visa-<slug> thật để xem (T14 chưa làm), nên render tạm ngay trong
+// dialog từ đúng dữ liệu đang gõ dở (kể cả chưa lưu) để chuyên viên tự đọc lại trước khi Lưu/Xuất bản.
+function toggleNqgPreview(){
+  const box = $('nqgPreviewBox');
+  const willShow = box.classList.contains('hidden');
+  if(willShow){
+    const h1 = $('nqgH1').value.trim() || '(chưa nhập H1)';
+    const moDau = $('nqgMoDau').value.trim();
+    const blocks = collectNqgKhoiNoiDung();
+    const faqs = collectNqgFaq();
+    box.innerHTML = `<h4>${esc(h1)}</h4>` +
+      (moDau ? `<p>${esc(moDau)}</p>` : '') +
+      blocks.map(b=>`<div class="nqg-preview-h2">${esc(b.h2)}</div><div>${b.noi_dung_html}</div>`).join('') +
+      (faqs.length ? `<div class="nqg-preview-h2">Câu hỏi thường gặp</div>` +
+        faqs.map(f=>`<p><b>${esc(f.cau_hoi)}</b><br>${esc(f.tra_loi)}</p>`).join('') : '');
+  }
+  box.classList.toggle('hidden');
+  $('nqgPreviewBtn').textContent = willShow ? '🙈 Ẩn xem trước' : '👁 Xem trước';
+}
+
+async function saveNqgModal(){
+  const id = $('nqgId').value;
+  const ten_nuoc = $('nqgTenNuoc').value;
+  if(!id && !ten_nuoc){ toast('Vui lòng chọn Quốc gia','err'); return; }
+  const body = {
+    title_seo: $('nqgTitleSeo').value.trim() || null,
+    meta_description: $('nqgMetaDesc').value.trim() || null,
+    h1: $('nqgH1').value.trim() || null,
+    mo_dau: $('nqgMoDau').value.trim() || null,
+    khoi_noi_dung: collectNqgKhoiNoiDung(),
+    faq: collectNqgFaq(),
+    thoi_gian_xu_ly: $('nqgThoiGianXuLy').value.trim() || null,
+    tac_gia: $('nqgTacGia').value.trim() || null,
+    thu_tu: $('nqgThuTu').value.trim() ? Number($('nqgThuTu').value) : 0,
+    published: $('nqgPublished').checked
+  };
+  if(!id){ body.ten_nuoc = ten_nuoc; body.slug = nqgSlugify(ten_nuoc); }
+  const btn = $('nqgSaveBtn'); btn.disabled=true;
+  try{
+    if(id) await api('noi_dung_quoc_gia?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
+    else await api('noi_dung_quoc_gia',{method:'POST',body:JSON.stringify(body)});
+    snapshotDialog('nqgOverlay');
+    closeNqgModal(); loadNoiDungQuocGia(); toast(id?'Đã cập nhật':'Đã thêm');
+  }catch(e){ toast(e.message.includes('duplicate')?'Nước này đã có nội dung, vui lòng bấm "Chi tiết" ở dòng đó để sửa':'Lỗi lưu: '+e.message,'err'); }
+  finally{ btn.disabled=false; }
+}
+async function delNqg(id){
+  if(!await showConfirmPopup({message:'Xóa nội dung quốc gia này? Không thể hoàn tác.'})) return;
+  try{
+    await api('noi_dung_quoc_gia?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    loadNoiDungQuocGia(); toast('Đã xóa');
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 

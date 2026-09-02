@@ -363,10 +363,12 @@ ${chrome.footer}
    lỗi. CHƯA làm 410 Gone cho bài đã unpublish — cần thêm cột theo dõi "đã từng publish", phức tạp
    hơn giá trị ở giai đoạn này; khi nào thật sự gỡ bài thì làm sau.
 
-   Link trang quốc gia lấy ĐỘNG từ bảng noi_dung_quoc_gia (T13/T14, CHƯA làm ở thời điểm viết T21)
-   -> query dưới đây sẽ ném lỗi "relation does not exist" và bị nuốt về mảng rỗng (catch), nên trang
-   404 hiện tại chỉ còn link trang chủ + /blog + hotline. Khi T13/T14 xong và có nước published, trang
-   404 TỰ ĐỘNG hiện thêm link ngay, không cần sửa lại file này lần nữa. */
+   Link trang quốc gia lấy ĐỘNG từ bảng noi_dung_quoc_gia — lúc viết T21, bảng này CHƯA tồn tại (T13
+   làm sau) nên query dưới đây từng ném lỗi "relation does not exist" và bị nuốt về mảng rỗng
+   (catch), trang 404 chỉ còn link trang chủ + /blog + hotline. T13 nay ĐÃ xong (bảng tồn tại) nhưng
+   T14 (route /visa-<slug>) VẪN CHƯA làm — nên dù có nước published, chưa có trang thật để trỏ tới,
+   catch vẫn còn nguyên giá trị phòng hờ (bảng lỗi/mạng chập chờn...). Khi T14 xong, trang 404 TỰ
+   ĐỘNG hiện thêm link ngay, không cần sửa lại file này lần nữa. */
 async function getPublishedCountryLinks(env) {
   try {
     const rows = await supa(env, 'noi_dung_quoc_gia?select=slug,ten_nuoc&published=eq.true&order=thu_tu&limit=4');
@@ -454,11 +456,11 @@ ${chrome.footer}
       sitemap nếu trả 200. Khi T11 xong và các file được thêm vào public/, sitemap TỰ ĐỘNG hiện
       thêm URL ngay lần crawl kế tiếp, không cần quay lại sửa file này — không có <lastmod> đáng tin
       (asset chỉ có Last-Modified theo lần deploy, không phản ánh đúng "lần sửa NỘI DUNG").
-   4. Trang quốc gia ĐÃ publish (T13/T14, CHƯA làm) — query noi_dung_quoc_gia?published=eq.true bọc
-      try/catch giống hệt cơ chế đã dùng ở trang 404 (T21, xem getPublishedCountryLinks()): bảng
-      chưa tồn tại -> mảng rỗng, không throw. T13 KHÔNG định nghĩa cột updated_at cho bảng này nên
-      chỉ SELECT slug (cột chắc chắn tồn tại theo đúng thiết kế T13) — không suy đoán thêm cột nào
-      khác, tự để không có <lastmod> cho các URL này.
+   4. Trang quốc gia ĐÃ publish (T13 xong — bảng đã có, T14 route /visa-<slug> CHƯA làm) — query
+      noi_dung_quoc_gia?published=eq.true bọc try/catch giống hệt cơ chế đã dùng ở trang 404 (T21,
+      xem getPublishedCountryLinks()): bảng chưa tồn tại/lỗi khác -> mảng rỗng, không throw.
+      lastmod = updated_at THẬT (migration 14 đã thêm cột này + trigger tự cập nhật, cùng mẫu
+      posts) — không còn là "không có nguồn tin cậy" như lúc viết T5 lần đầu (khi đó T13 chưa làm).
    5. Toàn bộ posts published — lastmod = updated_at THẬT của từng bài (cột có trigger tự cập nhật,
       xem 05_Database/13_supabase_setup_phase13.sql) — KHÔNG bịa ngày.
 
@@ -483,12 +485,12 @@ async function getExistingTrustedPages(env, request) {
   return results.filter(Boolean);
 }
 
-async function getPublishedCountrySlugsForSitemap(env) {
+async function getPublishedCountriesForSitemap(env) {
   try {
-    const rows = await supa(env, 'noi_dung_quoc_gia?select=slug&published=eq.true');
-    return (rows || []).map(r => r.slug).filter(Boolean);
+    const rows = await supa(env, 'noi_dung_quoc_gia?select=slug,updated_at&published=eq.true');
+    return (rows || []).filter(r => r.slug);
   } catch (e) {
-    return []; // bảng chưa tồn tại (chưa chạy migration T13) hoặc lỗi khác -> không hiện URL, không throw
+    return []; // bảng chưa tồn tại/lỗi khác -> không hiện URL, không throw (nguồn phụ, không chặn cả sitemap)
   }
 }
 
@@ -500,9 +502,9 @@ function sitemapUrlXml(loc, lastmod) {
 
 async function renderSitemap(request, env) {
   const origin = new URL(request.url).origin;
-  const [trustedPages, countrySlugs, posts] = await Promise.all([
+  const [trustedPages, countries, posts] = await Promise.all([
     getExistingTrustedPages(env, request),
-    getPublishedCountrySlugsForSitemap(env),
+    getPublishedCountriesForSitemap(env),
     // KHÔNG catch ở đây (khác 2 nguồn phụ trên) — posts là nội dung CHÍNH của sitemap, lỗi thật
     // (vd Supabase down) nên rơi ra ngoài cho catch ở fetch() trả 500, thay vì âm thầm phát sinh
     // 1 sitemap "200 OK" trông có vẻ ổn nhưng thiếu sạch mọi bài viết — Google có thể lỡ tin nhầm
@@ -521,7 +523,7 @@ async function renderSitemap(request, env) {
   xml += sitemapUrlXml(origin + '/', '');
   xml += sitemapUrlXml(origin + '/blog', latestPostDate);
   for (const p of trustedPages) xml += sitemapUrlXml(origin + p, '');
-  for (const slug of countrySlugs) xml += sitemapUrlXml(origin + '/' + slug, '');
+  for (const c of countries) xml += sitemapUrlXml(origin + '/' + c.slug, (c.updated_at || '').slice(0, 10));
   for (const p of (posts || [])) {
     const href = origin + '/blog/' + (p.slug || 'bai-viet') + '-' + p.id;
     xml += sitemapUrlXml(href, (p.updated_at || '').slice(0, 10));
