@@ -302,7 +302,8 @@ a.avatar{text-decoration:none;cursor:pointer}
 /* ==================== TIN TỨC ==================== */
 .grid-posts{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
 .card-post{background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;
-  box-shadow:var(--shadow-sm);transition:.25s;display:flex;flex-direction:column;cursor:pointer}
+  box-shadow:var(--shadow-sm);transition:.25s;display:flex;flex-direction:column;cursor:pointer;
+  text-decoration:none;color:inherit}
 .card-post:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg);border-color:var(--color-primary-light)}
 /* aspect-ratio (thay vì height:160px cố định, 2026-08) — giữ ĐÚNG tỷ lệ khung ảnh 2.3:1 ở MỌI
    kích thước màn hình (mobile 1 cột/tablet 2 cột/desktop 3 cột đều đổi bề ngang thẻ khác nhau,
