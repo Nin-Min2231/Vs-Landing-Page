@@ -2,14 +2,19 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<!-- Tắt tạm html{scroll-behavior:smooth} (khai báo trong <style>) TRƯỚC khi trình duyệt tự cuộn
-     tới #hash lúc tải trang (vd vào thẳng /#dang-ky từ trang khác) — nếu không, cú cuộn ban đầu
-     là 1 animation kéo dài, và trong lúc đó 2 khối chèn động (Danh mục bài viết, Feedback khách
-     hàng) làm trang cao thêm, khiến animation "đuổi theo" đích đang dịch chuyển rồi trượt quá đà
-     (lỗi thật đã đo được: dừng ở tận đáy trang). Cuộn tức thì (auto) không có animation nên không
-     bị đuổi theo — script "SỬA CUỘN TỚI ANCHOR..." cuối trang sẽ tự sửa lại đúng vị trí SAU khi 2
-     khối trên tải xong, rồi bật lại smooth cho các lần bấm menu sau này của người dùng. -->
-<script>if(location.hash){document.documentElement.style.scrollBehavior='auto';}</script>
+<!-- Tự xoá #hash khỏi URL NGAY LÚC ĐẦU (giữ lại giá trị gốc trong window.__initialHash__ để dùng
+     sau) — chặn hẳn cú cuộn-tới-#hash TỰ ĐỘNG của trình duyệt lúc tải trang (vd vào thẳng
+     /#dang-ky từ trang khác), vì nó xảy ra SONG SONG với lúc 2 khối chèn động (Danh mục bài viết,
+     Feedback khách hàng) đang làm trang cao thêm dần — 2 cú cuộn (của trình duyệt và của JS sửa
+     lại sau) tranh nhau, cú của trình duyệt luôn thắng phần cuối nên vẫn trôi tới tận đáy trang dù
+     JS đã can thiệp (đã tự kiểm chứng qua nhiều lượt đo trên production, thử cả cách tắt
+     scroll-behavior vẫn không đủ — nguồn cuộn phải bị LOẠI HẲN, không phải chỉ đổi animation).
+     Hàm fixInitialHashScroll() cuối trang (script "SỬA CUỘN TỚI ANCHOR") sẽ là nơi DUY NHẤT thật
+     sự cuộn, gọi SAU KHI 2 khối trên tải xong nên luôn ra đúng vị trí cuối cùng. -->
+<script>
+window.__initialHash__ = location.hash;
+if(location.hash) history.replaceState(null, '', location.pathname + location.search);
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1B6EF3">
 <title>Top Visa 5S – Dịch vụ Visa trọn gói, tỷ lệ đậu cao</title>
@@ -1115,27 +1120,23 @@ initReviewsSlider();
 
 /* ==================== SỬA CUỘN TỚI ANCHOR LÚC TẢI TRANG (vd /#dang-ky từ trang khác) ====================
    Lỗi thật: trang chủ có nhiều khối chèn ĐỘNG sau khi tải (Danh mục bài viết, Feedback khách hàng)
-   làm chiều cao trang tăng lên NGAY TRONG LÚC trình duyệt đang tự cuộn mượt (html{scroll-behavior:
-   smooth}) tới #hash lúc tải trang — cú cuộn "đuổi theo" 1 vị trí đang dịch chuyển nên trượt quá đà
-   (đo được: dừng ở tận đáy trang thay vì đúng đích). Sửa bằng 2 bước:
-   1) Script đầu <head> tắt tạm scroll-behavior thành 'auto' NGAY TỪ ĐẦU (trước khi trình duyệt kịp
-      tự cuộn) — cú cuộn ban đầu của trình duyệt thành tức thì, không animation nên không thể "đuổi
-      theo" bị trượt quá đà nữa (dù có thể dừng chưa đúng hẳn vì lúc đó trang còn đang tải dở).
-   2) Hàm fixInitialHashScroll() dưới đây, gọi lại SAU KHI 2 khối chèn động đã tải xong (thành công
-      hay lỗi/rỗng đều gọi, xem finally ở 2 IIFE) — cuộn lại tức thì (vẫn 'auto') về đúng vị trí
-      cuối cùng, tôn trọng scroll-margin-top (mục "NAVBAR") nên không bị .navbar sticky che.
-   Chỉ bật lại smooth (cho các lần bấm menu SAU của người dùng) sau 2 giây — đủ lâu để chắc chắn cả
-   2 khối trên đã tải xong, tránh 2 cú cuộn animation chồng lấn nhau lặp lại đúng lỗi ban đầu. */
+   làm chiều cao trang tăng lên NGAY TRONG LÚC trình duyệt đang tự cuộn tới #hash lúc tải trang —
+   2 cú cuộn (của trình duyệt và của JS sửa lại sau) tranh nhau, cú của trình duyệt luôn thắng phần
+   cuối nên trôi tới tận đáy trang dù JS đã can thiệp (đã tự kiểm chứng qua nhiều lượt đo trên
+   production — kể cả thử tắt hẳn scroll-behavior:smooth để cuộn tức thì vẫn KHÔNG đủ, nguồn cuộn
+   của trình duyệt phải bị LOẠI HẲN chứ không chỉ đổi animation). Script đầu <head> đã tự xoá #hash
+   khỏi URL NGAY LÚC ĐẦU (history.replaceState, giữ giá trị gốc ở window.__initialHash__) để chặn
+   hẳn cú cuộn tự động đó — hàm này giờ là nơi DUY NHẤT thật sự cuộn, gọi SAU KHI 2 khối chèn động
+   đã tải xong (thành công hay lỗi/rỗng đều gọi, xem finally ở 2 IIFE) nên luôn ra đúng vị trí cuối
+   cùng, tôn trọng scroll-margin-top (mục "NAVBAR") nên không bị .navbar sticky che. */
 function fixInitialHashScroll(){
-  if(!location.hash) return;
+  const hash = window.__initialHash__;
+  if(!hash) return;
   let target;
-  try{ target = document.querySelector(location.hash); }catch(e){ return; } // hash không hợp lệ làm selector
+  try{ target = document.querySelector(hash); }catch(e){ return; } // hash không hợp lệ làm selector
   if(!target) return;
-  document.documentElement.style.scrollBehavior = 'auto'; // đảm bảo tức thì dù có gì đó lỡ bật lại smooth
-  target.scrollIntoView({block:'start'});
-}
-if(location.hash){
-  setTimeout(()=>{ document.documentElement.style.scrollBehavior = ''; }, 2000);
+  target.scrollIntoView({block:'start'}); // scroll-behavior:smooth (CSS mặc định) vẫn áp dụng — an
+  // toàn ở bước này vì không còn cú cuộn nào khác tranh chấp, mượt mà cho người dùng.
 }
 
 /* ==================== FEEDBACK KHÁCH HÀNG ĐỘNG (từ admin.html — Cài đặt chung, 2026-08-31) ====
