@@ -2402,3 +2402,56 @@ HEAD, không thể dựa vào hành vi "tình cờ đúng" như trang chủ.
   route đúng; giá SSR trang chủ (T9) và favicon mới (T3) không đổi.
 
 T4 coi như hoàn tất và đã xác nhận sống đúng trên production.
+
+## 55. T21 — Trang 404 đầy đủ (2026-09-02)
+
+**Bối cảnh:** sắp có 2 nhóm route động (`/blog/<slug>-<id>`, `/visa-<slug>` khi T14 làm xong) sẽ
+sinh ra nhiều đường dẫn 404 tiềm năng (slug gõ sai, bài bị unpublish, link cũ chia sẻ trên Facebook,
+nước chưa publish). Mặc định Cloudflare Static Assets trả **trang trắng không navbar** cho path
+không khớp — khách vào là thoát ngay.
+
+**Việc (`02_Source/worker.js`):** đổi dòng cuối `fetch()` từ `return env.ASSETS.fetch(request)`
+(hành vi cũ, trả thẳng 404 mặc định cho path lạ) sang: gọi `env.ASSETS.fetch(request)` trước —
+**giữ nguyên 100%** cho mọi asset thật (200 không đổi gì) — **CHỈ khi** kết quả là `404` (và method
+là GET/HEAD) mới tự dựng trang 404 riêng qua `render404Page()`. Trang 404 dùng lại đúng
+`getSiteChrome()` đã có sẵn từ khối Blog SSR (T4) để trích navbar/footer/CSS **trực tiếp từ chính
+`index.html`** — không copy riêng 1 bản, tự động khớp 100% design system mỗi khi sau này ai sửa
+navbar/footer/CSS (đúng bài học "2 bản sao dễ lệch nhau" đã ghi nhiều lần). Nội dung: mã 404 lớn,
+câu xin lỗi, nút "Về trang chủ" + "Xem Blog" (`.btn.btn-primary`/`.btn.btn-outline` có sẵn), dòng
+hotline `tel:0935887922`, `<meta name="robots" content="noindex">`, response status **404** thật
+(không phải 200 giả 404), `Cache-Control: no-store` (không cache trang lỗi ở CDN).
+
+**Link trang quốc gia "đang publish" — thiết kế tự động, không cần sửa lại sau này:** kế hoạch yêu
+cầu 404 có link tới 3-4 trang quốc gia đang publish, nhưng **T13/T14 (bảng `noi_dung_quoc_gia` +
+route `/visa-<slug>`) CHƯA làm** ở thời điểm này — không có bảng, không có route. Đã viết
+`getPublishedCountryLinks()` query thẳng `noi_dung_quoc_gia?select=slug,ten_nuoc&published=eq.true&limit=4`
+bọc `try/catch` — bảng chưa tồn tại thì query ném lỗi "relation does not exist", bị nuốt về mảng
+rỗng, trang 404 hiện tại chỉ còn link trang chủ + `/blog` + hotline (đã test xác nhận không có link
+`/visa-` nào). **Khi T13/T14 xong và có nước `published=true`, trang 404 sẽ TỰ ĐỘNG hiện thêm link
+ngay, không cần quay lại sửa file này.** Lưu ý: cột `slug` trong `noi_dung_quoc_gia` LÀ toàn bộ path
+cuối (vd `visa-nhat-ban`, theo đúng thiết kế T13/T14), nên href chỉ nối `/` + `slug`, KHÔNG ghép
+thêm tiền tố `visa-` (đã tự sửa 1 lỗi thật lúc test — ban đầu viết nhầm `/visa-${slug}` ra
+`/visa-visa-nhat-ban`).
+
+**CHƯA làm 410 Gone cho bài đã unpublish** (đúng như kế hoạch ghi) — cần thêm cột theo dõi "đã từng
+publish", phức tạp hơn giá trị ở giai đoạn này.
+
+**Đã test trước khi deploy:** `node --check` OK; import thẳng `worker.js` vào Node (mock
+`env.ASSETS.fetch` trả `index.html` thật cho `/` và 404 cho path lạ, mock Supabase ném lỗi bảng
+chưa tồn tại) — xác nhận GET lẫn HEAD path lạ đều ra đúng 404 kèm navbar/footer/robots
+noindex/link home+blog+hotline, không có link `/visa-` nào; test riêng kịch bản mock
+`noi_dung_quoc_gia` CÓ dữ liệu (2 nước) → xác nhận hiện đúng 2 link `/visa-nhat-ban`/`/visa-han-quoc`
+(bắt được lỗi tiền tố kép nói trên); `/` (trang chủ) vẫn 200 bình thường (hồi quy).
+
+**Đã deploy + xác nhận trên production (commit `3278ae8`):** `curl -sI
+https://topvisa5s.com/khong-ton-tai` → **404**; `grep` xác nhận đúng 1 navbar + 1 footer + đúng 1
+`<meta name="robots" content="noindex">` + có `href="/blog"` + có `tel:0935887922`; mở bằng Claude
+Browser thấy đầy đủ navbar (logo, 5 mục menu, nút CTA) + khối 404 + 2 nút + hotline + footer đầy đủ
+(đọc bằng `javascript_tool` vì ảnh chụp màn hình lúc đã cuộn bị lỗi xếp lớp — giới hạn công cụ đã
+biết, không phải lỗi trang, xem mục 20/47/53) — **không phải trang trắng**. Hồi quy: `/`, `/admin`
+(qua redirect có sẵn `/admin.html`→`/admin`, không liên quan T21), `/blog`, `/assets/logo.svg` vẫn
+200; `/worker.js`/`/wrangler.toml`/`/package.json` vẫn 404 (an ninh Phương án A không đổi — giờ có
+thêm HTML thân thiện thay vì trang trắng khi 404, nhưng vẫn không lộ nội dung file); redirect
+`workers.dev`→domain chính (T1) vẫn hoạt động.
+
+T21 coi như hoàn tất và đã xác nhận sống đúng trên production.
