@@ -64,6 +64,19 @@ export default {
         });
       }
     }
+    // Sitemap động (kế hoạch SEO T5) — PHẢI đứng TRƯỚC dòng env.ASSETS.fetch() fallback bên dưới để
+    // route này luôn thắng, dù file tĩnh 02_Source/public/sitemap.xml có lỡ còn sót lại hay không
+    // (đã xoá file đó, xem CLAUDE.md). Nhận cả HEAD, cùng lý do đã áp dụng cho /blog (mục 3).
+    if (url.pathname === '/sitemap.xml' && (request.method === 'GET' || request.method === 'HEAD')) {
+      try {
+        return await renderSitemap(request, env);
+      } catch (e) {
+        console.error('renderSitemap lỗi:', e);
+        return new Response('Không tải được sitemap, vui lòng thử lại sau.', {
+          status: 500, headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+      }
+    }
     // Mọi request khác: thử phục vụ file tĩnh trước (hành vi cũ, GIỮ NGUYÊN 100% cho asset thật —
     // index.html/admin.html/robots.txt/assets/...). CHỈ khi Cloudflare không tìm thấy gì (404) —
     // path gõ sai, link cũ đã xoá, slug /blog hoặc /visa-<slug> tương lai không tồn tại — mới tự
@@ -424,6 +437,96 @@ ${chrome.footer}
   return new Response(html, {
     status: 404,
     headers: { 'Content-Type': 'text/html;charset=utf-8', 'Cache-Control': 'no-store' }
+  });
+}
+
+/* ==================== SITEMAP ĐỘNG — /sitemap.xml (kế hoạch SEO T5) ====================
+   Trước T5: 02_Source/public/sitemap.xml TĨNH chỉ có đúng 1 URL trang chủ, lastmod hardcode
+   "2026-08-07" không bao giờ tự cập nhật — đã xoá file này (worker chạy trước env.ASSETS.fetch nên
+   route động dưới đây luôn thắng, xem fetch() ở trên). Ghép 4 nguồn:
+   1. "/" — không có nguồn dữ liệu "lần sửa gần nhất" đáng tin cậy nào (trang chủ gộp nhiều mảng: giá
+      dịch vụ, đánh giá, bài viết mới...) -> KHÔNG bịa lastmod, chỉ có <loc> (hợp lệ theo chuẩn
+      sitemap — <lastmod> là tùy chọn).
+   2. "/blog" — lastmod = updated_at MỚI NHẤT trong các bài published (đã fetch sẵn ở bước 4, không
+      cần query thêm) — đây là ngày THẬT vì nội dung /blog thay đổi đúng theo đó, không phải fabricate.
+   3. "Trang tin cậy" (T11 — chinh-sach-bao-mat.html/dieu-khoan-dich-vu.html/lien-he.html) CHƯA làm ở
+      thời điểm viết T5 -> dò tồn tại THẬT qua env.ASSETS.fetch() (HEAD each file), chỉ đưa vào
+      sitemap nếu trả 200. Khi T11 xong và các file được thêm vào public/, sitemap TỰ ĐỘNG hiện
+      thêm URL ngay lần crawl kế tiếp, không cần quay lại sửa file này — không có <lastmod> đáng tin
+      (asset chỉ có Last-Modified theo lần deploy, không phản ánh đúng "lần sửa NỘI DUNG").
+   4. Trang quốc gia ĐÃ publish (T13/T14, CHƯA làm) — query noi_dung_quoc_gia?published=eq.true bọc
+      try/catch giống hệt cơ chế đã dùng ở trang 404 (T21, xem getPublishedCountryLinks()): bảng
+      chưa tồn tại -> mảng rỗng, không throw. T13 KHÔNG định nghĩa cột updated_at cho bảng này nên
+      chỉ SELECT slug (cột chắc chắn tồn tại theo đúng thiết kế T13) — không suy đoán thêm cột nào
+      khác, tự để không có <lastmod> cho các URL này.
+   5. Toàn bộ posts published — lastmod = updated_at THẬT của từng bài (cột có trigger tự cập nhật,
+      xem 05_Database/13_supabase_setup_phase13.sql) — KHÔNG bịa ngày.
+
+   CHỈ sinh <loc>+<lastmod> — bỏ hẳn <changefreq>/<priority> (Google công bố rõ bỏ qua 2 thẻ này,
+   sinh ra là công sức vô ích, xem kế hoạch SEO T5). <lastmod> chỉ xuất hiện khi có giá trị THẬT —
+   không tự bịa ngày cho URL không có nguồn dữ liệu tin cậy. */
+const TRUSTED_STATIC_PAGES = ['/chinh-sach-bao-mat.html', '/dieu-khoan-dich-vu.html', '/lien-he.html'];
+
+async function getExistingTrustedPages(env, request) {
+  const results = await Promise.all(TRUSTED_STATIC_PAGES.map(async p => {
+    try {
+      const res = await env.ASSETS.fetch(new Request(new URL(p, request.url), { method: 'HEAD' }));
+      return res.ok ? p : null;
+    } catch (e) {
+      return null;
+    }
+  }));
+  return results.filter(Boolean);
+}
+
+async function getPublishedCountrySlugsForSitemap(env) {
+  try {
+    const rows = await supa(env, 'noi_dung_quoc_gia?select=slug&published=eq.true');
+    return (rows || []).map(r => r.slug).filter(Boolean);
+  } catch (e) {
+    return []; // bảng chưa tồn tại (chưa chạy migration T13) hoặc lỗi khác -> không hiện URL, không throw
+  }
+}
+
+function sitemapUrlXml(loc, lastmod) {
+  return '  <url>\n    <loc>' + escHtml(loc) + '</loc>\n' +
+    (lastmod ? '    <lastmod>' + lastmod + '</lastmod>\n' : '') +
+    '  </url>\n';
+}
+
+async function renderSitemap(request, env) {
+  const origin = new URL(request.url).origin;
+  const [trustedPages, countrySlugs, posts] = await Promise.all([
+    getExistingTrustedPages(env, request),
+    getPublishedCountrySlugsForSitemap(env),
+    // KHÔNG catch ở đây (khác 2 nguồn phụ trên) — posts là nội dung CHÍNH của sitemap, lỗi thật
+    // (vd Supabase down) nên rơi ra ngoài cho catch ở fetch() trả 500, thay vì âm thầm phát sinh
+    // 1 sitemap "200 OK" trông có vẻ ổn nhưng thiếu sạch mọi bài viết — Google có thể lỡ tin nhầm
+    // đó là danh sách đầy đủ.
+    supa(env, 'posts?select=id,slug,updated_at&published=eq.true')
+  ]);
+
+  // lastmod của "/blog" = ngày mới nhất trong updated_at của các bài published (so sánh chuỗi
+  // "YYYY-MM-DD" đúng thứ tự thời gian) — không cần query riêng, tận dụng luôn kết quả posts ở trên.
+  const latestPostDate = (posts || []).reduce((max, p) => {
+    const d = (p.updated_at || '').slice(0, 10);
+    return d && d > max ? d : max;
+  }, '');
+
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  xml += sitemapUrlXml(origin + '/', '');
+  xml += sitemapUrlXml(origin + '/blog', latestPostDate);
+  for (const p of trustedPages) xml += sitemapUrlXml(origin + p, '');
+  for (const slug of countrySlugs) xml += sitemapUrlXml(origin + '/' + slug, '');
+  for (const p of (posts || [])) {
+    const href = origin + '/blog/' + (p.slug || 'bai-viet') + '-' + p.id;
+    xml += sitemapUrlXml(href, (p.updated_at || '').slice(0, 10));
+  }
+  xml += '</urlset>';
+
+  return new Response(xml, {
+    status: 200,
+    headers: { 'Content-Type': 'text/xml;charset=utf-8', 'Cache-Control': 'public,max-age=300' }
   });
 }
 
