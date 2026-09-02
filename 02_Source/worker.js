@@ -465,7 +465,11 @@ ${chrome.footer}
    CHỈ sinh <loc>+<lastmod> — bỏ hẳn <changefreq>/<priority> (Google công bố rõ bỏ qua 2 thẻ này,
    sinh ra là công sức vô ích, xem kế hoạch SEO T5). <lastmod> chỉ xuất hiện khi có giá trị THẬT —
    không tự bịa ngày cho URL không có nguồn dữ liệu tin cậy. */
-const TRUSTED_STATIC_PAGES = ['/chinh-sach-bao-mat.html', '/dieu-khoan-dich-vu.html', '/lien-he.html'];
+// Dùng path KHÔNG đuôi ".html" — khớp đúng canonical thật của 3 trang (T11, 2026-09) và cách
+// Cloudflare Static Assets phục vụ chúng: request ".html" bị 307-redirect sang bản không đuôi
+// (đã xác nhận qua hành vi /admin.html -> /admin), nên dò tồn tại bằng path ".html" sẽ luôn ra
+// res.ok=false (307 không phải 2xx) dù file có tồn tại thật — dò đúng path không đuôi mới chính xác.
+const TRUSTED_STATIC_PAGES = ['/chinh-sach-bao-mat', '/dieu-khoan-dich-vu', '/lien-he'];
 
 async function getExistingTrustedPages(env, request) {
   const results = await Promise.all(TRUSTED_STATIC_PAGES.map(async p => {
