@@ -467,16 +467,16 @@ footer a:hover{color:#fff}
 <a href="#noi-dung" class="skip-link">Bỏ qua tới nội dung</a>
 <nav class="navbar">
   <div class="container nav-inner">
-    <a href="#banner" class="logo"><img src="assets/logo.svg" alt="Logo Top Visa 5S" width="50" height="40">Top <span>Visa 5S</span></a>
+    <a href="/#banner" class="logo"><img src="assets/logo.svg" alt="Logo Top Visa 5S" width="50" height="40">Top <span>Visa 5S</span></a>
     <ul class="nav-links" id="navLinks">
-      <li><a href="#dich-vu">🧳 Dịch vụ</a></li>
-      <li><a href="#loi-ich">⭐ Lợi ích</a></li>
-      <li><a href="#danh-gia">💬 Đánh giá</a></li>
+      <li><a href="/#dich-vu">🧳 Dịch vụ</a></li>
+      <li><a href="/#loi-ich">⭐ Lợi ích</a></li>
+      <li><a href="/#danh-gia">💬 Đánh giá</a></li>
       <!-- Menu "Tin tức"/theo Danh mục bài viết KHÁC được chèn động ngay TRƯỚC link FAQ này —
            chỉ hiện khi Danh mục đó có ít nhất 1 bài viết công khai, xem script cuối trang
            (mục "DANH MỤC BÀI VIẾT ĐỘNG"). Không còn link "Tin tức" cứng ở đây (2026-08). -->
-      <li><a href="#faq">❓ FAQ</a></li>
-      <li><a href="#dang-ky" class="btn btn-cta" style="padding:10px 20px">📝 Đăng ký tư vấn</a></li>
+      <li><a href="/#faq">❓ FAQ</a></li>
+      <li><a href="/#dang-ky" class="btn btn-cta" style="padding:10px 20px">📝 Đăng ký tư vấn</a></li>
     </ul>
     <button class="hamburger" id="hamburger" aria-label="Mở menu">☰</button>
   </div>
@@ -537,16 +537,16 @@ footer a:hover{color:#fff}
   <div class="container">
     <div class="footer-grid">
       <div>
-        <a href="#banner" class="logo"><img src="assets/logo.svg" alt="Logo Top Visa 5S" width="50" height="40">Top <span>Visa 5S</span></a>
+        <a href="/#banner" class="logo"><img src="assets/logo.svg" alt="Logo Top Visa 5S" width="50" height="40">Top <span>Visa 5S</span></a>
         <p style="font-size:14px">Dịch vụ visa trọn gói uy tín tại Đà Nẵng — nhanh chóng, minh bạch, tận tâm.</p>
       </div>
       <div>
         <h4>Dịch vụ</h4>
         <ul>
-          <li><a href="#dich-vu">Visa Nhật Bản</a></li>
-          <li><a href="#dich-vu">Visa Hàn Quốc</a></li>
-          <li><a href="#dich-vu">Visa Schengen</a></li>
-          <li><a href="#dich-vu">Visa Mỹ – Úc</a></li>
+          <li><a href="/#dich-vu">Visa Nhật Bản</a></li>
+          <li><a href="/#dich-vu">Visa Hàn Quốc</a></li>
+          <li><a href="/#dich-vu">Visa Schengen</a></li>
+          <li><a href="/#dich-vu">Visa Mỹ – Úc</a></li>
         </ul>
       </div>
       <div>
@@ -592,6 +592,39 @@ const scrollTopBtn = document.getElementById('scrollTopBtn');
 window.addEventListener('scroll', () => {
   scrollTopBtn.classList.toggle('show', window.scrollY > 600);
 });
+
+/* Menu "Danh mục bài viết" động — đồng bộ với mục "DANH MỤC BÀI VIẾT ĐỘNG" trong index.html, CHỈ
+   dựng lại phần MENU (trang này không có section tương ứng) — link trỏ VỀ trang chủ (/#cat-...)
+   vì section thật chỉ tồn tại ở đó. Copy đúng slugifyCatName()/thứ tự sort A-Z để tên/slug khớp
+   100% với trang chủ, tránh 2 nơi lệch nhau (bài học mục 12/31.F CLAUDE.md). */
+(async function(){
+  const SUPABASE_URL = "https://vvnjxvcdnzttcdufjjgo.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_mp5Q5GRLV_ll8E4eNeivWw_aUv0q0xR";
+  function slugifyCatName(s){
+    return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d')
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'muc';
+  }
+  try{
+    const res = await fetch(SUPABASE_URL+'/rest/v1/posts?select=categories(id,name)&published=eq.true', {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer '+SUPABASE_ANON_KEY }
+    });
+    if(!res.ok) return;
+    const posts = await res.json();
+    const names = new Set();
+    posts.forEach(p => { if(p.categories) names.add(p.categories.name); });
+    if(!names.size) return;
+    const faqLi = document.querySelector('#navLinks a[href="/#faq"]')?.closest('li');
+    if(!faqLi) return;
+    [...names].sort((a,b)=>a.localeCompare(b,'vi')).forEach(name=>{
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '/#cat-'+slugifyCatName(name);
+      a.textContent = '📰 '+name;
+      li.appendChild(a);
+      faqLi.parentNode.insertBefore(li, faqLi);
+    });
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
