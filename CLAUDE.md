@@ -2288,3 +2288,85 @@ trên chính production `topvisa5s.com` TRƯỚC khi deploy T3** (số liệu d�
 ~10 lượt/ngày nên PageSpeed Insights/CrUX chưa có dữ liệu thật, số Lighthouse-mô-phỏng (hay ở đây là
 Performance API đo trực tiếp) chỉ đủ để SO SÁNH tương đối trước/sau, không phải con số cuối cùng.
 Số liệu thật (28 ngày dữ liệu CrUX) chỉ đọc được sau khi có đủ traffic thật.
+
+## 54. T4 — kết xuất bài viết phía server: `/blog` + `/blog/<slug>-<id>` (2026-09-02)
+
+**Bối cảnh:** trước T4, bài viết nạp bằng JS từ Supabase vào `div#categorySections` rỗng lúc tải
+trang, chi tiết mở bằng `openPostDetail(i)` không đổi URL — Google không có gì để lập chỉ mục, mọi
+bài viết mang lại 0 lượt tìm kiếm. Task lớn, chia 4 bước, dừng lại xin xác nhận sau mỗi bước.
+
+**Bước 1 — migration `05_Database/13_supabase_setup_phase13.sql`** (PM đã tự chạy, xác nhận
+2026-09-02): bật extension `unaccent`; thêm `posts.slug text` + `posts.updated_at timestamptz
+default now()`; trigger `set_posts_updated_at` tự cập nhật `updated_at` mỗi lần UPDATE; backfill
+`slug` cho bài đã có (`lower(title)` → thay riêng `đ`→`d` → `unaccent()` → chỉ giữ `a-z0-9`, nối
+bằng `-`) — đã mô phỏng bằng Python trước khi viết SQL, và xác nhận lại bằng REST API sau khi PM
+chạy: 12 bài đều ra đúng slug dự đoán, không ký tự thừa/trùng. **Không có `insert into`**, idempotent
+đúng quy tắc `05_Database/README.md`. Không phải tạo bảng mới nên **không cần** sửa
+`06_Backup_Tool/backup-supabase.mjs`.
+
+**Bước 2 — route `/blog` (`worker.js`):**
+- `getSiteChrome(env, request)`: trích CSS design system + navbar + footer **trực tiếp từ chính
+  `index.html` đang chạy** (qua `env.ASSETS.fetch('/')` rồi regex-extract `<style>`/`<nav
+  class="navbar">`/`<footer id="footer">`) — **KHÔNG copy cứng 1 bản riêng trong `worker.js`**, để
+  `/blog*` luôn tự động khớp 100% với trang chủ mỗi khi sau này ai sửa design system/navbar/footer,
+  tránh lặp lại đúng kiểu rủi ro "2 bản sao dễ lệch nhau" đã gặp nhiều lần (giá dịch vụ mục 31.D,
+  FAQ/JSON-LD mục 12). Asset tương đối (`assets/logo.svg`) trích ra được đổi thành tuyệt đối
+  (`/assets/logo.svg`), anchor `#dich-vu` đổi thành `/#dich-vu` — vì `/blog*` không đứng ở `/` nên
+  đường dẫn/anchor tương đối sẽ sai chỗ.
+- `renderBlogList()`: fetch `posts?select=id,title,slug,image_url,created_at,categories(name)
+  &published=eq.true&order=created_at.desc`, mỗi bài bọc `<article><a class="card-post"
+  href="/blog/<slug>-<id>">` (dùng lại nguyên class CSS `.card-post` có sẵn — hoạt động bình thường
+  trên thẻ `<a>` vì rule đã có `display:flex`, không cần CSS mới). `<head>` riêng: title/description/
+  self-canonical (`url.origin+url.pathname`, đúng quy tắc T1)/og:*. Thêm 1 rule CSS nhỏ
+  `h1.section-title` (mở rộng selector `h2.section-title` có sẵn sang thêm thẻ H1, dùng lại y
+  nguyên giá trị/biến màu, không bịa gì mới) để mỗi trang có đúng 1 H1 ngữ nghĩa.
+- Response: `Content-Type: text/html;charset=utf-8`, `Cache-Control: public,max-age=300`.
+
+**Bước 3 — route `/blog/<slug>-<id>` (`worker.js`):**
+- Tách `<id>` bằng regex `^(.+)-(\d+)$` — luôn lấy đúng SỐ CUỐI CÙNG làm id, kể cả khi slug chứa số
+  khác (vd ngày tháng `...-13-08-2026-15` vẫn tách đúng `id=15`). Có thêm nhánh fallback
+  `/blog/<id>` (không có slug) cho chắc.
+- Tra bài theo `id` + `published=eq.true` — không tồn tại/chưa publish → **404 thật** (không
+  redirect trang chủ, tránh Google coi là soft-404). Slug trong URL sai (đổi tiêu đề, gõ tay, hoặc
+  rỗng) → **301** sang đúng `/blog/<slug thật>-<id>`.
+- `<head>` sinh động: `title`=`p.title` (nguyên văn, không thêm hậu tố thương hiệu — theo đúng chữ
+  của kế hoạch), `description` = 155 ký tự đầu `p.content` đã bỏ thẻ HTML (hàm
+  `stripHtmlAndTruncate()` — phòng hờ dù `content` hiện tại là text thường, không có HTML thật),
+  self-canonical, `og:image` = `p.image_url` (fallback `og-image.png` nếu bài chưa có ảnh). JSON-LD
+  `Article` đủ 5 field theo đúng yêu cầu: `headline`/`datePublished`/`dateModified`/`author`
+  (`Organization`, vì DB không lưu tác giả riêng từng bài)/`image`.
+- Nội dung bài hiển thị qua class mới `.article-title`/`.article-meta`/`.article-body`/
+  `.article-cover` (thêm vào cùng khối CSS phụ với `h1.section-title` ở Bước 2, dùng lại biến màu/
+  khoảng cách có sẵn).
+
+**Bước 4 — `index.html`, card bài viết (script "DANH MỤC BÀI VIẾT ĐỘNG"):**
+- `<div class="card-post" onclick="openPostDetail(i)">` → `<a class="card-post"
+  href="/blog/<slug>-<id>" onclick="return openPostDetail(i,event)">` — Google/crawler giờ có link
+  thật để đi theo và index được trang chi tiết SSR.
+- `openPostDetail(i,ev)` thêm tham số `ev`: **Ctrl/Cmd/Shift+click** (ý định mở tab mới/cửa sổ mới)
+  → trả `true`, KHÔNG gọi `preventDefault` → trình duyệt tự điều hướng theo `href` thật; **click
+  thường** → `preventDefault()` + mở popup như cũ (giữ nguyên UX quen thuộc, không rời trang) + trả
+  `false`. JS lỗi/bị tắt → link vẫn hoạt động bình thường vì bản chất là `<a href>` thật.
+
+**Đã kiểm tra kỹ trước khi tin tưởng (mỗi bước test bằng dữ liệu THẬT, không phải giả lập tùy ý):**
+- Slug backfill: mô phỏng Python + đối chiếu REST API sau khi PM chạy — khớp 100%.
+- `/blog`: import thẳng `worker.js` vào Node, mock `env.ASSETS.fetch` trả `index.html` thật + mock
+  Supabase trả 3 bài thật (có 1 bài `categories:null` để thử edge case) → 3 `<article>`, canonical
+  đúng, navbar/footer/asset-path/anchor đều đúng, đúng 1 H1 — mở bằng trình duyệt thật xác nhận
+  layout không vỡ (đo bằng JS vì ảnh chụp màn hình bị lỗi công cụ, xem mục 20/47).
+- `/blog/<slug>-<id>`: dùng bài thật "LỄ OBON 2026..." (nhiều đoạn, emoji, tiếng Nhật) — xác nhận cả
+  câu ở GIỮA lẫn câu CUỐI bài đều có trong HTML (chứng minh không bị cắt, đúng trọng tâm nghiệm thu
+  "view-source thấy đầy đủ nội dung"), JSON-LD parse được và đủ 5 field, test riêng 5 tình huống
+  (đúng slug/sai slug/chỉ id/id không tồn tại/path rác) đều ra đúng status (200/301/301/404/404).
+- Bước 4: test 2 lớp — gọi `openPostDetail()` trực tiếp với event giả lập (xác nhận đúng
+  `preventDefault` có/không gọi theo từng loại click) VÀ bấm chuột THẬT vào 1 card chèn vào DOM
+  (không chỉ gọi hàm) — popup mở đúng, đúng tiêu đề.
+- `node --check`/parse toàn bộ `<script>` inline: OK ở cả 2 file.
+
+**Chưa test được** (cần deploy thật): redirect 301 sống trên production, curl `grep -c "<article"`
+trên `topvisa5s.com/blog`, dán URL bài viết thật vào Google Rich Results Test — sẽ làm ngay sau khi
+deploy.
+
+**⚠️ Việc CHƯA làm (đã ghi rõ trong kế hoạch, để dành cho sau):** việc 6 của T4 ("mỗi bài blog nối
+1-2 internal link về trang quốc gia liên quan") — kế hoạch tự ghi chú "làm được sau T14" (trang quốc
+gia chưa tồn tại), không phải bị bỏ sót.

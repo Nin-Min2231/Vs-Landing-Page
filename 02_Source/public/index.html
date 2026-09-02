@@ -1182,7 +1182,7 @@ function slugifyCatName(s){
           <div class="grid-posts">${group.posts.map(p=>{
             const excerpt = (p.content||'').slice(0,110);
             return `
-            <div class="card-post" onclick="openPostDetail(${p.__idx})">
+            <a class="card-post" href="/blog/${esc(p.slug||'bai-viet')}-${p.id}" onclick="return openPostDetail(${p.__idx},event)">
               ${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy" width="400" height="174">`
                              : `<div class="thumb-placeholder">📰</div>`}
               <div class="body">
@@ -1191,7 +1191,7 @@ function slugifyCatName(s){
                 <div class="excerpt">${esc(excerpt)}${(p.content||'').length>110?'...':''}</div>
                 <div class="meta"><span>${new Date(p.created_at).toLocaleDateString('vi-VN')}</span><span class="post-readmore">Đọc tiếp →</span></div>
               </div>
-            </div>`;
+            </a>`;
           }).join('')}</div>
         </div>`;
       sectionsWrap.appendChild(section);
@@ -1200,7 +1200,15 @@ function slugifyCatName(s){
     initScrollSpy(); // quét lại để theo dõi cuộn cho menu/section mới chèn vào
   }catch(e){ /* im lặng bỏ qua nếu không tải được, không ảnh hưởng phần còn lại của trang */ }
 })();
-function openPostDetail(i){
+function openPostDetail(i,ev){
+  // Card bài viết giờ là <a href="/blog/..."> thật (T4, kế hoạch SEO — để Google có link đi theo
+  // và crawl được trang chi tiết SSR). Ctrl/Cmd/Shift+click (mở tab mới/cửa sổ mới) và JS lỗi/bị
+  // tắt -> để trình duyệt tự điều hướng theo href thật, KHÔNG chặn. Click thường -> mở popup như
+  // cũ (preventDefault để không rời trang), vẫn giữ đúng UX quen thuộc cho khách đang xem trang chủ.
+  if(ev){
+    if(ev.ctrlKey||ev.metaKey||ev.shiftKey) return true;
+    ev.preventDefault();
+  }
   const p = window.__POSTS__[i];
   const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   document.getElementById('postDetailCat').textContent = p.categories?.name || 'Bài viết';
@@ -1213,6 +1221,7 @@ function openPostDetail(i){
     </div>`;
   document.getElementById('postOverlay').classList.add('show');
   document.getElementById('postDetailBody').scrollTop = 0;
+  return false;
 }
 function closePostDetail(){ document.getElementById('postOverlay').classList.remove('show'); }
 document.getElementById('postOverlay').addEventListener('click', e=>{

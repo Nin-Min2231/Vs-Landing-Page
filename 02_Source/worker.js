@@ -38,6 +38,29 @@ export default {
         return env.ASSETS.fetch(request);
       }
     }
+    // Danh sách bài viết SSR (kế hoạch SEO T4) — Google/Facebook/Bing đọc được nội dung ngay,
+    // không còn phụ thuộc JS phía client như trước (div#categorySections rỗng lúc tải trang).
+    if (url.pathname === '/blog' && request.method === 'GET') {
+      try {
+        return await renderBlogList(request, env);
+      } catch (e) {
+        console.error('renderBlogList lỗi:', e);
+        return new Response('Không tải được danh sách bài viết, vui lòng thử lại sau.', {
+          status: 500, headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+      }
+    }
+    // Chi tiết 1 bài viết SSR (kế hoạch SEO T4) — /blog/<slug>-<id>, tra theo id (số cuối URL).
+    if (url.pathname.startsWith('/blog/') && request.method === 'GET') {
+      try {
+        return await renderBlogPost(request, env);
+      } catch (e) {
+        console.error('renderBlogPost lỗi:', e);
+        return new Response('Không tải được bài viết, vui lòng thử lại sau.', {
+          status: 500, headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+      }
+    }
     return env.ASSETS.fetch(request); // hành vi cũ — GIỮ NGUYÊN cho mọi request khác
   },
   async scheduled(event, env, ctx) {
@@ -96,6 +119,209 @@ async function renderHomepageWithLivePrices(request, env) {
   headers.set('Content-Type', assetRes.headers.get('Content-Type') || 'text/html;charset=UTF-8');
   headers.set('Cache-Control', 'public, max-age=300');
   return new Response(html, { status: assetRes.status, headers });
+}
+
+/* ==================== BLOG SSR — /blog và /blog/<slug>-<id> (kế hoạch SEO T4) ====================
+   Trước T4: div#categorySections rỗng lúc tải trang (bài viết nạp bằng JS), chi tiết mở bằng
+   openPostDetail(i) không đổi URL -> Google không có gì để lập chỉ mục. 2 route dưới đây dựng HTML
+   ĐẦY ĐỦ nội dung ngay trong response đầu tiên, có <head> riêng (title/description/self-canonical/
+   og:*) + JSON-LD Article ở trang chi tiết.
+
+   getSiteChrome() trích CSS design system + navbar + footer TRỰC TIẾP từ chính index.html đang chạy
+   (qua env.ASSETS.fetch) — KHÔNG copy cứng 1 bản riêng trong worker.js, để /blog* luôn tự động khớp
+   100% với trang chủ mỗi khi sau này ai đó sửa design system/navbar/footer, không phải nhớ sửa 2
+   nơi (đúng bài học "2 bản sao dễ lệch nhau" đã gặp nhiều lần — giá dịch vụ mục 31.D, FAQ/JSON-LD
+   mục 12). Asset tương đối ("assets/logo.svg") trong navbar/footer trích ra được đổi thành tuyệt
+   đối ("/assets/logo.svg") vì /blog* không đứng ở "/" nên đường dẫn tương đối sẽ trỏ sai chỗ; anchor
+   "#dich-vu" đổi thành "/#dich-vu" để bấm vào luôn quay lại đúng section ở trang chủ (các section đó
+   không tồn tại trên chính trang /blog*). */
+function escHtml(s) {
+  return (s ?? '').toString().replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+async function getSiteChrome(env, request) {
+  const homeRes = await env.ASSETS.fetch(new Request(new URL('/', request.url)));
+  if (!homeRes.ok) throw new Error('Không tải được index.html để trích design system (HTTP ' + homeRes.status + ')');
+  const html = await homeRes.text();
+  const fixPaths = s => s.replace(/(src|srcset)="assets\//g, '$1="/assets/').replace(/href="#/g, 'href="/#');
+  const css = (html.match(/<style>([\s\S]*?)<\/style>/) || [])[1] || '';
+  const navbar = fixPaths((html.match(/<nav class="navbar">[\s\S]*?<\/nav>/) || [])[0] || '');
+  const footer = fixPaths((html.match(/<footer id="footer">[\s\S]*?<\/footer>/) || [])[0] || '');
+  return { css, navbar, footer };
+}
+// Head chung cho mọi trang /blog* — dùng lại đúng 6 dòng icon/font đã có ở index.html, sửa path
+// "assets/..." tương đối thành "/assets/..." tuyệt đối vì lý do đã giải thích ở trên. 2 rule CSS phụ
+// thêm cuối cùng (h1.section-title, .article-title) CHỈ nới rộng selector có sẵn sang thêm 1 thẻ H1
+// (để mỗi trang có ĐÚNG 1 H1 ngữ nghĩa) — dùng lại y nguyên giá trị số/biến màu đã có, không bịa
+// thêm màu/khoảng cách mới.
+function blogHeadCommon(title, description, canonical, ogImage) {
+  return `<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1B6EF3">
+<title>${escHtml(title)}</title>
+<meta name="description" content="${escHtml(description)}">
+<link rel="canonical" href="${escHtml(canonical)}">
+<link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+<link rel="icon" type="image/png" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-180.png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Top Visa 5S">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:url" content="${escHtml(canonical)}">
+<meta property="og:title" content="${escHtml(title)}">
+<meta property="og:description" content="${escHtml(description)}">
+<meta property="og:image" content="${escHtml(ogImage)}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700&display=swap" rel="stylesheet">`;
+}
+const BLOG_EXTRA_CSS = `
+h1.section-title{font-size:32px;font-weight:700;text-align:center;margin-bottom:var(--sp-1)}
+.article-title{font-size:28px;font-weight:700;line-height:1.3;margin:var(--sp-2) 0 6px}
+.article-meta{font-size:13px;color:var(--color-text-muted);margin-bottom:var(--sp-3)}
+.article-body{font-size:16px;line-height:1.8;color:var(--color-text);white-space:pre-wrap}
+.article-cover{width:100%;max-height:420px;object-fit:cover;border-radius:var(--radius-lg);margin-bottom:var(--sp-3)}
+`;
+
+const DEFAULT_OG_IMAGE = 'https://topvisa5s.com/assets/og-image.png';
+
+async function renderBlogList(request, env) {
+  const url = new URL(request.url);
+  const canonical = url.origin + url.pathname; // T1: origin+pathname, KHÔNG kèm query
+  const [chrome, posts] = await Promise.all([
+    getSiteChrome(env, request),
+    supa(env, 'posts?select=id,title,slug,image_url,created_at,categories(name)&published=eq.true&order=created_at.desc')
+  ]);
+  const title = 'Blog / Tin tức Visa – Top Visa 5S';
+  const description = 'Cập nhật tin tức, kinh nghiệm và hướng dẫn thủ tục xin visa Nhật Bản, Hàn Quốc, Đài Loan, Trung Quốc, Schengen, Mỹ, Úc từ Top Visa 5S.';
+
+  const articlesHtml = (posts || []).map(p => {
+    const href = '/blog/' + (p.slug || 'bai-viet') + '-' + p.id;
+    const dateStr = new Date(p.created_at).toLocaleDateString('vi-VN');
+    const thumb = p.image_url
+      ? `<img class="thumb" src="${escHtml(p.image_url)}" alt="${escHtml(p.title)}" loading="lazy" width="400" height="174">`
+      : `<div class="thumb-placeholder">📰</div>`;
+    return `<article><a class="card-post" href="${href}">
+      ${thumb}
+      <div class="body">
+        <div class="cat">${escHtml(p.categories?.name || 'Tin tức')}</div>
+        <h3>${escHtml(p.title)}</h3>
+        <div class="meta"><span>${dateStr}</span><span class="post-readmore">Đọc tiếp →</span></div>
+      </div>
+    </a></article>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+${blogHeadCommon(title, description, canonical, DEFAULT_OG_IMAGE)}
+<style>${chrome.css}${BLOG_EXTRA_CSS}</style>
+</head>
+<body>
+<a href="#noi-dung" class="skip-link">Bỏ qua tới nội dung</a>
+${chrome.navbar}
+<main id="noi-dung">
+<section id="blog-list">
+  <div class="container">
+    <h1 class="section-title">Blog / Tin tức Visa</h1>
+    <p class="section-sub">Cập nhật thông tin, kinh nghiệm xin visa mới nhất từ Top Visa 5S</p>
+    <div class="grid-posts">${articlesHtml || '<p style="text-align:center;color:var(--color-text-muted)">Chưa có bài viết nào.</p>'}</div>
+  </div>
+</section>
+</main>
+${chrome.footer}
+</body>
+</html>`;
+
+  return new Response(html, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html;charset=utf-8', 'Cache-Control': 'public,max-age=300' }
+  });
+}
+
+// Bỏ hết thẻ HTML rồi lấy đúng N ký tự đầu — dùng cho meta description (155 ký tự, theo yêu cầu
+// kế hoạch SEO T4). content trong DB hiện tại là text thường (không chứa HTML thật), nhưng vẫn lọc
+// phòng trường hợp ai đó dán nhầm đoạn có thẻ <...> vào — không để lọt vào description hiển thị
+// trên kết quả tìm kiếm.
+function stripHtmlAndTruncate(text, maxLen) {
+  const plain = (text || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  return plain.length > maxLen ? plain.slice(0, maxLen).trim() + '…' : plain;
+}
+
+async function renderBlogPost(request, env) {
+  const url = new URL(request.url);
+  const seg = url.pathname.slice('/blog/'.length).replace(/\/+$/, ''); // phần sau "/blog/", bỏ "/" thừa cuối
+  let urlSlug, id;
+  const mSlugId = seg.match(/^(.+)-(\d+)$/); // "<slug>-<id>" — tách đúng <id> là số cuối cùng
+  const mIdOnly = seg.match(/^(\d+)$/);      // fallback: chỉ gõ "/blog/<id>", không có slug
+  if (mSlugId) { urlSlug = mSlugId[1]; id = mSlugId[2]; }
+  else if (mIdOnly) { urlSlug = ''; id = mIdOnly[1]; }
+  else return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+
+  const rows = await supa(env,
+    'posts?select=id,title,slug,image_url,content,created_at,updated_at,categories(name)' +
+    '&id=eq.' + encodeURIComponent(id) + '&published=eq.true');
+  const p = rows && rows[0];
+  if (!p) return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); // không tồn tại/chưa publish -> 404 thật, KHÔNG redirect về trang chủ (tránh soft-404)
+
+  // Slug trong URL sai (bài đổi tiêu đề, hoặc ai gõ tay/để trống) -> 301 sang URL đúng, đổi tiêu đề
+  // bài không làm hỏng link cũ vì việc tra bài luôn dựa vào id, chưa từng dựa vào slug.
+  const realSlug = p.slug || 'bai-viet';
+  if (urlSlug !== realSlug) {
+    return Response.redirect(url.origin + '/blog/' + realSlug + '-' + p.id, 301);
+  }
+
+  const canonical = url.origin + url.pathname; // T1: origin+pathname, KHÔNG kèm query
+  const description = stripHtmlAndTruncate(p.content, 155);
+  const ogImage = p.image_url || DEFAULT_OG_IMAGE;
+  const dateStr = new Date(p.created_at).toLocaleDateString('vi-VN');
+  const isoPublished = new Date(p.created_at).toISOString();
+  const isoModified = new Date(p.updated_at || p.created_at).toISOString();
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: p.title,
+    datePublished: isoPublished,
+    dateModified: isoModified,
+    author: { '@type': 'Organization', name: 'Top Visa 5S' },
+    image: ogImage
+  };
+
+  const chrome = await getSiteChrome(env, request);
+  const cover = p.image_url
+    ? `<img class="article-cover" src="${escHtml(p.image_url)}" alt="${escHtml(p.title)}" width="800" height="420">`
+    : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+${blogHeadCommon(p.title, description, canonical, ogImage)}
+<style>${chrome.css}${BLOG_EXTRA_CSS}</style>
+<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+</head>
+<body>
+<a href="#noi-dung" class="skip-link">Bỏ qua tới nội dung</a>
+${chrome.navbar}
+<main id="noi-dung">
+<section id="blog-post">
+  <div class="container" style="max-width:760px">
+    <p><a href="/blog">← Tất cả bài viết</a></p>
+    ${cover}
+    <div class="cat">${escHtml(p.categories?.name || 'Tin tức')}</div>
+    <h1 class="article-title">${escHtml(p.title)}</h1>
+    <div class="article-meta">${dateStr}</div>
+    <div class="article-body">${escHtml(p.content || '')}</div>
+  </div>
+</section>
+</main>
+${chrome.footer}
+</body>
+</html>`;
+
+  return new Response(html, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html;charset=utf-8', 'Cache-Control': 'public,max-age=300' }
+  });
 }
 
 /* ==================== BƯỚC 1: SINH THÔNG BÁO MỚI (bỏ qua nếu đã có) ====================
