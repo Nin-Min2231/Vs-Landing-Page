@@ -438,8 +438,14 @@ footer a:hover{color:#fff}
    để tránh 2 cụm nút nổi cùng xoè ra chồng nhau. */
 .chatbox-toggle{position:fixed;right:16px;bottom:90px;z-index:220;width:58px;height:58px;border-radius:50%;
   background:var(--color-primary);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:var(--shadow-md);
-  display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s;
+  display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s,opacity .2s;
   animation:chatboxToggleWiggle 4s ease-in-out infinite}
+/* .float-contact.open xoè 3 nút (Gọi điện/Chat Zalo/Facebook) LÊN TRÊN nút chính, cao tới hơn
+   150px từ đáy màn hình — đè lên đúng vùng .chatbox-toggle (90-148px). Chiều "chatbox mở thì tự
+   đóng float-contact" đã có sẵn (chatboxToggleOpen()), còn chiều ngược lại (float-contact mở thì
+   ẩn chatbox-toggle) qua class này, gắn/gỡ ở JS "NÚT NỔI" — đối xứng, tránh 2 cụm nút nổi chồng
+   nhau ở CẢ 2 chiều bấm. */
+.chatbox-toggle.is-hidden-by-float{opacity:0;pointer-events:none;transform:scale(.6)}
 .chatbox-toggle:hover{background:var(--color-primary-dark)}
 .chatbox-toggle .badge-dot{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;
   background:var(--color-accent);border:2px solid #fff}
@@ -1280,10 +1286,16 @@ const floatContact = document.getElementById('floatContact');
 document.getElementById('floatToggle').addEventListener('click', e=>{
   e.stopPropagation();
   floatContact.classList.toggle('open');
+  // Ẩn nút Chat Box lúc cụm nút liên hệ đang xoè, tránh đè lên "Facebook" — xem CSS
+  // .chatbox-toggle.is-hidden-by-float. Chiều ngược lại (mở Chat Box) đã có sẵn ở chatboxToggleOpen().
+  const cbToggle = document.getElementById('chatboxToggle');
+  if(cbToggle) cbToggle.classList.toggle('is-hidden-by-float', floatContact.classList.contains('open'));
 });
 document.addEventListener('click', e=>{
   if(floatContact.classList.contains('open') && !floatContact.contains(e.target)){
     floatContact.classList.remove('open');
+    const cbToggle = document.getElementById('chatboxToggle');
+    if(cbToggle) cbToggle.classList.remove('is-hidden-by-float');
   }
 });
 
