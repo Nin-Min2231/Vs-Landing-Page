@@ -102,13 +102,13 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 .navbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);
   box-shadow:var(--shadow-sm);transition:.3s}
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:68px}
-.logo{font-size:22px;font-weight:700;color:var(--color-primary);text-decoration:none;
-  display:inline-flex;align-items:center;gap:10px}
+.logo{font-size:20px;font-weight:700;color:var(--color-primary);text-decoration:none;
+  display:inline-flex;align-items:center;gap:10px;white-space:nowrap}
 .logo img{height:40px;width:auto}
 .logo span{color:var(--color-accent)}
-.nav-links{display:flex;gap:var(--sp-4);align-items:center;list-style:none}
-.nav-links a{text-decoration:none;color:var(--color-text);font-weight:700;font-size:15px;
-  position:relative;padding:6px 2px;transition:.2s}
+.nav-links{display:flex;gap:var(--sp-2);align-items:center;list-style:none}
+.nav-links a{text-decoration:none;color:var(--color-text);font-weight:700;font-size:14px;
+  position:relative;padding:6px 2px;transition:.2s;white-space:nowrap}
 .nav-links a:not(.btn)::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:0;
   background:var(--color-primary);transition:width .25s ease}
 .nav-links a:not(.btn):hover::after,.nav-links a:not(.btn).active::after{width:100%}
@@ -117,6 +117,12 @@ p.section-sub{text-align:center;color:var(--color-text-muted);max-width:560px;ma
 .nav-links a.btn-cta{box-shadow:0 0 0 0 rgba(255,122,41,.5);animation:cta-glow 2.5s infinite}
 @keyframes cta-glow{0%{box-shadow:0 0 0 0 rgba(255,122,41,.45)}70%{box-shadow:0 0 0 10px rgba(255,122,41,0)}100%{box-shadow:0 0 0 0 rgba(255,122,41,0)}}
 .hamburger{display:none;background:none;border:none;font-size:26px;cursor:pointer;color:var(--color-text)}
+@media (max-width:1099px){
+  .hamburger{display:block}
+  .nav-links{display:none;position:absolute;top:68px;left:0;right:0;background:#fff;
+    flex-direction:column;padding:var(--sp-3);gap:var(--sp-2);box-shadow:var(--shadow-md)}
+  .nav-links.show{display:flex}
+}
 
 /* ==================== HERO ==================== */
 .hero{background:linear-gradient(135deg,var(--color-primary-light) 0%,#fff 60%);padding:var(--sp-10) 0}
@@ -451,10 +457,6 @@ footer a:hover{color:#fff}
 @media (max-width:767px){
   section{padding:var(--sp-6) 0}
   h2.section-title{font-size:24px}
-  .hamburger{display:block}
-  .nav-links{display:none;position:absolute;top:68px;left:0;right:0;background:#fff;
-    flex-direction:column;padding:var(--sp-3);gap:var(--sp-2);box-shadow:var(--shadow-md)}
-  .nav-links.show{display:flex}
   .hero-grid,.register-grid{grid-template-columns:1fr}
   .hero h1{font-size:28px}
   .hero .btn{width:100%}
