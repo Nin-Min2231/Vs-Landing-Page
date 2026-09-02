@@ -64,7 +64,20 @@ export default {
         });
       }
     }
-    return env.ASSETS.fetch(request); // hành vi cũ — GIỮ NGUYÊN cho mọi request khác
+    // Mọi request khác: thử phục vụ file tĩnh trước (hành vi cũ, GIỮ NGUYÊN 100% cho asset thật —
+    // index.html/admin.html/robots.txt/assets/...). CHỈ khi Cloudflare không tìm thấy gì (404) —
+    // path gõ sai, link cũ đã xoá, slug /blog hoặc /visa-<slug> tương lai không tồn tại — mới tự
+    // dựng trang 404 đầy đủ navbar/footer thay vì trang trắng mặc định (kế hoạch SEO T21).
+    const assetRes = await env.ASSETS.fetch(request);
+    if (assetRes.status === 404 && (request.method === 'GET' || request.method === 'HEAD')) {
+      try {
+        return await render404Page(request, env);
+      } catch (e) {
+        console.error('render404Page lỗi:', e);
+        return assetRes; // lỗi khi tự dựng trang -> rơi về 404 mặc định của Cloudflare, không vỡ trang
+      }
+    }
+    return assetRes;
   },
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runNotificationJob(env));
@@ -324,6 +337,93 @@ ${chrome.footer}
   return new Response(html, {
     status: 200,
     headers: { 'Content-Type': 'text/html;charset=utf-8', 'Cache-Control': 'public,max-age=300' }
+  });
+}
+
+/* ==================== TRANG 404 ĐẦY ĐỦ — mọi path không khớp route nào (kế hoạch SEO T21) ====
+   Trước T21: path sai/đã xoá rơi xuống 404 mặc định của Cloudflare (trang trắng, không navbar) ->
+   khách vào là thoát luôn. Sắp có 2 nhóm route động (/blog/<slug>-<id>, /visa-<slug>) sẽ sinh thêm
+   nhiều đường dẫn 404 tiềm năng (slug gõ sai, bài bị unpublish, link cũ chia sẻ trên Facebook, nước
+   chưa publish) nên cần trang 404 tử tế: navbar, footer, câu xin lỗi, link về trang chủ + /blog +
+   trang quốc gia ĐANG PUBLISH + hotline — dùng lại đúng getSiteChrome() đã có ở khối Blog SSR phía
+   trên (không copy riêng 1 bản navbar/footer khác). noindex để Google không lập chỉ mục nhầm trang
+   lỗi. CHƯA làm 410 Gone cho bài đã unpublish — cần thêm cột theo dõi "đã từng publish", phức tạp
+   hơn giá trị ở giai đoạn này; khi nào thật sự gỡ bài thì làm sau.
+
+   Link trang quốc gia lấy ĐỘNG từ bảng noi_dung_quoc_gia (T13/T14, CHƯA làm ở thời điểm viết T21)
+   -> query dưới đây sẽ ném lỗi "relation does not exist" và bị nuốt về mảng rỗng (catch), nên trang
+   404 hiện tại chỉ còn link trang chủ + /blog + hotline. Khi T13/T14 xong và có nước published, trang
+   404 TỰ ĐỘNG hiện thêm link ngay, không cần sửa lại file này lần nữa. */
+async function getPublishedCountryLinks(env) {
+  try {
+    const rows = await supa(env, 'noi_dung_quoc_gia?select=slug,ten_nuoc&published=eq.true&order=thu_tu&limit=4');
+    return rows || [];
+  } catch (e) {
+    return []; // bảng chưa tồn tại (chưa chạy migration T13) hoặc lỗi khác -> không hiện link, không throw
+  }
+}
+
+const NOTFOUND_EXTRA_CSS = `
+.notfound-box{max-width:640px;text-align:center;padding:var(--sp-10) var(--sp-3);margin:0 auto}
+.notfound-code{font-size:80px;font-weight:800;color:var(--color-primary);line-height:1;margin-bottom:var(--sp-2)}
+.notfound-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--sp-2);margin:var(--sp-4) 0}
+.notfound-hotline{color:var(--color-text-muted);font-size:15px}
+.notfound-hotline a{color:var(--color-primary);font-weight:700;text-decoration:none}
+`;
+
+async function render404Page(request, env) {
+  const [chrome, countries] = await Promise.all([
+    getSiteChrome(env, request),
+    getPublishedCountryLinks(env)
+  ]);
+
+  // c.slug đã LÀ toàn bộ path cuối (vd "visa-nhat-ban", xem thiết kế cột slug ở T13/T14) — không
+  // ghép thêm tiền tố "visa-" nữa, chỉ nối "/" + slug.
+  const countryLinksHtml = countries.map(c =>
+    `<a class="btn btn-outline" href="/${escHtml(c.slug)}">Visa ${escHtml(c.ten_nuoc)}</a>`
+  ).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1B6EF3">
+<title>Không tìm thấy trang – Top Visa 5S</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+<link rel="icon" type="image/png" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700&display=swap" rel="stylesheet">
+<style>${chrome.css}${BLOG_EXTRA_CSS}${NOTFOUND_EXTRA_CSS}</style>
+</head>
+<body>
+<a href="#noi-dung" class="skip-link">Bỏ qua tới nội dung</a>
+${chrome.navbar}
+<main id="noi-dung">
+<section id="not-found">
+  <div class="container notfound-box">
+    <div class="notfound-code">404</div>
+    <h1 class="section-title">Không tìm thấy trang bạn cần</h1>
+    <p class="section-sub">Đường dẫn này không tồn tại hoặc đã được thay đổi. Xin lỗi vì sự bất tiện này — bạn có thể quay lại trang chủ hoặc xem các mục dưới đây.</p>
+    <div class="notfound-actions">
+      <a class="btn btn-primary" href="/">🏠 Về trang chủ</a>
+      <a class="btn btn-outline" href="/blog">📰 Xem Blog</a>
+      ${countryLinksHtml}
+    </div>
+    <p class="notfound-hotline">Cần hỗ trợ ngay? Gọi hotline <a href="tel:0935887922"><b>0935 887 922</b></a></p>
+  </div>
+</section>
+</main>
+${chrome.footer}
+</body>
+</html>`;
+
+  return new Response(html, {
+    status: 404,
+    headers: { 'Content-Type': 'text/html;charset=utf-8', 'Cache-Control': 'no-store' }
   });
 }
 
