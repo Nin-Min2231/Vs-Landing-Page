@@ -2676,7 +2676,69 @@ buộc", card khối H2/FAQ, khối xem trước).
 `/visa-<slug>` nào** (đúng như dự kiến — bảng thật trên Supabase production chưa tồn tại, sẽ tự
 xuất hiện ngay khi PM chạy migration + có nước `published=true`, không cần deploy lại code).
 
-**Việc còn lại:** chờ PM chạy `05_Database/14_supabase_setup_phase14.sql` trong SQL Editor, sau đó
-tự vào admin nhập thử ít nhất 1 nước để xác nhận migration đã chạy đúng (đọc lại không lỗi). T14
-(route SSR `/visa-<slug>`) làm sau khi có nội dung chuyên môn thật từ chuyên viên cho ít nhất 1
-nước — **Claude Code tuyệt đối không tự viết điều kiện/hồ sơ/quy định lãnh sự thay chuyên viên.**
+**Cập nhật 2026-09-02, cùng ngày:** PM xác nhận đã chạy `14_supabase_setup_phase14.sql` xong và tự
+nhập thử 1 record "Visa Nhật Bản" qua admin để test — **PM xác nhận đây CHỈ là dữ liệu test** (xem
+mục "còn tồn đọng" của mục 58 lúc đó), không phải nội dung chuyên môn thật, nên **T14 (route SSR
+`/visa-<slug>`) vẫn đứng yên, tiếp tục chờ nội dung chuyên môn thật từ chuyên viên** — Claude Code
+tuyệt đối không tự viết điều kiện/hồ sơ/quy định lãnh sự thay chuyên viên. Đã hỏi lại người dùng
+trước khi kết luận (tránh đoán nhầm rồi lỡ xây route trên dữ liệu test), sau đó chuyển sang làm T16
+(xem mục 59) — task tiếp theo "đã mở chặn, làm được ngay" theo đúng thứ tự kế hoạch.
+
+## 59. T16 — Công cụ ước tính chi phí Visa (2026-09-02)
+
+**Trang tĩnh mới** `02_Source/public/cong-cu/uoc-tinh-chi-phi-visa.html`, URL
+`https://topvisa5s.com/cong-cu/uoc-tinh-chi-phi-visa` (không đuôi `.html`, đúng theo hành vi
+Cloudflare Static Assets đã xác nhận ở T11/mục 57 — request `.html` tự 307-redirect sang bản gọn).
+**Trang này nằm SÂU HƠN 1 cấp** so với `index.html` (`public/cong-cu/...` thay vì `public/...`) —
+**khác với 3 trang T11** (đứng cùng cấp `index.html` nên không cần sửa gì) — nên khi trích
+navbar/footer từ `index.html` phải tự sửa đường dẫn tương đối `assets/...`/`href="#..."` thành
+tuyệt đối `/assets/...`/`href="/#..."`, đúng kỹ thuật `fixPaths()` mà `worker.js` (`getSiteChrome()`)
+đã dùng cho `/blog`/404 — nếu quên bước này thì logo/anchor menu sẽ trỏ sai
+(`public/cong-cu/assets/...` không tồn tại).
+
+**Tính năng:** khách chọn Quốc gia (8 lựa chọn, khớp `dich_vu_gia`) + Mục đích (Du lịch/Công tác/
+Thăm thân/Khác — danh sách cố định đơn giản, KHÔNG đọc bảng `danh_muc_muc_dich` vì bảng đó chỉ mở
+RLS cho `authenticated`, `anon` không đọc được) + Số người → hiện ngay **Tổng tạm tính = giá
+(`dich_vu_gia`, cùng cách fetch `index.html` đang dùng ở mục "GIÁ DỊCH VỤ") × số người**, kèm dòng
+"Đã gồm phí lãnh sự và phí dịch vụ, không phát sinh thêm". Nước `gia=null` ("Khác") → mời để lại
+SĐT thay vì hiện số 0/sai.
+
+**Form lead RIÊNG (không dùng chung form trang chủ):** bắt buộc vì nghiệm thu T16 yêu cầu
+`nguon='cong-cu-uoc-tinh'` — form trang chủ mặc định `nguon='Từ Web'`, không thể tái dùng qua link
+`/#dang-ky` như đã làm cho CTA của `lien-he.html` (T11). `note` tự tổng hợp ngữ cảnh (nước/mục
+đích/số người/tổng tạm tính) để chuyên viên gọi lại có đủ thông tin ngay, không phải hỏi lại từ đầu.
+
+**≥400 từ nội dung giải thích** (đo được 448 từ) — chỉ giải thích CHUNG về cấu trúc giá (phí lãnh
+sự + phí dịch vụ là gì, vì sao khác nhau giữa các nước) và nhắc lại đúng nguyên văn cam kết "Đậu
+Visa Mới Thu Phí Dịch Vụ" đã có sẵn trên trang chủ — **không bịa thêm bất kỳ quy định lãnh sự cụ thể
+nào** (vd không nói "nước X cần phỏng vấn trong Y ngày", chỉ nói chung chung "một số trường hợp cần
+phỏng vấn/lấy dấu vân tay" đúng như đã mô tả sẵn ở FAQ/mục Quy trình trên trang chủ).
+
+**GA4 `tool_start`/`tool_complete`/`tool_lead` (yêu cầu T16) — T8 (gắn GA4) CHƯA làm** ở thời điểm
+này (còn chờ PM cấp Measurement ID) → bọc qua `trackToolEvent()` tự kiểm `typeof gtag==='function'`
+trước khi gọi, không ném lỗi khi chưa có `gtag`. **Khi T8 xong, 3 sự kiện này tự động bắt đầu gửi
+ngay, không cần quay lại sửa file này** — cùng triết lý "tự động, không cần nhớ sửa lại" đã áp dụng
+nhiều lần trong đợt SEO này (T5/T21/T11).
+
+**`worker.js` (liên quan T5):** đổi tên `TRUSTED_STATIC_PAGES` → `EXTRA_STATIC_PAGES` (không còn
+riêng cho 3 trang T11 nữa) và thêm path công cụ này vào mảng — sitemap tự nhận diện qua đúng cơ chế
+dò-tồn-tại đã có sẵn từ T5, không cần sửa logic gì thêm. Mảng này sẽ còn dài thêm khi làm T15/T17
+(2 công cụ còn lại, cùng nhóm `/cong-cu/...`).
+
+**Đã test trước khi deploy:** `node --check`, HTML cân bằng thẻ, đếm từ phần nội dung (448 ≥ 400).
+Qua Claude Browser: mở file cục bộ, xác nhận `fetch` giá THẬT từ Supabase production thành công
+(8 nước đúng giá đang niêm yết) — tính `3.300.000 × 2 = 6.600.000đ` đúng; nước "Khác" hiện đúng
+thông báo mời để lại SĐT; validate tên/SĐT đúng chặn khi sai; mock `fetch` cho riêng endpoint
+`leads` để xác nhận payload gửi đi đúng `nguon:'cong-cu-uoc-tinh'` + `note` tổng hợp đúng ngữ cảnh
+mà **không tạo dữ liệu test thật trên production** (khác cách vài lần trước có tạo rồi nhờ PM xóa —
+lần này không cần vì đã mock được toàn bộ, không phải gọi API thật); mock `gtag` xác nhận cả 2 sự
+kiện `tool_start`/`tool_complete` gọi đúng tham số khi `gtag` có sẵn.
+
+**Đã deploy + xác nhận trên production (commit `42b9e40`):** `/cong-cu/uoc-tinh-chi-phi-visa` → 200,
+`.html` → 307 redirect đúng; canonical/title/H1 đúng; **sitemap.xml tự động thêm đúng URL này ngay
+sau deploy**, không cần sửa gì thêm ngoài việc thêm 1 dòng path (đúng thiết kế mục 56/57). Test
+tương tác THẬT trên production bằng `form_input` (không chỉ gọi hàm JS): chọn "Đài Loan" → hiện
+đúng "3.000.000đ" (khớp giá thật đang niêm yết). Hồi quy: `/`, `/blog`, `/chinh-sach-bao-mat`,
+`/admin` vẫn 200.
+
+T16 coi như hoàn tất và đã xác nhận sống đúng trên production.
