@@ -2455,3 +2455,72 @@ thêm HTML thân thiện thay vì trang trắng khi 404, nhưng vẫn không l�
 `workers.dev`→domain chính (T1) vẫn hoạt động.
 
 T21 coi như hoàn tất và đã xác nhận sống đúng trên production.
+
+## 56. T5 — Sitemap động từ worker, xoá sitemap.xml tĩnh (2026-09-02)
+
+**Bối cảnh:** `02_Source/public/sitemap.xml` tĩnh chỉ có đúng 1 URL trang chủ, `lastmod` hardcode
+`2026-08-07` không bao giờ tự cập nhật — trong khi site đã có `/blog` + 12 bài viết thật (T4) cần
+liệt kê. Đã xoá file tĩnh, thêm route `/sitemap.xml` vào `worker.js`, đặt **trước** dòng
+`env.ASSETS.fetch()` fallback trong `fetch()` để route động luôn thắng (không phụ thuộc file tĩnh
+còn sót hay không — dù sao cũng đã xoá file đó).
+
+**Việc (`02_Source/worker.js`, hàm `renderSitemap()`):** ghép 5 nguồn URL:
+1. `/` — không có nguồn "lần sửa gần nhất" đáng tin cậy (trang chủ gộp nhiều mảng: giá dịch vụ,
+   đánh giá, bài viết mới...) → **không bịa `lastmod`**, chỉ có `<loc>` (hợp lệ theo chuẩn sitemap —
+   `<lastmod>` là tùy chọn).
+2. `/blog` — `lastmod` = ngày **mới nhất** trong `updated_at` của các bài published (tận dụng luôn
+   kết quả `posts` đã fetch, không query thêm) — là ngày THẬT vì nội dung `/blog` đổi đúng theo đó.
+3. **"Trang tin cậy"** (T11 — `chinh-sach-bao-mat.html`/`dieu-khoan-dich-vu.html`/`lien-he.html`)
+   **CHƯA làm** ở thời điểm viết T5 → hàm `getExistingTrustedPages()` dò tồn tại THẬT qua
+   `env.ASSETS.fetch()` (HEAD từng file), chỉ đưa vào sitemap nếu trả 200. **Khi T11 xong và các
+   file được thêm vào `public/`, sitemap TỰ ĐỘNG hiện thêm URL ngay lần crawl kế tiếp — không cần
+   quay lại sửa file này** (cùng triết lý "tự động, không cần nhớ sửa lại" đã áp dụng nhiều lần,
+   xem mục 45/46 — bài học "quên 1 chỗ, im lặng không báo").
+4. Trang quốc gia đã publish (T13/T14, **CHƯA làm**) — hàm `getPublishedCountrySlugsForSitemap()`
+   query `noi_dung_quoc_gia?select=slug&published=eq.true` bọc `try/catch` giống hệt cơ chế đã
+   dùng ở trang 404 (T21, `getPublishedCountryLinks()`): bảng chưa tồn tại → mảng rỗng, không
+   throw. **Chỉ SELECT `slug`** (T13 không định nghĩa cột `updated_at` cho bảng này) — không suy
+   đoán thêm cột, các URL này không có `<lastmod>`.
+5. Toàn bộ `posts?select=id,slug,updated_at&published=eq.true` — `lastmod` = `updated_at` THẬT của
+   từng bài (cột có trigger tự cập nhật, `05_Database/13_supabase_setup_phase13.sql`) — không bịa.
+
+**CHỈ sinh `<loc>`+`<lastmod>`** — bỏ hẳn `<changefreq>`/`<priority>` theo đúng yêu cầu (Google công
+bố rõ bỏ qua 2 thẻ này). `<lastmod>` chỉ xuất hiện khi có giá trị THẬT đáng tin — không tự bịa ngày
+cho URL không có nguồn dữ liệu tin cậy (mục 1, 3, 4 ở trên).
+
+**Quyết định lỗi có chủ đích khác nhau giữa 2 nhóm nguồn:** lỗi ở "trang tin cậy"/"trang quốc gia"
+(nguồn phụ, tùy chọn) bị nuốt êm (mảng rỗng) vì đây là tính năng CHƯA tồn tại, không phải lỗi thật.
+Ngược lại, lỗi khi fetch `posts` (nguồn CHÍNH, phải có) **KHÔNG bọc catch riêng** — cố tình để lỗi
+rơi ra ngoài cho `catch` ở `fetch()` trả **500**, thay vì âm thầm phát sinh 1 sitemap "200 OK" trông
+có vẻ ổn nhưng thiếu sạch mọi bài viết (Google có thể lỡ tin nhầm đó là danh sách đầy đủ, tệ hơn 1
+lần 500 tạm thời mà Google tự retry sau).
+
+Nhận cả `GET`/`HEAD` (route không có file tĩnh dự phòng, đúng bài học ở mục 3).
+Content-Type `text/xml;charset=utf-8`, `Cache-Control: public,max-age=300`.
+
+**Đã test trước khi deploy:** `node --check` OK; test bằng Node import thẳng `worker.js`, 5 kịch
+bản (mock `env.ASSETS.fetch`/Supabase): (1) chưa có T11/T13/T14 + 2 bài viết — đúng 4 URL, không
+`changefreq`/`priority`, `/` không lastmod, `/blog` lastmod = ngày mới nhất; (2) không có bài viết
+nào — `/blog` không có `<lastmod>`; (3) giả lập T11 xong (3 file tồn tại) + T13/T14 có 1 nước
+published — tự động hiện đủ 4 URL mới không cần sửa code; (4) `HEAD /sitemap.xml` → 200; (5) query
+`posts` lỗi (Supabase down) → xác nhận trả **500** thay vì 200 thiếu bài. Validate XML bằng
+`python3 -c "xml.etree.ElementTree"` (không chỉ regex) — xác nhận well-formed, kể cả trường hợp
+slug chứa ký tự `<script>` vẫn được `escHtml()` escape đúng chuẩn XML.
+
+**Đã deploy + xác nhận trên production (commit `e314cd9` xoá file tĩnh, `4143614` thêm route):**
+`https://topvisa5s.com/sitemap.xml` → 200, `Content-Type: text/xml;charset=utf-8`,
+`Cache-Control: public,max-age=300`; validate bằng Python XML parser → **14 URL hợp lệ** (`/` +
+`/blog` + 12 bài viết thật, tất cả `lastmod=2026-09-02` vì cột `updated_at` của bảng `posts` mới
+được thêm đúng hôm nay qua migration 13 — PostgreSQL gán `default now()` cho các dòng có sẵn lúc
+`ALTER TABLE ADD COLUMN`, đây là giá trị THẬT trong DB chứ không phải lỗi); 0 thẻ
+`changefreq`/`priority`; 0 link `/visa-`/trang tin cậy (đúng vì T11/T13/T14 chưa làm). Hồi quy:
+`robots.txt` vẫn khai đúng dòng `Sitemap: https://topvisa5s.com/sitemap.xml`; `/`, `/blog` vẫn 200;
+`/worker.js`/`/wrangler.toml` vẫn 404 (an ninh không đổi); trang 404 (T21) vẫn hoạt động.
+
+**⚠️ Bài học khi tự kiểm bằng `curl` sau deploy — đừng lặp lại lỗi vòng lặp poll sai điều kiện đã
+gặp ở T21 (mục 55):** lần đầu poll bằng điều kiện "thấy `<urlset`" thoát ngay lập tức vì bản TĨNH
+cũ cũng có `<urlset>` — tưởng đã deploy xong nhưng thực ra đang đọc cache/bản cũ. Phải poll bằng
+điều kiện phân biệt được bản mới với bản cũ (ở đây: "không còn thấy `changefreq`") mới xác nhận
+đúng đã deploy xong.
+
+T5 coi như hoàn tất và đã xác nhận sống đúng trên production.
