@@ -1105,6 +1105,25 @@ initReviewsSlider();
   }catch(e){ /* im lặng bỏ qua nếu không tải được, giữ giá fallback trong HTML */ }
 })();
 
+/* ==================== SỬA CUỘN TỚI ANCHOR LÚC TẢI TRANG (vd /#dang-ky từ trang khác) ====================
+   Lỗi thật: trang chủ có nhiều khối chèn ĐỘNG sau khi tải (Danh mục bài viết, Feedback khách hàng)
+   làm chiều cao trang tăng lên SAU KHI trình duyệt đã tự cuộn tới #hash lúc tải trang xong — kết
+   hợp với html{scroll-behavior:smooth} (mục "MENU MOBILE"), cú cuộn mượt ban đầu "đuổi theo" 1 vị
+   trí đang dịch chuyển nên trượt quá đà (có lúc tới tận cuối trang) thay vì dừng đúng đích. Gọi lại
+   hàm này SAU KHI 2 khối chèn động (đổi chiều cao) đã tải xong (dù thành công hay lỗi/rỗng, xem
+   finally bên dưới) để tự sửa lại đúng vị trí, dùng behavior:'auto' (tức thì) tránh lặp lại đúng
+   lỗi "đuổi theo" — tôn trọng scroll-margin-top (mục "NAVBAR") nên không bị .navbar sticky che. */
+function fixInitialHashScroll(){
+  if(!location.hash) return;
+  let target;
+  try{ target = document.querySelector(location.hash); }catch(e){ return; } // hash không hợp lệ làm selector
+  if(!target) return;
+  const prevBehavior = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  target.scrollIntoView({block:'start'});
+  document.documentElement.style.scrollBehavior = prevBehavior;
+}
+
 /* ==================== FEEDBACK KHÁCH HÀNG ĐỘNG (từ admin.html — Cài đặt chung, 2026-08-31) ====
    2 review viết cứng trong <div id="reviewsTrack"> (mục "ĐÁNH GIÁ" phía trên) chỉ là FALLBACK —
    nếu tải được ít nhất 1 dòng feedback thật từ Supabase (bảng danh_gia_khach_hang, anon chỉ
@@ -1146,6 +1165,7 @@ initReviewsSlider();
     }).join('');
     initReviewsSlider();
   }catch(e){ /* im lặng bỏ qua nếu không tải được, giữ 2 review tĩnh cũ trong HTML */ }
+  finally{ fixInitialHashScroll(); }
 })();
 
 /* ==================== DANH MỤC BÀI VIẾT ĐỘNG (menu + section theo Danh mục) ====================
@@ -1226,6 +1246,7 @@ function slugifyCatName(s){
 
     initScrollSpy(); // quét lại để theo dõi cuộn cho menu/section mới chèn vào
   }catch(e){ /* im lặng bỏ qua nếu không tải được, không ảnh hưởng phần còn lại của trang */ }
+  finally{ fixInitialHashScroll(); }
 })();
 function openPostDetail(i,ev){
   // Card bài viết giờ là <a href="/blog/..."> thật (T4, kế hoạch SEO — để Google có link đi theo
