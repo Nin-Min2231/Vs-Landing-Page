@@ -40,7 +40,10 @@ export default {
     }
     // Danh sách bài viết SSR (kế hoạch SEO T4) — Google/Facebook/Bing đọc được nội dung ngay,
     // không còn phụ thuộc JS phía client như trước (div#categorySections rỗng lúc tải trang).
-    if (url.pathname === '/blog' && request.method === 'GET') {
+    // Nhận cả HEAD (không chỉ GET) — 2 route này KHÔNG có file tĩnh tương ứng trong public/, nên nếu
+    // rơi xuống env.ASSETS.fetch() (trang chủ "/" thì còn có index.html làm fallback, ở đây thì
+    // không) sẽ ra 404 THẬT — phát hiện lúc tự kiểm bằng `curl -I` (HEAD) sau khi deploy lần đầu.
+    if (url.pathname === '/blog' && (request.method === 'GET' || request.method === 'HEAD')) {
       try {
         return await renderBlogList(request, env);
       } catch (e) {
@@ -51,7 +54,7 @@ export default {
       }
     }
     // Chi tiết 1 bài viết SSR (kế hoạch SEO T4) — /blog/<slug>-<id>, tra theo id (số cuối URL).
-    if (url.pathname.startsWith('/blog/') && request.method === 'GET') {
+    if (url.pathname.startsWith('/blog/') && (request.method === 'GET' || request.method === 'HEAD')) {
       try {
         return await renderBlogPost(request, env);
       } catch (e) {
