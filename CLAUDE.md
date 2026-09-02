@@ -2601,3 +2601,82 @@ cho người có chuyên môn pháp lý rà lại trước khi chính thức cô
 có sẵn trong kế hoạch SEO T11.
 
 T11 coi như hoàn tất (trừ `gioi-thieu.html`) và đã xác nhận sống đúng trên production.
+
+## 58. T13 — bảng `noi_dung_quoc_gia` + màn nhập trong admin (2026-09-02)
+
+**⚠️ CẦN PM TỰ CHẠY MIGRATION TRƯỚC KHI DÙNG ĐƯỢC — chưa chạy thì bỏ qua bước này sẽ lặp lại đúng
+sự cố đã ghi ở mục 45:** `05_Database/14_supabase_setup_phase14.sql` **CHƯA được chạy** trên
+Supabase production (đã xác nhận qua `curl` — sitemap.xml không có URL `/visa-<slug>` nào, đúng vì
+bảng chưa tồn tại). Trước khi PM chạy file này, tab "Cài đặt chung" trong admin sẽ báo lỗi toast đỏ
+"Lỗi tải nội dung quốc gia..." mỗi lần đăng nhập — **đây là hành vi đã lường trước, không phải bug
+mới**, chỉ hết khi PM chạy migration.
+
+**Migration (`14_supabase_setup_phase14.sql`):** bảng `noi_dung_quoc_gia` đúng theo thiết kế T13
+(`slug`/`ten_nuoc`/`title_seo`/`meta_description`/`h1`/`mo_dau`/`khoi_noi_dung` jsonb/`faq` jsonb/
+`thoi_gian_xu_ly`/`thu_tu`/`published` default false), RLS `anon` chỉ SELECT khi `published=true`,
+`authenticated` toàn quyền — cùng khuôn `posts`/`dich_vu_gia`. **Tự thêm 2 phần ngoài spec gốc, có
+lý do rõ ràng:**
+- Cột `updated_at` + trigger tự cập nhật (cùng mẫu `posts`, migration 13) — spec T13 gốc KHÔNG có
+  cột này, nhưng đã tự thêm để sitemap.xml (T5) có `<lastmod>` THẬT cho trang quốc gia sau này thay
+  vì mãi mãi không có — chi phí thấp (1 cột + 1 trigger, y hệt khuôn đã có), lợi ích rõ (khớp đúng
+  triết lý "lastmod lấy updated_at THẬT" đã áp dụng cho `/blog`). Đã sửa `worker.js` dùng ngay cột
+  này trong cùng lần deploy (xem `getPublishedCountriesForSitemap()`), không phải để dành làm sau.
+- Cột `tac_gia` (cả `noi_dung_quoc_gia` lẫn `alter table posts`) — gộp theo đúng chỉ định trong kế
+  hoạch SEO (mục T20: *"gộp vào migration 14 của T13, chưa deploy nên không tốn migration riêng"*).
+  Để trống, KHÔNG tự bịa tên chuyên viên — chờ PM cấp tên/chức danh + xác nhận đồng ý công khai.
+
+**Màn nhập trong admin (`admin.html`, tab "Cài đặt chung", block mới `.c-nqg`):** theo đúng mẫu
+`dich_vu_gia`/`danh_gia_khach_hang` đã có (list CRUD + dialog `dlg-standard`) — KHÔNG dựng sẵn 7
+dòng placeholder cho 7 nước (khác cách làm ở trang 404/mục 55), mà theo đúng precedent
+`dich_vu_gia`: list chỉ hiện dòng ĐÃ tạo, "+ Thêm" mở dialog với select "Quốc gia" giới hạn đúng 7
+nước cố định (`NQG_COUNTRIES`, khớp `DVG_COUNTRIES` trừ `"Khác"`) **và loại bỏ nước đã có dòng
+khác** (tránh trùng `slug` unique). Sửa dòng có sẵn thì khóa hẳn select Quốc gia (đổi nước = tạo
+trang khác, không phải sửa trang hiện tại).
+
+**Khối H2 + FAQ — quyết định kiến trúc quan trọng, khác hẳn "Thành viên nhóm"/"Xử lý phát sinh":**
+2 mảng `khoi_noi_dung`/`faq` là **jsonb lưu thẳng trong 1 dòng**, không phải bảng con riêng có
+API/id riêng như Thành viên nhóm. Vì vậy **không cần giữ 1 mảng JS đồng bộ qua `oninput`** — mỗi
+khối là 1 `.nqg-block-item` thuần trong DOM (`addNqgKhoiNoiDung()`/`addNqgFaq()` chèn HTML trực
+tiếp bằng `insertAdjacentHTML`, "Xóa" chỉ gỡ đúng phần tử qua `removeNqgBlock(this)` + tự đánh lại
+số thứ tự nhãn), và **lúc bấm Lưu mới đọc lại toàn bộ giá trị hiện có trong DOM**
+(`collectNqgKhoiNoiDung()`/`collectNqgFaq()`, tự lọc bỏ khối trống hoàn toàn) rồi gộp thành 1 mảng
+gửi đi cùng lúc với các field khác — đơn giản hơn hẳn cách giữ 2 nguồn sự thật (mảng JS + DOM) luôn
+phải đồng bộ nhau, mà `snapshotDialog()`/`confirmCloseDialog()` (mục 23) vẫn hoạt động đúng bình
+thường vì cơ chế đó vốn đã tự quét MỌI input/textarea trong overlay, không quan tâm chúng tĩnh hay
+được chèn động.
+
+**`noi_dung_html` được coi là HTML thật** (đúng tên cột, không phải text thường như `posts.content`)
+— textarea có ghi chú "gõ HTML cơ bản được" và nút "Xem trước" (`toggleNqgPreview()`) render trực
+tiếp bằng `innerHTML` (không qua `esc()`) cho riêng trường này, còn H1/H2/FAQ (text thường) vẫn qua
+`esc()` như bình thường. An toàn vì đây là preview NỘI BỘ chỉ admin đã đăng nhập nhìn thấy (RLS
+chặn `anon` đọc dòng `published=false`), không phải nội dung public — không có route `/visa-<slug>`
+thật để xem trước (T14 chưa làm) nên phải tự dựng bản xem trước tạm ngay trong dialog từ dữ liệu
+đang gõ dở, kể cả chưa lưu.
+
+**Slug tự sinh, khoá không cho sửa tay:** `nqgSlugify()` copy đúng quy tắc bỏ dấu đã dùng ở
+`vnNorm()`/migration 13 (xử lý riêng "đ" trước khi NFD strip, vì "đ" không tách được bằng NFD) +
+tiền tố `visa-`. Đã tự kiểm cả 7 nước cho ra đúng slug khớp ví dụ trong kế hoạch (`visa-nhat-ban`)
+— riêng "Schengen (châu Âu)" ra `visa-schengen-chau-au` (không có trong kế hoạch làm ví dụ, nhưng
+là kết quả suy ra hợp lý từ đúng quy tắc, không bịa).
+
+**Đã test trước khi deploy:** `node --check` (`worker.js` + JS trích từ `admin.html`); HTML cân
+bằng thẻ (`python3 html.parser`); unit test `nqgSlugify()` cho cả 7 nước bằng Node thuần. Test đầy
+đủ luồng CRUD qua Claude Browser (mock `api()` mô phỏng bảng trong bộ nhớ, gọi trực tiếp các hàm —
+đăng nhập thật cần mật khẩu Supabase không có): thêm mới (chọn nước → slug tự điền → nhập đủ field
+→ thêm 1 khối H2 + 1 FAQ → Lưu) → danh sách hiện đúng dòng; mở "Chi tiết" đọc lại đúng 100% (kể cả
+nội dung khối H2/FAQ) + select Quốc gia bị khoá đúng; mở "+ Thêm" lần 2 → đúng nước đã dùng bị loại
+khỏi danh sách chọn; xoá 1 khối H2 giữa danh sách 3 khối → còn đúng 2 khối, đánh số lại đúng, khối
+trống bị `collectNqgKhoiNoiDung()` tự lọc bỏ; đóng dialog KHÔNG sửa gì → không hỏi xác nhận; sửa 1
+field rồi đóng → đúng hỏi xác nhận (mục 23); xoá dòng → đúng gọi `showConfirmPopup` rồi xoá; chụp
+màn hình xác nhận layout dialog khớp đúng design system `dlg-*` (section xanh nhạt, badge đỏ "Bắt
+buộc", card khối H2/FAQ, khối xem trước).
+
+**Đã deploy + xác nhận trên production (commit `02822e1`):** `/admin` vẫn 200, chứa đúng cấu trúc
+`nqgOverlay` mới; hồi quy `/`, `/blog`, `/sitemap.xml` vẫn 200 và **sitemap.xml chưa có URL
+`/visa-<slug>` nào** (đúng như dự kiến — bảng thật trên Supabase production chưa tồn tại, sẽ tự
+xuất hiện ngay khi PM chạy migration + có nước `published=true`, không cần deploy lại code).
+
+**Việc còn lại:** chờ PM chạy `05_Database/14_supabase_setup_phase14.sql` trong SQL Editor, sau đó
+tự vào admin nhập thử ít nhất 1 nước để xác nhận migration đã chạy đúng (đọc lại không lỗi). T14
+(route SSR `/visa-<slug>`) làm sau khi có nội dung chuyên môn thật từ chuyên viên cho ít nhất 1
+nước — **Claude Code tuyệt đối không tự viết điều kiện/hồ sơ/quy định lãnh sự thay chuyên viên.**
