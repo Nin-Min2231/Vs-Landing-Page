@@ -2742,3 +2742,136 @@ tương tác THẬT trên production bằng `form_input` (không chỉ gọi hà
 `/admin` vẫn 200.
 
 T16 coi như hoàn tất và đã xác nhận sống đúng trên production.
+
+## 60. Phiên PM test trực tiếp trên production — 7 lỗi/thiếu sót phát hiện + sửa, NGOÀI kế hoạch SEO
+    (2026-09-02, cùng ngày mục 53-59)
+
+**Bối cảnh:** sau khi xong T3/T4/T5/T9/T11/T13/T16, PM tự bấm thử trên `topvisa5s.com` thật (không
+qua kế hoạch SEO nữa) và báo lại từng lỗi UI/UX gặp phải — phiên này xử lý TỪNG lỗi PM báo, theo
+đúng thứ tự PM đưa ra, deploy ngay sau mỗi lỗi (không gộp lại chờ xong hết mới deploy 1 lần).
+
+**A. Card bài viết trang chủ bị gạch chân (tiêu đề/nhãn "TIN TỨC"):** hệ quả phụ của T4 (SSR bài
+viết, mục 54) — đổi `.card-post` từ `<div>` sang `<a href="/blog/...">` để Google index được,
+nhưng chưa tắt gạch chân mặc định của thẻ `<a>` (theo CSS spec, gạch chân lan xuống MỌI phần tử con
+trừ khi chặn lại). Sửa 1 dòng: `.card-post{...text-decoration:none;color:inherit}` — nút "Đọc tiếp
+→" (`.post-readmore`) vẫn giữ gạch chân vì đã tự khai riêng, không bị ảnh hưởng.
+
+**B. 3 trang pháp lý (`chinh-sach-bao-mat.html`/`dieu-khoan-dich-vu.html`/`lien-he.html`, T11) —
+navbar "cũ", thiếu menu Danh mục bài viết động:** nguyên nhân — lúc dựng T11 (mục 57), script build
+3 trang này COPY nguyên `<style>`+`<nav>`+`<footer>` từ `index.html` tại 1 THỜI ĐIỂM, nhưng KHÔNG
+copy đồng thời đoạn JS "DANH MỤC BÀI VIẾT ĐỘNG" (mục 31.F) nên 3 trang này thiếu hẳn 2 menu
+"📰 Thủ tục Visa"/"📰 Tin tức" đang có trên trang chủ. Đã sửa 2 việc:
+1. Đổi mọi `href="#dich-vu"`/`#loi-ich`/`#danh-gia`/`#faq`/`#dang-ky`/`#banner` (navbar + footer)
+   thành `/#...` — vì đây là trang KHÁC trang chủ, anchor không có `/` ở đầu thì không bấm được gì
+   (giữ nguyên `href="#noi-dung"` — skip-link, đúng vì trỏ tới `<main>` của CHÍNH trang đó).
+2. Copy nguyên script "DANH MỤC BÀI VIẾT ĐỘNG" nhưng CHỈ phần dựng MENU (không dựng section, vì 3
+   trang này không có section tương ứng) — link menu trỏ về `/#cat-<slug>` (trang chủ) thay vì
+   `#cat-<slug>` (chính trang đó).
+
+**⚠️ Rủi ro "2 bản sao dễ lệch nhau" LẶP LẠI đúng kiểu đã cảnh báo nhiều lần (mục 45/46/52/56)** —
+nhưng lần này ở lớp HTML/JS tĩnh chứ không phải dữ liệu/route động. 3 trang T11 là bản snapshot
+TĨNH dựng 1 lần, không tự động nhận thay đổi sau này của `index.html` như `/blog`/404 (T4/T21, dùng
+`getSiteChrome()` trích trực tiếp lúc request) — **bất kỳ thay đổi navbar/footer/widget nổi nào
+sau này ở `index.html` đều PHẢI tự tay đồng bộ lại cả 3 trang này**, không có cơ chế tự động.
+
+**C. 3 trang pháp lý thiếu hẳn cụm liên hệ nổi (💬) + Chat Box (🤖):** cùng nguyên nhân gốc mục B —
+lúc dựng T11, `<style>` được copy NGUYÊN VẸN (nên CSS `.float-contact`/`.chatbox-*` vẫn có sẵn) NHƯNG
+phần HTML (`<div id="floatContact">`, `<button id="chatboxToggle">`, `<div id="chatboxPanel">`) và
+JS (toàn bộ logic Chat Box, mục 47) chưa từng được thêm — khiến CSS "chờ sẵn" nhưng không có gì để
+áp dụng. Đã thêm đủ HTML + JS (copy nguyên từ `index.html`, không viết lại), với 1 khác biệt bắt
+buộc: `chatboxPriceListText()` (nút hỏi nhanh "Bảng giá dịch vụ các nước") đọc DOM `.card-service`
+— 3 trang này không có bảng giá — nên hàm được sửa thêm nhánh dự phòng (`!lines.length`) trỏ khách
+về `/#dich-vu` thay vì trả lời rỗng, áp dụng ĐỒNG THỜI cho cả `index.html` (dùng chung 1 bản hàm).
+
+**D. Icon Chat Box (🤖) bị nút "Facebook" (cụm liên hệ nổi xoè ra) đè lên:** 2 lượt sửa — lượt 1
+(PM chưa ưng) ẩn hẳn icon Chat Box khi cụm liên hệ đang xoè (`opacity:0`); lượt 2 (PM yêu cầu) đổi
+sang **đẩy icon Chat Box lên đứng NGAY TRÊN "Gọi điện"** thay vì biến mất — đo `offsetHeight` THẬT
+của `.float-contact` (không hardcode số, vì `.float-item` ẩn bằng `opacity` chứ không `display:none`
+nên chiều cao container LUÔN cố định dù đang xoè hay thu) rồi gán inline `style.bottom` cho
+`#chatboxToggle`; bỏ style (`=''`) để về đúng vị trí mặc định CSS khi thu gọn lại. Hàm dùng chung
+`pushChatboxAboveFloat(push)` — gọi cả khi bấm nút liên hệ nổi LẪN khi mở Chat Box lúc cụm liên hệ
+đang xoè (`chatboxToggleOpen()` tự đóng cụm liên hệ + trả lại vị trí icon).
+
+**E. Thêm link "Liên hệ" — cả footer lẫn menu chính:** trước đó cột "Liên hệ" trong footer-grid chỉ
+có địa chỉ/SĐT/email TĨNH, không link tới trang `/lien-he` (chỉ dòng copyright nhỏ cuối footer mới
+có) — bọc `<h4>Liên hệ</h4>` thành `<h4><a href="/lien-he">Liên hệ</a></h4>` (màu chữ tự động nhạt
+hơn heading khác — `footer a{color:#CBD5E1}` thắng `footer h4{color:#fff}` do đứng sau trong CSS,
+là tín hiệu thị giác cho biết đây là link, không cần CSS mới). PM yêu cầu thêm tiếp 1 mục **trong
+menu chính** — thêm `<li><a href="/lien-he">📍 Liên hệ</a></li>` ngay sau FAQ, trước "Đăng ký tư
+vấn". Cả 2 áp dụng đồng bộ 4 trang; `/blog`+404 tự nhận qua `getSiteChrome()`, không cần sửa thêm.
+
+**F. Thêm mục "Liên hệ" vào menu làm menu VỠ DÒNG ở khổ máy tính/laptop không full màn hình (~800–
+1150px)** — đây là lỗi NGHIÊM TRỌNG nhất trong 7 lỗi (ảnh hưởng toàn bộ khách xem trên desktop hẹp,
+không chỉ 1 trang). Nguyên nhân: menu 8 mục + nút CTA gần như vừa khít bề rộng container tối đa
+(1200px, dư ~48px) NGAY TỪ TRƯỚC khi thêm "Liên hệ" — thêm 1 mục nữa (~78px) vượt hẳn khoảng dư,
+và ngưỡng chuyển sang hamburger cũ (`max-width:767px`) quá hẹp, để lại 1 "vùng kẹt" rộng (768–
+~1150px) nơi menu ngang không đủ chỗ nhưng chưa tới ngưỡng hamburger — flex item bị nén dưới bề
+rộng chữ tự nhiên (không có `white-space:nowrap`) nên TỪNG chữ trong 1 mục tự xuống dòng giữa chừng
+("Dịch" / "vụ"). Đã sửa 3 lớp cộng dồn (không lớp nào đơn lẻ đủ an toàn):
+1. Tách `.hamburger`/`.nav-links{display:none...}` ra **khối `@media` RIÊNG cho navbar**
+   (`max-width:1099px`) — KHÔNG gộp vào `@media(max-width:767px)` chung (khối đó vẫn giữ nguyên
+   767px cho hero/grid/footer... — chỉ đổi ngưỡng của riêng navbar, tránh kéo theo đổi layout khác
+   ở khổ 768–1099px ngoài ý muốn).
+2. Giảm `gap` menu 32px→16px (`var(--sp-4)`→`var(--sp-2)`), cỡ chữ menu 15px→14px, logo 22px→20px
+   — tăng khoảng dư khi hiển thị ngang (ở khổ ≥1100px).
+3. Thêm `white-space:nowrap` cho `.logo`/`.nav-links a` — phòng hờ, đảm bảo dù có bị nén cũng không
+   BAO GIỜ vỡ chữ giữa chừng (item sẽ chỉ tràn/ẩn bớt chứ không tách dòng, dù với lớp 1+2 thực tế
+   không còn xảy ra kịch bản này ở khổ ≥1100px nữa).
+Áp dụng đồng bộ 4 trang. **Đã xác nhận qua ảnh chụp thật trên production** (khổ desktop mặc định
+của Claude Browser, tương đương ~1280px) — cả 8 mục + CTA nằm gọn 1 dòng, không vỡ chữ.
+
+**G. Bấm "Đăng ký tư vấn miễn phí" ở `/lien-he` (trỏ `/#dang-ky`) cuộn SAI vị trí — lỗi khó nhất
+phiên này, sửa qua 4 lượt mới ra đúng gốc:**
+- **Lượt 1 (chưa đủ):** đoán do `.navbar` (`position:sticky`, cao 68px) che mất phần đầu section
+  đích khi cuộn tới anchor — thêm `section[id],header[id],main[id]{scroll-margin-top:84px}` (áp
+  dụng chung mọi anchor, kể cả section "Danh mục bài viết" chèn động — không cần liệt kê từng id).
+  Tự đo lại bằng `curl`/production thật mới phát hiện đây KHÔNG PHẢI nguyên nhân chính: cuộn không
+  chỉ lệch vài chục px mà TRƯỢT HẲN TỚI TẬN ĐÁY TRANG (`scrollY` = giá trị tối đa có thể).
+- **Lượt 2 (chưa đủ):** phát hiện nguyên nhân thật — trang chủ có 2 khối chèn ĐỘNG sau tải (Danh
+  mục bài viết mục B ở trên, Feedback khách hàng mục 48) làm chiều cao trang tăng dần NGAY TRONG
+  LÚC trình duyệt đang tự cuộn mượt (`html{scroll-behavior:smooth}`) tới `#hash` lúc tải trang — cú
+  cuộn "đuổi theo" 1 đích đang dịch chuyển nên trượt quá đà. Thử tắt tạm `scroll-behavior` thành
+  `auto` (tức thì) ngay đầu `<head>` — VẪN KHÔNG ĐỦ, cú cuộn tự động của trình duyệt vẫn "thắng" cú
+  sửa lại của JS chạy sau (2 nguồn cuộn cùng tồn tại, dù đổi animation vẫn còn tranh chấp).
+- **Lượt 3 (đủ về mặt loại trừ nguồn cuộn, còn 1 lỗ hổng nhỏ):** loại HẲN 1 nguồn thay vì chỉ đổi
+  animation — script đầu `<head>` tự **xoá `#hash` khỏi URL ngay lúc đầu**
+  (`history.replaceState(null,'',location.pathname+location.search)`, giữ giá trị gốc ở
+  `window.__initialHash__`) — trình duyệt không còn gì để tự cuộn tới nữa. Hàm `fixInitialHashScroll()`
+  (gọi trong `finally` của CẢ 2 khối chèn động ở trên, dù thành công/lỗi/rỗng đều gọi) giờ là nguồn
+  cuộn DUY NHẤT, dùng `window.__initialHash__` để tìm đích.
+- **Lượt 4 (đúng, đang chạy):** `fixInitialHashScroll()` vẫn gọi `scrollIntoView()` KHÔNG chỉ định
+  `behavior` → mặc định hưởng `scroll-behavior:smooth` của CSS — vì hàm này bị gọi 2 LẦN (1 lần/khối
+  chèn động, thời điểm tải xong khác nhau), 2 cú cuộn mượt gọi gần nhau có thể vẫn chồng lấn/đuổi
+  theo nhau y hệt lỗi gốc. Sửa bằng cách ép `behavior:'instant'` — đúng NGUYÊN TẮC đã áp dụng sẵn ở
+  `initScrollLock()` (mục 46.B, khôi phục vị trí cuộn khi đóng popup bài viết) cho CÙNG LÝ DO: "BẮT
+  BUỘC dùng `instant`, không phải `smooth`" khi có khả năng gọi cuộn nhiều lần liên tiếp trong thời
+  gian ngắn — bài học cũ trong chính file này lẽ ra nên áp dụng ngay từ lượt 1.
+
+**Đã xác nhận đúng bằng số đo chính xác trên production (không chỉ code):** `getBoundingClientRect()`
+qua đúng luồng bấm nút thật từ `/lien-he` (không phải gọi hàm JS giả lập) → `scrollY≈7298`,
+`sectionTop≈84px` (khớp CHÍNH XÁC giá trị `scroll-margin-top:84px` đã đặt ở lượt 1), `covered:false`
+— ổn định, không trôi tiếp sau khi chờ thêm. **Lưu ý quan trọng về công cụ test dùng trong phiên
+này:** `Element.scrollIntoView()` gọi qua `javascript_tool` (tiêm từ ngoài) cho kết quả CỰC KỲ THẤT
+THƯỜNG trong môi trường Claude Browser (lúc thì đúng, lúc không nhúc nhích, lúc lại nhảy sai) — đã
+tự kiểm chứng bằng cách so sánh với 1 trang HOÀN TOÀN không liên quan (Wikipedia, cuộn tới `#History`)
+để tách bạch "lỗi do trang web" hay "lỗi do công cụ test": Wikipedia cuộn đúng ngay từ đầu, chứng
+minh công cụ VẪN xử lý được `#hash` bình thường trong trường hợp đơn giản — nên các kết quả sai/thất
+thường gặp phải khi test riêng site này là **tín hiệu thật** (khiến lượt 2/3/4 ở trên là sửa lỗi
+thật, không phải chạy theo ảo giác của công cụ), nhưng độ ồn của kết quả đo qua công cụ RẤT CAO —
+**nếu sau này cần debug lại hành vi cuộn bằng Claude Browser, LUÔN thử lại ở tab HOÀN TOÀN MỚI (đóng
+tab cũ, tạo tab mới) trước khi kết luận, và ưu tiên bấm nút bằng toạ độ pixel thật (`computer` tool)
+hơn là gọi hàm JS trực tiếp qua `javascript_tool`** — cách đầu phản ánh đúng hành vi người dùng thật
+hơn, cách sau có tỷ lệ "không có tác dụng gì" (no-op) cao bất thường trong môi trường này.
+
+**Đã test trước mỗi lần deploy:** `node --check` + `python3 html.parser` cho cả 4 file mỗi lượt sửa.
+**Đã deploy từng lỗi riêng biệt, xác nhận trên production ngay sau mỗi lần** (7 commit liên tiếp
+cùng ngày, không gộp chung 1 lần deploy) — khớp đúng yêu cầu PM muốn thấy kết quả ngay sau mỗi lần
+báo lỗi. Hồi quy đầy đủ sau lượt cuối: `/`, `/lien-he`, `/blog` vẫn 200; `/worker.js` vẫn 404 (an
+ninh Phương án A không đổi).
+
+**⚠️ Việc CẦN nhớ nếu sau này còn sửa navbar/footer/widget nổi ở `index.html`:** PHẢI tự tay đồng bộ
+lại cả 3 trang T11 (`chinh-sach-bao-mat.html`/`dieu-khoan-dich-vu.html`/`lien-he.html`) — không có
+cơ chế tự động như `/blog`/404. Nếu việc này lặp lại nhiều lần nữa trong tương lai, cân nhắc đề xuất
+PM chuyển hẳn 3 trang này sang SSR qua `worker.js` (dùng `getSiteChrome()` như `/blog`/404) thay vì
+tiếp tục giữ dạng file tĩnh — đánh đổi: mất tính đơn giản "1 file HTML" nhưng đổi lấy đồng bộ tự
+động vĩnh viễn, không phải việc nhỏ nên CHỈ làm nếu PM đồng ý, không tự ý đổi kiến trúc.
