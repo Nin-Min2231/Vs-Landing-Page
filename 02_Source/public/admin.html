@@ -3395,7 +3395,7 @@ function renderHoSo(){
     <tr>
       <td>${i+1}</td>
       <td>${fmtDate(h.ngay)}</td>
-      <td><b>${esc(h.ten_khach)}</b></td>
+      <td><b>${esc(h.ten_khach)}</b> <span style="color:var(--mut)">(${h.so_luong||1})</span></td>
       <td>${h.sdt_khach?`<a href="tel:${esc(h.sdt_khach)}">${esc(h.sdt_khach)}</a>`:'–'}</td>
       <td>${esc(h.danh_muc_nuoc?.ten||'–')}</td>
       <td>${esc(h.danh_muc_muc_dich?.ten||'–')}</td>
