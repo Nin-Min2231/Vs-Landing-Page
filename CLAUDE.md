@@ -2875,3 +2875,111 @@ cơ chế tự động như `/blog`/404. Nếu việc này lặp lại nhiều l
 PM chuyển hẳn 3 trang này sang SSR qua `worker.js` (dùng `getSiteChrome()` như `/blog`/404) thay vì
 tiếp tục giữ dạng file tĩnh — đánh đổi: mất tính đơn giản "1 file HTML" nhưng đổi lấy đồng bộ tự
 động vĩnh viễn, không phải việc nhỏ nên CHỈ làm nếu PM đồng ý, không tự ý đổi kiến trúc.
+
+## 61. Admin: số lượng HS ở màn Tài chính, Thành viên nhóm chọn từ Khách hàng, trạng thái "Xong"
+    (2026-09-07, 3 yêu cầu PM — chỉ sửa `admin.html`, KHÔNG cần migration)
+
+**Bối cảnh:** 3 yêu cầu PM đưa cùng lúc, tất cả nằm trong `02_Source/public/admin.html`. Đã hỏi PM
+chốt 3 điểm trước khi code (màu trạng thái mới / có chặn trùng thành viên không / có thêm cột CSDL
+không) thay vì tự đoán — cả 3 PM chọn phương án khuyến nghị.
+
+**A. Màn "Tài chính" — thêm Số lượng HS sau tên khách:** dòng "Thu" đổi từ `Tên khách - Nước` sang
+**`Tên khách (Số lượng HS) - Nước`** (vd `Mạc Lê Ý Nhi (2) - Nhật Bản`), khớp đúng cách list "Hồ sơ"
+đang hiển thị (`renderHoSo()`). 2 chỗ sửa trong `loadTaiChinh()`: thêm `so_luong` vào `select=` của
+query `ho_so` (trước đây không lấy cột này) + ghép lại chuỗi `noi_dung`. **Không phải sửa
+`exportTaiChinhCSV()`** — hàm đó dùng thẳng `r.noi_dung` nên tự có định dạng mới (đã tự kiểm chứng
+bằng cách mock `Blob` và đọc lại chuỗi CSV sinh ra, không chỉ suy luận).
+
+**B. "Thành viên nhóm" (dialog Hồ sơ) — chỉ còn thêm bằng cách CHỌN từ "Thông tin khách hàng":**
+- **Bỏ hẳn** khối `.subrow-add` 3 ô nhập tay + nút "+ Thêm"/"Hủy sửa", **bỏ luôn nút "Sửa"** ở mỗi
+  dòng (chỉ còn "Xóa" theo đúng yêu cầu PM) — đã xóa cả HTML lẫn 3 hàm `editThanhVien()`/
+  `cancelEditThanhVien()`/`addThanhVien()`, không để lại code chết.
+- Thêm nút 🔍 (`#tvienPickBtn`, class `.tvien-pick-btn`) ngay cạnh chữ tiêu đề "Thành viên nhóm" —
+  `.dlg-section-title` vốn đã `display:flex;gap:8px` nên chỉ cần đặt nút làm con, không thêm layout.
+  **KHÔNG dùng lại class `.kh-pick-btn`** của ô "Tên khách hàng" vì class đó `position:absolute`
+  (bám vào trong ô input), đặt ở tiêu đề sẽ trôi sai chỗ.
+- **Dùng CHUNG dialog `#khPickOverlay`** với ô "Tên khách hàng", KHÔNG nhân bản thêm 1 dialog gần
+  giống — phân biệt bằng biến `KH_PICK_MODE` (`'hoso'` mặc định / `'tvien'`), `pickKhachHang()` rẽ
+  nhánh ở đầu hàm. Đúng bài học "2 bản sao dễ lệch nhau" đã ghi ở mục 45/52/56/60.
+- Chọn 1 dòng → `addThanhVienFromKhachHang()` POST ngay vào CSDL (giữ nguyên hành vi cũ của
+  `addThanhVien()`: bảng con này lưu tức thì, không chờ bấm "Lưu" ở dialog Hồ sơ) rồi gọi
+  `loadThanhVien()` + `refreshSoLuong()` vì `ho_so.so_luong` do **trigger CSDL** tính lại. Map 3 cột
+  thẳng từ `khach_hang`: `ho_ten`→`ten_khach`, `so_dt`→`sdt_khach`, `ghi_chu`→`ghi_chu`.
+- **Chặn trùng 2 lớp** (PM chọn chặn cả 2 loại): dialog **ẩn luôn** khách đã dùng khỏi danh sách
+  (đúng precedent màn "Nội dung quốc gia"/"Giá dịch vụ" ở mục 58, nơi nước đã có dòng bị loại khỏi
+  select) + `addThanhVienFromKhachHang()` vẫn kiểm lại lần nữa (phòng danh sách đang mở bị cũ, vd 2
+  tab cùng sửa 1 hồ sơ). "Đã dùng" gồm **cả khách hàng CHÍNH của hồ sơ**, không chỉ các thành viên
+  — vì `so_luong = 1 (khách chính) + số thành viên`, thêm lại khách chính sẽ đếm người đó 2 lần và
+  lệch luôn Tổng chi (2 khoản chi nhân `so_luong`).
+- **CỐ Ý KHÔNG thêm cột `khach_hang_id`** vào `ho_so_thanh_vien` (PM chọn phương án không migration)
+  → so trùng bằng **tên + SĐT** qua `tvienKey()`: `vnNorm()` bỏ dấu/hạ chữ thường + SĐT lọc còn chữ
+  số, nên `"0912 000 001"` và `"0912000001"` ra cùng khóa (đã test đúng). **Giới hạn đã biết, đã ghi
+  vào comment ngay tại hàm:** 2 khách hàng TRÙNG TÊN mà cả 2 đều chưa có SĐT sẽ ra cùng khóa → người
+  thứ 2 bị coi là trùng; cách xử lý khi gặp là nhập SĐT cho khách ở màn "Thông tin khách hàng".
+- **Hệ quả nghiệp vụ đã nói rõ với PM:** khách chưa có trong "Thông tin khách hàng" thì **không thêm
+  vào nhóm được nữa** — phải tạo record khách hàng trước. Đây là hệ quả tất yếu của việc bỏ nhập tay,
+  và đồng nhất với ô "Tên khách hàng" (vốn đã `readonly`, buộc chọn từ danh sách từ trước).
+
+**C. Trạng thái hồ sơ mới "Xong" — xử lý y hệt "Đậu":**
+- **KHÔNG cần migration:** `ho_so.trang_thai` là `text not null default 'Đang xử lý'`, **không có
+  CHECK constraint** (đã kiểm `02_supabase_setup_phase2.sql` dòng 121) → thêm giá trị mới chỉ là đổi
+  danh sách lựa chọn trong `admin.html`, đúng như tiền lệ đổi `leads.status` ở mục 04_phase4 D.2.
+- 8 chỗ đã sửa: chip lọc (thêm sau "Đậu", **mặc định không tích** như Đậu/Rớt/Hủy), `<option>` trong
+  dropdown dialog, `computeStatusWidths()` nhóm `hoso`, `hsPillClass()`, `hsStatusSelectClass()`,
+  `HS_STATUS_ORDER` (**= 3, cùng nhóm với Đậu/Rớt/Hủy**), + CSS 3 class mới.
+- **Gom `HS_STATUS_KET_QUA_CUOI = ['Đậu','Xong','Rớt','Hủy']` thành 1 hằng số duy nhất** thay cho 2
+  mảng viết cứng riêng lẻ trước đây ở `loadTaiChinh()` (lọc qua REST `in.()`) và `renderDashboard()`
+  ("Lợi nhuận tháng này", lọc phía client). **Đây là chỗ quan trọng nhất của mục C:** mục 27 CLAUDE.md
+  đã dặn "sửa 1 chỗ thì PHẢI sửa chỗ kia cho khớp" — gom hằng số làm lời dặn đó thành không thể quên.
+  Thêm trạng thái kết quả cuối lần sau chỉ cần sửa đúng 1 dòng này.
+- **2 chỗ CỐ Ý không đụng, vì đã tự đúng nhờ viết theo whitelist:** "Hồ sơ trả kết quả tuần này" ở
+  Dashboard (`renderDashTraKqTuan()`, lọc `=== 'Đã nộp' || === 'Đang xử lý'`) và job thông báo trong
+  `worker.js` (`trang_thai=in.("Đã nộp","Đang xử lý")`) — hồ sơ đã "Xong" tự động bị loại, đúng ý
+  nghĩa "đã có kết quả cuối thì không còn sắp trả KQ". `v_dashboard_theo_thang` không lọc theo trạng
+  thái nên cũng không ảnh hưởng. **Bài học chung: điều kiện viết theo whitelist ("chỉ lấy X, Y") tự
+  đúng khi thêm giá trị mới, còn blacklist ("loại trừ X, Y") thì phải nhớ sửa** — đúng cùng họ lý do
+  đã chọn Phương án A ở mục 52.
+- **Màu "Xong" = xanh dương ĐẬM `#BFDBFE`/chữ `#1E40AF`** (PM chọn "màu riêng"). Không dùng lại xanh
+  lá `#DCFCE7` của "Đậu" (2 trạng thái sẽ không phân biệt được bằng màu trên list) và **cũng không
+  dùng xanh dương NHẠT `--pl`/#E8F1FE** — màu đó "Đang xử lý" đang dùng cho pill/chip rồi. Đã đo
+  bằng `getComputedStyle` cả 3 chip cạnh nhau để chắc chắn khác nhau thật:
+  Xong `rgb(191,219,254)` · Đậu `rgb(220,252,231)` · Đang xử lý `rgb(232,241,254)`.
+- **`.status-select.st-xong` CHỈ đặt `background`, KHÔNG đặt `color`** — giống đúng 5 class
+  `st-*` có sẵn. Lý do có chủ đích: nếu đặt `color:#fff` cho `<select>` thì trên Chrome/Windows các
+  `<option>` trong danh sách bung ra kế thừa màu chữ đó → chữ trắng trên nền trắng, không đọc được.
+
+**Đã test trước khi deploy (mock, KHÔNG tạo dữ liệu test thật trên production):** `node --check` cả
+2 khối `<script>` inline (trích bằng regex loại bỏ thẻ có `src=`); cân bằng thẻ HTML bằng
+`python3 html.parser`; mở `admin.html` bằng Claude Browser rồi **mock `api()` thành 1 CSDL trong bộ
+nhớ có mô phỏng cả trigger `so_luong`** (không có mật khẩu admin để đăng nhập thật — cùng cách đã
+dùng ở mục 58) và bấm THẬT bằng `.click()` lên đúng element (nút 🔍, dòng trong dialog), không chỉ
+gọi hàm. Các ca đã xác nhận đúng:
+- Sort list Hồ sơ với 2 hồ sơ "Xong" xen giữa Đậu/Rớt/Hủy → ra đúng thứ tự trộn theo ngày
+  (Hủy 01/8 · Rớt 03/8 · Đậu 05/8 · Xong 07/8 · Xong 09/8), đứng sau Đang xử lý/Đã nộp.
+- Query Tài chính gửi đi đúng `select=...,so_luong,...` + `in.(Đậu,Xong,Rớt,Hủy)`; dòng hiển thị ra
+  đúng `Mạc Lê Ý Nhi (2) - Nhật Bản`; hồ sơ **thiếu `so_luong`** → fallback `(1)`, **thiếu nước** →
+  `- –`; dòng "Chi" không bị đụng; CSV xuất ra đúng chuỗi mới.
+- Thành viên nhóm: khách chính + thành viên đã có (SĐT có dấu cách) **đều bị ẩn** khỏi dialog; chọn
+  1 khách → payload POST đúng 4 field, `so_luong` tự lên; khách **không có SĐT** → `sdt_khach:null`,
+  vẫn lấy đúng `ghi_chu`; gọi thẳng hàm với khách đã dùng → chặn + **không POST**; hết khách để chọn
+  → hiện đúng dòng "Không tìm thấy khách hàng phù hợp"; xóa 1 thành viên → `so_luong` tự giảm.
+- Hồ sơ MỚI chưa lưu → nút 🔍 ẩn + hiện đúng dòng nhắc "Lưu hồ sơ trước..." (nút 🔍 nằm ở tiêu đề
+  section, NGOÀI `#hoTvienBox`, nên phải tự ẩn/hiện riêng trong `openHoSoModal()` — dễ quên).
+- `snapshotDialog()`/`confirmCloseDialog()` (mục 23) vẫn đúng: đóng dialog Hồ sơ ngay sau khi
+  thêm/xóa thành viên **không** bị hỏi "chưa lưu" oan.
+- Reset bộ lọc → chip "Xong" đúng trạng thái không tích; lọc chỉ tích "Xong" → ra đúng 2 hồ sơ.
+
+**⚠️ Lỗi công cụ gặp lại (không phải lỗi code, đừng mất thời gian debug):** `computer` tool báo
+`left_click failed: the press at (0,0) could not be attributed to a frame` khi element cần cuộn tới,
+và ảnh chụp màn hình chỉ ra 1 góc trang đã cũ dù đã `scroll_to` + `resize_window` — đúng họ giới hạn
+"xếp lớp/không compositing khung nhìn thật" đã ghi ở mục 20/47/53/55, cộng thêm việc preview pane
+nạp file cục bộ dưới dạng **`data:` URL** (nên `localStorage` bị chặn → console có 1 lỗi
+`SecurityError` từ `tv5s_device_id`, **code cũ, không liên quan thay đổi phiên này**, đã xác nhận
+bằng `git diff | grep localStorage` ra rỗng). Cách đi tiếp đã hiệu quả: bấm bằng `.click()` trực
+tiếp lên element (như mục 54) + đọc kết quả bằng `javascript_tool`, không dựa vào ảnh chụp.
+
+**Chưa làm (cần deploy thật mới xác nhận được):** đăng nhập admin thật rồi bấm thử end-to-end trên
+production (Claude Code không có mật khẩu admin) — cần PM tự nghiệm thu 3 việc: (1) màn Tài chính
+hiện đúng `Tên (SL) - Nước`, (2) thêm/xóa thành viên nhóm qua 🔍 và Số lượng hồ sơ tự cập nhật,
+(3) đổi 1 hồ sơ sang "Xong" rồi kiểm hồ sơ đó có xuất hiện ở màn Tài chính + "Lợi nhuận tháng này"
+trên Dashboard khớp số với màn Tài chính.

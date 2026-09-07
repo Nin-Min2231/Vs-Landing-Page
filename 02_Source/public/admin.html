@@ -264,6 +264,11 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .pill-hs-dau{background:#DCFCE7;color:var(--ok)}
 .pill-hs-rot{background:#FEE2E2;color:var(--err)}
 .pill-hs-huy{background:#F1F5F9;color:var(--mut)}
+/* "Xong" (2026-09) — cùng nhóm "kết quả cuối" với "Đậu" về sort + tính lợi nhuận, nhưng CỐ Ý
+   KHÔNG dùng lại xanh lá #DCFCE7 của "Đậu" (2 trạng thái sẽ không phân biệt được bằng màu trên
+   list) và cũng KHÔNG dùng xanh dương nhạt --pl/#E8F1FE của "Đang xử lý" — chọn xanh dương ĐẬM
+   hơn hẳn để cả 3 sắc thái tách bạch nhau. */
+.pill-hs-xong{background:#BFDBFE;color:#1E40AF}
 
 /* ===== "Dialog chuẩn" (dlg-*) — mẫu dialog dùng chung cho mọi màn hình, gốc từ thiết kế
    Figma dialog Hồ sơ. Tài liệu đầy đủ: 01_Docs/10_Chuan_Dialog_Chung.md — đọc trước khi
@@ -335,6 +340,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .status-select.st-dau{background:#DCFCE7}
 .status-select.st-rot{background:#FEE2E2}
 .status-select.st-huy{background:#F1F5F9}
+.status-select.st-xong{background:#BFDBFE}
 
 /* Chiều rộng cố định cho các nhóm trạng thái (đo bằng canvas lúc tải trang, xem
    computeStatusWidths()) — áp cho cả pill lẫn select cùng 1 nhóm để không bị lệch nhau. */
@@ -356,6 +362,13 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
   width:28px;height:28px;border:none;background:transparent;border-radius:6px;
   cursor:pointer;font-size:15px;color:var(--mut);display:flex;align-items:center;justify-content:center}
 .kh-pick-btn:hover{background:var(--pl)}
+/* Nút 🔍 cạnh tiêu đề "Thành viên nhóm" (2026-09) — KHÔNG dùng lại .kh-pick-btn vì nút đó
+   position:absolute (bám vào ô input), còn nút này là con thường của .dlg-section-title
+   (đã có display:flex + gap:8px sẵn nên không cần thêm layout gì). */
+.tvien-pick-btn{width:28px;height:28px;border:1px solid var(--bd);background:#fff;border-radius:6px;
+  cursor:pointer;font-size:14px;color:var(--mut);display:inline-flex;align-items:center;
+  justify-content:center;flex-shrink:0}
+.tvien-pick-btn:hover{background:var(--pl);border-color:var(--p)}
 /* ===== Icon lịch tùy chỉnh cho MỌI ô ngày mask dd/mm/yyyy (2026-08, sửa lại cho gọn) — bọc
    quanh input bằng JS lúc tải trang (initDatePickers()), không sửa từng input trong HTML, xem
    CLAUDE.md mục 20. Icon nằm LỒNG BÊN TRONG ô input (position:absolute, giống icon lịch mặc định
@@ -412,6 +425,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .chk-chip.is-checked.chip-dau{background:#DCFCE7;color:var(--ok);border-color:var(--ok)}
 .chk-chip.is-checked.chip-rot{background:#FEE2E2;color:var(--err);border-color:var(--err)}
 .chk-chip.is-checked.chip-huy{background:#F1F5F9;color:var(--mut);border-color:var(--mut)}
+.chk-chip.is-checked.chip-xong{background:#BFDBFE;color:#1E40AF;border-color:#1E40AF}
 
 /* ===== Popup Confirm / Thông báo — dùng chung mọi màn hình (theo thiết kế
    Popup_Confirm.png / Popup_thong_bao.png). Nội dung đổ vào lúc gọi showConfirmPopup()/
@@ -671,6 +685,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <label class="chk-chip chip-dxl is-checked"><input type="checkbox" value="Đang xử lý" checked onchange="onHsStatusChipChange(this)">Đang xử lý</label>
           <label class="chk-chip chip-dn is-checked"><input type="checkbox" value="Đã nộp" checked onchange="onHsStatusChipChange(this)">Đã nộp</label>
           <label class="chk-chip chip-dau"><input type="checkbox" value="Đậu" onchange="onHsStatusChipChange(this)">Đậu</label>
+          <label class="chk-chip chip-xong"><input type="checkbox" value="Xong" onchange="onHsStatusChipChange(this)">Xong</label>
           <label class="chk-chip chip-rot"><input type="checkbox" value="Rớt" onchange="onHsStatusChipChange(this)">Rớt</label>
           <label class="chk-chip chip-huy"><input type="checkbox" value="Hủy" onchange="onHsStatusChipChange(this)">Hủy</label>
         </div>
@@ -1088,7 +1103,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
           <div class="dlg-field"><label>Ngày trả KQ</label><input type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10" id="hoNgayTraKq" oninput="onDateInput(this)"></div>
           <div class="dlg-field"><label>Trạng thái hồ sơ</label>
             <select id="hoTrangThai" class="status-select stt-hoso" onchange="updateHoSoStatusColor()">
-              <option>Đang xử lý</option><option>Đã nộp</option><option>Đậu</option><option>Rớt</option><option>Hủy</option>
+              <option>Đang xử lý</option><option>Đã nộp</option><option>Đậu</option><option>Xong</option><option>Rớt</option><option>Hủy</option>
             </select>
           </div>
         </div>
@@ -1121,22 +1136,22 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
 
       <div class="dlg-section">
-        <div class="dlg-section-title">Thành viên nhóm</div>
+        <!-- Thành viên nhóm (2026-09): KHÔNG còn 3 ô nhập tay + nút "+ Thêm" nữa — chỉ thêm được
+             bằng cách bấm 🔍 chọn từ danh sách "Thông tin khách hàng" (giống hệt cách ô "Tên khách
+             hàng" ở trên đã làm), nên dữ liệu thành viên luôn khớp 1 khách hàng thật. Đã thêm thì
+             chỉ Xóa được, không sửa (muốn sửa tên/SĐT/ghi chú thì sửa ở màn "Thông tin khách
+             hàng" rồi xóa/thêm lại dòng này). -->
+        <div class="dlg-section-title">Thành viên nhóm
+          <button type="button" class="tvien-pick-btn hidden" id="tvienPickBtn" onclick="openKhPickModal('tvien')"
+            title="Chọn khách hàng thêm vào nhóm" aria-label="Chọn khách hàng thêm vào nhóm">🔍</button>
+        </div>
         <div id="hoTvienHint" class="hint hidden">Lưu hồ sơ trước để thêm thành viên nhóm.</div>
         <div id="hoTvienBox">
-          <div class="tbl-wrap" style="margin-bottom:10px">
+          <div class="tbl-wrap">
             <table style="min-width:400px">
               <thead><tr><th>Tên khách</th><th>SĐT</th><th>Ghi chú</th><th class="th-center">Thao tác</th></tr></thead>
               <tbody id="hoTvienBody"></tbody>
             </table>
-          </div>
-          <div class="subrow-add">
-            <input type="hidden" id="tvienEditId">
-            <input type="text" id="tvienTenKhach" placeholder="Tên khách">
-            <input type="tel" id="tvienSdtKhach" placeholder="SĐT">
-            <input type="text" id="tvienGhiChu" placeholder="Ghi chú">
-            <button class="btn btn-p" id="tvienSaveBtn" onclick="addThanhVien()">+ Thêm</button>
-            <button class="btn btn-g hidden" id="tvienCancelBtn" onclick="cancelEditThanhVien()">Hủy sửa</button>
           </div>
         </div>
       </div>
@@ -1499,7 +1514,10 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
   </div>
 </div>
 
-<!-- ============ MODAL CHỌN KHÁCH HÀNG (tìm kiếm từ dialog Hồ sơ, bấm 🔍) ============ -->
+<!-- ============ MODAL CHỌN KHÁCH HÀNG (dùng CHUNG cho 2 chỗ trong dialog Hồ sơ, bấm 🔍) ======
+     - Ô "Tên khách hàng"      -> openKhPickModal()        -> KH_PICK_MODE='hoso'  -> điền vào form
+     - Tiêu đề "Thành viên nhóm" -> openKhPickModal('tvien') -> KH_PICK_MODE='tvien' -> thêm 1 dòng
+     Chỉ khác nhau ở dòng ghi chú #khPickNote và hàm chạy khi bấm 1 dòng, xem pickKhachHang(). -->
 <div class="overlay hidden" id="khPickOverlay">
   <div class="modal modal-lg dlg-standard">
     <div class="dlg-head">
@@ -1507,6 +1525,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       <button type="button" class="modal-x" onclick="closeKhPickModal()" aria-label="Đóng">✕</button>
     </div>
     <div class="dlg-body">
+      <div class="hint hidden" id="khPickNote" style="padding-top:0"></div>
       <input type="search" id="khPickSearch" placeholder="Tìm họ tên / SĐT..." oninput="renderKhPickList()" style="margin-bottom:12px">
       <div class="tbl-wrap">
         <table>
@@ -1855,7 +1874,7 @@ function computeStatusWidths(){
   ctx.font = "700 13px 'Be Vietnam Pro', system-ui, sans-serif";
   const groups = {
     tuvan:  ['Mới','Đang tư vấn','Chốt','Hủy'],
-    hoso:   ['Đang xử lý','Đã nộp','Đậu','Rớt','Hủy'],
+    hoso:   ['Đang xử lý','Đã nộp','Đậu','Xong','Rớt','Hủy'],
     xlps:   ['Đang xử lý','Hủy','Tạm dừng','Hoàn thành'],
     doitac: ['Đang hợp tác','Ngừng hợp tác']
   };
@@ -3339,7 +3358,7 @@ async function loadHoSo(){
   }catch(e){ if(e.message!=='401') toast('Lỗi tải hồ sơ: '+e.message,'err'); }
 }
 function hsPillClass(s){
-  return {'Đang xử lý':'pill-hs-dxl','Đã nộp':'pill-hs-dn','Đậu':'pill-hs-dau','Rớt':'pill-hs-rot','Hủy':'pill-hs-huy'}[s]||'pill-hs-dxl';
+  return {'Đang xử lý':'pill-hs-dxl','Đã nộp':'pill-hs-dn','Đậu':'pill-hs-dau','Xong':'pill-hs-xong','Rớt':'pill-hs-rot','Hủy':'pill-hs-huy'}[s]||'pill-hs-dxl';
 }
 /* Chip checkbox "Trạng thái" (nhiều lựa chọn) — bấm 1 chip thì đổi màu (class is-checked)
    theo đúng màu pill trạng thái tương ứng rồi lọc lại danh sách. */
@@ -3351,10 +3370,20 @@ function checkedHsStatuses(){
   return [...document.querySelectorAll('#fHsStatusGroup input:checked')].map(cb=>cb.value);
 }
 /* Thứ tự ưu tiên trạng thái khi sort list Hồ sơ (2026-08, đổi lại lần 2) — số nhỏ hơn hiện trước.
-   "Đậu"/"Rớt"/"Hủy" CỐ Ý cùng giá trị 3 (không tách 3/4/5 như trước) — PM yêu cầu 3 trạng thái này
-   xem là 1 nhóm DUY NHẤT, xen kẽ lẫn nhau theo đúng Ngày tạo (không tách riêng từng trạng thái rồi
-   mới xếp theo ngày), xem ví dụ minh họa ở comment renderHoSo() bên dưới. */
-const HS_STATUS_ORDER = {'Đang xử lý':1,'Đã nộp':2,'Đậu':3,'Rớt':3,'Hủy':3};
+   "Đậu"/"Xong"/"Rớt"/"Hủy" CỐ Ý cùng giá trị 3 (không tách 3/4/5/6) — PM yêu cầu các trạng thái
+   này xem là 1 nhóm DUY NHẤT, xen kẽ lẫn nhau theo đúng Ngày tạo (không tách riêng từng trạng thái
+   rồi mới xếp theo ngày), xem ví dụ minh họa ở comment renderHoSo() bên dưới.
+   "Xong" (2026-09, PM yêu cầu) là trạng thái MỚI, xử lý y hệt "Đậu" ở MỌI nơi: cùng giá trị 3 ở
+   đây, và cũng được tính vào "Khoản thu"/"Lợi nhuận" của màn Tài chính + Dashboard (xem
+   loadTaiChinh()/renderDashboard()). Nếu sau này thêm trạng thái kết quả cuối nữa, phải sửa ĐỦ 3
+   chỗ đó cùng lúc, không chỉ chỗ này. */
+const HS_STATUS_ORDER = {'Đang xử lý':1,'Đã nộp':2,'Đậu':3,'Xong':3,'Rớt':3,'Hủy':3};
+/* Các trạng thái "đã có kết quả cuối" — 1 NGUỒN SỰ THẬT DUY NHẤT cho cả màn "Tài chính"
+   (loadTaiChinh(), lọc qua REST) lẫn "Lợi nhuận tháng này" ở Dashboard (renderDashboard(), lọc
+   phía client). Trước 2026-09 hai chỗ này viết cứng riêng mảng ['Đậu','Rớt','Hủy'] của mình nên
+   mỗi lần thêm/bớt trạng thái đều phải nhớ sửa 2 nơi, đúng kiểu rủi ro "2 bản sao dễ lệch nhau"
+   đã ghi nhiều lần trong CLAUDE.md (mục 27/45/52/56) — gom lại 1 hằng số để hết hẳn. */
+const HS_STATUS_KET_QUA_CUOI = ['Đậu','Xong','Rớt','Hủy'];
 function renderHoSo(){
   const checkedSt=checkedHsStatuses(), q=vnNorm($('fHsSearch').value.trim());
   const tuNgay=toISODate($('fHsTuNgay').value), denNgay=toISODate($('fHsDenNgay').value);
@@ -3369,10 +3398,10 @@ function renderHoSo(){
      lần 2 theo đúng yêu cầu PM, xem CLAUDE.md mục 42/43):
      Ưu tiên 1 — "Đang xử lý": trong nhóm, sắp theo Ngày tạo CŨ -> MỚI.
      Ưu tiên 2 — "Đã nộp": trong nhóm, sắp theo Ngày trả KQ GẦN NHẤT (hôm nay) -> XA NHẤT (tương lai).
-     Ưu tiên 3 — "Đậu"/"Rớt"/"Hủy" GỘP CHUNG 1 NHÓM (không tách riêng từng trạng thái): sắp theo
-       Ngày tạo CŨ -> MỚI, xen kẽ lẫn nhau giữa 3 trạng thái theo đúng ngày (KHÔNG xếp hết "Hủy"
-       rồi mới tới "Rớt" rồi "Đậu" — ví dụ đúng: Hủy 01/8, Rớt 03/8, Đậu 05/8, Hủy 09/8, Rớt 12/8,
-       Đậu 15/8 — xen kẽ đúng theo ngày, không nhóm theo trạng thái). */
+     Ưu tiên 3 — "Đậu"/"Xong"/"Rớt"/"Hủy" GỘP CHUNG 1 NHÓM (không tách riêng từng trạng thái): sắp
+       theo Ngày tạo CŨ -> MỚI, xen kẽ lẫn nhau giữa 4 trạng thái theo đúng ngày (KHÔNG xếp hết
+       "Hủy" rồi mới tới "Rớt" rồi "Đậu" — ví dụ đúng: Hủy 01/8, Rớt 03/8, Đậu 05/8, Xong 07/8,
+       Hủy 09/8, Rớt 12/8, Đậu 15/8 — xen kẽ đúng theo ngày, không nhóm theo trạng thái). */
   if(SORT_STATE['hs']){
     rows = applySort('hs', rows, {
       ngay:h=>h.ngay, ten:h=>h.ten_khach, sdt:h=>h.sdt_khach, nuoc:h=>h.danh_muc_nuoc?.ten,
@@ -3428,7 +3457,7 @@ function onMoneyInput(el){
   updateHoSoTotals();
 }
 function hsStatusSelectClass(s){
-  return {'Đang xử lý':'st-dxl','Đã nộp':'st-dn','Đậu':'st-dau','Rớt':'st-rot','Hủy':'st-huy'}[s]||'st-dxl';
+  return {'Đang xử lý':'st-dxl','Đã nộp':'st-dn','Đậu':'st-dau','Xong':'st-xong','Rớt':'st-rot','Hủy':'st-huy'}[s]||'st-dxl';
 }
 function updateHoSoStatusColor(){
   const sel=$('hoTrangThai');
@@ -3474,7 +3503,9 @@ function openHoSoModal(id, prefill){
   if(h) loadXlps(h.id); else { CUR_HOSO_XLPS=[]; renderXlps(); }
   $('hoTvienHint').classList.toggle('hidden', !!h);
   $('hoTvienBox').classList.toggle('hidden', !h);
-  cancelEditThanhVien();
+  // Nút 🔍 nằm ở tiêu đề section (NGOÀI #hoTvienBox) nên phải tự ẩn/hiện riêng — hồ sơ chưa lưu
+  // thì chưa có ho_so_id để gắn thành viên vào, hiện nút ra chỉ để bấm rồi báo lỗi.
+  $('tvienPickBtn').classList.toggle('hidden', !h);
   if(h) loadThanhVien(h.id); else { CUR_HOSO_THANHVIEN=[]; renderThanhVien(); }
   $('hoOverlay').classList.remove('hidden');
   const body = $('hoOverlay').querySelector('.dlg-body');
@@ -3566,7 +3597,17 @@ async function saveHoSo(){
 function markAutoFilled(on){
   ['hoTenKhach','hoSdtKhach','hoDiaChi','hoEmail'].forEach(id=>$(id).classList.toggle('autofilled', on));
 }
-function openKhPickModal(){
+/* Chế độ đang mở của dialog "Chọn khách hàng" — 'hoso' (điền ô "Tên khách hàng", mặc định) hoặc
+   'tvien' (thêm 1 dòng vào "Thành viên nhóm", 2026-09). Dùng 1 dialog cho cả 2 thay vì nhân bản
+   thêm 1 dialog gần giống — đúng bài học "2 bản sao dễ lệch nhau" (CLAUDE.md mục 45/52/56/60). */
+let KH_PICK_MODE = 'hoso';
+function openKhPickModal(mode){
+  KH_PICK_MODE = (mode === 'tvien') ? 'tvien' : 'hoso';
+  const note = $('khPickNote');
+  note.textContent = KH_PICK_MODE === 'tvien'
+    ? 'Bấm 1 dòng để thêm khách đó vào Thành viên nhóm. Khách đã có trong hồ sơ (khách chính hoặc thành viên) không hiện ở danh sách này.'
+    : '';
+  note.classList.toggle('hidden', KH_PICK_MODE !== 'tvien');
   $('khPickSearch').value = '';
   renderKhPickList();
   $('khPickOverlay').classList.remove('hidden');
@@ -3574,7 +3615,14 @@ function openKhPickModal(){
 function closeKhPickModal(){ $('khPickOverlay').classList.add('hidden'); }
 function renderKhPickList(){
   const q = vnNorm($('khPickSearch').value.trim());
-  const rows = KHACH_HANG.filter(k=>!q||vnNorm(k.ho_ten).includes(q)||vnNorm(k.so_dt).includes(q));
+  let rows = KHACH_HANG.filter(k=>!q||vnNorm(k.ho_ten).includes(q)||vnNorm(k.so_dt).includes(q));
+  // Chế độ 'tvien': ẩn luôn khách đã dùng trong hồ sơ này khỏi danh sách (thay vì cho bấm rồi mới
+  // báo lỗi) — đúng precedent màn "Nội dung quốc gia"/"Giá dịch vụ" ở tab Cài đặt chung, nơi nước
+  // đã có dòng cũng bị loại khỏi select (xem CLAUDE.md mục 58).
+  if(KH_PICK_MODE === 'tvien'){
+    const used = tvienUsedKeys();
+    rows = rows.filter(k=>!used.has(tvienKey(k.ho_ten, k.so_dt)));
+  }
   $('khPickEmpty').classList.toggle('hidden', rows.length>0);
   $('khPickBody').innerHTML = rows.map(k=>`
     <tr class="kh-pick-row" onclick="pickKhachHang(${k.id})">
@@ -3585,6 +3633,11 @@ function renderKhPickList(){
   applyRowLabels('khPickBody');
 }
 function pickKhachHang(id){
+  if(KH_PICK_MODE === 'tvien'){
+    closeKhPickModal();
+    addThanhVienFromKhachHang(id);
+    return;
+  }
   const r = KHACH_HANG.find(x=>x.id===id);
   if(!r) return;
   $('hoTenKhach').value = r.ho_ten;
@@ -3781,10 +3834,9 @@ function renderThanhVien(){
       <td>${t.sdt_khach?`<a href="tel:${esc(t.sdt_khach)}">${esc(t.sdt_khach)}</a>`:'–'}</td>
       <td>${esc(t.ghi_chu||'–')}</td>
       <td class="td-actions">
-        <button class="btn btn-p" onclick="editThanhVien(${t.id})">Sửa</button>
         <button class="btn btn-d" onclick="delThanhVien(${t.id})">Xóa</button>
       </td>
-    </tr>`).join('') : '<tr><td colspan="4" class="empty">Chưa có thành viên nào</td></tr>';
+    </tr>`).join('') : '<tr><td colspan="4" class="empty">Chưa có thành viên nào — bấm 🔍 ở tiêu đề để chọn khách hàng</td></tr>';
   applyRowLabels('hoTvienBody');
 }
 async function refreshSoLuong(hoSoId){
@@ -3796,46 +3848,56 @@ async function refreshSoLuong(hoSoId){
     updateHoSoTotals();
   }catch(e){ /* khong chan thao tac chinh neu lam moi lai khong duoc */ }
 }
-/* ==== Sửa thành viên nhóm (2026-08) — tái dùng luôn 3 ô "+ Thêm" làm form sửa (không mở thêm
-   dialog/hàng inline riêng): bấm "Sửa" nạp dữ liệu dòng đó vào 3 ô + ghi nhớ id đang sửa vào
-   #tvienEditId, đổi nhãn nút thành "Cập nhật" + hiện thêm nút "Hủy sửa". addThanhVien() dùng
-   chung cho cả thêm mới lẫn cập nhật, rẽ nhánh PATCH/POST theo đúng mẫu id?PATCH:POST đã dùng
-   ở mọi hàm saveXxx() khác trong file này. ==== */
-function editThanhVien(id){
-  const t = CUR_HOSO_THANHVIEN.find(x=>x.id===id);
-  if(!t) return;
-  $('tvienEditId').value = t.id;
-  $('tvienTenKhach').value = t.ten_khach;
-  $('tvienSdtKhach').value = t.sdt_khach||'';
-  $('tvienGhiChu').value = t.ghi_chu||'';
-  $('tvienSaveBtn').textContent = 'Cập nhật';
-  $('tvienCancelBtn').classList.remove('hidden');
-  $('tvienTenKhach').focus();
+/* ==== Thêm thành viên nhóm bằng cách CHỌN từ "Thông tin khách hàng" (2026-09, PM yêu cầu) ====
+   Thay hẳn 3 ô nhập tay + nút "+ Thêm"/"Sửa" trước đây (đã xóa cả HTML lẫn 3 hàm editThanhVien()/
+   cancelEditThanhVien()/addThanhVien()) — giờ chỉ còn 1 đường vào duy nhất: bấm 🔍 ở tiêu đề
+   section, chọn 1 dòng trong dialog "Chọn khách hàng" (dùng CHUNG dialog #khPickOverlay với ô
+   "Tên khách hàng", phân biệt bằng KH_PICK_MODE). Chọn xong ghi ngay vào CSDL (POST) như hành vi
+   cũ của addThanhVien() — bảng con này vốn lưu tức thì, không chờ bấm "Lưu" ở dialog Hồ sơ, và
+   ho_so.so_luong do trigger CSDL tự tính lại nên phải gọi refreshSoLuong() sau mỗi lần đổi.
+   3 cột lấy thẳng từ khach_hang: ho_ten -> ten_khach, so_dt -> sdt_khach, ghi_chu -> ghi_chu. ==== */
+
+/* Khóa so trùng thành viên. CỐ Ý không lưu khach_hang_id vào ho_so_thanh_vien (PM chọn phương án
+   không thêm cột / không cần migration) nên phải so bằng tên + SĐT — đúng 2 thứ nhân viên nhìn
+   thấy trên list. vnNorm() bỏ dấu + hạ chữ thường (dùng chung với ô tìm kiếm), SĐT lọc còn chữ số
+   để "0909 000 111" và "0909000111" không bị coi là 2 người khác nhau.
+   GIỚI HẠN đã biết: 2 khách hàng TRÙNG TÊN mà cả 2 đều chưa có SĐT sẽ ra cùng khóa -> người thứ 2
+   bị coi là trùng. Chấp nhận đánh đổi này (thà chặn thừa 1 ca cực hiếm hơn là đếm đôi số lượng hồ
+   sơ, vì so_luong nhân vào 2 khoản chi -> lệch luôn lợi nhuận), cách xử lý khi gặp: nhập SĐT cho
+   khách ở màn "Thông tin khách hàng" là hết trùng khóa. */
+function tvienKey(ten, sdt){
+  return vnNorm((ten||'').trim()) + '|' + String(sdt||'').replace(/[^0-9]/g,'');
 }
-function cancelEditThanhVien(){
-  $('tvienEditId').value = '';
-  $('tvienTenKhach').value=''; $('tvienSdtKhach').value=''; $('tvienGhiChu').value='';
-  $('tvienSaveBtn').textContent = '+ Thêm';
-  $('tvienCancelBtn').classList.add('hidden');
+/* Tập khóa ĐÃ dùng trong hồ sơ đang mở = các thành viên đã thêm + CHÍNH khách hàng chính của hồ
+   sơ. Phải gồm cả khách chính vì ho_so.so_luong = 1 (khách chính) + số thành viên — thêm lại
+   khách chính vào nhóm sẽ đếm người đó 2 lần, lệch luôn Tổng chi (2 khoản chi nhân so_luong). */
+function tvienUsedKeys(){
+  const keys = new Set(CUR_HOSO_THANHVIEN.map(t=>tvienKey(t.ten_khach, t.sdt_khach)));
+  const tenChinh = $('hoTenKhach').value.trim();
+  if(tenChinh) keys.add(tvienKey(tenChinh, $('hoSdtKhach').value));
+  return keys;
 }
-async function addThanhVien(){
+async function addThanhVienFromKhachHang(id){
   const hoId = $('hoId').value;
   if(!hoId){ toast('Lưu hồ sơ trước khi thêm thành viên nhóm','err'); return; }
-  const ten_khach=$('tvienTenKhach').value.trim();
-  if(!ten_khach){ toast('Nhập tên khách','err'); return; }
-  const editId = $('tvienEditId').value;
-  const body = {
-    ten_khach, sdt_khach:$('tvienSdtKhach').value.trim()||null, ghi_chu:$('tvienGhiChu').value.trim()||null
-  };
+  const k = KHACH_HANG.find(x=>x.id===id);
+  if(!k) return;
+  // Dialog đã tự ẩn khách trùng khỏi danh sách (renderKhPickList), nhưng vẫn chặn lại lần nữa ở
+  // đây — phòng trường hợp danh sách đang mở bị cũ so với dữ liệu thật (vd 2 tab cùng sửa 1 hồ sơ).
+  if(tvienUsedKeys().has(tvienKey(k.ho_ten, k.so_dt))){
+    toast('Khách "'+k.ho_ten+'" đã có trong hồ sơ này (khách chính hoặc thành viên nhóm)','err');
+    renderKhPickList();
+    return;
+  }
   try{
-    if(editId) await api('ho_so_thanh_vien?id=eq.'+editId,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
-    else await api('ho_so_thanh_vien',{method:'POST',body:JSON.stringify({...body, ho_so_id:Number(hoId)})});
-    cancelEditThanhVien();
+    await api('ho_so_thanh_vien',{method:'POST',body:JSON.stringify({
+      ho_so_id:Number(hoId), ten_khach:k.ho_ten, sdt_khach:k.so_dt||null, ghi_chu:k.ghi_chu||null
+    })});
     await loadThanhVien(hoId);
     await refreshSoLuong(hoId);
-    toast(editId?'Đã cập nhật thành viên nhóm':'Đã thêm thành viên nhóm');
+    toast('Đã thêm "'+k.ho_ten+'" vào nhóm');
     snapshotDialog('hoOverlay');
-  }catch(e){ toast('Lỗi lưu: '+e.message,'err'); }
+  }catch(e){ toast('Lỗi thêm thành viên: '+e.message,'err'); }
 }
 async function delThanhVien(id){
   if(!await showConfirmPopup({message:'Xóa thành viên này khỏi nhóm?'})) return;
@@ -3870,13 +3932,14 @@ function renderDashboard(byMonth, nhacLai, xlps7){
   const todayIso = tcToday();
   const hsTraKqHomNay = HO_SO.filter(h=>h.ngay_tra_kq===todayIso).length;
   /* "Lợi nhuận tháng này" (2026-08, đổi lại lần 2) — tính ĐÚNG khớp công thức mới của màn "Tài
-     chính" (renderTaiChinh()): tổng loi_nhuan của hồ sơ ĐÃ CÓ KẾT QUẢ CUỐI (Đậu/Rớt/Hủy, loi_nhuan
+     chính" (renderTaiChinh()): tổng loi_nhuan của hồ sơ ĐÃ CÓ KẾT QUẢ CUỐI (HS_STATUS_KET_QUA_CUOI
+     = Đậu/Xong/Rớt/Hủy, loi_nhuan
      khác 0 — giá trị âm của Rớt/Hủy vẫn tính) có Ngày trả KQ trong tháng này (đầu tháng -> hôm nay,
      xem tcDefaultFrom()/tcToday()). KHÔNG còn trừ "Khoản chi" nữa (PM yêu cầu tách riêng, xem
      comment tương ứng ở renderTaiChinh()) — nhờ đó không cần gọi API khoan_chi ở loadDashboard()
      nữa. Sửa ở đây thì PHẢI sửa cả renderTaiChinh() cho khớp, và ngược lại (mục 27 CLAUDE.md). */
   const monthFrom = tcDefaultFrom(), monthTo = tcToday();
-  const loiNhuanThangNay = HO_SO.filter(h=>['Đậu','Rớt','Hủy'].includes(h.trang_thai) &&
+  const loiNhuanThangNay = HO_SO.filter(h=>HS_STATUS_KET_QUA_CUOI.includes(h.trang_thai) &&
       Number(h.loi_nhuan||0)!==0 && h.ngay_tra_kq && h.ngay_tra_kq>=monthFrom && h.ngay_tra_kq<=monthTo)
     .reduce((s,h)=>s+Number(h.loi_nhuan||0),0);
   $('dashStatRow').innerHTML = `
@@ -3945,7 +4008,8 @@ function renderDashTraKqTuan(todayIso){
 }
 
 /* ==================== PHASE 3: TÀI CHÍNH ====================
-   Khoản thu = loi_nhuan của ho_so có trang_thai='Đậu', theo ngay_tra_kq.
+   Khoản thu = loi_nhuan của ho_so đã có kết quả cuối (trang_thai thuộc HS_STATUS_KET_QUA_CUOI:
+   Đậu/Xong/Rớt/Hủy — "Xong" thêm 2026-09 theo yêu cầu PM), theo ngay_tra_kq.
    Khoản chi = bảng khoan_chi độc lập, nhập tay (chi phí vận hành công ty — KHÔNG liên
    quan tới các cột chi_... của ho_so, những cột đó đã trừ vào loi_nhuan hồ sơ rồi).
    2 nguồn dữ liệu gộp ở phía client, không dùng view/join CSDL. */
@@ -3969,15 +4033,20 @@ async function loadTaiChinh(){
   const to = toIso || tcToday();
   try{
     // "Lợi nhuận" (2026-08, đổi lại theo yêu cầu PM) = tổng loi_nhuan của hồ sơ ĐÃ CÓ KẾT QUẢ CUỐI
-    // (Đậu/Rớt/Hủy — trước đây CHỈ tính Đậu), loại bỏ hồ sơ chưa có lợi nhuận (0 hoặc null qua
+    // (HS_STATUS_KET_QUA_CUOI = Đậu/Xong/Rớt/Hủy — trước đây CHỈ tính Đậu), loại bỏ hồ sơ chưa có lợi nhuận (0 hoặc null qua
     // loi_nhuan=neq.0 — Postgres tự loại cả null vì so sánh null luôn không đúng/không sai). Giá trị
     // ÂM (hồ sơ Rớt/Hủy vẫn ghi nhận lỗ) VẪN được tính vào tổng, không lọc bỏ.
     const [hoSoRows, chiRows] = await Promise.all([
-      api('ho_so?select=id,ten_khach,ngay_tra_kq,loi_nhuan,danh_muc_nuoc(ten)&trang_thai=in.'+encodeURIComponent('(Đậu,Rớt,Hủy)')+'&loi_nhuan=neq.0&ngay_tra_kq=gte.'+from+'&ngay_tra_kq=lte.'+to+'&order=ngay_tra_kq.desc'),
+      api('ho_so?select=id,ten_khach,so_luong,ngay_tra_kq,loi_nhuan,danh_muc_nuoc(ten)&trang_thai=in.'+encodeURIComponent('('+HS_STATUS_KET_QUA_CUOI.join(',')+')')+'&loi_nhuan=neq.0&ngay_tra_kq=gte.'+from+'&ngay_tra_kq=lte.'+to+'&order=ngay_tra_kq.desc'),
       api('khoan_chi?select=*&ngay=gte.'+from+'&ngay=lte.'+to+'&order=ngay.desc')
     ]);
     KHOAN_CHI = chiRows||[];
-    const thu = (hoSoRows||[]).map(h=>({ngay:h.ngay_tra_kq, loai:'Thu', noi_dung: h.ten_khach+' - '+(h.danh_muc_nuoc?.ten||'–'), so_tien:Number(h.loi_nhuan||0), ref_id:h.id}));
+    // Nội dung dòng "Thu" — định dạng "Tên khách hàng (Số lượng HS) - Nước xin visa" (2026-09,
+    // PM yêu cầu), khớp đúng cách list "Hồ sơ" đang hiển thị (renderHoSo()). so_luong do TRIGGER
+    // CSDL tự tính (1 khách chính + số thành viên nhóm) nên luôn >=1; fallback ||1 chỉ để phòng
+    // trường hợp cột về null. Chuỗi này cũng là chuỗi xuất ra CSV (exportTaiChinhCSV() dùng
+    // r.noi_dung) nên không cần sửa thêm chỗ nào cho phần xuất file.
+    const thu = (hoSoRows||[]).map(h=>({ngay:h.ngay_tra_kq, loai:'Thu', noi_dung: h.ten_khach+' ('+(h.so_luong||1)+') - '+(h.danh_muc_nuoc?.ten||'–'), so_tien:Number(h.loi_nhuan||0), ref_id:h.id}));
     const chi = KHOAN_CHI.map(c=>({ngay:c.ngay, loai:'Chi', noi_dung:c.noi_dung, so_tien:Number(c.so_tien||0), ref_id:c.id}));
     TC_ROWS = thu.concat(chi).sort((a,b)=> (a.ngay||'')<(b.ngay||'') ? 1 : (a.ngay||'')>(b.ngay||'') ? -1 : 0);
     TC_LAST_THU = thu; TC_LAST_CHI = chi;
