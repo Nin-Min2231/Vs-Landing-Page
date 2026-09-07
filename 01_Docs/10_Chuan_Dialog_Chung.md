@@ -4,7 +4,9 @@
 >
 > Nguồn gốc: dialog "Đăng ký hồ sơ mới" (tab Hồ sơ), làm theo thiết kế Figma ngày 2026-08. Xem `admin.html`, khối `#hoOverlay` là ví dụ tham chiếu đầy đủ nhất — copy cấu trúc từ đó khi cần.
 >
-> Cập nhật 2026-08: đã áp dụng mẫu này cho **toàn bộ 6 dialog** trong `admin.html` (Hồ sơ, Tư vấn, Đại lý ủy thác, Bảng phí đại lý, Bài viết, Sửa tên danh mục) — xem danh sách chi tiết ở mục 8.
+> **Cập nhật 2026-09-07 (đã rà soát lại toàn bộ bằng script, không phải đọc mắt):** mẫu này đang được áp dụng cho **toàn bộ 14 dialog** trong `admin.html` — xem danh sách đầy đủ ở mục 8. Con số "6 dialog" ở bản trước là số của 2026-08, đã lỗi thời (bảng mục 8 lúc đó cũng chỉ liệt kê 11/14).
+>
+> **Kết quả rà soát 2026-09-07 — 14/14 dialog đạt chuẩn, không có dialog nào lệch:** cả 14 đều đủ 5 thành phần bắt buộc của mục 2 (`.dlg-head` + `<h3>` + `.modal-x` + `.dlg-body` + `.modal-actions.dlg-foot`); 12/12 dialog CÓ nhập liệu đều đã áp dụng cảnh báo "chưa lưu" của mục 9.1, 2 dialog còn lại (`#chatDetailOverlay` thuần xem, `#khPickOverlay` thuần chọn) đúng diện miễn trừ; **0 chỗ còn dùng `type="date"`** — mọi field ngày đều đã dùng mask `dd/mm/yyyy` theo đúng Giai đoạn 3 ở mục 9.
 
 ## 1. Khi nào dùng mẫu này
 
@@ -14,6 +16,8 @@ Dùng cho **mọi dialog dạng form nhiều field** trong `admin.html` — đ�
 - Form có field tiền (VNĐ) cần định dạng dấu chấm ngăn cách hàng nghìn.
 
 Với dialog quá đơn giản (1-2 field, chắc chắn không bao giờ dài hơn màn hình) như "Sửa tên danh mục" (`#renameOverlay`), vẫn nên dùng `dlg-standard`/`dlg-head`/`dlg-body`/`dlg-foot` để đồng bộ màu sắc + vị trí nút X/nút Lưu, nhưng KHÔNG cần chia `.dlg-section`/`.dlg-row` — chỉ cần bọc field trong `.dlg-field` đơn giản (xem `#renameOverlay` làm ví dụ).
+
+**Cách đặt bề rộng cho nhóm dialog 1-2 field này (chốt lại 2026-09-07):** dùng `class="modal dlg-standard"` (KHÔNG thêm `modal-lg`/`modal-xl`) rồi ép hẹp bằng inline `style="max-width:400px"` — hiện có đúng 2 dialog theo khuôn này: `#renameOverlay` (400px, 1 field) và `#dvgOverlay` (460px, 2 field). Đây là **ngoại lệ CÓ CHỦ Ý**, không phải lệch chuẩn: câu "Không dùng mặc định `modal` (600px) vì quá hẹp" ở mục 2 chỉ nhắm vào **form nhiều cột**; dialog 1-2 field mà để 920px trở lên thì 1 ô input bị kéo dài hết chiều ngang, xấu hơn hẳn. Thêm dialog 1-2 field mới thì theo đúng khuôn này, đừng "sửa" 2 dialog trên thành `modal-lg`.
 
 ## 2. Cấu trúc HTML mẫu (copy — chỉ đổi nội dung bên trong)
 
@@ -103,6 +107,26 @@ Cách dùng trong HTML:
 Khi mở dialog (hàm `openXxxModal`): `$('xxxSoTien').value = formatMoney(data?.so_tien);`
 Khi lưu (hàm `saveXxx`): `so_tien: unformatMoney($('xxxSoTien').value)`
 
+**⚠️ BẪY TÊN HÀM — phát hiện khi rà soát 2026-09-07, đọc trước khi thêm field tiền mới:** trong
+`admin.html` có **2** hàm format tiền, tên gần giống nhau nhưng KHÁC nhau ở đuôi:
+
+| Hàm | Làm gì | Dùng cho dialog nào |
+|---|---|---|
+| `onMoneyInput(el)` | format + **gọi thêm `updateHoSoTotals()`** (tính lại Tổng thu/Tổng chi/Lợi nhuận của dialog Hồ sơ) | CHỈ nên dùng cho `#hoOverlay` |
+| `onChiMoneyInput(el)` | **chỉ** format, không gọi gì thêm | mọi dialog khác có field tiền |
+
+Thực tế hiện tại: `#hoOverlay` (8 ô) dùng `onMoneyInput` — đúng; `#chiOverlay`/`#dvgOverlay` dùng
+`onChiMoneyInput` — đúng; nhưng `#dtFeeOverlay` (`feePhiUyThac`, `feePhiLanhSu`) và `#nuocOverlay`
+(`nuocLePhi`) **cũng đang dùng `onMoneyInput`** (làm theo đúng chữ của mục này trước đây), nên mỗi
+lần gõ tiền ở 2 dialog đó lại chạy `updateHoSoTotals()` một cách vô ích. **Hiện tại VÔ HẠI** — hàm
+đó chỉ ghi vào 3 ô chỉ-đọc + `#hoSoLuong` của dialog Hồ sơ đang ĐÓNG, và `openHoSoModal()` luôn nạp
+lại toàn bộ giá trị khi mở nên không thể lộ ra số sai. **Nhưng là bẫy chờ:** ngày nào ai thêm vào
+`updateHoSoTotals()` một việc CÓ tác dụng phụ thật (toast, gọi API, sửa biến dùng chung) thì 2
+dialog kia sẽ hỏng một cách âm thầm, rất khó lần ra nguyên nhân. **Field tiền mới từ nay: dùng
+`onChiMoneyInput` trừ khi field đó thật sự nằm trong dialog Hồ sơ.** Việc đổi 3 ô đang lệch nói
+trên sang `onChiMoneyInput` là dọn dẹp thuần (không sửa lỗi đang hiện), CHƯA làm — cần PM đồng ý
+vì có sửa file đang chạy production.
+
 ## 6. Select đổi màu theo trạng thái (tuỳ chọn — chỉ dùng nếu field có nhiều trạng thái như "Trạng thái hồ sơ")
 
 ```html
@@ -137,8 +161,17 @@ Xem hàm `hsStatusSelectClass()`/`updateHoSoStatusColor()` trong `admin.html` l�
 | Nước đến (Cài đặt chung, Phase 6, 2026-08) | `#nuocOverlay` | 1 nhóm (Thông tin nước đến) | modal-lg, có `money-input` (Lệ phí) + 2 textarea giới hạn ký tự (`maxlength`) cho Checklist (1000)/Ghi chú (500). Nút mở dialog trong list gọi là "Chi tiết" (không phải "Sửa") — dùng chung cho cả xem lẫn sửa, xem CLAUDE.md mục 22 |
 | Chi tiết hội thoại (Quản lý Chat, Chat Box Release 1, 2026-08-28) | `#chatDetailOverlay` | 1 nhóm (Thông tin phiên chat) + 1 khối `.chat-msg-list` riêng (không phải `.dlg-section`, xem CLAUDE.md mục 47) | modal-lg, **KHÔNG áp dụng `snapshotDialog`/`confirmCloseDialog`** (mục 9.1) vì dialog THUẦN XEM, không có field nhập liệu — chỉ có nút "Đóng lại", không có nút "Lưu" |
 | Feedback từ khách hàng (Cài đặt chung, 2026-08-31) | `#dgkhOverlay` | 1 nhóm (Thông tin feedback) | modal-lg, copy đúng khuôn CRUD của "Dịch vụ Visa các quốc gia" (`#dvgOverlay`) — 4 field: Tên Facebook/URL (bắt buộc, cùng 1 `.dlg-row`), Nội dung (bắt buộc, textarea), Ghi chú (tùy chọn, textarea, chỉ nội bộ không hiển thị công khai). Xem CLAUDE.md mục 48 |
+| Dịch vụ Visa các quốc gia — giá (Cài đặt chung) | `#dvgOverlay` | Không chia section (2 field) | **Bổ sung vào bảng 2026-09-07** (trước đó chỉ được nhắc gián tiếp ở dòng `#dgkhOverlay`, không có dòng riêng). `class="modal dlg-standard"` + inline `max-width:460px` theo khuôn dialog 1-2 field ở mục 1. 2 field: Đất nước (select `danh_muc_nuoc`, bắt buộc) + Giá tiền (`money-input`, dùng `onChiMoneyInput` — đúng, xem bẫy tên hàm ở mục 5). Là dialog gốc mà `#dgkhOverlay`/`#nqgOverlay` copy khuôn CRUD từ đó |
+| Nội dung quốc gia (Cài đặt chung, T13 SEO, 2026-09-02) | `#nqgOverlay` | 4 nhóm (Thông tin cơ bản, Nội dung SEO, Khối nội dung H2, FAQ) | **Bổ sung vào bảng 2026-09-07.** modal-xl. Dialog phức tạp nhất sau `#hoOverlay`: 2 mảng `khoi_noi_dung`/`faq` là **jsonb lưu thẳng trong 1 dòng**, KHÔNG phải bảng con có API riêng như Thành viên nhóm — nên các khối được chèn/xóa thẳng trong DOM (`addNqgKhoiNoiDung()`/`removeNqgBlock()`) và chỉ ĐỌC LẠI toàn bộ giá trị lúc bấm Lưu (`collectNqgKhoiNoiDung()`), không giữ mảng JS song song. Có nút "👁 Xem trước" render `innerHTML` cho riêng field `noi_dung_html`. Slug tự sinh, khoá không cho sửa tay. Xem CLAUDE.md mục 58 |
+| Chọn khách hàng (dialog tìm kiếm, dùng chung) | `#khPickOverlay` | Không chia section (1 ô tìm + 1 bảng) | **Bổ sung vào bảng 2026-09-07.** modal-lg, chỉ có nút "Đóng lại" (không có nút Lưu) → **đúng diện miễn trừ mục 9.1**, không áp `snapshotDialog`/`confirmCloseDialog`. Dùng CHUNG cho 2 chỗ trong dialog Hồ sơ, phân biệt bằng biến `KH_PICK_MODE`: `'hoso'` (điền ô "Tên khách hàng") và `'tvien'` (thêm dòng vào "Thành viên nhóm", 2026-09-07) — **cần thêm chỗ thứ 3 thì thêm giá trị mới cho biến này, ĐỪNG nhân bản dialog**. Xem CLAUDE.md mục 61 |
 
 Khi tạo dialog mới trong tương lai, thêm 1 dòng vào bảng này để danh sách luôn cập nhật.
+**Bảng này đã được rà soát lại bằng script ngày 2026-09-07 và khớp 100% với `admin.html`** (14 dòng
+= 14 overlay có class `dlg-standard` trong code, không thiếu không dư). Cách rà lại nhanh cho lần
+sau: `grep -c 'class="modal[^"]*dlg-standard"' 02_Source/public/admin.html` để lấy tổng số, rồi
+`grep -B3 'class="modal[^"]*dlg-standard"' ... | grep -o 'id="[a-zA-Z]*Overlay"'` để lấy danh sách
+id — đối chiếu với cột "ID overlay" ở trên. **Lưu ý khi grep toàn dự án: loại thư mục
+`.claude/worktrees/`** (bản checkout cũ của các nhánh cũ, không phải code đang chạy).
 
 ## 9.1 Cảnh báo "dữ liệu chưa lưu" khi đóng dialog — BẮT BUỘC cho MỌI dialog mới (2026-08)
 

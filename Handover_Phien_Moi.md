@@ -222,15 +222,32 @@ trong `admin.html`, chỉ tới đúng `01_Docs/10_Chuan_Dialog_Chung.md` ở tr
 2026-09-07 ghi đường dẫn `02_Source/admin.html` kiểu CŨ (viết trước khi chuyển file vào `public/` ở
 mục 52) — **đã sửa thành `02_Source/public/admin.html`**, không còn sai nữa.
 
-**⚠️ Còn 1 con số đã lỗi thời trong CÙNG file skill (và trong tài liệu nó trỏ tới) — CHƯA sửa:**
-cả 2 nơi đều ghi *"cả 6/6 dialog trong `admin.html` đã dùng mẫu này"* (tính đến 2026-08), nhưng
-`admin.html` hiện đã có **14 overlay dùng class `dlg-standard`** (`postOverlay`, `tvOverlay`,
-`chatDetailOverlay`, `hoOverlay`, `dtOverlay`, `dtFeeOverlay`, `renameOverlay`, `nuocOverlay`,
-`dvgOverlay`, `dgkhOverlay`, `nqgOverlay`, `chiOverlay`, `khOverlay`, `khPickOverlay`). Cố ý KHÔNG
-tự sửa con số vì mới chỉ ĐẾM số overlay có class đó, **chưa rà từng dialog xem có tuân đủ spec ở
-mục 8 tài liệu hay không** — ghi "14/14 đã theo mẫu" khi chưa rà là khẳng định chưa kiểm chứng, đúng
-cái phải tránh. Nếu phiên sau cần dựa vào bảng mục 8 đó thì rà lại 14 dialog trước rồi cập nhật cả
-tài liệu lẫn skill. Riêng câu dặn "dialog mới tạo thêm sau này cũng phải theo mẫu" thì vẫn đúng.
+**Đã rà soát lại toàn bộ 14 dialog (2026-09-07, bằng script chứ không đọc mắt) — kết quả: 14/14 đạt
+chuẩn, KHÔNG có dialog nào lệch.** Trước đó cả skill lẫn tài liệu đều ghi "6/6 dialog" (số của
+2026-08, bảng mục 8 lúc đó liệt kê 11/14) — **đã sửa cả 2 nơi thành 14/14 và bổ sung 3 dòng còn
+thiếu vào bảng mục 8** (`#dvgOverlay`, `#nqgOverlay`, `#khPickOverlay`). Chi tiết đã rà: cả 14 đủ 5
+thành phần bắt buộc của mục 2 · 12/12 dialog có nhập liệu đều đã áp cảnh báo "chưa lưu" (mục 9.1),
+2 dialog còn lại (`#chatDetailOverlay` thuần xem, `#khPickOverlay` thuần chọn) đúng diện miễn trừ ·
+**0 chỗ còn dùng `type="date"`** (mọi field ngày đã dùng mask `dd/mm/yyyy`, đúng Giai đoạn 3 mục 9).
+Cuối mục 8 tài liệu giờ có sẵn 2 câu lệnh `grep` để rà lại nhanh cho phiên sau.
+
+**2 việc phát sinh từ lần rà soát này — đã GHI vào tài liệu, code thì CHƯA sửa:**
+1. **Bẫy tên hàm ô tiền (mục 5 tài liệu, mới thêm bảng so sánh):** `admin.html` có 2 hàm
+   `onMoneyInput(el)` (format **+ gọi thêm `updateHoSoTotals()`**, chỉ đúng cho dialog Hồ sơ) và
+   `onChiMoneyInput(el)` (chỉ format). Tài liệu cũ chỉ nói tới hàm đầu, nên `#dtFeeOverlay`
+   (`feePhiUyThac`/`feePhiLanhSu`) và `#nuocOverlay` (`nuocLePhi`) đang dùng `onMoneyInput` → gõ
+   tiền ở 2 dialog đó chạy `updateHoSoTotals()` vô ích. **Hiện tại VÔ HẠI** (hàm đó chỉ ghi vào 3 ô
+   chỉ-đọc + `#hoSoLuong` của dialog Hồ sơ đang ĐÓNG, mà `openHoSoModal()` luôn nạp lại toàn bộ khi
+   mở nên không thể lộ số sai) — **nhưng là bẫy chờ**: ngày nào ai thêm vào `updateHoSoTotals()`
+   một việc có tác dụng phụ thật (toast/gọi API/sửa biến dùng chung) thì 2 dialog kia hỏng âm thầm.
+   Field tiền mới từ nay **dùng `onChiMoneyInput`** trừ khi nằm trong dialog Hồ sơ. Đổi 3 ô đang
+   lệch sang `onChiMoneyInput` là **dọn dẹp thuần, không phải sửa lỗi đang hiện — CHƯA làm, chờ PM
+   đồng ý** (có sửa file đang chạy production).
+2. **Khuôn dialog 1-2 field (mục 1 tài liệu, mới chốt):** `class="modal dlg-standard"` + inline
+   `style="max-width:400px"`, KHÔNG thêm `modal-lg`/`modal-xl` — hiện có `#renameOverlay` (400px)
+   và `#dvgOverlay` (460px). Đây là **ngoại lệ CÓ CHỦ Ý**, câu "không dùng `modal` mặc định 600px"
+   ở mục 2 chỉ nhắm vào form nhiều cột. **Đừng "sửa" 2 dialog đó thành `modal-lg`** — 1 ô input bị
+   kéo dài 920px còn xấu hơn.
 
 **Lưu ý về `.claude/worktrees/`:** thư mục này chứa bản checkout CŨ của 3 nhánh cũ
 (`phase-2-handover-review`, `phase-3-tai-chinh`, `scr-003-mailing-list-screen`), bị loại qua
