@@ -2983,3 +2983,28 @@ production (Claude Code không có mật khẩu admin) — cần PM tự nghiệ
 hiện đúng `Tên (SL) - Nước`, (2) thêm/xóa thành viên nhóm qua 🔍 và Số lượng hồ sơ tự cập nhật,
 (3) đổi 1 hồ sơ sang "Xong" rồi kiểm hồ sơ đó có xuất hiện ở màn Tài chính + "Lợi nhuận tháng này"
 trên Dashboard khớp số với màn Tài chính.
+
+**Cập nhật 2026-09-08 — PM đã nghiệm thu xong 3 việc trên, yêu cầu thêm cột "Trạng thái" ở màn
+Tài chính:** vị trí ngay SAU cột "Nội dung"; dòng "Thu" hiện trạng thái của hồ sơ tương ứng, dòng
+"Chi" hiện dấu `–`. Sửa 6 chỗ trong `loadTaiChinh()`/`renderTaiChinh()`/`exportTaiChinhCSV()` + 1
+`<th>` mới — không cần migration, không đụng `worker.js`.
+- **Dùng lại `hsPillClass()` + class `stt-hoso`** (cùng hàm màn Hồ sơ đang dùng) thay vì tự viết
+  bảng màu riêng cho màn Tài chính — nhờ vậy trạng thái mới thêm sau này (như "Xong" ở trên) tự
+  hiện đúng màu ở CẢ 2 màn, không phải nhớ sửa 2 nơi. Cùng tinh thần gom hằng số
+  `HS_STATUS_KET_QUA_CUOI` đã làm ở mục C.
+- Dòng "Chi" gán thẳng `trang_thai:null` lúc dựng mảng (không để `undefined`) — cho 2 nhóm Thu/Chi
+  cùng hình dạng object, chỗ render/CSV chỉ cần 1 phép kiểm `r.trang_thai ? ... : '–'`.
+- **Cột mới cũng sortable** như 4 cột kia. Getter trả `r.trang_thai||''` cho dòng Chi để mọi dòng
+  Chi gom về CÙNG 1 đầu danh sách (`applySort` so chuỗi bằng `localeCompare(...,'vi')`), không lẫn
+  vào giữa các nhóm trạng thái của dòng Thu — đã test cả 2 chiều tăng/giảm.
+- **CSV cũng thêm cột này** (`exportTaiChinhCSV()`): PM không yêu cầu rõ, nhưng file xuất ra mà
+  lệch cột so với bảng đang nhìn thì rất dễ đọc nhầm — đã giữ đúng thứ tự 5 cột như trên màn hình.
+- **KHÔNG phải sửa `applyRowLabels()`**: hàm này tự lấy nhãn thẻ card mobile từ chính `<th>` của
+  bảng, nên thêm 1 `<th>` + 1 `<td>` là chế độ thẻ trên điện thoại tự có nhãn "Trạng thái" đúng
+  chỗ — đã xác nhận `dataset.label` ra đủ 6 nhãn.
+
+**Đã test (mock `api()` như trên, chưa deploy khi viết dòng này):** `node --check` + cân bằng thẻ
+OK; đếm `<th>` = `<td>` = 6 (tránh lệch cột — lỗi kinh điển khi chèn cột vào giữa bảng); 4 dòng Thu
+hiện đúng 4 pill `pill-hs-dau`/`pill-hs-rot`/`pill-hs-xong`/`pill-hs-huy`, dòng Chi hiện `–` không
+có pill; bấm THẬT vào `<th>` sort 2 lần → tăng/giảm đều đúng, dòng Chi luôn ở 1 đầu; CSV sinh ra
+đúng 5 cột đúng thứ tự.

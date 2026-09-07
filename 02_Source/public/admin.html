@@ -776,6 +776,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
             <th class="sortable" onclick="onSortClick('tc','ngay',renderTaiChinhSorted)">Ngày<span class="sort-ic" data-tbl="tc" data-col="ngay"></span></th>
             <th class="sortable" onclick="onSortClick('tc','loai',renderTaiChinhSorted)">Phân loại<span class="sort-ic" data-tbl="tc" data-col="loai"></span></th>
             <th class="sortable" onclick="onSortClick('tc','noidung',renderTaiChinhSorted)">Nội dung<span class="sort-ic" data-tbl="tc" data-col="noidung"></span></th>
+            <th class="sortable" onclick="onSortClick('tc','trangthai',renderTaiChinhSorted)">Trạng thái<span class="sort-ic" data-tbl="tc" data-col="trangthai"></span></th>
             <th class="sortable" onclick="onSortClick('tc','sotien',renderTaiChinhSorted)">Số tiền<span class="sort-ic" data-tbl="tc" data-col="sotien"></span></th>
             <th class="th-center">Thao tác</th>
           </tr></thead>
@@ -4037,7 +4038,7 @@ async function loadTaiChinh(){
     // loi_nhuan=neq.0 — Postgres tự loại cả null vì so sánh null luôn không đúng/không sai). Giá trị
     // ÂM (hồ sơ Rớt/Hủy vẫn ghi nhận lỗ) VẪN được tính vào tổng, không lọc bỏ.
     const [hoSoRows, chiRows] = await Promise.all([
-      api('ho_so?select=id,ten_khach,so_luong,ngay_tra_kq,loi_nhuan,danh_muc_nuoc(ten)&trang_thai=in.'+encodeURIComponent('('+HS_STATUS_KET_QUA_CUOI.join(',')+')')+'&loi_nhuan=neq.0&ngay_tra_kq=gte.'+from+'&ngay_tra_kq=lte.'+to+'&order=ngay_tra_kq.desc'),
+      api('ho_so?select=id,ten_khach,so_luong,trang_thai,ngay_tra_kq,loi_nhuan,danh_muc_nuoc(ten)&trang_thai=in.'+encodeURIComponent('('+HS_STATUS_KET_QUA_CUOI.join(',')+')')+'&loi_nhuan=neq.0&ngay_tra_kq=gte.'+from+'&ngay_tra_kq=lte.'+to+'&order=ngay_tra_kq.desc'),
       api('khoan_chi?select=*&ngay=gte.'+from+'&ngay=lte.'+to+'&order=ngay.desc')
     ]);
     KHOAN_CHI = chiRows||[];
@@ -4046,8 +4047,11 @@ async function loadTaiChinh(){
     // CSDL tự tính (1 khách chính + số thành viên nhóm) nên luôn >=1; fallback ||1 chỉ để phòng
     // trường hợp cột về null. Chuỗi này cũng là chuỗi xuất ra CSV (exportTaiChinhCSV() dùng
     // r.noi_dung) nên không cần sửa thêm chỗ nào cho phần xuất file.
-    const thu = (hoSoRows||[]).map(h=>({ngay:h.ngay_tra_kq, loai:'Thu', noi_dung: h.ten_khach+' ('+(h.so_luong||1)+') - '+(h.danh_muc_nuoc?.ten||'–'), so_tien:Number(h.loi_nhuan||0), ref_id:h.id}));
-    const chi = KHOAN_CHI.map(c=>({ngay:c.ngay, loai:'Chi', noi_dung:c.noi_dung, so_tien:Number(c.so_tien||0), ref_id:c.id}));
+    // Cột "Trạng thái" (2026-09-08, PM yêu cầu): dòng "Thu" lấy đúng trang_thai của hồ sơ tương
+    // ứng (luôn là 1 trong HS_STATUS_KET_QUA_CUOI vì query đã lọc sẵn), dòng "Chi" KHÔNG có khái
+    // niệm trạng thái nên để null — chỗ render/xuất CSV tự đổi thành "–".
+    const thu = (hoSoRows||[]).map(h=>({ngay:h.ngay_tra_kq, loai:'Thu', noi_dung: h.ten_khach+' ('+(h.so_luong||1)+') - '+(h.danh_muc_nuoc?.ten||'–'), trang_thai:h.trang_thai, so_tien:Number(h.loi_nhuan||0), ref_id:h.id}));
+    const chi = KHOAN_CHI.map(c=>({ngay:c.ngay, loai:'Chi', noi_dung:c.noi_dung, trang_thai:null, so_tien:Number(c.so_tien||0), ref_id:c.id}));
     TC_ROWS = thu.concat(chi).sort((a,b)=> (a.ngay||'')<(b.ngay||'') ? 1 : (a.ngay||'')>(b.ngay||'') ? -1 : 0);
     TC_LAST_THU = thu; TC_LAST_CHI = chi;
     renderTaiChinh(thu, chi);
@@ -4070,7 +4074,9 @@ function renderTaiChinh(thuArr, chiArr){
     <div class="stat"><div class="n">${fmtVND(tongChi)}</div><div class="l">Khoản chi</div></div>
     <div class="stat"><div class="n">${thuArr.length}</div><div class="l">Số hồ sơ tính lợi nhuận trong kỳ</div></div>`;
   $('tcEmpty').classList.toggle('hidden', TC_ROWS.length>0);
-  const rows = applySort('tc', TC_ROWS, {ngay:r=>r.ngay, loai:r=>r.loai, noidung:r=>r.noi_dung, sotien:r=>r.so_tien});
+  // trangthai: dòng "Chi" trả '' để mọi dòng Chi gom về cùng 1 đầu danh sách khi sort (applySort
+  // so sánh chuỗi bằng localeCompare 'vi'), không lẫn vào giữa các nhóm trạng thái của dòng Thu.
+  const rows = applySort('tc', TC_ROWS, {ngay:r=>r.ngay, loai:r=>r.loai, noidung:r=>r.noi_dung, trangthai:r=>r.trang_thai||'', sotien:r=>r.so_tien});
   $('tcBody').innerHTML = rows.map(r=>{
     // Hồ sơ Rớt/Hủy có thể có loi_nhuan ÂM (lỗ) — tô đỏ đúng theo dấu thật, không tô xanh cứng theo
     // loai='Thu' như trước nữa (trước đây chỉ có hồ sơ Đậu nên loi_nhuan luôn dương, không cần phân
@@ -4081,6 +4087,9 @@ function renderTaiChinh(thuArr, chiArr){
       <td>${fmtDate(r.ngay)}</td>
       <td><span class="pill ${r.loai==='Thu'?'pill-won':'pill-chi'}">${r.loai}</span></td>
       <td>${esc(r.noi_dung)}</td>
+      <td>${r.trang_thai
+        ? `<span class="pill stt-hoso ${hsPillClass(r.trang_thai)}">${esc(r.trang_thai)}</span>`
+        : '–'}</td>
       <td style="color:${isNeg?'var(--err)':'var(--ok)'};font-weight:700">${r.loai==='Chi'?'-':''}${fmtVND(r.so_tien)}</td>
       <td class="td-actions">${r.loai==='Thu'
         ? `<button class="btn btn-p" onclick="openHoSoModal(${r.ref_id})">Chi tiết</button>`
@@ -4131,10 +4140,12 @@ async function delChi(id){
 }
 function exportTaiChinhCSV(){
   if(!TC_ROWS.length){ toast('Chưa có dữ liệu để xuất','err'); return; }
-  const head=['Ngày','Phân loại','Nội dung','Số tiền'];
+  // Giữ đúng thứ tự cột như bảng trên màn hình (kể cả cột "Trạng thái" thêm 2026-09-08) — file
+  // xuất ra mà lệch cột so với cái đang nhìn thì rất dễ đọc nhầm.
+  const head=['Ngày','Phân loại','Nội dung','Trạng thái','Số tiền'];
   const csvCell = v => '"'+(v??'').toString().replace(/"/g,'""')+'"';
   const lines=[head.join(',')].concat(TC_ROWS.map(r=>
-    [fmtDate(r.ngay), r.loai, r.noi_dung, r.so_tien].map(csvCell).join(',')));
+    [fmtDate(r.ngay), r.loai, r.noi_dung, r.trang_thai||'–', r.so_tien].map(csvCell).join(',')));
   const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
