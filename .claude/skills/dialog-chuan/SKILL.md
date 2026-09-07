@@ -5,7 +5,7 @@ description: Mẫu dialog/popup chuẩn dùng chung cho admin.html của dự á
 
 # Dialog chuẩn cho admin.html (Top Visa)
 
-Khi cần tạo mới hoặc sửa bố cục 1 dialog (popup form) trong `02_Source/admin.html`, đọc đầy đủ **`01_Docs/10_Chuan_Dialog_Chung.md`** trước khi viết code — file đó có:
+Khi cần tạo mới hoặc sửa bố cục 1 dialog (popup form) trong `02_Source/public/admin.html`, đọc đầy đủ **`01_Docs/10_Chuan_Dialog_Chung.md`** trước khi viết code — file đó có:
 
 - Cấu trúc HTML mẫu để copy (class `dlg-standard`, `dlg-head`, `dlg-body`, `dlg-foot`, `dlg-section`, `dlg-row`, `dlg-field`).
 - Bảng màu chính xác (nền section `#CCE3F0`, vạch xanh `#1E5AE8`, badge bắt buộc `#D64550`, nền tổng tiền `#E6F8EB`...).

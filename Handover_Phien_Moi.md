@@ -218,7 +218,28 @@ CLAUDE.md mục 1) → `10_SEO/12_Thu_tu_thuc_hien.xlsx` (thứ tự 20 bước)
 `01_Docs/10_Chuan_Dialog_Chung.md` (chuẩn dialog `dlg-*`, đọc trước khi dựng dialog mới) → file này.
 
 **Có 1 skill sẵn trong repo:** `.claude/skills/dialog-chuan/` — tự kích hoạt khi làm việc với dialog
-trong `admin.html`, chỉ tới đúng `01_Docs/10_Chuan_Dialog_Chung.md` ở trên. ⚠️ File skill đó ghi
-đường dẫn **`02_Source/admin.html` kiểu CŨ** (viết trước khi chuyển file vào `public/` ở mục 52) —
-đường dẫn đúng hiện tại là `02_Source/public/admin.html`, tự hiểu ngầm quy tắc cộng `public/` ở
-CLAUDE.md mục 1/52 khi đọc.
+trong `admin.html`, chỉ tới đúng `01_Docs/10_Chuan_Dialog_Chung.md` ở trên. File skill này trước
+2026-09-07 ghi đường dẫn `02_Source/admin.html` kiểu CŨ (viết trước khi chuyển file vào `public/` ở
+mục 52) — **đã sửa thành `02_Source/public/admin.html`**, không còn sai nữa.
+
+**⚠️ Còn 1 con số đã lỗi thời trong CÙNG file skill (và trong tài liệu nó trỏ tới) — CHƯA sửa:**
+cả 2 nơi đều ghi *"cả 6/6 dialog trong `admin.html` đã dùng mẫu này"* (tính đến 2026-08), nhưng
+`admin.html` hiện đã có **14 overlay dùng class `dlg-standard`** (`postOverlay`, `tvOverlay`,
+`chatDetailOverlay`, `hoOverlay`, `dtOverlay`, `dtFeeOverlay`, `renameOverlay`, `nuocOverlay`,
+`dvgOverlay`, `dgkhOverlay`, `nqgOverlay`, `chiOverlay`, `khOverlay`, `khPickOverlay`). Cố ý KHÔNG
+tự sửa con số vì mới chỉ ĐẾM số overlay có class đó, **chưa rà từng dialog xem có tuân đủ spec ở
+mục 8 tài liệu hay không** — ghi "14/14 đã theo mẫu" khi chưa rà là khẳng định chưa kiểm chứng, đúng
+cái phải tránh. Nếu phiên sau cần dựa vào bảng mục 8 đó thì rà lại 14 dialog trước rồi cập nhật cả
+tài liệu lẫn skill. Riêng câu dặn "dialog mới tạo thêm sau này cũng phải theo mẫu" thì vẫn đúng.
+
+**Lưu ý về `.claude/worktrees/`:** thư mục này chứa bản checkout CŨ của 3 nhánh cũ
+(`phase-2-handover-review`, `phase-3-tai-chinh`, `scr-003-mailing-list-screen`), bị loại qua
+`.git/info/exclude` nên không được git theo dõi. Trong đó có bản `SKILL.md`/`CLAUDE.md`/`README.md`
+cũ vẫn ghi đường dẫn thiếu `public/` — **đó là ảnh chụp quá khứ, ĐỪNG sửa và đừng dùng làm nguồn
+tham chiếu**; khi `grep` toàn dự án nhớ loại thư mục này ra kẻo tưởng còn nhiều chỗ sai.
+
+**Đường dẫn kiểu cũ CÒN LẠI, cố ý không sửa (đúng chủ trương mục 52):** `01_Docs/05_Ke_hoach_du_an.md`
+dòng 51/68 ghi `02_Source/index.html`, `02_Source/admin.html` — đây là **tài liệu kế hoạch lịch sử**
+(bảng "Đầu ra"/"Thời gian" từng Phase, có checkbox tiến độ), giữ nguyên để đúng bối cảnh lúc lập kế
+hoạch, giống các mục lịch sử trong `CLAUDE.md`. Khác hẳn file skill (là **chỉ dẫn còn hiệu lực** cho
+agent đọc rồi hành động ngay — sai đường dẫn ở đó là đi tìm file không tồn tại, nên phải sửa).
