@@ -194,6 +194,13 @@ td select{width:auto;font-size:13px;padding:5px 8px}
 .pagination-btns .btn:disabled{opacity:.4;cursor:not-allowed}
 /* nhóm nút "Thao tác" dùng chung cho mọi bảng */
 .th-center{text-align:center}
+/* Canh lề ô dữ liệu (2026-09-08) — dùng CHUNG cho mọi bảng, đặt class lên CẢ <th> lẫn <td> của
+   cùng 1 cột để tiêu đề và dữ liệu không lệch nhau. Chỉ có tác dụng ở chế độ BẢNG (desktop):
+   ở chế độ THẺ trên điện thoại (@media max-width:700px bên dưới) mỗi <td> là flex container
+   "nhãn: giá trị" nên text-align không đổi được vị trí — đúng ý, thẻ luôn canh trái cho dễ đọc. */
+.th-right{text-align:right}
+.td-center{text-align:center}
+.td-right{text-align:right}
 .td-actions{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
 
 /* bảng → thẻ (card) trên điện thoại, thay vì cuộn ngang */
@@ -263,7 +270,16 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .pill-hs-dn{background:#FEF3C7;color:var(--warn)}
 .pill-hs-dau{background:#DCFCE7;color:var(--ok)}
 .pill-hs-rot{background:#FEE2E2;color:var(--err)}
-.pill-hs-huy{background:#F1F5F9;color:var(--mut)}
+/* "Hủy" (đổi màu 2026-09-08 theo yêu cầu PM — trước đây xám #F1F5F9/--mut #64748B, PM thấy tối và
+   chìm). Chọn TÍM (violet-100/violet-700) vì đó là ô màu pastel còn TRỐNG duy nhất trong bộ 6 trạng
+   thái hồ sơ — xanh dương nhạt (Đang xử lý), vàng (Đã nộp), xanh lá (Đậu), xanh dương đậm (Xong),
+   đỏ (Rớt) đều đã dùng; tím cũng không đụng ý nghĩa của đỏ "Rớt" (trượt visa) vì "Hủy" là khách/
+   công ty chủ động dừng, không phải bị lãnh sự từ chối.
+   ⚠️ CỐ Ý chỉ đổi trạng thái "Hủy" của HỒ SƠ (dùng ở màn Hồ sơ + Tài chính, đúng phạm vi PM nêu).
+   3 chỗ khác cũng đang xám #F1F5F9/--mut và KHÔNG đổi: .pill-lost (Tư vấn "Hủy"), .pill-xl-huy
+   (Xử lý phát sinh "Hủy"), .pill-dt-off (Đại lý "Ngừng hợp tác") — đây là các thực thể KHÁC, PM
+   chưa yêu cầu. Nếu sau này PM muốn đồng bộ toàn app thì đổi cả 3 dòng đó sang cùng cặp màu này. */
+.pill-hs-huy{background:#EDE9FE;color:#6D28D9}
 /* "Xong" (2026-09) — cùng nhóm "kết quả cuối" với "Đậu" về sort + tính lợi nhuận, nhưng CỐ Ý
    KHÔNG dùng lại xanh lá #DCFCE7 của "Đậu" (2 trạng thái sẽ không phân biệt được bằng màu trên
    list) và cũng KHÔNG dùng xanh dương nhạt --pl/#E8F1FE của "Đang xử lý" — chọn xanh dương ĐẬM
@@ -339,7 +355,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .status-select.st-dn{background:#FEF3C7}
 .status-select.st-dau{background:#DCFCE7}
 .status-select.st-rot{background:#FEE2E2}
-.status-select.st-huy{background:#F1F5F9}
+.status-select.st-huy{background:#EDE9FE}
 .status-select.st-xong{background:#BFDBFE}
 
 /* Chiều rộng cố định cho các nhóm trạng thái (đo bằng canvas lúc tải trang, xem
@@ -424,7 +440,7 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 .chk-chip.is-checked.chip-dn{background:#FEF3C7;color:var(--warn);border-color:var(--warn)}
 .chk-chip.is-checked.chip-dau{background:#DCFCE7;color:var(--ok);border-color:var(--ok)}
 .chk-chip.is-checked.chip-rot{background:#FEE2E2;color:var(--err);border-color:var(--err)}
-.chk-chip.is-checked.chip-huy{background:#F1F5F9;color:var(--mut);border-color:var(--mut)}
+.chk-chip.is-checked.chip-huy{background:#EDE9FE;color:#6D28D9;border-color:#6D28D9}
 .chk-chip.is-checked.chip-xong{background:#BFDBFE;color:#1E40AF;border-color:#1E40AF}
 
 /* ===== Popup Confirm / Thông báo — dùng chung mọi màn hình (theo thiết kế
@@ -776,8 +792,8 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
             <th class="sortable" onclick="onSortClick('tc','ngay',renderTaiChinhSorted)">Ngày<span class="sort-ic" data-tbl="tc" data-col="ngay"></span></th>
             <th class="sortable" onclick="onSortClick('tc','loai',renderTaiChinhSorted)">Phân loại<span class="sort-ic" data-tbl="tc" data-col="loai"></span></th>
             <th class="sortable" onclick="onSortClick('tc','noidung',renderTaiChinhSorted)">Nội dung<span class="sort-ic" data-tbl="tc" data-col="noidung"></span></th>
-            <th class="sortable" onclick="onSortClick('tc','trangthai',renderTaiChinhSorted)">Trạng thái<span class="sort-ic" data-tbl="tc" data-col="trangthai"></span></th>
-            <th class="sortable" onclick="onSortClick('tc','sotien',renderTaiChinhSorted)">Số tiền<span class="sort-ic" data-tbl="tc" data-col="sotien"></span></th>
+            <th class="sortable th-center" onclick="onSortClick('tc','trangthai',renderTaiChinhSorted)">Trạng thái<span class="sort-ic" data-tbl="tc" data-col="trangthai"></span></th>
+            <th class="sortable th-right" onclick="onSortClick('tc','sotien',renderTaiChinhSorted)">Số tiền<span class="sort-ic" data-tbl="tc" data-col="sotien"></span></th>
             <th class="th-center">Thao tác</th>
           </tr></thead>
           <tbody id="tcBody"></tbody>
@@ -4087,10 +4103,10 @@ function renderTaiChinh(thuArr, chiArr){
       <td>${fmtDate(r.ngay)}</td>
       <td><span class="pill ${r.loai==='Thu'?'pill-won':'pill-chi'}">${r.loai}</span></td>
       <td>${esc(r.noi_dung)}</td>
-      <td>${r.trang_thai
+      <td class="td-center">${r.trang_thai
         ? `<span class="pill stt-hoso ${hsPillClass(r.trang_thai)}">${esc(r.trang_thai)}</span>`
         : '–'}</td>
-      <td style="color:${isNeg?'var(--err)':'var(--ok)'};font-weight:700">${r.loai==='Chi'?'-':''}${fmtVND(r.so_tien)}</td>
+      <td class="td-right" style="color:${isNeg?'var(--err)':'var(--ok)'};font-weight:700">${r.loai==='Chi'?'-':''}${fmtVND(r.so_tien)}</td>
       <td class="td-actions">${r.loai==='Thu'
         ? `<button class="btn btn-p" onclick="openHoSoModal(${r.ref_id})">Chi tiết</button>`
         : `<button class="btn btn-p" onclick="openChiModal(${r.ref_id})">Sửa</button><button class="btn btn-d" onclick="delChi(${r.ref_id})">Xóa</button>`}</td>

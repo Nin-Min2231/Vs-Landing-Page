@@ -3008,3 +3008,34 @@ OK; đếm `<th>` = `<td>` = 6 (tránh lệch cột — lỗi kinh điển khi c
 hiện đúng 4 pill `pill-hs-dau`/`pill-hs-rot`/`pill-hs-xong`/`pill-hs-huy`, dòng Chi hiện `–` không
 có pill; bấm THẬT vào `<th>` sort 2 lần → tăng/giảm đều đúng, dòng Chi luôn ở 1 đầu; CSV sinh ra
 đúng 5 cột đúng thứ tự.
+
+**Cập nhật 2026-09-08 (lần 2) — canh lề màn Tài chính + đổi màu trạng thái "Hủy":**
+- **Canh lề (chỉ màn Tài chính, đúng phạm vi PM nêu):** "Trạng thái" canh giữa, "Số tiền" canh
+  phải, 3 cột còn lại giữ canh trái. Thêm 3 class dùng chung `.th-right`/`.td-center`/`.td-right`
+  (cạnh `.th-center` đã có) và đặt lên **CẢ `<th>` LẪN `<td>`** của cùng 1 cột — chỉ đặt 1 bên thì
+  tiêu đề lệch khỏi dữ liệu. **Không đụng màn Hồ sơ** (PM chưa yêu cầu) → 2 màn hiện canh lề khác
+  nhau cho cùng loại dữ liệu, đã báo PM, chờ quyết có đồng bộ tiếp không.
+- 3 class này **chỉ có tác dụng ở chế độ BẢNG (desktop)**: ở chế độ THẺ trên điện thoại
+  (`@media max-width:700px`) mỗi `<td>` là flex container "nhãn: giá trị" nên `text-align` không
+  đổi được vị trí — đúng ý, thẻ luôn canh trái cho dễ đọc. Không phải viết thêm rule cho mobile.
+- **Màu "Hủy": xám `#F1F5F9`/`--mut #64748B` → TÍM `#EDE9FE`/`#6D28D9`** (violet-100/violet-700).
+  PM báo màu xám cũ tối và chìm. Chọn tím vì đó là ô màu pastel **còn trống duy nhất** trong bộ 6
+  trạng thái hồ sơ (xanh dương nhạt/vàng/xanh lá/xanh dương đậm/đỏ đã dùng hết), và không đụng ý
+  nghĩa của đỏ "Rớt" — "Hủy" là khách/công ty chủ động dừng, khác hẳn bị lãnh sự từ chối.
+- Đổi ĐỦ 3 nơi cho đồng bộ: `.pill-hs-huy` (pill, dùng chung cả màn Hồ sơ lẫn Tài chính qua
+  `hsPillClass()`), `.chk-chip.is-checked.chip-huy` (chip lọc), `.status-select.st-huy` (select
+  trong dialog — chỉ đổi `background`, KHÔNG đặt `color`, đúng bẫy K ở
+  `01_Docs/10_Chuan_Dialog_Chung.md`).
+- **⚠️ CỐ Ý không đổi 3 chỗ khác cũng đang xám `#F1F5F9`/`--mut`:** `.pill-lost` (Tư vấn "Hủy"),
+  `.pill-xl-huy` (Xử lý phát sinh "Hủy"), `.pill-dt-off` (Đại lý "Ngừng hợp tác") — thực thể KHÁC,
+  PM chỉ nêu "tài chính và hồ sơ". Hệ quả: app hiện có 2 sắc "Hủy" khác nhau (hồ sơ tím, tư vấn/xử
+  lý phát sinh xám). Đã báo PM. Muốn đồng bộ toàn app thì đổi cả 3 dòng đó sang cùng cặp màu tím.
+
+**Đã đo bằng `getBoundingClientRect()` trên bảng rộng thật 1436px** (không chỉ đọc `text-align`):
+Ngày `trái 12px/phải 80px` (canh trái) · Nội dung `trái 12/phải 177` (canh trái) · Trạng thái
+`trái 65/phải 65` (**canh giữa chính xác**) · Số tiền `trái 92/phải 12` (**sát phải**) · dấu `–`
+của dòng Chi `trái 122/phải 122` (canh giữa). Màu: 6/6 nền và 6/6 chữ của 6 trạng thái đều khác
+nhau; "Hủy" ra đúng `rgb(237,233,254)`/`rgb(109,40,217)` ở cả pill 2 màn, chip lọc và select.
+**Lưu ý khi đo lại sau này:** phải `switchTab(...)` sang đúng tab VÀ bỏ `hidden` của `#appView`
+(màn đăng nhập che) trước khi đo — nếu không mọi `getBoundingClientRect()` đều trả 0 và dễ tưởng
+nhầm là CSS không ăn.
