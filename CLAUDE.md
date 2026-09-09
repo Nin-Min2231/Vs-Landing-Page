@@ -3039,3 +3039,60 @@ nhau; "Hủy" ra đúng `rgb(237,233,254)`/`rgb(109,40,217)` ở cả pill 2 mà
 **Lưu ý khi đo lại sau này:** phải `switchTab(...)` sang đúng tab VÀ bỏ `hidden` của `#appView`
 (màn đăng nhập che) trước khi đo — nếu không mọi `getBoundingClientRect()` đều trả 0 và dễ tưởng
 nhầm là CSS không ăn.
+
+## 62. T8 (GA4) + T22b (banner cookie) — GA4 chỉ bắn SAU KHI khách đồng ý (2026-09-09)
+
+**Bối cảnh:** PM cấp Measurement ID `G-YF2B7B2MJR` và duyệt câu chữ banner. Kế hoạch SEO ghi rõ
+**T8 KHÔNG được tách khỏi T22b** — GA4 đặt cookie và gửi dữ liệu ra nước ngoài, theo Luật BVDLCN
+91/2025 cần cơ sở pháp lý (thường là đồng ý) → banner + GA4 phải deploy **cùng 1 đợt**.
+
+**Kiến trúc — 1 khối duy nhất, 2 đường lan toả:** toàn bộ tính năng (HTML banner + JS consent +
+JS nạp GA4 + 4/5 sự kiện) gói trong 1 khối đặt giữa 2 marker `<!-- CONSENT+GA4:START -->` /
+`<!-- CONSENT+GA4:END -->` cuối `index.html`, CSS `.cookie-bar` để trong `<style>` chính.
+- **3 trang SSR tự có, KHÔNG phải bảo trì bản sao:** `getSiteChrome()` (`worker.js`) thêm trường
+  `consent` trích nguyên văn khối giữa 2 marker; `/blog`, `/blog/<slug>`, 404 chèn
+  `${chrome.consent}` ngay sau `${chrome.footer}`. CSS đã tự có vì nằm trong `<style>` chính.
+  **CỐ Ý không chạy `fixPaths()`** lên khối này: nó chỉ có 1 link tuyệt đối
+  (`/chinh-sach-bao-mat`) và `href="#"` của nút "Cài đặt cookie" (đã `preventDefault`) —
+  `fixPaths` sẽ biến `#` thành `/#` vô nghĩa. Không khớp marker → trả `''`, trang vẫn dựng bình
+  thường, chỉ mất banner (không vỡ trang).
+- **4 trang tĩnh phải copy TAY** (`chinh-sach-bao-mat`/`dieu-khoan-dich-vu`/`lien-he`/
+  `cong-cu/uoc-tinh-chi-phi-visa`) — đúng bài học E mục 60, không có cơ chế tự đồng bộ. Đã dùng
+  script **trích thẳng từ `index.html`** rồi chèn, KHÔNG gõ lại tay, để 5 bản luôn giống hệt nhau.
+  **Sửa banner/GA4 lần sau: sửa `index.html` rồi chạy lại kiểu script đó, đừng sửa 5 chỗ.**
+
+**Hành vi consent:** lựa chọn lưu `localStorage['tv5s_cookie_consent']` = `yes`/`no`; chưa chọn →
+hiện banner; `yes` → nạp GA4 ngay lúc tải; `no` → không nạp gì. Link "Cài đặt cookie" ở
+`.copyright` mở lại banner để đổi ý. **Mọi truy cập `localStorage` bọc `try/catch`** — chế độ
+riêng tư/chặn cookie/`data:` URL lúc test đều ném lỗi, không được để hỏng phần còn lại của trang.
+
+**5 sự kiện chuyển đổi (T8):** 4 cái đầu bắt bằng **event delegation 1 listener trên `document`**
+(đúng yêu cầu "không sửa từng thẻ") nên tự chạy trên MỌI trang có khối này:
+`click_hotline`/`click_zalo`/`click_facebook` qua `.js-tel-link`/`.js-zalo-link`/`.js-fb-link`
+(3 class này đã có sẵn trong `index.html` từ trước), `open_chatbox` qua `#chatboxToggle`.
+- **`open_chatbox` chỉ bắn khi MỞ, không bắn khi đóng:** listener ở `document` chạy SAU handler
+  của nút (bubbling) nên đọc được `#chatboxPanel.classList.contains('open')` để lọc — nhờ vậy
+  không phải sửa `chatboxToggleOpen()` ở cả 4 file có chatbox.
+- **`generate_lead` KHÔNG dùng delegation** — phải nằm trong hàm submit form, **sau khi POST
+  `leads` trả về ok** (không bắn lúc bấm nút), để số GA4 khớp đúng số lead thật trong admin.
+  Chỉ `index.html` có form nên chỉ sửa 1 chỗ.
+- Mọi lời gọi đều kiểm `typeof gtag === 'function'` trước → khách từ chối thì không bắn gì.
+
+**Đã test (mock, KHÔNG tạo lead thật trên production):** cú pháp JS + cân bằng thẻ + JSON-LD
+`json.loads` cho cả 6 file. Trên tab HOÀN TOÀN MỚI (tab cũ giữ lại JS realm giữa các lần
+`navigate` → kết quả sai lệch, đúng nhiễu đã ghi mục 60): (1) trang sạch → banner hiện, `gtag`
+undefined, **0 script googletagmanager**; (2) bấm "Từ chối" → banner ẩn, vẫn 0 script, bấm hotline
+không bắn gì; (3) "Cài đặt cookie" → banner mở lại; (4) bấm "Đồng ý" → banner ẩn, `gtag` thành
+function, đúng 1 script `gtag/js?id=G-YF2B7B2MJR`; (5) bấm thật 3 link + chatbox → đúng 4 sự kiện,
+đóng chatbox KHÔNG bắn trùng; (6) mock `fetch` endpoint `leads` rồi submit form → `generate_lead`
+bắn đúng 1 lần sau khi POST ok, payload đúng, không tạo dữ liệu thật. Import thẳng `worker.js` vào
+Node: `/blog`, `/blog/<slug>`, 404 đều có banner + CSS + Measurement ID + link footer, và **không
+trang nào có thẻ `<script src=gtag>` tĩnh** (đúng: GA4 chỉ nạp động sau khi đồng ý).
+
+**⚠️ CÒN TỒN ĐỌNG, CHƯA SỬA — sitemap đang khai 1 URL 404:** `https://topvisa5s.com/visa-nhat-ban`
+có trong `sitemap.xml` nhưng trả **404**, và trang 404 tuỳ chỉnh **cũng chèn link tới chính URL
+đó** (404 trỏ sang 404). Nguyên nhân: dòng TEST trong `noi_dung_quoc_gia` để `published=true`,
+trong khi route `/visa-<slug>` (T14) chưa xây — cơ chế "tự động nhận diện nước đã publish" của T5
+(`getPublishedCountriesForSitemap()`) và T21 (`getPublishedCountryLinks()`) chạy TRƯỚC cả route.
+**Bài học: thiết kế "tự động nhận diện" phải tự hỏi thêm "nếu thứ mình quảng cáo chưa tồn tại thì
+sao" — ở đây nó quảng cáo URL mình chưa phục vụ được.** Đang chờ PM chốt cách xử lý.

@@ -175,7 +175,14 @@ async function getSiteChrome(env, request) {
   const css = (html.match(/<style>([\s\S]*?)<\/style>/) || [])[1] || '';
   const navbar = fixPaths((html.match(/<nav class="navbar">[\s\S]*?<\/nav>/) || [])[0] || '');
   const footer = fixPaths((html.match(/<footer id="footer">[\s\S]*?<\/footer>/) || [])[0] || '');
-  return { css, navbar, footer };
+  // Banner cookie + GA4 (T22b/T8, 2026-09-09) — trích nguyên văn khối giữa 2 marker trong
+  // index.html để /blog, /blog/<slug> và trang 404 tự có, không phải bảo trì thêm 1 bản sao.
+  // CỐ Ý KHÔNG chạy fixPaths(): khối này chỉ có 1 link tuyệt đối (/chinh-sach-bao-mat) và 1
+  // href="#" của nút "Cài đặt cookie" (đã preventDefault) — fixPaths sẽ biến "#" thành "/#",
+  // vô nghĩa ở đây. CSS của banner nằm trong <style> chính nên đã có sẵn trong biến css.
+  // Không khớp marker (ai đó lỡ xoá) -> trả '' và trang vẫn dựng bình thường, chỉ mất banner.
+  const consent = (html.match(/<!-- CONSENT\+GA4:START[\s\S]*?<!-- CONSENT\+GA4:END -->/) || [])[0] || '';
+  return { css, navbar, footer, consent };
 }
 // Head chung cho mọi trang /blog* — dùng lại đúng 6 dòng icon/font đã có ở index.html, sửa path
 // "assets/..." tương đối thành "/assets/..." tuyệt đối vì lý do đã giải thích ở trên. 2 rule CSS phụ
@@ -258,6 +265,7 @@ ${chrome.navbar}
 </section>
 </main>
 ${chrome.footer}
+${chrome.consent}
 </body>
 </html>`;
 
@@ -344,6 +352,7 @@ ${chrome.navbar}
 </section>
 </main>
 ${chrome.footer}
+${chrome.consent}
 </body>
 </html>`;
 
@@ -369,7 +378,23 @@ ${chrome.footer}
    T14 (route /visa-<slug>) VẪN CHƯA làm — nên dù có nước published, chưa có trang thật để trỏ tới,
    catch vẫn còn nguyên giá trị phòng hờ (bảng lỗi/mạng chập chờn...). Khi T14 xong, trang 404 TỰ
    ĐỘNG hiện thêm link ngay, không cần sửa lại file này lần nữa. */
+/* ==== CHỐT CHẶN: chưa có route /visa-<slug> thì KHÔNG được quảng cáo URL đó ở bất kỳ đâu ====
+   (2026-09-09) Sự cố thật: PM nhập 1 dòng TEST vào `noi_dung_quoc_gia` với published=true. Hai cơ
+   chế "tự động nhận diện nước đã publish" — sitemap (T5) và trang 404 (T21) — lập tức đưa
+   https://topvisa5s.com/visa-nhat-ban vào sitemap VÀ chèn link đó lên chính trang 404, trong khi
+   route `/visa-<slug>` (T14) CHƯA ĐƯỢC XÂY. Kết quả: sitemap khai 1 URL trả 404, và trang 404 trỏ
+   sang một 404 khác. Google báo "Submitted URL not found (404)" ngay khi PM gửi sitemap.
+
+   BÀI HỌC (áp dụng cho mọi thiết kế "tự động nhận diện" sau này): tự động đọc dữ liệu để quyết
+   định hiển thị thì phải tự hỏi thêm "nếu THỨ mình đang quảng cáo chưa tồn tại thì sao" — dữ liệu
+   sẵn sàng KHÔNG có nghĩa là route phục vụ nó đã sẵn sàng. Xem thêm CLAUDE.md mục 62.
+
+   CÁCH BẬT LẠI KHI LÀM XONG T14: đổi đúng 1 dòng dưới đây thành `true`. Không cần sửa gì khác —
+   sitemap và trang 404 sẽ tự liệt kê lại các nước đang publish như thiết kế ban đầu. */
+const VISA_COUNTRY_ROUTE_READY = false;
+
 async function getPublishedCountryLinks(env) {
+  if (!VISA_COUNTRY_ROUTE_READY) return [];
   try {
     const rows = await supa(env, 'noi_dung_quoc_gia?select=slug,ten_nuoc&published=eq.true&order=thu_tu&limit=4');
     return rows || [];
@@ -433,6 +458,7 @@ ${chrome.navbar}
 </section>
 </main>
 ${chrome.footer}
+${chrome.consent}
 </body>
 </html>`;
 
@@ -490,6 +516,7 @@ async function getExistingExtraPages(env, request) {
 }
 
 async function getPublishedCountriesForSitemap(env) {
+  if (!VISA_COUNTRY_ROUTE_READY) return [];   // xem chốt chặn ở getPublishedCountryLinks()
   try {
     const rows = await supa(env, 'noi_dung_quoc_gia?select=slug,updated_at&published=eq.true');
     return (rows || []).filter(r => r.slug);

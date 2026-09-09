@@ -474,6 +474,27 @@ footer a:hover{color:#fff}
   .card-review{padding:var(--sp-3)}
   .card-review p.quote{font-size:15px}
 }
+
+/* ===== T22b — Banner cookie (2026-09-09). Nằm trong <style> chính để /blog, /blog/<slug> và
+   trang 404 tự có CSS này qua getSiteChrome() (worker.js trích cả khối <style>). ===== */
+.cookie-bar{position:fixed;left:0;right:0;bottom:0;z-index:120;background:var(--color-dark);
+  color:#fff;padding:12px var(--sp-2);display:flex;align-items:center;justify-content:center;
+  gap:var(--sp-2);flex-wrap:wrap;font-size:14px;box-shadow:0 -4px 16px rgba(15,30,61,.18)}
+.cookie-bar p{margin:0;line-height:1.5}
+.cookie-bar a{color:#93C5FD;text-decoration:underline}
+.cookie-bar .cookie-actions{display:flex;gap:var(--sp-1);flex-shrink:0}
+.cookie-bar button{font-family:var(--font);font-weight:700;font-size:14px;padding:8px 18px;
+  border-radius:var(--radius-sm);cursor:pointer;border:1.5px solid transparent;transition:.15s}
+.cookie-bar .btn-cookie-yes{background:var(--color-primary);color:#fff;border-color:var(--color-primary-dark)}
+.cookie-bar .btn-cookie-yes:hover{background:var(--color-primary-dark)}
+.cookie-bar .btn-cookie-no{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
+.cookie-bar .btn-cookie-no:hover{background:rgba(255,255,255,.12)}
+.cookie-bar.hidden{display:none}
+@media(max-width:600px){
+  .cookie-bar{flex-direction:column;align-items:stretch;text-align:center;gap:10px;padding:14px}
+  .cookie-bar .cookie-actions{justify-content:center}
+  .cookie-bar button{flex:1}
+}
 </style>
 
 <style>
@@ -564,7 +585,7 @@ footer a:hover{color:#fff}
         </picture>
       </div>
     </div>
-    <div class="copyright">© 2026 <span class="js-company">Top Visa 5S</span>. <a href="/chinh-sach-bao-mat">Chính sách bảo mật</a> · <a href="/dieu-khoan-dich-vu">Điều khoản dịch vụ</a> · <a href="/lien-he">Liên hệ</a></div>
+    <div class="copyright">© 2026 <span class="js-company">Top Visa 5S</span>. <a href="/chinh-sach-bao-mat">Chính sách bảo mật</a> · <a href="/dieu-khoan-dich-vu">Điều khoản dịch vụ</a> · <a href="/lien-he">Liên hệ</a> · <a href="#" class="js-cookie-settings">Cài đặt cookie</a></div>
   </div>
 </footer>
 <div class="float-contact" id="floatContact">
@@ -892,5 +913,86 @@ document.addEventListener('click', function(e){
   }catch(e){}
 })();
 </script>
+<!-- CONSENT+GA4:START — T22b + T8 (2026-09-09). KHỐI NÀY ĐƯỢC TRÍCH NGUYÊN VĂN bởi
+     getSiteChrome() trong worker.js để /blog, /blog/<slug> và trang 404 tự có, KHÔNG cần sửa
+     riêng. 4 trang tĩnh (3 trang pháp lý + công cụ ước tính) phải copy TAY khối này khi nó đổi —
+     xem CLAUDE.md mục 60 bài học E. ĐỪNG đổi 2 dòng marker. -->
+<div class="cookie-bar hidden" id="cookieBar" role="region" aria-label="Thông báo cookie">
+  <p>Trang này dùng cookie để thống kê lượt truy cập. <a href="/chinh-sach-bao-mat">Chính sách bảo mật</a></p>
+  <div class="cookie-actions">
+    <button type="button" class="btn-cookie-yes" id="cookieAcceptBtn">Đồng ý</button>
+    <button type="button" class="btn-cookie-no" id="cookieDeclineBtn">Từ chối</button>
+  </div>
+</div>
+<script>
+/* ==================== T22b + T8 — Cookie consent & GA4 (2026-09-09) ====================
+   GA4 CHỈ được nạp SAU KHI khách bấm "Đồng ý" — trước đó không có cookie _ga nào (yêu cầu của
+   kế hoạch SEO T22b + Luật BVDLCN 91/2025). Lựa chọn lưu ở localStorage, đổi lại được qua link
+   "Cài đặt cookie" ở footer.
+   4/5 sự kiện chuyển đổi bắt bằng EVENT DELEGATION 1 listener trên document (đúng yêu cầu T8
+   "không sửa từng thẻ") nên tự chạy trên MỌI trang có khối này, kể cả 3 trang pháp lý có nút
+   liên hệ nổi + chatbox. Riêng generate_lead nằm trong hàm submit form ở dưới (chỉ trang chủ
+   mới có form). ==================================================================== */
+(function(){
+  var GA_ID = 'G-YF2B7B2MJR';
+  var KEY   = 'tv5s_cookie_consent';
+  /* localStorage có thể ném lỗi (chế độ riêng tư, chặn cookie bên thứ ba, hoặc trang mở bằng
+     data:/file:// lúc test) — bọc try/catch để KHÔNG bao giờ làm hỏng phần còn lại của trang. */
+  function readChoice(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function saveChoice(v){ try { localStorage.setItem(KEY, v); } catch(e){} }
+
+  function loadGA4(){
+    if (window.__ga4Loaded__) return;          // chặn nạp 2 lần nếu bấm Đồng ý nhiều lần
+    window.__ga4Loaded__ = true;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function(){ window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    window.gtag('config', GA_ID);
+    var sc = document.createElement('script');
+    sc.async = true;
+    sc.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+    document.head.appendChild(sc);
+  }
+  function bar(){ return document.getElementById('cookieBar'); }
+  function showBar(){ var b = bar(); if (b) b.classList.remove('hidden'); }
+  function hideBar(){ var b = bar(); if (b) b.classList.add('hidden'); }
+
+  var accept = document.getElementById('cookieAcceptBtn');
+  var decline = document.getElementById('cookieDeclineBtn');
+  if (accept)  accept.addEventListener('click', function(){ saveChoice('yes'); hideBar(); loadGA4(); });
+  if (decline) decline.addEventListener('click', function(){ saveChoice('no');  hideBar(); });
+
+  var choice = readChoice();
+  if (choice === 'yes') loadGA4();
+  else if (choice !== 'no') showBar();        // chưa chọn lần nào -> hiện banner
+
+  /* 4 sự kiện chuyển đổi — 1 listener duy nhất, dùng capture=false để chạy SAU handler của
+     chính phần tử (cần thiết cho open_chatbox: lúc đó panel đã kịp mở/đóng để đọc trạng thái). */
+  document.addEventListener('click', function(ev){
+    if (typeof window.gtag !== 'function') return;   // chưa đồng ý -> không bắn gì
+    var t = ev.target;
+    if (!t || !t.closest) return;
+    if (t.closest('.js-cookie-settings')) { ev.preventDefault(); showBar(); return; }
+    if (t.closest('.js-tel-link'))  window.gtag('event', 'click_hotline');
+    if (t.closest('.js-zalo-link')) window.gtag('event', 'click_zalo');
+    if (t.closest('.js-fb-link'))   window.gtag('event', 'click_facebook');
+    if (t.closest('#chatboxToggle')) {
+      var panel = document.getElementById('chatboxPanel');
+      // chỉ tính là "mở chatbox", không tính lượt bấm để đóng lại
+      if (panel && panel.classList.contains('open')) window.gtag('event', 'open_chatbox');
+    }
+  });
+
+  /* Link "Cài đặt cookie" ở footer phải bấm được cả khi khách CHƯA đồng ý (lúc đó gtag chưa tồn
+     tại nên listener trên đã return sớm) — bắt riêng bằng 1 listener nhẹ nữa. */
+  document.addEventListener('click', function(ev){
+    var t = ev.target;
+    if (t && t.closest && t.closest('.js-cookie-settings') && typeof window.gtag !== 'function'){
+      ev.preventDefault(); showBar();
+    }
+  });
+})();
+</script>
+<!-- CONSENT+GA4:END -->
 </body>
 </html>
