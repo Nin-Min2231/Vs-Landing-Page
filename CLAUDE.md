@@ -3114,3 +3114,26 @@ hoặc `curl` có giả header trình duyệt, **đừng dùng `curl` trần r�
 h1, status code, sitemap, redirect) — chỉ sai với thứ do tầng edge chèn thêm.
 **Hệ quả: automatic setup của Cloudflare Web Analytics CÓ hoạt động với site chạy qua Worker** —
 nghi ngờ ban đầu (Worker tự dựng response nên edge không chèn được) là SAI, không cần gắn thẻ tay.
+
+**Cập nhật 2026-09-10 — T10 phần `sameAs` (phần duy nhất của T10 không bị chặn):** kế hoạch ghi
+"thêm 2 link Facebook còn lại trong `03_Information/Information.md` vào `sameAs`". Đã đọc kỹ context
+3 link trước khi thêm — **chúng KHÔNG cùng loại**, đây là điều kế hoạch không nêu:
+- Link 1 *"Chuyên Visa Toàn Quốc"* `share/1EVr8W3p2E` — trang doanh nghiệp
+- Link 2 *"trụ sở tại Đà Nẵng"* `profile.php?id=100054643111869` — trang doanh nghiệp
+- Link 3 *"tư vấn viên"* `share/1ei5XS6zJE` — **profile CÁ NHÂN của một nhân viên**
+
+**Phát hiện thêm: 2 schema đang KHÔNG KHỚP nhau từ trước** — `index.html` (`TravelAgency`) chỉ có
+link 1; `lien-he.html` (`LocalBusiness`) có link 1 + link 3, thiếu link 2. Đã đưa cả 3 vào cả 2 nơi
+để 2 schema khớp 100% (kế hoạch T10 nhấn mạnh dữ liệu trên site phải nhất quán).
+
+**⚠️ Điểm cần PM quyết, đã báo:** `sameAs` theo schema.org nghĩa là *"URL này là một danh tính KHÁC
+của CHÍNH thực thể đang mô tả"*. Profile cá nhân của nhân viên **không phải** danh tính của doanh
+nghiệp — nó là một `Person` khác. Về mặt chuẩn thì link 3 nên bỏ khỏi `sameAs` của cả
+`TravelAgency` lẫn `LocalBusiness` (nếu muốn ghi nhận chuyên viên thì đúng chỗ là `Article.author`
+= `Person` của **T20**, không phải `sameAs` của tổ chức). Đã giữ lại theo đúng chữ của kế hoạch +
+yêu cầu PM, nhưng **khuyến nghị bỏ**; bỏ chỉ là xoá 1 dòng ở mỗi file. Liên quan T20: link đó gắn
+với 1 người thật, mà T20 yêu cầu rõ "**và họ đồng ý công khai**".
+
+**Nghiệm thu:** không grep chuỗi mà **parse thật** cả 2 khối JSON-LD bằng `json.loads` rồi in ra
+mảng `sameAs` — cả 2 đều đúng 3 link, cùng thứ tự. Cân bằng thẻ + `node --check` 5 trang tĩnh: OK.
+`openingHours`/`geo`/`priceRange` của T10 **vẫn chờ PM** cấp giờ + toạ độ từ Google Business Profile.
