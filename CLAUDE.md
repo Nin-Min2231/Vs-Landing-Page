@@ -3096,3 +3096,21 @@ trong khi route `/visa-<slug>` (T14) chưa xây — cơ chế "tự động nh�
 (`getPublishedCountriesForSitemap()`) và T21 (`getPublishedCountryLinks()`) chạy TRƯỚC cả route.
 **Bài học: thiết kế "tự động nhận diện" phải tự hỏi thêm "nếu thứ mình quảng cáo chưa tồn tại thì
 sao" — ở đây nó quảng cáo URL mình chưa phục vụ được.** Đang chờ PM chốt cách xử lý.
+
+**Đính chính 2026-09-10 — Cloudflare Web Analytics THỰC RA ĐÃ CHẠY từ trước, kết luận "chưa thấy
+beacon" ở lần rà 2026-09-09 là ÂM TÍNH GIẢ do cách test sai:** `curl` trần không nhận được beacon
+vì **Cloudflare chỉ chèn `beacon.min.js` khi request TRÔNG GIỐNG trình duyệt thật** (có
+`User-Agent` trình duyệt + `Accept: text/html`). Đã tự kiểm chứng bằng 2 lệnh cạnh nhau:
+`curl -s https://topvisa5s.com/ | grep -c cloudflareinsights` → **0**, nhưng thêm 2 header
+`-H "User-Agent: Mozilla/5.0 ... Chrome/140..."` `-H "Accept: text/html,..."` → **có beacon**.
+Mở bằng trình duyệt thật cũng xác nhận: script `static.cloudflareinsights.com/beacon.min.js/...`
+đã tải xong (có trong `performance.getEntriesByType('resource')`), token `66924e27c7dd...`, và
+dashboard Cloudflare hiện 8 page views / 6 visits trong 24h.
+**Bài học chung, áp dụng cho MỌI lần kiểm script chèn ở tầng edge/CDN (không riêng Cloudflare):
+`curl` trần KHÔNG phản ánh đúng HTML mà khách thật nhận được** — CDN/WAF/analytics thường phân
+biệt bot bằng header. Muốn kết luận "trang thiếu script X" thì phải kiểm bằng trình duyệt thật
+hoặc `curl` có giả header trình duyệt, **đừng dùng `curl` trần rồi kết luận thiếu**. Ngược lại,
+`curl` trần vẫn đúng và vẫn nên dùng cho những thứ do chính `worker.js`/file tĩnh sinh ra (canonical,
+h1, status code, sitemap, redirect) — chỉ sai với thứ do tầng edge chèn thêm.
+**Hệ quả: automatic setup của Cloudflare Web Analytics CÓ hoạt động với site chạy qua Worker** —
+nghi ngờ ban đầu (Worker tự dựng response nên edge không chèn được) là SAI, không cần gắn thẻ tay.
