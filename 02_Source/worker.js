@@ -181,7 +181,7 @@ async function renderHomepageWithLivePrices(request, env) {
 const AUTHOR_DEFAULT = {
   name: 'Thu Hiền',
   jobTitle: 'Chuyên viên',
-  yearsText: '14 năm kinh nghiệm hồ sơ visa'
+  yearsText: '10 năm kinh nghiệm hồ sơ visa'
 };
 /* Dòng byline hiển thị dưới H1. `tac_gia` nhập tay là chuỗi tự do -> in nguyên văn; không có thì
    ghép từ AUTHOR_DEFAULT. Luôn kèm ngày cập nhật (tín hiệu nội dung còn mới). */

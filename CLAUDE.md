@@ -3166,7 +3166,7 @@ mới: cần thêm thời gian hoàn thiện hồ sơ + đặt lịch hẹn, và
   hoạch SEO) — parse JSON-LD thật + regex lấy `.faq-a`, `html.unescape` cả 2 rồi so bằng `==`:
   **6/6 câu khớp**, chatbox cũng khớp. Đây là cách nên dùng lại mỗi lần sửa FAQ, đừng so bằng mắt.
 
-**T20 — byline chuyên viên: PM cấp "Thu Hiền · Chuyên viên · 14 năm kinh nghiệm".**
+**T20 — byline chuyên viên: PM cấp "Thu Hiền · Chuyên viên · 10 năm kinh nghiệm" (PM báo lại cùng ngày: 10, không phải 14 — đã sửa trước khi số 14 kịp sống quá 1 giờ trên production).**
 - **Thứ tự ưu tiên 2 tầng, tránh bắt PM sửa tay 12 bài cũ:** (1) cột `tac_gia` của chính bài viết
   (nhập qua admin) → dùng khi bài do người KHÁC viết; (2) để trống → hằng số `AUTHOR_DEFAULT` trong
   `worker.js`. Cả 12 bài hiện có `tac_gia=null` nên tự hưởng byline mặc định ngay, không cần thao
@@ -3180,7 +3180,7 @@ mới: cần thêm thời gian hoàn thiện hồ sơ + đặt lịch hẹn, và
 - **Đổi tên/thêm chuyên viên sau này: sửa đúng khối `AUTHOR_DEFAULT`**, không rải tên người ra
   nhiều chỗ.
 - **Nghiệm thu:** import thẳng `worker.js` vào Node, 2 kịch bản — `tac_gia=null` ra byline
-  "Thu Hiền · Chuyên viên, 14 năm kinh nghiệm hồ sơ visa · Cập nhật <ngày>" với
+  "Thu Hiền · Chuyên viên, 10 năm kinh nghiệm hồ sơ visa · Cập nhật <ngày>" với
   `author={"@type":"Person","name":"Thu Hiền"}`; `tac_gia="Trần Văn B · Chuyên viên cấp cao, 8 năm"`
   ra đúng chuỗi đó và `Person.name="Trần Văn B"` (chức danh bị loại đúng ý).
 - **Giả định đã nêu rõ với PM:** T20 yêu cầu "**và họ đồng ý công khai**". PM cấp tên sau khi đọc
