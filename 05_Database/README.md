@@ -49,6 +49,9 @@
     quản lý qua admin.html (Cài đặt chung), `anon` chỉ SELECT khi `published=true`, `authenticated`
     toàn quyền CRUD. Gộp thêm cột `posts.tac_gia` + `noi_dung_quoc_gia.tac_gia` (T20, byline chuyên
     viên — để trống chờ PM cấp tên). Xem CLAUDE.md mục 58.
+15. `15_supabase_setup_phase15.sql` — Phase 15 (2026-09-11, Kaizen trang chủ): xóa danh mục thừa
+    "Kinh nghiệm xin visa" (0 bài viết) khỏi bảng `categories` — "Bài viết" giờ khóa cứng đúng 2
+    danh mục "Thủ tục Visa"/"Tin tức", không còn tab quản lý danh mục tự do. Không tạo bảng mới.
 
 **Nếu database ĐÃ chạy qua các bản cũ trước đây** (trường hợp thực tế của dự án này — Supabase
 project đang dùng đã qua đủ các phase): chỉ cần chạy file nào **có thay đổi mới** kể từ lần chạy

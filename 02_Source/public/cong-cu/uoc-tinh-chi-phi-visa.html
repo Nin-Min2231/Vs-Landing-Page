@@ -451,7 +451,7 @@ footer a:hover{color:#fff}
   .card-review p.quote{font-size:15px}
 }
 
-/* ===== T22b — Banner cookie (2026-09-09). Nằm trong <style> chính để /blog, /blog/<slug> và
+/* ===== T22b — Banner cookie (2026-09-09). Nằm trong <style> chính để /tin-tuc, /tin-tuc/<slug> và
    trang 404 tự có CSS này qua getSiteChrome() (worker.js trích cả khối <style>). ===== */
 .cookie-bar{position:fixed;left:0;right:0;bottom:0;z-index:120;background:var(--color-dark);
   color:#fff;padding:12px var(--sp-2);display:flex;align-items:center;justify-content:center;
@@ -498,9 +498,11 @@ h1.section-title{font-size:32px;font-weight:700;text-align:center;margin-bottom:
       <li><a href="/#dich-vu">🧳 Dịch vụ</a></li>
       <li><a href="/#loi-ich">⭐ Lợi ích</a></li>
       <li><a href="/#danh-gia">💬 Đánh giá</a></li>
-      <!-- Menu "Tin tức"/theo Danh mục bài viết KHÁC được chèn động ngay TRƯỚC link FAQ này —
-           chỉ hiện khi Danh mục đó có ít nhất 1 bài viết công khai, xem script cuối trang
-           (mục "DANH MỤC BÀI VIẾT ĐỘNG"). Không còn link "Tin tức" cứng ở đây (2026-08). -->
+      <!-- Kaizen 2026-09-11: "Bài viết" khóa cứng đúng 2 danh mục cố định — 2 mục menu này giờ CỐ
+           ĐỊNH trong HTML (không còn chèn động theo Danh mục PM tự tạo như trước), đồng bộ TAY với
+           index.html (xem CLAUDE.md mục 60 bài học E — trang tĩnh không tự nhận thay đổi navbar). -->
+      <li><a href="/#thu-tuc-visa">🛂 Thủ tục Visa</a></li>
+      <li><a href="/tin-tuc">📰 Tin tức</a></li>
       <li><a href="/#faq">❓ FAQ</a></li>
       <li><a href="/#dang-ky" class="btn btn-cta" style="padding:10px 20px">📝 Đăng ký tư vấn</a></li>
     </ul>
@@ -740,7 +742,7 @@ document.getElementById('calcLeadForm').addEventListener('submit', async functio
 });
 
 /* Hamburger menu mobile + nút lên đầu trang — copy nguyên logic từ index.html (không copy toàn bộ
-   <script> của index.html vì phần lớn phục vụ slider/chatbox/blog không có trên trang này). */
+   <script> của index.html vì phần lớn phục vụ slider/chatbox/tin-tuc không có trên trang này). */
 const navLinks = document.getElementById('navLinks');
 document.getElementById('hamburger').addEventListener('click', e => {
   e.stopPropagation();
@@ -758,7 +760,7 @@ window.addEventListener('scroll', () => {
 });
 </script>
 <!-- CONSENT+GA4:START — T22b + T8 (2026-09-09). KHỐI NÀY ĐƯỢC TRÍCH NGUYÊN VĂN bởi
-     getSiteChrome() trong worker.js để /blog, /blog/<slug> và trang 404 tự có, KHÔNG cần sửa
+     getSiteChrome() trong worker.js để /tin-tuc, /tin-tuc/<slug> và trang 404 tự có, KHÔNG cần sửa
      riêng. 4 trang tĩnh (3 trang pháp lý + công cụ ước tính) phải copy TAY khối này khi nó đổi —
      xem CLAUDE.md mục 60 bài học E. ĐỪNG đổi 2 dòng marker. -->
 <div class="cookie-bar hidden" id="cookieBar" role="region" aria-label="Thông báo cookie">

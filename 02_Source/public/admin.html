@@ -160,9 +160,9 @@ table{width:100%;border-collapse:separate;border-spacing:0;min-width:720px}
 th{background:var(--dark);color:#fff;text-align:left;padding:11px 12px;font-size:13px;white-space:nowrap}
 td{padding:10px 12px;border-bottom:1px solid var(--bd);font-size:14px;vertical-align:middle}
 tr:hover td{background:var(--pl)}
-/* Dòng tiêu đề cột dính cứng khi cuộn (2026-08) — CHỈ áp dụng cho bảng CHÍNH của 7 màn list đã có
+/* Dòng tiêu đề cột dính cứng khi cuộn (2026-08) — CHỈ áp dụng cho bảng CHÍNH của các màn list đã có
    "tab cuộn cố định" (mục 17 cũ): Tư vấn/Hồ sơ/Thông tin khách hàng/Tài chính/Đại lý ủy thác/
-   Bài viết/Danh mục bài viết. Chọn đúng qua selector ".tab-scroll>.tbl-wrap" (chỉ khớp .tbl-wrap
+   Thủ tục Visa/Tin tức (2 tab bài viết, Kaizen 2026-09-11). Chọn đúng qua selector ".tab-scroll>.tbl-wrap" (chỉ khớp .tbl-wrap
    là con trực tiếp của section .tab-scroll) — tự động KHÔNG áp dụng cho Dashboard/Cài đặt chung
    (không có class tab-scroll) hay bảng con trong dialog (nằm trong .dlg-body, không phải con trực
    tiếp của .tab-scroll). */
@@ -570,11 +570,11 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
     <button class="tab" data-tab="hoso" onclick="switchTab('hoso')">🗃 Hồ sơ</button>
     <button class="tab" data-tab="khachhang" onclick="switchTab('khachhang')">👥 Thông tin khách hàng</button>
     <button class="tab" data-tab="taichinh" onclick="switchTab('taichinh')">💰 Tài chính</button>
-    <button class="tab" data-tab="posts" onclick="switchTab('posts')">📝 Bài viết</button>
+    <button class="tab" data-tab="postsvisa" onclick="switchTab('postsvisa')">🛂 Thủ tục Visa</button>
+    <button class="tab" data-tab="poststin" onclick="switchTab('poststin')">📰 Tin tức</button>
     <button class="tab" data-tab="doitac" onclick="switchTab('doitac')">🤝 Đại lý ủy thác</button>
     <button class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ Cài đặt chung</button>
     <button class="tab" data-tab="chat" onclick="switchTab('chat')">💬 Quản lý Chat</button>
-    <button class="tab" data-tab="cats" onclick="switchTab('cats')">🗂 Danh mục</button>
   </nav>
 
   <main>
@@ -925,47 +925,57 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
       </div>
     </section>
 
-    <!-- ===== TAB POSTS ===== -->
-    <section id="tab-posts" class="hidden tab-scroll">
+    <!-- ===== TAB THỦ TỤC VISA (Bài viết, danh mục cố định "Thủ tục Visa" — Kaizen 2026-09-11) =====
+         Không còn ô chọn "Danh mục" — mọi bài tạo ở tab này tự gán category_id="Thủ tục Visa" và
+         phan_loai cố định "Hồ sơ xin Visa các nước" (xem savePost()). Không có bộ lọc "Phân loại"
+         vì giá trị đó luôn giống nhau cho mọi bài trong tab này. -->
+    <section id="tab-postsvisa" class="hidden tab-scroll">
       <div class="panel-head">
-        <h2>Bài viết</h2>
+        <h2>Thủ tục Visa</h2>
         <div class="filters">
-          <select id="fPostCat" onchange="renderPosts()"><option value="">Tất cả danh mục</option></select>
-          <select id="fPostPhanLoai" onchange="renderPosts()"><option value="">Tất cả phân loại</option></select>
-          <button class="btn btn-p btn-add-fab" onclick="openPostModal()">+ Thêm bài viết</button>
+          <button class="btn btn-p btn-add-fab" onclick="openPostModal('visa')">+ Thêm bài viết</button>
         </div>
       </div>
       <div class="tbl-wrap">
         <table>
           <thead><tr>
             <th>#</th>
-            <th class="sortable" onclick="onSortClick('posts','title',renderPosts)">Tiêu đề<span class="sort-ic" data-tbl="posts" data-col="title"></span></th>
-            <th class="sortable" onclick="onSortClick('posts','cat',renderPosts)">Danh mục<span class="sort-ic" data-tbl="posts" data-col="cat"></span></th>
-            <th class="sortable" onclick="onSortClick('posts','phanloai',renderPosts)">Phân loại<span class="sort-ic" data-tbl="posts" data-col="phanloai"></span></th>
-            <th class="sortable" onclick="onSortClick('posts','ngay',renderPosts)">Ngày tạo<span class="sort-ic" data-tbl="posts" data-col="ngay"></span></th>
-            <th class="sortable" onclick="onSortClick('posts','published',renderPosts)">Hiển thị<span class="sort-ic" data-tbl="posts" data-col="published"></span></th>
+            <th class="sortable" onclick="onSortClick('postsvisa','title',renderPostsVisa)">Tiêu đề<span class="sort-ic" data-tbl="postsvisa" data-col="title"></span></th>
+            <th class="sortable" onclick="onSortClick('postsvisa','ngay',renderPostsVisa)">Ngày tạo<span class="sort-ic" data-tbl="postsvisa" data-col="ngay"></span></th>
+            <th class="sortable" onclick="onSortClick('postsvisa','published',renderPostsVisa)">Hiển thị<span class="sort-ic" data-tbl="postsvisa" data-col="published"></span></th>
             <th class="th-center">Thao tác</th>
           </tr></thead>
-          <tbody id="postsBody"></tbody>
+          <tbody id="postsVisaBody"></tbody>
         </table>
-        <div class="empty hidden" id="postsEmpty">Chưa có bài viết nào</div>
+        <div class="empty hidden" id="postsVisaEmpty">Chưa có bài viết nào</div>
       </div>
     </section>
 
-    <!-- ===== TAB CATEGORIES ===== -->
-    <section id="tab-cats" class="hidden tab-scroll">
+    <!-- ===== TAB TIN TỨC (Bài viết, danh mục cố định "Tin tức" — Kaizen 2026-09-11) =====
+         "Phân loại" ở tab này vẫn nhập tự do (giữ nguyên như trước) — trang /tin-tuc dùng đúng giá
+         trị này để tự chia thành nhiều khu vực hiển thị riêng theo chủ đề, mỗi khu vực có trang
+         chủ đề riêng /tin-tuc/chu-de/<slug>. -->
+    <section id="tab-poststin" class="hidden tab-scroll">
       <div class="panel-head">
-        <h2>Danh mục bài viết</h2>
+        <h2>Tin tức</h2>
         <div class="filters">
-          <input type="text" id="newCatName" placeholder="Tên danh mục mới" style="width:200px">
-          <button class="btn btn-p" onclick="addCategory()">+ Thêm</button>
+          <select id="fPostPhanLoai" onchange="renderPostsTinTuc()"><option value="">Tất cả phân loại</option></select>
+          <button class="btn btn-p btn-add-fab" onclick="openPostModal('tin')">+ Thêm bài viết</button>
         </div>
       </div>
       <div class="tbl-wrap">
-        <table style="min-width:400px">
-          <thead><tr><th>#</th><th class="sortable" onclick="onSortClick('cats','name',renderCats)">Tên danh mục<span class="sort-ic" data-tbl="cats" data-col="name"></span></th><th class="th-center">Thao tác</th></tr></thead>
-          <tbody id="catsBody"></tbody>
+        <table>
+          <thead><tr>
+            <th>#</th>
+            <th class="sortable" onclick="onSortClick('poststin','title',renderPostsTinTuc)">Tiêu đề<span class="sort-ic" data-tbl="poststin" data-col="title"></span></th>
+            <th class="sortable" onclick="onSortClick('poststin','phanloai',renderPostsTinTuc)">Phân loại<span class="sort-ic" data-tbl="poststin" data-col="phanloai"></span></th>
+            <th class="sortable" onclick="onSortClick('poststin','ngay',renderPostsTinTuc)">Ngày tạo<span class="sort-ic" data-tbl="poststin" data-col="ngay"></span></th>
+            <th class="sortable" onclick="onSortClick('poststin','published',renderPostsTinTuc)">Hiển thị<span class="sort-ic" data-tbl="poststin" data-col="published"></span></th>
+            <th class="th-center">Thao tác</th>
+          </tr></thead>
+          <tbody id="postsTinBody"></tbody>
         </table>
+        <div class="empty hidden" id="postsTinEmpty">Chưa có bài viết nào</div>
       </div>
     </section>
   </main>
@@ -981,18 +991,23 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
 
     <div class="dlg-body">
       <input type="hidden" id="postId">
+      <!-- postTab: 'visa' | 'tin' — do openPostModal(tab,id) gán, quyết định category_id tự động
+           gửi lên khi lưu (xem savePost()) và có hiện ô "Phân loại" hay không. Không còn ô chọn
+           "Danh mục" nữa — mỗi tab admin chỉ tạo đúng 1 loại bài (Kaizen 2026-09-11). -->
+      <input type="hidden" id="postTab">
 
       <div class="dlg-section">
         <div class="dlg-section-title">Thông tin bài viết</div>
         <div class="dlg-row">
           <div class="dlg-field"><label>Tiêu đề <span class="req-badge">Bắt buộc</span></label><input type="text" id="postTitle"></div>
-          <div class="dlg-field"><label>Danh mục <span class="req-badge">Bắt buộc</span></label><select id="postCat"></select></div>
-          <!-- T20 (2026-09-11): byline hiện dưới H1 trang /blog/<slug>-<id> và vào Article.author
+          <!-- T20 (2026-09-11): byline hiện dưới H1 trang /tin-tuc/<slug>-<id> và vào Article.author
                dạng Person. Để TRỐNG thì worker.js tự dùng chuyên viên mặc định (xem AUTHOR_DEFAULT
                trong worker.js) — chỉ điền ở đây khi bài do người KHÁC viết. -->
           <div class="dlg-field dlg-field-wide"><label>Người viết (để trống = dùng chuyên viên mặc định)</label><input type="text" id="postTacGia" placeholder="vd: Thu Hiền · Chuyên viên, 10 năm kinh nghiệm hồ sơ visa"></div>
-          <div class="dlg-field"><label>Phân loại <span class="req-badge">Bắt buộc</span></label>
-            <input type="text" id="postPhanLoai" list="postPhanLoaiList" placeholder="VD: Tin tức &amp; Kinh nghiệm xin Visa">
+          <!-- Chỉ hiện ở tab "Tin tức" (openPostModal ẩn/hiện qua #postPhanLoaiWrap) — tab "Thủ tục
+               Visa" tự gán cố định "Hồ sơ xin Visa các nước", không cần PM nhập. -->
+          <div class="dlg-field" id="postPhanLoaiWrap"><label>Phân loại <span class="req-badge">Bắt buộc</span></label>
+            <input type="text" id="postPhanLoai" list="postPhanLoaiList" placeholder="VD: Kinh nghiệm xin visa Nhật Bản">
             <datalist id="postPhanLoaiList"></datalist>
           </div>
           <div class="dlg-field dlg-field-wide"><label>Link ảnh đại diện (URL)</label><input type="url" id="postImage" placeholder="https://... (tải ảnh lên postimages.org để lấy link miễn phí)"></div>
@@ -2325,7 +2340,7 @@ async function maybeAskPushPermission(){
 /* ==================== TAB ==================== */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
-  ['dash','tuvan','chat','hoso','khachhang','taichinh','doitac','settings','posts','cats'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
+  ['dash','tuvan','chat','hoso','khachhang','taichinh','doitac','settings','postsvisa','poststin'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
   if(name==='dash') loadDashboard();
   if(name==='taichinh') loadTaiChinh();
   if(name==='chat') loadChatLogs();
@@ -2450,105 +2465,101 @@ async function delChatSession(sessionId){
   }catch(e){ toast('Lỗi xóa: '+e.message,'err'); }
 }
 
-/* ==================== CATEGORIES (Danh mục bài viết — giữ nguyên) ==================== */
+/* ==================== CATEGORIES (bảng categories — chỉ tra cứu id theo tên, KHÔNG còn UI quản
+   lý CRUD, Kaizen 2026-09-11) ====================
+   "Bài viết" giờ khóa cứng đúng 2 danh mục cố định "Thủ tục Visa"/"Tin tức" (2 tab riêng, xem dưới)
+   — PM không còn tự tạo thêm danh mục qua admin nữa (tab "Danh mục bài viết" cũ đã bị bỏ). CATS chỉ
+   dùng nội bộ để `catIdByName()` tra category_id đúng khi lưu bài viết. */
 async function loadCats(){
-  try{
-    CATS = await api('categories?select=*&order=name') || [];
-    renderCats();
-    $('postCat').innerHTML = '<option value="">-- Chọn --</option>'+
-      CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
-    const fCat=$('fPostCat'), fCatCur=fCat.value;
-    fCat.innerHTML = '<option value="">Tất cả danh mục</option>'+
-      CATS.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
-    fCat.value = fCatCur;
-  }catch(e){ if(e.message!=='401') toast('Lỗi tải danh mục: '+e.message,'err'); }
+  try{ CATS = await api('categories?select=*&order=name') || []; }
+  catch(e){ if(e.message!=='401') toast('Lỗi tải danh mục: '+e.message,'err'); }
 }
-async function addCategory(){
-  const name=$('newCatName').value.trim();
-  if(!name){ toast('Nhập tên danh mục','err'); return; }
-  try{
-    await api('categories',{method:'POST',body:JSON.stringify({name})});
-    $('newCatName').value=''; loadCats(); toast('Đã thêm danh mục');
-  }catch(e){ toast(e.message.includes('duplicate')?'Danh mục đã tồn tại':'Lỗi: '+e.message,'err'); }
-}
-/* ==== Xóa "Danh mục bài viết" — CHẶN xóa nếu đang có bài viết dùng (posts.category_id), 2026-08
-   theo yêu cầu PM (đảo lại quyết định cũ ở CLAUDE.md mục 14 vốn cho xóa tự do vì posts.category_id
-   cho phép NULL — giờ PM muốn chặn giống mọi danh mục khác trong hệ thống). ==== */
-async function delCategory(id){
-  if(!await showConfirmPopup({message:'Xóa danh mục này? Không thể hoàn tác.'})) return;
-  const blockMsg = 'Danh mục này đang được dùng ở bài viết nên không thể xóa.';
-  try{
-    if(await isRecordInUse([{table:'posts',column:'category_id',value:id}])){
-      showNotifyPopup({message:blockMsg}); return;
-    }
-    await api('categories?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
-    loadCats(); toast('Đã xóa danh mục');
-  }catch(e){
-    const msg=e.message.toLowerCase();
-    if(msg.includes('foreign key')||msg.includes('violates')||msg.includes('23503'))
-      showNotifyPopup({message:blockMsg});
-    else toast('Lỗi xóa: '+e.message,'err');
-  }
-}
-function renderCats(){
-  const rows = applySort('cats', CATS, {name:c=>c.name});
-  $('catsBody').innerHTML = rows.map((c,i)=>`
-    <tr><td>${i+1}</td><td>${esc(c.name)}</td>
-    <td class="td-actions">
-      <button class="btn btn-p" onclick="openRenameModal('cat',${c.id})">Sửa</button>
-      <button class="btn btn-d" onclick="delCategory(${c.id})">Xóa</button>
-    </td></tr>`).join('');
-  applyRowLabels('catsBody');
-  updateSortIcons('cats');
-}
+function catIdByName(name){ return CATS.find(c=>c.name===name)?.id; }
 
-/* ==================== POSTS (Bài viết — giữ nguyên) ==================== */
+/* ==================== POSTS (Bài viết — chia 2 tab cố định theo Danh mục, Kaizen 2026-09-11) ====
+   POST_CAT_NAME ánh xạ "context tab" ('visa'/'tin') sang đúng tên trong bảng categories — tab
+   "Thủ tục Visa" LUÔN gán category_id của danh mục "Thủ tục Visa" + phan_loai cố định
+   POST_FIXED_PHANLOAI (không cho PM sửa, đảm bảo section "Hồ sơ xin Visa các nước" trên trang chủ
+   không bao giờ đổi tiêu đề ngoài ý muốn); tab "Tin tức" vẫn để PM tự gõ "Phân loại" tự do — giá
+   trị này là "khu vực hiển thị" trên trang /tin-tuc (mỗi Phân loại khác nhau = 1 khu vực riêng). */
+const POST_CAT_NAME = {visa:'Thủ tục Visa', tin:'Tin tức'};
+const POST_FIXED_PHANLOAI = 'Hồ sơ xin Visa các nước';
+/* Sửa lỗi L-01 (báo cáo phân tích Kaizen 11/09): savePost() trước đây KHÔNG gửi cột slug, nên mọi
+   bài tạo sau migration 13 (chỉ backfill 1 lần cho bài cũ) có slug=NULL, rơi về URL xấu
+   "/tin-tuc/bai-viet-<id>". Cùng quy tắc bỏ dấu đã dùng ở nqgSlugify() (trang quốc gia)/migration
+   13, KHÔNG có tiền tố "visa-" (chỉ dùng riêng cho trang quốc gia). Chỉ sinh slug khi TẠO MỚI —
+   SỬA bài GIỮ NGUYÊN slug cũ (xem savePost()): worker.js đã tự 301 khi URL sai slug, đổi slug lúc
+   sửa chỉ làm chết link đã chia sẻ, không có lợi ích gì thêm. */
+function slugifyPostTitle(title){
+  return (title||'').toLowerCase().replace(/đ/g,'d')
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/(^-+)|(-+$)/g,'') || 'bai-viet';
+}
 async function loadPosts(){
   try{
     POSTS = await api('posts?select=*,categories(name)&order=created_at.desc') || [];
     const fPl=$('fPostPhanLoai'), fPlCur=fPl.value;
     fPl.innerHTML = '<option value="">Tất cả phân loại</option>'+
-      [...new Set(POSTS.map(p=>p.phan_loai).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi'))
-        .map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+      [...new Set(POSTS.filter(p=>p.categories?.name==='Tin tức').map(p=>p.phan_loai).filter(Boolean))]
+        .sort((a,b)=>a.localeCompare(b,'vi')).map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
     fPl.value = fPlCur;
-    renderPosts();
+    renderPostsVisa();
+    renderPostsTinTuc();
   }catch(e){ if(e.message!=='401') toast('Lỗi tải bài viết: '+e.message,'err'); }
 }
-function renderPosts(){
-  const fCat=$('fPostCat').value, fPl=$('fPostPhanLoai').value;
-  const filtered = POSTS.filter(p=>
-    (!fCat || String(p.category_id)===fCat) && (!fPl || p.phan_loai===fPl)
-  );
-  const rows = applySort('posts', filtered, {
-    title:p=>p.title, cat:p=>p.categories?.name||'', phanloai:p=>p.phan_loai||'',
-    ngay:p=>p.created_at, published:p=>p.published?1:0
-  });
-  $('postsEmpty').classList.toggle('hidden', rows.length>0);
-  $('postsBody').innerHTML = rows.map((p,i)=>`
+function renderPostsVisa(){
+  const filtered = POSTS.filter(p=>p.categories?.name==='Thủ tục Visa');
+  const rows = applySort('postsvisa', filtered, {title:p=>p.title, ngay:p=>p.created_at, published:p=>p.published?1:0});
+  $('postsVisaEmpty').classList.toggle('hidden', rows.length>0);
+  $('postsVisaBody').innerHTML = rows.map((p,i)=>`
     <tr>
       <td>${i+1}</td>
       <td><b>${esc(p.title)}</b></td>
-      <td>${esc(p.categories?.name||'–')}</td>
+      <td>${fmtTime(p.created_at)}</td>
+      <td>${p.published?'✅ Công khai':'🚫 Ẩn'}</td>
+      <td class="td-actions">
+        <button class="btn btn-p" onclick="openPostModal('visa',${p.id})">Sửa</button>
+        <button class="btn btn-d" onclick="delPost(${p.id})">Xóa</button>
+      </td>
+    </tr>`).join('');
+  applyRowLabels('postsVisaBody');
+  updateSortIcons('postsvisa');
+}
+function renderPostsTinTuc(){
+  const fPl=$('fPostPhanLoai').value;
+  const filtered = POSTS.filter(p=>p.categories?.name==='Tin tức' && (!fPl || p.phan_loai===fPl));
+  const rows = applySort('poststin', filtered, {
+    title:p=>p.title, phanloai:p=>p.phan_loai||'', ngay:p=>p.created_at, published:p=>p.published?1:0
+  });
+  $('postsTinEmpty').classList.toggle('hidden', rows.length>0);
+  $('postsTinBody').innerHTML = rows.map((p,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td><b>${esc(p.title)}</b></td>
       <td>${p.phan_loai?`<span class="text-trunc" title="${esc(p.phan_loai)}">${esc(p.phan_loai)}</span>`:'–'}</td>
       <td>${fmtTime(p.created_at)}</td>
       <td>${p.published?'✅ Công khai':'🚫 Ẩn'}</td>
       <td class="td-actions">
-        <button class="btn btn-p" onclick="openPostModal(${p.id})">Sửa</button>
+        <button class="btn btn-p" onclick="openPostModal('tin',${p.id})">Sửa</button>
         <button class="btn btn-d" onclick="delPost(${p.id})">Xóa</button>
       </td>
     </tr>`).join('');
-  applyRowLabels('postsBody');
-  updateSortIcons('posts');
+  applyRowLabels('postsTinBody');
+  updateSortIcons('poststin');
 }
-function openPostModal(id){
+function openPostModal(tab,id){
   const p = id ? POSTS.find(x=>x.id===id) : null;
-  $('postModalTitle').textContent = p ? 'Sửa bài viết' : 'Thêm bài viết';
+  const tabLabel = tab==='visa' ? 'Thủ tục Visa' : 'Tin tức';
+  $('postModalTitle').textContent = (p?'Sửa':'Thêm')+' bài viết — '+tabLabel;
+  $('postTab').value = tab;
   $('postId').value = p?.id||'';
   $('postTitle').value = p?.title||'';
-  $('postCat').value = p?.category_id||'';
-  $('postPhanLoaiList').innerHTML = [...new Set(POSTS.map(x=>x.phan_loai).filter(Boolean))]
-    .map(v=>`<option value="${esc(v)}">`).join('');
-  $('postPhanLoai').value = p?.phan_loai||'';
+  $('postPhanLoaiWrap').classList.toggle('hidden', tab==='visa');
+  if(tab==='tin'){
+    $('postPhanLoaiList').innerHTML = [...new Set(POSTS.filter(x=>x.categories?.name==='Tin tức').map(x=>x.phan_loai).filter(Boolean))]
+      .map(v=>`<option value="${esc(v)}">`).join('');
+    $('postPhanLoai').value = p?.phan_loai||'';
+  }
   $('postImage').value = p?.image_url||'';
   $('postContent').value = p?.content||'';
   $('postTacGia').value = p?.tac_gia||'';
@@ -2558,12 +2569,19 @@ function openPostModal(id){
 }
 function closePostModal(){ confirmCloseDialog('postOverlay', ()=>$('postOverlay').classList.add('hidden')); }
 async function savePost(){
+  const tab = $('postTab').value;
   const title=$('postTitle').value.trim();
   if(!title){ toast('Nhập tiêu đề bài viết','err'); return; }
-  const category_id=$('postCat').value;
-  if(!category_id){ toast('Chọn Danh mục','err'); return; }
-  const phan_loai=$('postPhanLoai').value.trim();
-  if(!phan_loai){ toast('Nhập Phân loại','err'); return; }
+  const category_id = catIdByName(POST_CAT_NAME[tab]);
+  if(!category_id){ toast('Lỗi: không tìm thấy danh mục "'+POST_CAT_NAME[tab]+'" trong CSDL','err'); return; }
+  let phan_loai;
+  if(tab==='visa'){
+    phan_loai = POST_FIXED_PHANLOAI;
+  }else{
+    phan_loai = $('postPhanLoai').value.trim();
+    if(!phan_loai){ toast('Nhập Phân loại','err'); return; }
+  }
+  const id=$('postId').value;
   const body={
     title,
     category_id,
@@ -2573,7 +2591,7 @@ async function savePost(){
     tac_gia: $('postTacGia').value.trim()||null,   // T20 — để trống thì worker.js dùng AUTHOR_DEFAULT
     published: $('postPublished').checked
   };
-  const id=$('postId').value;
+  if(!id) body.slug = slugifyPostTitle(title); // L-01: chỉ sinh slug lúc TẠO MỚI, sửa bài giữ nguyên slug cũ
   const btn=$('postSaveBtn'); btn.disabled=true;
   try{
     if(id) await api('posts?id=eq.'+id,{method:'PATCH',body:JSON.stringify(body),prefer:'return=minimal'});
@@ -3061,14 +3079,15 @@ async function deleteDanhMuc(type,id){
     else toast('Lỗi xóa: '+e.message,'err');
   }
 }
-/* type==='cat' -> "Danh mục bài viết" (bảng categories, cột name) — khác nhóm "Nước/Mục đích/
-   Đối tác" (bảng danh_muc_*, cột ten) nên xử lý riêng 1 nhánh, dùng chung dialog renameOverlay. */
+/* Chỉ còn dùng cho "Nước đến"/"Mục đích"/"Đối tác" (bảng danh_muc_*, cột ten) — nhánh type==='cat'
+   ("Danh mục bài viết") đã bỏ cùng lúc bỏ tab quản lý danh mục bài viết (Kaizen 2026-09-11, xem
+   khối "CATEGORIES"/"POSTS" phía trên). */
 function openRenameModal(type,id){
-  const cur = type==='cat' ? CATS.find(x=>x.id===id) : danhMucArr(type).find(x=>x.id===id);
+  const cur = danhMucArr(type).find(x=>x.id===id);
   if(!cur) return;
   $('renameType').value = type;
   $('renameId').value = id;
-  $('renameValue').value = type==='cat' ? cur.name : cur.ten;
+  $('renameValue').value = cur.ten;
   $('renameOverlay').classList.remove('hidden');
   snapshotDialog('renameOverlay');
 }
@@ -3077,16 +3096,6 @@ async function saveRename(){
   const type = $('renameType').value, id = Number($('renameId').value);
   const ten = $('renameValue').value.trim();
   if(!ten){ toast('Nhập tên','err'); return; }
-  if(type==='cat'){
-    const cur = CATS.find(x=>x.id===id);
-    if(cur && ten===cur.name){ closeRenameModal(); return; }
-    try{
-      await api('categories?id=eq.'+id,{method:'PATCH',body:JSON.stringify({name:ten}),prefer:'return=minimal'});
-      snapshotDialog('renameOverlay');
-      closeRenameModal(); loadCats(); loadPosts(); toast('Đã cập nhật');
-    }catch(e){ toast(e.message.includes('duplicate')?'Danh mục đã tồn tại':'Lỗi: '+e.message,'err'); }
-    return;
-  }
   const cur = danhMucArr(type).find(x=>x.id===id);
   if(cur && ten===cur.ten){ closeRenameModal(); return; }
   try{

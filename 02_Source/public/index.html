@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- Tự xoá #hash khỏi URL NGAY LÚC ĐẦU (giữ lại giá trị gốc trong window.__initialHash__ để dùng
      sau) — chặn hẳn cú cuộn-tới-#hash TỰ ĐỘNG của trình duyệt lúc tải trang (vd vào thẳng
-     /#dang-ky từ trang khác), vì nó xảy ra SONG SONG với lúc 2 khối chèn động (Danh mục bài viết,
+     /#dang-ky từ trang khác), vì nó xảy ra SONG SONG với lúc 2 khối chèn động (Bài viết trang chủ,
      Feedback khách hàng) đang làm trang cao thêm dần — 2 cú cuộn (của trình duyệt và của JS sửa
      lại sau) tranh nhau, cú của trình duyệt luôn thắng phần cuối nên vẫn trôi tới tận đáy trang dù
      JS đã can thiệp (đã tự kiểm chứng qua nhiều lượt đo trên production, thử cả cách tắt
@@ -157,13 +157,6 @@ const COMPANY_ADDRESS   = "303 Âu Cơ, Liên Chiểu, Đà Nẵng";
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{font-family:var(--font);color:var(--color-text);background:var(--color-bg);font-size:16px;line-height:1.6}
-/* Khóa cuộn trang chính khi popup bài viết đang mở (xem initScrollLock() cuối script).
-   Dùng position:fixed + top âm (thay vì overflow:hidden;height:100% cũ) để KHÔNG làm mất/nhảy
-   vị trí cuộn thật lúc khóa — overflow:hidden;height:100% làm trình duyệt reset scrollTop về 0
-   NGAY LÚC khóa (thấy rõ vì backdrop popup trong suốt 60%), còn cách này giữ nguyên vị trí đang
-   xem trên màn hình suốt lúc mở popup, JS chỉ cần khôi phục lại scrollTop thật lúc đóng. */
-html.no-scroll{overflow:hidden}
-body.no-scroll{position:fixed;width:100%;overflow:hidden}
 img{max-width:100%}
 .container{max-width:1200px;margin:0 auto;padding:0 var(--sp-3)}
 section{padding:var(--sp-10) 0}
@@ -360,29 +353,6 @@ a.avatar{text-decoration:none;cursor:pointer}
 .card-post:hover .post-readmore{color:var(--color-primary-dark)}
 @media (max-width:1023px){.grid-posts{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:767px){.grid-posts{grid-template-columns:1fr}}
-
-.post-overlay{position:fixed;inset:0;background:rgba(15,30,61,.6);z-index:400;display:none;
-  align-items:center;justify-content:center;padding:16px}
-.post-overlay.show{display:flex}
-.post-modal{background:#fff;border-radius:var(--radius-lg);max-width:640px;width:100%;max-height:88vh;
-  box-shadow:var(--shadow-lg);position:relative;display:flex;flex-direction:column;overflow:hidden}
-.post-modal-header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:14px 20px;border-bottom:1px solid var(--color-border)}
-.post-modal-header .cat{color:var(--color-primary);font-weight:700;font-size:13px;text-transform:uppercase}
-.post-modal .close{width:34px;height:34px;border-radius:50%;background:var(--color-bg-alt);border:none;
-  font-size:17px;cursor:pointer;flex-shrink:0;transition:.25s;display:flex;align-items:center;justify-content:center;color:var(--color-text)}
-.post-modal .close:hover{background:var(--color-error);color:#fff;transform:rotate(90deg)}
-.post-modal-scroll{overflow-y:auto;flex:1}
-.post-modal-scroll img{width:100%;max-height:280px;object-fit:cover;display:block}
-.post-modal-scroll .body{padding:var(--sp-3) var(--sp-4)}
-.post-modal-scroll h3{font-size:22px;font-weight:700;margin-bottom:6px}
-.post-modal-scroll .meta{font-size:13px;color:var(--color-text-muted);margin-bottom:16px}
-.post-modal-scroll .content{white-space:pre-wrap;font-size:15px;line-height:1.7;color:var(--color-text)}
-.post-modal-cta{flex-shrink:0;padding:14px 20px;border-top:1px solid var(--color-border);
-  background:var(--color-bg-alt);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
-.post-modal-cta .hotline{font-weight:700;color:var(--color-primary);font-size:16px;text-decoration:none}
-.post-modal-cta .hotline:hover{color:var(--color-primary-dark)}
-@media (max-width:480px){.post-modal-cta{flex-direction:column;align-items:stretch;text-align:center}}
 
 /* ==================== FAQ ==================== */
 .faq-list{max-width:760px;margin:0 auto}
@@ -595,7 +565,7 @@ footer a:hover{color:#fff}
   .card-review p.quote{font-size:15px}
 }
 
-/* ===== T22b — Banner cookie (2026-09-09). Nằm trong <style> chính để /blog, /blog/<slug> và
+/* ===== T22b — Banner cookie (2026-09-09). Nằm trong <style> chính để /tin-tuc, /tin-tuc/<slug> và
    trang 404 tự có CSS này qua getSiteChrome() (worker.js trích cả khối <style>). ===== */
 .cookie-bar{position:fixed;left:0;right:0;bottom:0;z-index:120;background:var(--color-dark);
   color:#fff;padding:12px var(--sp-2);display:flex;align-items:center;justify-content:center;
@@ -637,9 +607,11 @@ footer a:hover{color:#fff}
       <li><a href="#dich-vu">🧳 Dịch vụ</a></li>
       <li><a href="#loi-ich">⭐ Lợi ích</a></li>
       <li><a href="#danh-gia">💬 Đánh giá</a></li>
-      <!-- Menu "Tin tức"/theo Danh mục bài viết KHÁC được chèn động ngay TRƯỚC link FAQ này —
-           chỉ hiện khi Danh mục đó có ít nhất 1 bài viết công khai, xem script cuối trang
-           (mục "DANH MỤC BÀI VIẾT ĐỘNG"). Không còn link "Tin tức" cứng ở đây (2026-08). -->
+      <!-- Kaizen 2026-09-11: "Bài viết" khóa cứng đúng 2 danh mục cố định — 2 mục menu này giờ CỐ
+           ĐỊNH trong HTML (không còn chèn động theo Danh mục PM tự tạo như trước). "Thủ tục Visa"
+           cuộn tới section cùng trang; "Tin tức" điều hướng thẳng sang trang /tin-tuc riêng. -->
+      <li><a href="#thu-tuc-visa">🛂 Thủ tục Visa</a></li>
+      <li><a href="/tin-tuc">📰 Tin tức</a></li>
       <li><a href="#faq">❓ FAQ</a></li>
       <li><a href="/lien-he">📍 Liên hệ</a></li>
       <li><a href="#dang-ky" class="btn btn-cta" style="padding:10px 20px">📝 Đăng ký tư vấn</a></li>
@@ -800,11 +772,39 @@ footer a:hover{color:#fff}
   </div>
 </section>
 
-<!-- ==================== BÀI VIẾT — 1 section/menu ĐỘNG cho mỗi Danh mục ====================
-     Rỗng lúc tải trang — script cuối trang tự nạp bài viết từ admin, nhóm theo "Danh mục" rồi
-     chèn 1 <section> (+ 1 menu tương ứng) vào đây cho mỗi Danh mục đang có ít nhất 1 bài viết
-     công khai. Tiêu đề mỗi section lấy từ "Phân loại" của bài viết (xem CLAUDE.md). -->
-<div id="categorySections"></div>
+<!-- ==================== THỦ TỤC VISA — lưới đầy đủ (Kaizen 2026-09-11) ====================
+     Lưới rỗng lúc tải trang — script cuối trang tự nạp bài viết đúng danh mục cố định "Thủ tục
+     Visa" (tab riêng trong admin.html) và điền vào đây. KHÔNG phân trang — bố cục "lưới đầy đủ"
+     giữ nguyên như trước Kaizen. Card bấm vào rời thẳng trang chi tiết /tin-tuc/<slug>-<id>. -->
+<section id="thu-tuc-visa">
+  <div class="container">
+    <h2 class="section-title">Hồ sơ xin Visa các nước</h2>
+    <p class="section-sub">Hướng dẫn thủ tục, checklist giấy tờ chi tiết theo từng quốc gia</p>
+    <div class="grid-posts" id="thuTucVisaGrid"></div>
+  </div>
+</section>
+
+<!-- ==================== TIN TỨC — xem trước trên trang chủ (Kaizen 2026-09-11) ====================
+     Lưới rỗng lúc tải trang — script cuối trang tự nạp bài viết đúng danh mục cố định "Tin tức"
+     (tab riêng trong admin.html), hiện 3 bài mới nhất/trang kèm nút Trước/Sau (giống cơ chế
+     "Khách hàng nói gì về chúng tôi" — không dùng lại chính hàm đó vì đây là lưới thẻ, không phải
+     slider trượt 1-slide-mỗi-lần). Bấm 1 bài rời thẳng trang chi tiết /tin-tuc/<slug>-<id>; nút
+     "Xem tất cả" dẫn sang trang /tin-tuc riêng (danh sách đầy đủ, chia theo Phân loại). -->
+<section id="tin-tuc-trangchu">
+  <div class="container">
+    <h2 class="section-title">Tin tức &amp; Khám phá thế giới</h2>
+    <p class="section-sub">Kinh nghiệm du lịch, văn hoá và tin tức mới nhất từ Top Visa 5S</p>
+    <div class="grid-posts" id="tinTucPreviewGrid"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:var(--sp-3);margin-top:var(--sp-4)" id="tinTucPreviewNav" hidden>
+      <button type="button" class="btn btn-outline" onclick="tinTucPreviewGo(-1)" aria-label="Xem tin trước">‹ Trước</button>
+      <span id="tinTucPreviewPageInfo" style="color:var(--color-text-muted);font-size:14px"></span>
+      <button type="button" class="btn btn-outline" onclick="tinTucPreviewGo(1)" aria-label="Xem tin sau">Sau ›</button>
+    </div>
+    <div style="text-align:center;margin-top:var(--sp-4)">
+      <a href="/tin-tuc" class="btn btn-outline">Xem tất cả tin tức →</a>
+    </div>
+  </div>
+</section>
 
 <!-- ==================== FAQ ==================== -->
 <section id="faq">
@@ -963,21 +963,6 @@ footer a:hover{color:#fff}
   </form>
 </div>
 
-<!-- ==================== CHI TIẾT BÀI VIẾT (POPUP) ==================== -->
-<div class="post-overlay" id="postOverlay">
-  <div class="post-modal">
-    <div class="post-modal-header">
-      <span class="cat" id="postDetailCat"></span>
-      <button class="close" onclick="closePostDetail()" aria-label="Đóng">✕</button>
-    </div>
-    <div class="post-modal-scroll" id="postDetailBody"></div>
-    <div class="post-modal-cta">
-      <a href="tel:0935887922" class="hotline js-tel-link">📞 <span class="js-hotline">0935 887 922</span></a>
-      <a href="#dang-ky" class="btn btn-cta" onclick="closePostDetail()">📝 Đăng ký tư vấn</a>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -992,10 +977,9 @@ footer a:hover{color:#fff}
 })();
 
 /* ==================== MENU MOBILE ====================
-   Đóng menu khi: (1) bấm vào 1 mục trong menu — dùng event delegation trên navLinks thay vì gắn
-   listener từng thẻ <a> để tự động hoạt động luôn với menu "Danh mục bài viết" chèn ĐỘNG sau khi
-   tải xong bài viết (mục "DANH MỤC BÀI VIẾT ĐỘNG" cuối trang), không cần gắn lại thủ công; (2) bấm
-   ra ngoài menu (outfocus) — cùng mẫu stopPropagation() + document click listener đã dùng cho
+   Đóng menu khi: (1) bấm vào 1 mục trong menu — dùng event delegation trên navLinks (không gắn
+   listener riêng từng thẻ <a>, tự động hoạt động với bất kỳ link nào thêm sau này); (2) bấm ra
+   ngoài menu (outfocus) — cùng mẫu stopPropagation() + document click listener đã dùng cho
    floatContact bên dưới, tránh bị tự đóng ngay lúc vừa bấm nút hamburger để MỞ menu. ==================== */
 const navLinks = document.getElementById('navLinks');
 document.getElementById('hamburger').addEventListener('click',e=>{
@@ -1143,19 +1127,18 @@ initReviewsSlider();
 })();
 
 /* ==================== SỬA CUỘN TỚI ANCHOR LÚC TẢI TRANG (vd /#dang-ky từ trang khác) ====================
-   Lỗi thật: trang chủ có nhiều khối chèn ĐỘNG sau khi tải (Danh mục bài viết, Feedback khách hàng)
+   Lỗi thật: trang chủ có nhiều khối chèn ĐỘNG sau khi tải (Bài viết trang chủ, Feedback khách hàng)
    làm chiều cao trang tăng lên NGAY TRONG LÚC trình duyệt đang tự cuộn tới #hash lúc tải trang —
    2 cú cuộn (của trình duyệt và của JS sửa lại sau) tranh nhau, cú của trình duyệt luôn thắng phần
    cuối nên trôi tới tận đáy trang dù JS đã can thiệp. Sửa 2 lớp:
    1) Script đầu <head> tự xoá #hash khỏi URL NGAY LÚC ĐẦU (history.replaceState, giữ giá trị gốc
       ở window.__initialHash__) — chặn hẳn cú cuộn tự động của trình duyệt (nguồn cuộn thứ nhất).
    2) Hàm này — nguồn cuộn DUY NHẤT còn lại — BẮT BUỘC dùng behavior:'instant' (không phải để mặc
-      định 'smooth' của html{scroll-behavior:smooth}) — cùng lý do đã áp dụng cho việc khôi phục vị
-      trí cuộn ở initScrollLock() (mục "CHI TIẾT BÀI VIẾT"): cuộn mượt (animation) bị gọi 2 LẦN (từ
-      finally của CẢ 2 khối chèn động, xem dưới) có thể chồng lấn/đuổi theo nhau nếu 1 khối vẫn
-      đang tải khi khối kia đã xong — cuộn tức thì loại bỏ hẳn khả năng này, mỗi lần gọi là 1 bước
-      dứt khoát, lần gọi SAU CÙNG (khi cả 2 khối đã chắc chắn tải xong) luôn cho ra đúng vị trí
-      cuối cùng. Tôn trọng scroll-margin-top (mục "NAVBAR") nên không bị .navbar sticky che. */
+      định 'smooth' của html{scroll-behavior:smooth}), vì hàm bị gọi 2 LẦN (từ finally của CẢ 2
+      khối chèn động, xem dưới) có thể chồng lấn/đuổi theo nhau nếu 1 khối vẫn đang tải khi khối
+      kia đã xong — cuộn tức thì loại bỏ hẳn khả năng này, mỗi lần gọi là 1 bước dứt khoát, lần gọi
+      SAU CÙNG (khi cả 2 khối đã chắc chắn tải xong) luôn cho ra đúng vị trí cuối cùng. Tôn trọng
+      scroll-margin-top (mục "NAVBAR") nên không bị .navbar sticky che. */
 function fixInitialHashScroll(){
   const hash = window.__initialHash__;
   if(!hash) return;
@@ -1209,153 +1192,75 @@ function fixInitialHashScroll(){
   finally{ fixInitialHashScroll(); }
 })();
 
-/* ==================== DANH MỤC BÀI VIẾT ĐỘNG (menu + section theo Danh mục) ====================
-   Mỗi "Danh mục" (category_id, quản lý ở admin.html tab "Danh mục bài viết") có ít nhất 1 bài
-   viết công khai (published=true) sẽ tự có 1 menu ("📰 <tên danh mục>") + 1 section riêng ("Phân
-   loại" của bài viết dùng làm tiêu đề H2) — chèn ngay trước link "FAQ". Danh mục không có bài
-   viết nào KHÔNG hiện gì cả (không tạo menu/section rỗng). Bài viết chưa gán Danh mục bị bỏ qua
-   (không thuộc section nào). Sắp xếp theo tên Danh mục (A-Z) để menu ổn định, không đổi chỗ theo
-   bài viết mới nhất. */
-function slugifyCatName(s){
-  return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d')
-    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'muc';
-}
-(async function(){
-  if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+/* ==================== BÀI VIẾT TRANG CHỦ — "Thủ tục Visa" (lưới đầy đủ) + "Tin tức" (xem trước,
+   nút Trước/Sau) ====================
+   Kaizen 2026-09-11: "Bài viết" giờ khóa cứng đúng 2 danh mục cố định (2 tab riêng trong
+   admin.html, không còn PM tự tạo thêm danh mục tùy ý như trước) nên bỏ hẳn cơ chế "1 section/menu
+   ĐỘNG cho mỗi Danh mục". Card bài viết LUÔN là <a href="/tin-tuc/..."> thật, bấm vào RỜI TRANG —
+   đã bỏ hẳn popup xem nhanh (PM quyết định: popup vốn là cơ chế DÙNG CHUNG cho card ở CẢ 2 section,
+   giữ 1 luồng click "rời trang" duy nhất cho mọi bài viết đơn giản hơn hẳn phải duy trì 2 luồng). */
+function tinTucBlogHref(p){ return '/tin-tuc/'+encodeURIComponent(p.slug||'bai-viet')+'-'+p.id; }
+function renderPostCardHtml(p, catLabel){
   const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const excerpt = (p.content||'').slice(0,110);
+  return `
+    <a class="card-post" href="${tinTucBlogHref(p)}">
+      ${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy" width="400" height="174">`
+                     : `<div class="thumb-placeholder">📰</div>`}
+      <div class="body">
+        <div class="cat">${esc(catLabel)}</div>
+        <h3>${esc(p.title)}</h3>
+        <div class="excerpt">${esc(excerpt)}${(p.content||'').length>110?'...':''}</div>
+        <div class="meta"><span>${new Date(p.created_at).toLocaleDateString('vi-VN')}</span><span class="post-readmore">Đọc tiếp →</span></div>
+      </div>
+    </a>`;
+}
+
+/* "Tin tức" trên trang chủ — 3 bài/trang, nút Trước/Sau (KHÔNG dùng lại initReviewsSlider(): đây
+   là lưới thẻ đổi hẳn nội dung mỗi trang, không phải slider trượt ngang 1-slide-mỗi-lần). */
+let tinTucHomePosts = [], tinTucHomePage = 0;
+const TIN_TUC_HOME_PAGE_SIZE = 3;
+function renderTinTucPreview(){
+  const grid = document.getElementById('tinTucPreviewGrid');
+  if(!grid) return;
+  const totalPages = Math.max(1, Math.ceil(tinTucHomePosts.length / TIN_TUC_HOME_PAGE_SIZE));
+  tinTucHomePage = ((tinTucHomePage % totalPages) + totalPages) % totalPages;
+  const from = tinTucHomePage * TIN_TUC_HOME_PAGE_SIZE;
+  grid.innerHTML = tinTucHomePosts.slice(from, from + TIN_TUC_HOME_PAGE_SIZE)
+    .map(p=>renderPostCardHtml(p, p.phan_loai || 'Tin tức')).join('');
+  const nav = document.getElementById('tinTucPreviewNav');
+  if(nav) nav.hidden = tinTucHomePosts.length <= TIN_TUC_HOME_PAGE_SIZE;
+  const pageInfo = document.getElementById('tinTucPreviewPageInfo');
+  if(pageInfo) pageInfo.textContent = (tinTucHomePage+1)+'/'+totalPages;
+}
+function tinTucPreviewGo(delta){ tinTucHomePage += delta; renderTinTucPreview(); }
+
+(async function(){
+  const visaSection = document.getElementById('thu-tuc-visa');
+  const tinSection = document.getElementById('tin-tuc-trangchu');
+  if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
   try{
-    const res = await fetch(SUPABASE_URL+'/rest/v1/posts?select=*,categories(id,name)&published=eq.true&order=created_at.desc',{
+    const res = await fetch(SUPABASE_URL+'/rest/v1/posts?select=*,categories(name)&published=eq.true&order=created_at.desc',{
       headers:{ 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY }
     });
     if(!res.ok) return;
     const posts = await res.json();
-    if(!posts.length) return;
-    posts.forEach((p,i)=>{ p.__idx = i; }); // giữ lại vị trí gốc để openPostDetail(i) tra đúng bài
-    window.__POSTS__ = posts;
 
-    const groups = new Map(); // category_id -> {name, posts:[]}
-    posts.forEach(p=>{
-      if(!p.categories) return; // bài viết chưa gán Danh mục -> không thuộc section nào
-      const cid = p.categories.id;
-      if(!groups.has(cid)) groups.set(cid, {name:p.categories.name, posts:[]});
-      groups.get(cid).posts.push(p);
-    });
-    if(!groups.size) return;
+    const visaPosts = posts.filter(p=>p.categories?.name==='Thủ tục Visa');
+    if(visaSection){
+      if(visaPosts.length) visaSection.querySelector('#thuTucVisaGrid').innerHTML =
+        visaPosts.map(p=>renderPostCardHtml(p,'Thủ tục Visa')).join('');
+      else visaSection.hidden = true; // chưa có bài Thủ tục Visa nào -> không hiện section rỗng
+    }
 
-    const orderedGroups = [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,'vi'));
-    const faqLi = document.querySelector('#navLinks a[href="#faq"]')?.closest('li');
-    const sectionsWrap = document.getElementById('categorySections');
-
-    orderedGroups.forEach(group=>{
-      const slug = 'cat-'+slugifyCatName(group.name);
-      const sectionTitle = group.posts[0].phan_loai || group.name;
-
-      // Menu — chèn ngay trước "FAQ"
-      const li = document.createElement('li');
-      const a = document.createElement('a');
-      a.href = '#'+slug;
-      a.textContent = '📰 '+group.name;
-      li.appendChild(a);
-      if(faqLi) faqLi.parentNode.insertBefore(li, faqLi); else document.getElementById('navLinks').appendChild(li);
-      // Không cần gọi closeMobileMenuOnClick(a) riêng — listener delegation trên #navLinks
-      // (mục 34.A) đã tự đóng menu mobile cho MỌI thẻ <a> kể cả link chèn động này.
-
-      // Section
-      const section = document.createElement('section');
-      section.id = slug;
-      section.innerHTML = `
-        <div class="container">
-          <h2 class="section-title">${esc(sectionTitle)}</h2>
-          <p class="section-sub">Cập nhật thông tin mới nhất từ Top Visa 5S</p>
-          <div class="grid-posts">${group.posts.map(p=>{
-            const excerpt = (p.content||'').slice(0,110);
-            return `
-            <a class="card-post" href="/blog/${esc(p.slug||'bai-viet')}-${p.id}" onclick="return openPostDetail(${p.__idx},event)">
-              ${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy" width="400" height="174">`
-                             : `<div class="thumb-placeholder">📰</div>`}
-              <div class="body">
-                <div class="cat">${esc(group.name)}</div>
-                <h3>${esc(p.title)}</h3>
-                <div class="excerpt">${esc(excerpt)}${(p.content||'').length>110?'...':''}</div>
-                <div class="meta"><span>${new Date(p.created_at).toLocaleDateString('vi-VN')}</span><span class="post-readmore">Đọc tiếp →</span></div>
-              </div>
-            </a>`;
-          }).join('')}</div>
-        </div>`;
-      sectionsWrap.appendChild(section);
-    });
-
-    initScrollSpy(); // quét lại để theo dõi cuộn cho menu/section mới chèn vào
+    tinTucHomePosts = posts.filter(p=>p.categories?.name==='Tin tức');
+    if(tinSection){
+      if(tinTucHomePosts.length) renderTinTucPreview();
+      else tinSection.hidden = true;
+    }
   }catch(e){ /* im lặng bỏ qua nếu không tải được, không ảnh hưởng phần còn lại của trang */ }
   finally{ fixInitialHashScroll(); }
 })();
-function openPostDetail(i,ev){
-  // Card bài viết giờ là <a href="/blog/..."> thật (T4, kế hoạch SEO — để Google có link đi theo
-  // và crawl được trang chi tiết SSR). Ctrl/Cmd/Shift+click (mở tab mới/cửa sổ mới) và JS lỗi/bị
-  // tắt -> để trình duyệt tự điều hướng theo href thật, KHÔNG chặn. Click thường -> mở popup như
-  // cũ (preventDefault để không rời trang), vẫn giữ đúng UX quen thuộc cho khách đang xem trang chủ.
-  if(ev){
-    if(ev.ctrlKey||ev.metaKey||ev.shiftKey) return true;
-    ev.preventDefault();
-  }
-  const p = window.__POSTS__[i];
-  const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  document.getElementById('postDetailCat').textContent = p.categories?.name || 'Bài viết';
-  document.getElementById('postDetailBody').innerHTML = `
-    ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.title)}" width="640" height="280">` : ''}
-    <div class="body">
-      <h3>${esc(p.title)}</h3>
-      <div class="meta">${new Date(p.created_at).toLocaleDateString('vi-VN')}</div>
-      <div class="content">${esc(p.content||'')}</div>
-    </div>`;
-  document.getElementById('postOverlay').classList.add('show');
-  document.getElementById('postDetailBody').scrollTop = 0;
-  return false;
-}
-function closePostDetail(){ document.getElementById('postOverlay').classList.remove('show'); }
-document.getElementById('postOverlay').addEventListener('click', e=>{
-  if(e.target.id==='postOverlay') closePostDetail();
-});
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePostDetail(); });
-
-/* Tự khóa/mở cuộn trang chính theo trạng thái hiện/ẩn của popup bài viết.
-   Dùng kỹ thuật position:fixed + top âm (KHÔNG dùng overflow:hidden;height:100% — cách đó làm
-   trình duyệt reset scrollTop về 0 NGAY LÚC khóa, gây nhảy lên đầu lúc MỞ popup, thấy được vì
-   backdrop trong suốt 60%). Lúc khóa: lưu window.scrollY rồi ghim body đứng yên đúng vị trí hiện
-   tại bằng top âm — không đụng gì tới scrollTop thật nên không có gì để nhảy. Lúc mở khóa: bỏ ghim
-   rồi khôi phục lại đúng scrollTop đã lưu — BẮT BUỘC dùng scrollTo({behavior:'instant'}) chứ
-   không gán thẳng .scrollTop, vì <html> có scroll-behavior:smooth (dùng cho menu) áp dụng luôn cho
-   MỌI thay đổi scrollTop kể cả gán bằng code, nên gán thẳng vẫn bị chạy hiệu ứng cuộn mượt từ đầu
-   trang xuống thay vì về thẳng tức thì (đã xác nhận qua test thật trên browser + điện thoại).
-   Bù thêm padding-right = đúng bề ngang thanh cuộn dọc: html.no-scroll{overflow:hidden} làm thanh
-   cuộn biến mất, khiến clientWidth giãn rộng thêm vài chục px trên trình duyệt desktop dùng thanh
-   cuộn cổ điển (không phải overlay scrollbar của macOS/di động) — không bù sẽ làm toàn trang giật
-   ngang nhẹ đúng lúc mở/đóng dialog, cùng bản chất với lỗi giật dọc đã sửa ở trên. */
-function initScrollLock(){
-  let savedScrollY = 0;
-  const check = ()=>{
-    const anyOpen = [...document.querySelectorAll('.post-overlay')].some(o=>o.classList.contains('show'));
-    const wasLocked = document.documentElement.classList.contains('no-scroll');
-    if(anyOpen && !wasLocked){
-      savedScrollY = window.scrollY;
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-      if(scrollbarWidth>0) document.documentElement.style.paddingRight = scrollbarWidth+'px';
-      document.body.style.top = (-savedScrollY)+'px';
-    }
-    document.documentElement.classList.toggle('no-scroll', anyOpen);
-    document.body.classList.toggle('no-scroll', anyOpen);
-    if(!anyOpen && wasLocked){
-      document.documentElement.style.paddingRight = '';
-      document.body.style.top = '';
-      window.scrollTo({top: savedScrollY, left: 0, behavior: 'instant'});
-    }
-  };
-  document.querySelectorAll('.post-overlay').forEach(el=>{
-    new MutationObserver(check).observe(el, {attributes:true, attributeFilter:['class']});
-  });
-  check();
-}
-initScrollLock();
 
 /* ==================== FAQ ACCORDION ==================== */
 document.querySelectorAll('.faq-q').forEach(btn=>{
@@ -1705,7 +1610,7 @@ document.addEventListener('click', function(e){
 });
 </script>
 <!-- CONSENT+GA4:START — T22b + T8 (2026-09-09). KHỐI NÀY ĐƯỢC TRÍCH NGUYÊN VĂN bởi
-     getSiteChrome() trong worker.js để /blog, /blog/<slug> và trang 404 tự có, KHÔNG cần sửa
+     getSiteChrome() trong worker.js để /tin-tuc, /tin-tuc/<slug> và trang 404 tự có, KHÔNG cần sửa
      riêng. 4 trang tĩnh (3 trang pháp lý + công cụ ước tính) phải copy TAY khối này khi nó đổi —
      xem CLAUDE.md mục 60 bài học E. ĐỪNG đổi 2 dòng marker. -->
 <div class="cookie-bar hidden" id="cookieBar" role="region" aria-label="Thông báo cookie">

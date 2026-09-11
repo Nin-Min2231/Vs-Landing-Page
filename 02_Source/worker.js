@@ -38,27 +38,47 @@ export default {
         return env.ASSETS.fetch(request);
       }
     }
-    // Danh sách bài viết SSR (kế hoạch SEO T4) — Google/Facebook/Bing đọc được nội dung ngay,
-    // không còn phụ thuộc JS phía client như trước (div#categorySections rỗng lúc tải trang).
-    // Nhận cả HEAD (không chỉ GET) — 2 route này KHÔNG có file tĩnh tương ứng trong public/, nên nếu
-    // rơi xuống env.ASSETS.fetch() (trang chủ "/" thì còn có index.html làm fallback, ở đây thì
-    // không) sẽ ra 404 THẬT — phát hiện lúc tự kiểm bằng `curl -I` (HEAD) sau khi deploy lần đầu.
-    if (url.pathname === '/blog' && (request.method === 'GET' || request.method === 'HEAD')) {
+    // /blog* -> /tin-tuc* — đổi tên vĩnh viễn (Kaizen 2026-09-11, C-01: "Bài viết" giờ khóa cứng 2
+    // danh mục, không còn tách riêng /blog). Giữ 301 MÃI MÃI (không xoá sau này) — link cũ đã chia
+    // sẻ trên Facebook/Zalo/tin nhắn vẫn phải dẫn đúng, cùng tinh thần redirect workers.dev ở trên.
+    if ((url.pathname === '/blog' || url.pathname.startsWith('/blog/')) &&
+        (request.method === 'GET' || request.method === 'HEAD')) {
+      return Response.redirect(url.origin + '/tin-tuc' + url.pathname.slice('/blog'.length) + url.search, 301);
+    }
+    // Trang chủ đề theo Phân loại — /tin-tuc/chu-de/<slug> (+ /trang-<n> phân trang, ĐƯỜNG DẪN
+    // không dùng query — xem lý do ở comment trên renderTinTucTopic()). Kiểm TRƯỚC route bài viết
+    // chi tiết bên dưới vì cùng chung tiền tố "/tin-tuc/".
+    if (url.pathname.startsWith('/tin-tuc/chu-de/') && (request.method === 'GET' || request.method === 'HEAD')) {
       try {
-        return await renderBlogList(request, env);
+        return await renderTinTucTopic(request, env);
       } catch (e) {
-        console.error('renderBlogList lỗi:', e);
+        console.error('renderTinTucTopic lỗi:', e);
+        return new Response('Không tải được trang chủ đề, vui lòng thử lại sau.', {
+          status: 500, headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+      }
+    }
+    // Danh sách "Tin tức" SSR, chia theo Phân loại (kế hoạch SEO T4, đổi tên "/blog"->"/tin-tuc" và
+    // thiết kế lại theo Kaizen 2026-09-11) — Google/Facebook/Bing đọc được nội dung ngay, không còn
+    // phụ thuộc JS phía client. Nhận cả HEAD (không chỉ GET) — route này KHÔNG có file tĩnh tương
+    // ứng trong public/ nên rơi xuống env.ASSETS.fetch() sẽ ra 404 THẬT (bài học đã gặp ở "/blog").
+    if (url.pathname === '/tin-tuc' && (request.method === 'GET' || request.method === 'HEAD')) {
+      try {
+        return await renderTinTucHome(request, env);
+      } catch (e) {
+        console.error('renderTinTucHome lỗi:', e);
         return new Response('Không tải được danh sách bài viết, vui lòng thử lại sau.', {
           status: 500, headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
       }
     }
-    // Chi tiết 1 bài viết SSR (kế hoạch SEO T4) — /blog/<slug>-<id>, tra theo id (số cuối URL).
-    if (url.pathname.startsWith('/blog/') && (request.method === 'GET' || request.method === 'HEAD')) {
+    // Chi tiết 1 bài viết SSR (kế hoạch SEO T4) — /tin-tuc/<slug>-<id>, tra theo id (số cuối URL).
+    // Dùng CHUNG cho bài thuộc CẢ 2 danh mục ("Thủ tục Visa" lẫn "Tin tức") — xem CLAUDE.md, C-08.
+    if (url.pathname.startsWith('/tin-tuc/') && (request.method === 'GET' || request.method === 'HEAD')) {
       try {
-        return await renderBlogPost(request, env);
+        return await renderTinTucPost(request, env);
       } catch (e) {
-        console.error('renderBlogPost lỗi:', e);
+        console.error('renderTinTucPost lỗi:', e);
         return new Response('Không tải được bài viết, vui lòng thử lại sau.', {
           status: 500, headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
@@ -66,7 +86,7 @@ export default {
     }
     // Sitemap động (kế hoạch SEO T5) — PHẢI đứng TRƯỚC dòng env.ASSETS.fetch() fallback bên dưới để
     // route này luôn thắng, dù file tĩnh 02_Source/public/sitemap.xml có lỡ còn sót lại hay không
-    // (đã xoá file đó, xem CLAUDE.md). Nhận cả HEAD, cùng lý do đã áp dụng cho /blog (mục 3).
+    // (đã xoá file đó, xem CLAUDE.md). Nhận cả HEAD, cùng lý do đã áp dụng cho /tin-tuc (mục 3).
     if (url.pathname === '/sitemap.xml' && (request.method === 'GET' || request.method === 'HEAD')) {
       try {
         return await renderSitemap(request, env);
@@ -79,7 +99,7 @@ export default {
     }
     // Mọi request khác: thử phục vụ file tĩnh trước (hành vi cũ, GIỮ NGUYÊN 100% cho asset thật —
     // index.html/admin.html/robots.txt/assets/...). CHỈ khi Cloudflare không tìm thấy gì (404) —
-    // path gõ sai, link cũ đã xoá, slug /blog hoặc /visa-<slug> tương lai không tồn tại — mới tự
+    // path gõ sai, link cũ đã xoá, slug /tin-tuc hoặc /visa-<slug> tương lai không tồn tại — mới tự
     // dựng trang 404 đầy đủ navbar/footer thay vì trang trắng mặc định (kế hoạch SEO T21).
     const assetRes = await env.ASSETS.fetch(request);
     if (assetRes.status === 404 && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -150,20 +170,23 @@ async function renderHomepageWithLivePrices(request, env) {
   return new Response(html, { status: assetRes.status, headers });
 }
 
-/* ==================== BLOG SSR — /blog và /blog/<slug>-<id> (kế hoạch SEO T4) ====================
+/* ==================== "TIN TỨC" SSR — /tin-tuc, /tin-tuc/chu-de/<slug>, /tin-tuc/<slug>-<id>
+   (kế hoạch SEO T4, đổi tên "/blog" -> "/tin-tuc" + thêm trang chủ đề theo Phân loại, Kaizen
+   2026-09-11) ====================
    Trước T4: div#categorySections rỗng lúc tải trang (bài viết nạp bằng JS), chi tiết mở bằng
-   openPostDetail(i) không đổi URL -> Google không có gì để lập chỉ mục. 2 route dưới đây dựng HTML
+   openPostDetail(i) không đổi URL -> Google không có gì để lập chỉ mục. 3 route dưới đây dựng HTML
    ĐẦY ĐỦ nội dung ngay trong response đầu tiên, có <head> riêng (title/description/self-canonical/
-   og:*) + JSON-LD Article ở trang chi tiết.
+   og:*) + JSON-LD Article ở trang chi tiết. "/blog"/"/blog/<slug>-<id>" cũ 301 vĩnh viễn sang
+   "/tin-tuc"/"/tin-tuc/<slug>-<id>" (xem redirect đầu fetch()).
 
    getSiteChrome() trích CSS design system + navbar + footer TRỰC TIẾP từ chính index.html đang chạy
-   (qua env.ASSETS.fetch) — KHÔNG copy cứng 1 bản riêng trong worker.js, để /blog* luôn tự động khớp
-   100% với trang chủ mỗi khi sau này ai đó sửa design system/navbar/footer, không phải nhớ sửa 2
-   nơi (đúng bài học "2 bản sao dễ lệch nhau" đã gặp nhiều lần — giá dịch vụ mục 31.D, FAQ/JSON-LD
+   (qua env.ASSETS.fetch) — KHÔNG copy cứng 1 bản riêng trong worker.js, để "/tin-tuc*" luôn tự động
+   khớp 100% với trang chủ mỗi khi sau này ai đó sửa design system/navbar/footer, không phải nhớ sửa
+   2 nơi (đúng bài học "2 bản sao dễ lệch nhau" đã gặp nhiều lần — giá dịch vụ mục 31.D, FAQ/JSON-LD
    mục 12). Asset tương đối ("assets/logo.svg") trong navbar/footer trích ra được đổi thành tuyệt
-   đối ("/assets/logo.svg") vì /blog* không đứng ở "/" nên đường dẫn tương đối sẽ trỏ sai chỗ; anchor
-   "#dich-vu" đổi thành "/#dich-vu" để bấm vào luôn quay lại đúng section ở trang chủ (các section đó
-   không tồn tại trên chính trang /blog*). */
+   đối ("/assets/logo.svg") vì "/tin-tuc*" không đứng ở "/" nên đường dẫn tương đối sẽ trỏ sai chỗ;
+   anchor "#dich-vu" đổi thành "/#dich-vu" để bấm vào luôn quay lại đúng section ở trang chủ (các
+   section đó không tồn tại trên chính trang "/tin-tuc*"). */
 /* ==== T20 — Byline chuyên viên (2026-09-11, PM cấp tên + xác nhận) ====================
    Ngành visa là YMYL: Google muốn thấy NGƯỜI THẬT chịu trách nhiệm cho nội dung, không phải tên
    công ty chung chung. Trước đây `Article.author` ghi cứng Organization "Top Visa 5S" — tức không
@@ -210,7 +233,7 @@ async function getSiteChrome(env, request) {
   const navbar = fixPaths((html.match(/<nav class="navbar">[\s\S]*?<\/nav>/) || [])[0] || '');
   const footer = fixPaths((html.match(/<footer id="footer">[\s\S]*?<\/footer>/) || [])[0] || '');
   // Banner cookie + GA4 (T22b/T8, 2026-09-09) — trích nguyên văn khối giữa 2 marker trong
-  // index.html để /blog, /blog/<slug> và trang 404 tự có, không phải bảo trì thêm 1 bản sao.
+  // index.html để /tin-tuc, /tin-tuc/<slug> và trang 404 tự có, không phải bảo trì thêm 1 bản sao.
   // CỐ Ý KHÔNG chạy fixPaths(): khối này chỉ có 1 link tuyệt đối (/chinh-sach-bao-mat) và 1
   // href="#" của nút "Cài đặt cookie" (đã preventDefault) — fixPaths sẽ biến "#" thành "/#",
   // vô nghĩa ở đây. CSS của banner nằm trong <style> chính nên đã có sẵn trong biến css.
@@ -218,12 +241,16 @@ async function getSiteChrome(env, request) {
   const consent = (html.match(/<!-- CONSENT\+GA4:START[\s\S]*?<!-- CONSENT\+GA4:END -->/) || [])[0] || '';
   return { css, navbar, footer, consent };
 }
-// Head chung cho mọi trang /blog* — dùng lại đúng 6 dòng icon/font đã có ở index.html, sửa path
+// Head chung cho mọi trang /tin-tuc* — dùng lại đúng 6 dòng icon/font đã có ở index.html, sửa path
 // "assets/..." tương đối thành "/assets/..." tuyệt đối vì lý do đã giải thích ở trên. 2 rule CSS phụ
 // thêm cuối cùng (h1.section-title, .article-title) CHỈ nới rộng selector có sẵn sang thêm 1 thẻ H1
 // (để mỗi trang có ĐÚNG 1 H1 ngữ nghĩa) — dùng lại y nguyên giá trị số/biến màu đã có, không bịa
 // thêm màu/khoảng cách mới.
-function blogHeadCommon(title, description, canonical, ogImage) {
+// L-02 (báo cáo phân tích Kaizen 11/09): trước đây og:type ghi cứng "article" dùng chung cho CẢ
+// trang danh sách lẫn chi tiết — sai vì trang danh sách/trang chủ đề không phải 1 bài viết. Tham số
+// ogType mặc định "website" (renderTinTucHome/renderTinTucTopic dùng đúng mặc định này, không cần
+// truyền); renderTinTucPost truyền "article" tường minh.
+function blogHeadCommon(title, description, canonical, ogImage, ogType) {
   return `<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1B6EF3">
@@ -233,7 +260,7 @@ function blogHeadCommon(title, description, canonical, ogImage) {
 <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
 <link rel="icon" type="image/png" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-180.png">
-<meta property="og:type" content="article">
+<meta property="og:type" content="${escHtml(ogType || 'website')}">
 <meta property="og:site_name" content="Top Visa 5S">
 <meta property="og:locale" content="vi_VN">
 <meta property="og:url" content="${escHtml(canonical)}">
@@ -254,31 +281,75 @@ h1.section-title{font-size:32px;font-weight:700;text-align:center;margin-bottom:
 
 const DEFAULT_OG_IMAGE = 'https://topvisa5s.com/assets/og-image.png';
 
-async function renderBlogList(request, env) {
+// Bỏ dấu tiếng Việt + chuẩn hoá thành slug URL — CÙNG QUY TẮC đã dùng ở admin.html (nqgSlugify,
+// "Nội dung quốc gia") và trước đây ở index.html (slugifyCatName, đã bỏ cùng lúc gỡ cơ chế menu/
+// section động theo Danh mục, Kaizen 2026-09-11): xử lý riêng "đ" trước khi NFD strip vì "đ" không
+// tách được bằng NFD. Dùng để sinh URL trang chủ đề /tin-tuc/chu-de/<slug> từ posts.phan_loai.
+function slugifyText(s) {
+  return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'chu-de';
+}
+
+const TIN_TUC_HOME_PREVIEW_SIZE = 6; // số bài xem trước mỗi "vùng hiển thị" (Phân loại) trên /tin-tuc
+const TOPIC_PAGE_SIZE = 9;           // số bài/trang ở trang chủ đề /tin-tuc/chu-de/<slug>
+
+// Thẻ bài viết dùng chung cho /tin-tuc, /tin-tuc/chu-de/<slug> — CÙNG cấu trúc HTML với .card-post
+// bên index.html (mục "BÀI VIẾT TRANG CHỦ") để không lệch giao diện giữa trang chủ và trang /tin-tuc.
+function postCardHtml(p, catLabel) {
+  const href = '/tin-tuc/' + (p.slug || 'bai-viet') + '-' + p.id;
+  const dateStr = new Date(p.created_at).toLocaleDateString('vi-VN');
+  const thumb = p.image_url
+    ? `<img class="thumb" src="${escHtml(p.image_url)}" alt="${escHtml(p.title)}" loading="lazy" width="400" height="174">`
+    : `<div class="thumb-placeholder">📰</div>`;
+  return `<a class="card-post" href="${href}">
+      ${thumb}
+      <div class="body">
+        <div class="cat">${escHtml(catLabel)}</div>
+        <h3>${escHtml(p.title)}</h3>
+        <div class="meta"><span>${dateStr}</span><span class="post-readmore">Đọc tiếp →</span></div>
+      </div>
+    </a>`;
+}
+
+/* ==================== "/tin-tuc" — chia theo Phân loại (Kaizen 2026-09-11, thay "/blog") ========
+   PM chốt: mỗi "Phân loại" (nhập tự do ở tab "Tin tức" trong admin.html) là 1 "vùng hiển thị" riêng
+   trên trang này — hiện vài bài mới nhất + nút "Xem tất cả" dẫn sang trang chủ đề riêng
+   /tin-tuc/chu-de/<slug> (đủ danh sách, có phân trang, xem renderTinTucTopic()). Vùng sắp xếp theo
+   bài MỚI NHẤT trong vùng (freshest-first, hợp lý cho trang danh sách — khác menu ổn định A-Z của
+   cơ chế "menu/section theo Danh mục" đã bỏ). CHỈ lấy bài category="Tin tức" — bài "Thủ tục Visa"
+   không thuộc trang này, đã có section riêng "lưới đầy đủ" ngay trên trang chủ (xem index.html). */
+async function renderTinTucHome(request, env) {
   const url = new URL(request.url);
   const canonical = url.origin + url.pathname; // T1: origin+pathname, KHÔNG kèm query
   const [chrome, posts] = await Promise.all([
     getSiteChrome(env, request),
-    supa(env, 'posts?select=id,title,slug,image_url,created_at,categories(name)&published=eq.true&order=created_at.desc')
+    supa(env, 'posts?select=id,title,slug,image_url,content,created_at,phan_loai,categories(name)&published=eq.true&order=created_at.desc')
   ]);
-  const title = 'Blog / Tin tức Visa – Top Visa 5S';
-  const description = 'Cập nhật tin tức, kinh nghiệm và hướng dẫn thủ tục xin visa Nhật Bản, Hàn Quốc, Đài Loan, Trung Quốc, Schengen, Mỹ, Úc từ Top Visa 5S.';
+  const tinTucPosts = (posts || []).filter(p => p.categories?.name === 'Tin tức');
 
-  const articlesHtml = (posts || []).map(p => {
-    const href = '/blog/' + (p.slug || 'bai-viet') + '-' + p.id;
-    const dateStr = new Date(p.created_at).toLocaleDateString('vi-VN');
-    const thumb = p.image_url
-      ? `<img class="thumb" src="${escHtml(p.image_url)}" alt="${escHtml(p.title)}" loading="lazy" width="400" height="174">`
-      : `<div class="thumb-placeholder">📰</div>`;
-    return `<article><a class="card-post" href="${href}">
-      ${thumb}
-      <div class="body">
-        <div class="cat">${escHtml(p.categories?.name || 'Tin tức')}</div>
-        <h3>${escHtml(p.title)}</h3>
-        <div class="meta"><span>${dateStr}</span><span class="post-readmore">Đọc tiếp →</span></div>
+  const title = 'Tin tức – Top Visa 5S';
+  const description = 'Kinh nghiệm du lịch, văn hoá và tin tức mới nhất về các nước Nhật Bản, Hàn Quốc, Đài Loan, Trung Quốc, Schengen, Mỹ, Úc từ Top Visa 5S.';
+
+  const groups = new Map(); // slug -> {label, posts:[]} — posts đã order created_at.desc nên posts[0] luôn là bài mới nhất trong vùng
+  tinTucPosts.forEach(p => {
+    const label = (p.phan_loai || '').trim() || 'Khác';
+    const slug = slugifyText(label);
+    if (!groups.has(slug)) groups.set(slug, { label, posts: [] });
+    groups.get(slug).posts.push(p);
+  });
+  const orderedGroups = [...groups.values()].sort((a, b) =>
+    new Date(b.posts[0].created_at) - new Date(a.posts[0].created_at));
+
+  const zonesHtml = orderedGroups.map(g => `
+    <section class="tin-tuc-zone">
+      <div class="container">
+        <h2 class="section-title">${escHtml(g.label)}</h2>
+        <div class="grid-posts">${g.posts.slice(0, TIN_TUC_HOME_PREVIEW_SIZE).map(p => postCardHtml(p, g.label)).join('')}</div>
+        <div style="text-align:center;margin-top:var(--sp-4)">
+          <a class="btn btn-outline" href="/tin-tuc/chu-de/${slugifyText(g.label)}">Xem tất cả "${escHtml(g.label)}" →</a>
+        </div>
       </div>
-    </a></article>`;
-  }).join('');
+    </section>`).join('');
 
   const html = `<!DOCTYPE html>
 <html lang="vi">
@@ -290,11 +361,94 @@ ${blogHeadCommon(title, description, canonical, DEFAULT_OG_IMAGE)}
 <a href="#noi-dung" class="skip-link">Bỏ qua tới nội dung</a>
 ${chrome.navbar}
 <main id="noi-dung">
-<section id="blog-list">
+<section id="tin-tuc-home">
   <div class="container">
-    <h1 class="section-title">Blog / Tin tức Visa</h1>
-    <p class="section-sub">Cập nhật thông tin, kinh nghiệm xin visa mới nhất từ Top Visa 5S</p>
-    <div class="grid-posts">${articlesHtml || '<p style="text-align:center;color:var(--color-text-muted)">Chưa có bài viết nào.</p>'}</div>
+    <h1 class="section-title">Tin tức &amp; Khám phá thế giới</h1>
+    <p class="section-sub">Kinh nghiệm du lịch, văn hoá và tin tức mới nhất từ Top Visa 5S</p>
+    ${!orderedGroups.length ? '<p style="text-align:center;color:var(--color-text-muted)">Chưa có bài viết nào.</p>' : ''}
+  </div>
+</section>
+${zonesHtml}
+</main>
+${chrome.footer}
+${chrome.consent}
+</body>
+</html>`;
+
+  return new Response(html, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html;charset=utf-8', 'Cache-Control': 'public,max-age=300' }
+  });
+}
+
+/* ==================== Trang chủ đề /tin-tuc/chu-de/<slug> (+ /trang-<n>) — Kaizen 2026-09-11 =====
+   Phân trang dùng ĐƯỜNG DẪN, KHÔNG dùng query (?trang=2) — vì ràng buộc T1 bắt canonical =
+   origin+pathname, bỏ hẳn query (chống ?utm_source= sinh trùng lặp). Nếu phân trang dùng query thì
+   canonical trang 2 tự trỏ về trang 1 -> nội dung trang 2 trở đi không bao giờ được lập chỉ mục.
+   "/trang-1" (thay vì URL gốc không có hậu tố) trả 404 — tránh 2 URL cùng trỏ 1 nội dung trang 1.
+
+   <slug> = slugifyText(phan_loai) — KHÔNG có bảng lưu slug riêng cho "Phân loại" (đây là cột text
+   tự do trong posts, không phải 1 bảng danh mục có id/slug như categories/noi_dung_quoc_gia), nên
+   trang này tự nhóm lại TOÀN BỘ bài "Tin tức" rồi lọc đúng nhóm khớp slug thay vì tra 1 dòng DB
+   theo slug như /visa-<slug> sẽ làm ở T14 — chấp nhận query hơi rộng vì số bài Tin tức còn nhỏ,
+   không đáng thêm 1 cột slug cho dữ liệu vốn không phải 1 thực thể quản lý riêng. */
+async function renderTinTucTopic(request, env) {
+  const url = new URL(request.url);
+  const seg = url.pathname.slice('/tin-tuc/chu-de/'.length).replace(/\/+$/, '');
+  const mPage = seg.match(/^([^/]+)\/trang-(\d+)$/);
+  const topicSlug = mPage ? mPage[1] : seg;
+  const page = mPage ? parseInt(mPage[2], 10) : 1;
+  if (!topicSlug || (mPage && page < 2)) {
+    return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+  }
+
+  const [chrome, posts] = await Promise.all([
+    getSiteChrome(env, request),
+    supa(env, 'posts?select=id,title,slug,image_url,content,created_at,phan_loai,categories(name)&published=eq.true&order=created_at.desc')
+  ]);
+  const topicPosts = (posts || [])
+    .filter(p => p.categories?.name === 'Tin tức')
+    .filter(p => slugifyText((p.phan_loai || '').trim() || 'Khác') === topicSlug);
+  if (!topicPosts.length) return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+
+  const label = (topicPosts[0].phan_loai || '').trim() || 'Khác';
+  const totalPages = Math.max(1, Math.ceil(topicPosts.length / TOPIC_PAGE_SIZE));
+  if (page > totalPages) return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+
+  const canonical = url.origin + '/tin-tuc/chu-de/' + topicSlug + (page > 1 ? '/trang-' + page : ''); // T1
+  const title = label + ' – Tin tức – Top Visa 5S';
+  const description = 'Các bài viết về "' + label + '" — cập nhật mới nhất từ Top Visa 5S.';
+  const gridHtml = topicPosts.slice((page - 1) * TOPIC_PAGE_SIZE, page * TOPIC_PAGE_SIZE)
+    .map(p => postCardHtml(p, label)).join('');
+
+  let pagerHtml = '';
+  if (totalPages > 1) {
+    const prevHref = page > 2 ? '/tin-tuc/chu-de/' + topicSlug + '/trang-' + (page - 1) : (page === 2 ? '/tin-tuc/chu-de/' + topicSlug : '');
+    const nextHref = page < totalPages ? '/tin-tuc/chu-de/' + topicSlug + '/trang-' + (page + 1) : '';
+    pagerHtml = `<div style="display:flex;align-items:center;justify-content:center;gap:var(--sp-3);margin-top:var(--sp-4)">
+      ${prevHref ? `<a class="btn btn-outline" href="${prevHref}">‹ Trước</a>` : ''}
+      <span style="color:var(--color-text-muted);font-size:14px">${page}/${totalPages}</span>
+      ${nextHref ? `<a class="btn btn-outline" href="${nextHref}">Sau ›</a>` : ''}
+    </div>`;
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+${blogHeadCommon(title, description, canonical, DEFAULT_OG_IMAGE)}
+<style>${chrome.css}${BLOG_EXTRA_CSS}</style>
+</head>
+<body>
+<a href="#noi-dung" class="skip-link">Bỏ qua tới nội dung</a>
+${chrome.navbar}
+<main id="noi-dung">
+<section id="tin-tuc-topic">
+  <div class="container">
+    <p><a href="/tin-tuc">← Tất cả tin tức</a></p>
+    <h1 class="section-title">${escHtml(label)}</h1>
+    <p class="section-sub">${topicPosts.length} bài viết</p>
+    <div class="grid-posts">${gridHtml}</div>
+    ${pagerHtml}
   </div>
 </section>
 </main>
@@ -318,12 +472,16 @@ function stripHtmlAndTruncate(text, maxLen) {
   return plain.length > maxLen ? plain.slice(0, maxLen).trim() + '…' : plain;
 }
 
-async function renderBlogPost(request, env) {
+// Chi tiết 1 bài viết — /tin-tuc/<slug>-<id> (kế hoạch SEO T4, đổi tên "/blog"->"/tin-tuc" Kaizen
+// 2026-09-11). Dùng CHUNG cho bài thuộc CẢ 2 danh mục ("Thủ tục Visa" lẫn "Tin tức") — không tách
+// URL riêng theo danh mục, khớp đúng quyết định C-01 (đổi tên toàn bộ /blog -> /tin-tuc) + C-08
+// (5 bài "Thủ tục Visa" sẽ 301 gộp về /visa-<slug> khi T14 xong, tạm thời sống chung URL /tin-tuc).
+async function renderTinTucPost(request, env) {
   const url = new URL(request.url);
-  const seg = url.pathname.slice('/blog/'.length).replace(/\/+$/, ''); // phần sau "/blog/", bỏ "/" thừa cuối
+  const seg = url.pathname.slice('/tin-tuc/'.length).replace(/\/+$/, ''); // phần sau "/tin-tuc/", bỏ "/" thừa cuối
   let urlSlug, id;
   const mSlugId = seg.match(/^(.+)-(\d+)$/); // "<slug>-<id>" — tách đúng <id> là số cuối cùng
-  const mIdOnly = seg.match(/^(\d+)$/);      // fallback: chỉ gõ "/blog/<id>", không có slug
+  const mIdOnly = seg.match(/^(\d+)$/);      // fallback: chỉ gõ "/tin-tuc/<id>", không có slug
   if (mSlugId) { urlSlug = mSlugId[1]; id = mSlugId[2]; }
   else if (mIdOnly) { urlSlug = ''; id = mIdOnly[1]; }
   else return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
@@ -338,7 +496,7 @@ async function renderBlogPost(request, env) {
   // bài không làm hỏng link cũ vì việc tra bài luôn dựa vào id, chưa từng dựa vào slug.
   const realSlug = p.slug || 'bai-viet';
   if (urlSlug !== realSlug) {
-    return Response.redirect(url.origin + '/blog/' + realSlug + '-' + p.id, 301);
+    return Response.redirect(url.origin + '/tin-tuc/' + realSlug + '-' + p.id, 301);
   }
 
   const canonical = url.origin + url.pathname; // T1: origin+pathname, KHÔNG kèm query
@@ -366,7 +524,7 @@ async function renderBlogPost(request, env) {
   const html = `<!DOCTYPE html>
 <html lang="vi">
 <head>
-${blogHeadCommon(p.title, description, canonical, ogImage)}
+${blogHeadCommon(p.title, description, canonical, ogImage, 'article')}
 <style>${chrome.css}${BLOG_EXTRA_CSS}</style>
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 </head>
@@ -374,9 +532,9 @@ ${blogHeadCommon(p.title, description, canonical, ogImage)}
 <a href="#noi-dung" class="skip-link">Bỏ qua tới nội dung</a>
 ${chrome.navbar}
 <main id="noi-dung">
-<section id="blog-post">
+<section id="tin-tuc-post">
   <div class="container" style="max-width:760px">
-    <p><a href="/blog">← Tất cả bài viết</a></p>
+    <p><a href="/tin-tuc">← Tất cả tin tức</a></p>
     ${cover}
     <div class="cat">${escHtml(p.categories?.name || 'Tin tức')}</div>
     <h1 class="article-title">${escHtml(p.title)}</h1>
@@ -398,17 +556,17 @@ ${chrome.consent}
 
 /* ==================== TRANG 404 ĐẦY ĐỦ — mọi path không khớp route nào (kế hoạch SEO T21) ====
    Trước T21: path sai/đã xoá rơi xuống 404 mặc định của Cloudflare (trang trắng, không navbar) ->
-   khách vào là thoát luôn. Sắp có 2 nhóm route động (/blog/<slug>-<id>, /visa-<slug>) sẽ sinh thêm
-   nhiều đường dẫn 404 tiềm năng (slug gõ sai, bài bị unpublish, link cũ chia sẻ trên Facebook, nước
-   chưa publish) nên cần trang 404 tử tế: navbar, footer, câu xin lỗi, link về trang chủ + /blog +
-   trang quốc gia ĐANG PUBLISH + hotline — dùng lại đúng getSiteChrome() đã có ở khối Blog SSR phía
-   trên (không copy riêng 1 bản navbar/footer khác). noindex để Google không lập chỉ mục nhầm trang
-   lỗi. CHƯA làm 410 Gone cho bài đã unpublish — cần thêm cột theo dõi "đã từng publish", phức tạp
-   hơn giá trị ở giai đoạn này; khi nào thật sự gỡ bài thì làm sau.
+   khách vào là thoát luôn. Sắp có 2 nhóm route động (/tin-tuc/<slug>-<id>, /visa-<slug>) sẽ sinh
+   thêm nhiều đường dẫn 404 tiềm năng (slug gõ sai, bài bị unpublish, link cũ chia sẻ trên Facebook,
+   nước chưa publish) nên cần trang 404 tử tế: navbar, footer, câu xin lỗi, link về trang chủ +
+   /tin-tuc + trang quốc gia ĐANG PUBLISH + hotline — dùng lại đúng getSiteChrome() đã có ở khối
+   "Tin tức" SSR phía trên (không copy riêng 1 bản navbar/footer khác). noindex để Google không lập
+   chỉ mục nhầm trang lỗi. CHƯA làm 410 Gone cho bài đã unpublish — cần thêm cột theo dõi "đã từng
+   publish", phức tạp hơn giá trị ở giai đoạn này; khi nào thật sự gỡ bài thì làm sau.
 
    Link trang quốc gia lấy ĐỘNG từ bảng noi_dung_quoc_gia — lúc viết T21, bảng này CHƯA tồn tại (T13
    làm sau) nên query dưới đây từng ném lỗi "relation does not exist" và bị nuốt về mảng rỗng
-   (catch), trang 404 chỉ còn link trang chủ + /blog + hotline. T13 nay ĐÃ xong (bảng tồn tại) nhưng
+   (catch), trang 404 chỉ còn link trang chủ + /tin-tuc + hotline. T13 nay ĐÃ xong (bảng tồn tại) nhưng
    T14 (route /visa-<slug>) VẪN CHƯA làm — nên dù có nước published, chưa có trang thật để trỏ tới,
    catch vẫn còn nguyên giá trị phòng hờ (bảng lỗi/mạng chập chờn...). Khi T14 xong, trang 404 TỰ
    ĐỘNG hiện thêm link ngay, không cần sửa lại file này lần nữa. */
@@ -484,7 +642,7 @@ ${chrome.navbar}
     <p class="section-sub">Đường dẫn này không tồn tại hoặc đã được thay đổi. Xin lỗi vì sự bất tiện này — bạn có thể quay lại trang chủ hoặc xem các mục dưới đây.</p>
     <div class="notfound-actions">
       <a class="btn btn-primary" href="/">🏠 Về trang chủ</a>
-      <a class="btn btn-outline" href="/blog">📰 Xem Blog</a>
+      <a class="btn btn-outline" href="/tin-tuc">📰 Xem Tin tức</a>
       ${countryLinksHtml}
     </div>
     <p class="notfound-hotline">Cần hỗ trợ ngay? Gọi hotline <a href="tel:0935887922"><b>0935 887 922</b></a></p>
@@ -505,12 +663,17 @@ ${chrome.consent}
 /* ==================== SITEMAP ĐỘNG — /sitemap.xml (kế hoạch SEO T5) ====================
    Trước T5: 02_Source/public/sitemap.xml TĨNH chỉ có đúng 1 URL trang chủ, lastmod hardcode
    "2026-08-07" không bao giờ tự cập nhật — đã xoá file này (worker chạy trước env.ASSETS.fetch nên
-   route động dưới đây luôn thắng, xem fetch() ở trên). Ghép 4 nguồn:
+   route động dưới đây luôn thắng, xem fetch() ở trên). Ghép 5 nguồn:
    1. "/" — không có nguồn dữ liệu "lần sửa gần nhất" đáng tin cậy nào (trang chủ gộp nhiều mảng: giá
       dịch vụ, đánh giá, bài viết mới...) -> KHÔNG bịa lastmod, chỉ có <loc> (hợp lệ theo chuẩn
       sitemap — <lastmod> là tùy chọn).
-   2. "/blog" — lastmod = updated_at MỚI NHẤT trong các bài published (đã fetch sẵn ở bước 4, không
-      cần query thêm) — đây là ngày THẬT vì nội dung /blog thay đổi đúng theo đó, không phải fabricate.
+   2. "/tin-tuc" — lastmod = updated_at MỚI NHẤT trong các bài danh mục "Tin tức" đã publish (đã
+      fetch sẵn ở bước 5, không cần query thêm) — ngày THẬT vì nội dung /tin-tuc thay đổi đúng theo
+      đó (Kaizen 2026-09-11, đổi tên từ "/blog"; trang này giờ CHỈ hiện bài "Tin tức", không còn
+      gộp cả "Thủ tục Visa" như /blog cũ).
+   2b. "/tin-tuc/chu-de/<slug>" — 1 URL/Phân loại đang có ít nhất 1 bài "Tin tức" published, lastmod
+      = updated_at MỚI NHẤT trong nhóm đó. CHỈ khai trang 1 (không khai "/trang-2..." — Google tự
+      tìm thấy qua link "Trước/Sau" trên trang, không cần liệt kê hết vào sitemap).
    3. Các trang tĩnh khác đáng lập chỉ mục (EXTRA_STATIC_PAGES — 3 trang pháp lý T11 +
       /cong-cu/uoc-tinh-chi-phi-visa T16, danh sách sẽ còn dài thêm ở T15/T17 sau này) -> dò tồn
       tại THẬT qua env.ASSETS.fetch() (HEAD each file), chỉ đưa vào sitemap nếu trả 200. Nhờ đó
@@ -522,8 +685,9 @@ ${chrome.consent}
       xem getPublishedCountryLinks()): bảng chưa tồn tại/lỗi khác -> mảng rỗng, không throw.
       lastmod = updated_at THẬT (migration 14 đã thêm cột này + trigger tự cập nhật, cùng mẫu
       posts) — không còn là "không có nguồn tin cậy" như lúc viết T5 lần đầu (khi đó T13 chưa làm).
-   5. Toàn bộ posts published — lastmod = updated_at THẬT của từng bài (cột có trigger tự cập nhật,
-      xem 05_Database/13_supabase_setup_phase13.sql) — KHÔNG bịa ngày.
+   5. Toàn bộ posts published (CẢ 2 danh mục, "Thủ tục Visa" lẫn "Tin tức" — đều sống ở URL
+      /tin-tuc/<slug>-<id>, xem C-01/C-08) — lastmod = updated_at THẬT của từng bài (cột có trigger
+      tự cập nhật, xem 05_Database/13_supabase_setup_phase13.sql) — KHÔNG bịa ngày.
 
    CHỈ sinh <loc>+<lastmod> — bỏ hẳn <changefreq>/<priority> (Google công bố rõ bỏ qua 2 thẻ này,
    sinh ra là công sức vô ích, xem kế hoạch SEO T5). <lastmod> chỉ xuất hiện khi có giá trị THẬT —
@@ -574,23 +738,36 @@ async function renderSitemap(request, env) {
     // (vd Supabase down) nên rơi ra ngoài cho catch ở fetch() trả 500, thay vì âm thầm phát sinh
     // 1 sitemap "200 OK" trông có vẻ ổn nhưng thiếu sạch mọi bài viết — Google có thể lỡ tin nhầm
     // đó là danh sách đầy đủ.
-    supa(env, 'posts?select=id,slug,updated_at&published=eq.true')
+    supa(env, 'posts?select=id,slug,updated_at,phan_loai,categories(name)&published=eq.true')
   ]);
 
-  // lastmod của "/blog" = ngày mới nhất trong updated_at của các bài published (so sánh chuỗi
-  // "YYYY-MM-DD" đúng thứ tự thời gian) — không cần query riêng, tận dụng luôn kết quả posts ở trên.
-  const latestPostDate = (posts || []).reduce((max, p) => {
+  // lastmod của "/tin-tuc" = ngày mới nhất trong updated_at của các bài DANH MỤC "Tin tức" đã
+  // publish (so sánh chuỗi "YYYY-MM-DD" đúng thứ tự thời gian) — /tin-tuc giờ CHỈ hiện bài "Tin
+  // tức" (Kaizen 2026-09-11), không cần query riêng, tận dụng luôn kết quả posts ở trên.
+  const tinTucPostsForSitemap = (posts || []).filter(p => p.categories?.name === 'Tin tức');
+  const latestTinTucDate = tinTucPostsForSitemap.reduce((max, p) => {
     const d = (p.updated_at || '').slice(0, 10);
     return d && d > max ? d : max;
   }, '');
 
+  // 1 URL trang chủ đề/Phân loại (chỉ trang 1) — lastmod = updated_at mới nhất trong đúng nhóm đó.
+  const topicGroups = new Map(); // slug -> lastmod mới nhất
+  tinTucPostsForSitemap.forEach(p => {
+    const label = (p.phan_loai || '').trim() || 'Khác';
+    const slug = slugifyText(label);
+    const d = (p.updated_at || '').slice(0, 10);
+    const cur = topicGroups.get(slug) || '';
+    if (d && d > cur) topicGroups.set(slug, d);
+  });
+
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
   xml += sitemapUrlXml(origin + '/', '');
-  xml += sitemapUrlXml(origin + '/blog', latestPostDate);
+  xml += sitemapUrlXml(origin + '/tin-tuc', latestTinTucDate);
+  for (const [slug, lastmod] of topicGroups) xml += sitemapUrlXml(origin + '/tin-tuc/chu-de/' + slug, lastmod);
   for (const p of extraPages) xml += sitemapUrlXml(origin + p, '');
   for (const c of countries) xml += sitemapUrlXml(origin + '/' + c.slug, (c.updated_at || '').slice(0, 10));
   for (const p of (posts || [])) {
-    const href = origin + '/blog/' + (p.slug || 'bai-viet') + '-' + p.id;
+    const href = origin + '/tin-tuc/' + (p.slug || 'bai-viet') + '-' + p.id;
     xml += sitemapUrlXml(href, (p.updated_at || '').slice(0, 10));
   }
   xml += '</urlset>';

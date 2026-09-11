@@ -3189,3 +3189,145 @@ mới: cần thêm thời gian hoàn thiện hồ sơ + đặt lịch hẹn, và
   đúng yêu cầu đó nên hiểu là đã đồng ý. Nếu chưa, gỡ chỉ là sửa 1 khối `AUTHOR_DEFAULT`.
 - **Trang quốc gia (T14) chưa có route** nên byline ở đó chưa hiển thị được — `authorPerson()`/
   `bylineText()` đã viết dùng chung, khi làm T14 gọi lại là xong.
+
+## 64. Kaizen trang chủ — khóa cứng "Bài viết" thành 2 danh mục cố định + đổi `/blog`→`/tin-tuc`
+    + trang chủ đề theo Phân loại (2026-09-11, cùng ngày mục 61-63)
+
+**Bối cảnh:** tiếp nối `11_Home_Kaizen/` (mục "0" `Handover_Phien_Moi.md` bản 21) — PM trả lời 6
+điểm còn chờ (C-06→C-11) bằng 1 kiến trúc MỚI, đơn giản hơn hẳn mọi đề xuất trong báo cáo phân
+tích gốc: **"Bài viết" khóa cứng đúng 2 danh mục cố định** — "Thủ tục Visa" và "Tin tức" — thay vì
+hệ thống danh mục PM tự do tạo thêm như trước. Quyết định này tự động giải quyết dứt điểm C-05
+(rủi ro navbar dài thêm — hết vì không còn tạo danh mục mới được), C-07 (không cần gộp
+`posts.phan_loai` vào `categories`), C-10 (không cần cột `kieu_hien_thi_home` — section không còn
+sinh động theo vòng lặp Danh mục), C-11 (không còn 2 mục menu "📰" hành xử khác nhau). **C-06 vẫn
+CÒN CHỜ** (trang `/danh-gia` chưa làm trong lượt này). Đã cập nhật đầy đủ
+`11_Home_Kaizen/Bao_cao_Phan_tich_Home_Kaizen_20260911.xlsx` (sheet 00/02/04/05/08) phản ánh đúng
+kiến trúc cuối — đọc sheet đó để biết chi tiết từng điểm đã đổi so với đề xuất gốc.
+
+**A. `admin.html` — "Bài viết" tách 2 tab cố định, bỏ tab "Danh mục bài viết":**
+- 2 tab MỚI thay tab "📝 Bài viết" + "🗂 Danh mục" cũ: **"🛂 Thủ tục Visa"** và **"📰 Tin tức"**
+  (`tab-postsvisa`/`tab-poststin`, `switchTab()` cập nhật theo). Mỗi tab có bảng/dialog riêng
+  (`renderPostsVisa()`/`renderPostsTinTuc()`, `postsVisaBody`/`postsTinBody`) nhưng DÙNG CHUNG 1
+  dialog `#postOverlay` — phân biệt bằng field ẩn `#postTab` (`'visa'`/`'tin'`) do
+  `openPostModal(tab,id)` gán.
+- **BỎ HẲN ô chọn "Danh mục"** khỏi dialog — `savePost()` tự tra `category_id` theo tên cố định
+  (`POST_CAT_NAME = {visa:'Thủ tục Visa', tin:'Tin tức'}` → `catIdByName()`, dùng `CATS` load qua
+  `loadCats()` đã rút gọn chỉ còn fetch, không còn render/CRUD danh mục).
+- **Tab "Thủ tục Visa":** ô "Phân loại" ẨN HẲN (`#postPhanLoaiWrap.hidden`), `savePost()` tự gán
+  cố định `POST_FIXED_PHANLOAI = 'Hồ sơ xin Visa các nước'` — PM không sửa được, đảm bảo H2 section
+  trang chủ không bao giờ đổi ngoài ý muốn.
+- **Tab "Tin tức":** ô "Phân loại" GIỮ NGUYÊN bắt buộc nhập tự do (datalist gợi ý) — ý nghĩa MỚI:
+  đây là khoá nhóm "vùng hiển thị"/trang chủ đề trên `/tin-tuc` (xem mục C).
+- **Xoá hẳn** `addCategory()`/`delCategory()`/`renderCats()`, nhánh `type==='cat'` trong
+  `openRenameModal()`/`saveRename()` (dialog `renameOverlay` giờ chỉ phục vụ "Nước đến"/"Mục
+  đích"/"Đối tác" như cũ).
+- **⭐ Tiện sửa luôn lỗi L-01** (báo cáo phân tích): `savePost()` trước đây KHÔNG gửi `slug` →
+  mọi bài mới có URL xấu `/tin-tuc/bai-viet-<id>`. Thêm hàm `slugifyPostTitle()` (bỏ dấu, KHÔNG có
+  tiền tố `visa-` khác `nqgSlugify()`), gọi khi **TẠO MỚI** (`if(!id) body.slug=...`) — **SỬA bài
+  GIỮ NGUYÊN slug cũ** (không gửi field `slug` khi PATCH), đúng nguyên tắc "worker.js đã tự 301,
+  đổi slug lúc sửa chỉ làm chết link đã chia sẻ".
+- Sort dùng 2 `tableKey` mới `postsvisa`/`poststin` (thay `posts`/`cats` cũ).
+
+**B. `worker.js` — `/blog` → `/tin-tuc`, 301 vĩnh viễn + trang chủ đề mới:**
+- **Redirect 301 MÃI MÃI**: `/blog` và `/blog/<bất kỳ>` → `/tin-tuc` + phần còn lại tương ứng
+  (giữ nguyên query) — đặt NGAY ĐẦU `fetch()`, trước mọi route khác.
+- **`renderTinTucHome()`** (thay `renderBlogList()`) — route `/tin-tuc`: fetch TOÀN BỘ posts
+  published, lọc riêng category `"Tin tức"`, NHÓM theo `phan_loai` (mỗi giá trị khác nhau = 1
+  "vùng hiển thị") — mỗi vùng là 1 `<section>` H2=tên Phân loại + lưới preview `TIN_TUC_HOME_
+  PREVIEW_SIZE=6` bài mới nhất + nút "Xem tất cả". Vùng sắp xếp theo bài MỚI NHẤT trong vùng
+  (freshest-first — khác menu ổn định A-Z của cơ chế cũ đã bỏ). Bài category `"Thủ tục Visa"`
+  **KHÔNG** xuất hiện ở trang này (đã có section riêng trên trang chủ).
+- **`renderTinTucTopic()`** (MỚI) — route `/tin-tuc/chu-de/<slug>` (+ `/trang-<n>`): `<slug>` =
+  `slugifyText(phan_loai)` tính ĐỘNG lúc dựng trang (không lưu cột slug riêng — `phan_loai` là
+  text tự do trong `posts`, không phải 1 bảng danh mục). Phân trang **ĐƯỜNG DẪN, không query**
+  (đúng ràng buộc T1 — canonical bỏ hẳn query, tránh trang 2+ không được lập chỉ mục), 9 bài/trang
+  (`TOPIC_PAGE_SIZE`). `/trang-1` → 404 (chặn trùng nội dung với URL gốc không hậu tố). Chủ đề
+  không khớp bài nào/quá trang cuối → 404 thật.
+- **`renderTinTucPost()`** (thay `renderBlogPost()`) — route `/tin-tuc/<slug>-<id>`, dùng CHUNG
+  cho bài CẢ 2 danh mục (không tách URL riêng theo danh mục — khớp C-01/C-08: 5 bài "Thủ tục
+  Visa" sẽ 301 gộp về `/visa-<slug>` khi T14 xong, tạm thời sống chung `/tin-tuc/`).
+- **⭐ Tiện sửa luôn lỗi L-02:** `blogHeadCommon()` thêm tham số `ogType` (mặc định `"website"` cho
+  trang danh sách/chủ đề, `"article"` cho trang chi tiết) — trước đây ghi cứng `"article"` cho cả
+  trang danh sách, sai vì đó không phải 1 bài viết.
+- **Sitemap** (`renderSitemap()`): `/blog`→`/tin-tuc`; thêm 1 URL/Phân loại đang có bài (`/tin-tuc/
+  chu-de/<slug>`, chỉ trang 1, lastmod = `updated_at` mới nhất trong nhóm); URL bài viết đổi tiền
+  tố `/tin-tuc/`. Trang 404: link "Xem Blog"→"Xem Tin tức" (`/tin-tuc`).
+- **`EXTRA_STATIC_PAGES`/`VISA_COUNTRY_ROUTE_READY`/`getPublishedCountryLinks()` không đổi.**
+
+**C. `index.html` — bỏ popup, 2 section TĨNH thay cơ chế động theo Danh mục:**
+- **BỎ HẲN** `#postOverlay` (popup xem nhanh) + `openPostDetail()`/`closePostDetail()`/
+  `initScrollLock()` + CSS `.post-overlay`/`.post-modal-*`/`.no-scroll` — PM quyết định bỏ vì popup
+  là cơ chế DÙNG CHUNG cho card ở CẢ 2 section, giữ 1 luồng "click = rời trang" cho MỌI bài viết
+  đơn giản hơn hẳn duy trì 2 luồng riêng. Card bài viết giờ LUÔN là `<a href="/tin-tuc/<slug>-
+  <id>">` thật.
+- **Thay `<div id="categorySections">`** (cơ chế sinh menu/section ĐỘNG cho MỌI Danh mục có bài,
+  mục 31.F cũ — ĐÃ BỎ HẲN) bằng **2 `<section>` TĨNH cố định trong HTML**:
+  - `#thu-tuc-visa` ("Hồ sơ xin Visa các nước") — lưới ĐẦY ĐỦ, KHÔNG phân trang, bố cục giữ
+    nguyên như trước Kaizen. Script cuối trang fetch category `"Thủ tục Visa"` rồi điền vào
+    `#thuTucVisaGrid`; 0 bài → `section.hidden=true`.
+  - `#tin-tuc-trangchu` ("Tin tức & Khám phá thế giới") — 3 bài/trang (`TIN_TUC_HOME_PAGE_SIZE`),
+    nút "‹ Trước"/"Sau ›" (`tinTucPreviewGo()`) — **KHÔNG tái dùng `.slider-arrow`** (định vị
+    `position:absolute` cho slider đánh giá, sẽ tràn mép ở lưới rộng `.container` 1200px) mà dùng
+    2 nút `.btn.btn-outline` dạng chữ, canh giữa NGANG dưới lưới — không phát sinh CSS mới. Nút
+    "Xem tất cả tin tức →" dẫn `/tin-tuc`.
+- **Menu — CỐ ĐỊNH, không còn chèn động:** `<li><a href="#thu-tuc-visa">🛂 Thủ tục Visa</a></li>`
+  (anchor, cuộn trong trang) + `<li><a href="/tin-tuc">📰 Tin tức</a></li>` (link thật, rời
+  trang) — thay hẳn comment placeholder "chèn động trước FAQ" cũ.
+- **CHƯA làm** (còn tồn đọng, xem sheet 04/07 báo cáo phân tích): chiều cao thẻ cố định +
+  `line-clamp` cho card Tin tức, khung giữ chỗ (skeleton) chống nhảy layout lúc 2 khối JS tải
+  xong — vấn đề cuộn-sai-vị-trí-lúc-tải-trang vẫn được `fixInitialHashScroll()` xử lý đúng (không
+  phụ thuộc khung giữ chỗ).
+
+**D. `05_Database/15_supabase_setup_phase15.sql` (MỚI, PM CẦN TỰ CHẠY):** DELETE danh mục thừa
+`"Kinh nghiệm xin visa"` khỏi `categories` (đã xác nhận qua REST API: 0 bài viết tham chiếu trước
+khi viết migration, và `posts.category_id` có `on delete set null` nên vẫn an toàn dù có bài dùng
+— chỉ là lớp chặn thêm cho chắc). Idempotent (`WHERE ... AND NOT EXISTS`). **Không tạo bảng mới**
+nên không cần sửa `06_Backup_Tool/backup-supabase.mjs`. Migration KHÔNG chặn deploy code (2 danh
+mục "Thủ tục Visa"/"Tin tức" cần thiết đã tồn tại sẵn từ trước, code chỉ tra theo TÊN không hardcode
+id) — chạy trước/sau deploy đều được, chỉ là dọn dữ liệu thừa.
+
+**E. 4 trang tĩnh (T11/T16) đồng bộ TAY theo đúng bài học CLAUDE.md mục 60.E** (không có cơ chế tự
+động như `/tin-tuc`/404 dùng `getSiteChrome()`): `chinh-sach-bao-mat.html`/`dieu-khoan-dich-vu.html`/
+`lien-he.html`/`cong-cu/uoc-tinh-chi-phi-visa.html` — cập nhật nav (2 mục menu cố định mới) +
+**XOÁ HẲN** đoạn JS "Menu Danh mục bài viết động" (mục 60.B từng thêm để 3 trang T11 có menu theo
+Danh mục — nay vô nghĩa vì menu đã tĩnh) + sửa 2 chỗ comment nhắc `/blog` → `/tin-tuc`. Dùng script
+Python đối chiếu byte-for-byte cả 4 file (không gõ tay) để tránh lệch nhau.
+
+**Đã test trước khi báo cáo (CHƯA deploy — theo Git Safety Protocol, KHÔNG tự ý push production khi
+chưa có xác nhận rõ ràng từ PM cho 1 thay đổi lớn thế này, dù project trước giờ có tiền lệ "code
+xong tự deploy"):**
+- `node --check` + cân bằng thẻ HTML (`python3 html.parser`) cho cả 6 file đã sửa (`admin.html`,
+  `index.html`, `worker.js`, 4 trang tĩnh) — OK hết.
+- `admin.html`: test qua Claude Browser (mock `api()` thành CSDL trong bộ nhớ) — 2 tab hiện đúng
+  bài theo danh mục, field Phân loại ẩn/hiện đúng theo tab, tạo mới sinh đúng `category_id`+
+  `phan_loai` (fixed cho Thủ tục Visa, tự do cho Tin tức), validate chặn Phân loại rỗng ở tab Tin
+  tức, slug tự sinh khi tạo mới + KHÔNG gửi khi sửa, sort/filter/xoá/`confirmCloseDialog` đều đúng.
+- `worker.js`: test qua Node (import thẳng `worker.js` làm ES module, mock `env.ASSETS.fetch` trả
+  `index.html` thật cho `getSiteChrome()` + mock Supabase REST) — 12 kịch bản: redirect 301 giữ
+  query, `/tin-tuc` nhóm đúng Phân loại (không lẫn "Thủ tục Visa"), trang chủ đề lọc đúng slug +
+  phân trang đúng (9/trang, `/trang-1` 404, quá trang cuối 404), bài viết CẢ 2 danh mục render
+  đúng dưới `/tin-tuc/<slug>-<id>` (byline/JSON-LD `Article` đúng), sai slug → 301, chưa publish →
+  404, sitemap có đủ URL mới + không còn `/blog`, trang 404 link đúng `/tin-tuc`, `og:type` đúng
+  `article`/`website` theo từng loại trang. HTML cân bằng + JSON-LD `json.loads` hợp lệ trên trang
+  render thật.
+- `index.html`: test qua Claude Browser (mock dữ liệu, gọi trực tiếp `renderPostCardHtml()`/
+  `renderTinTucPreview()`/`tinTucPreviewGo()`) — lưới Thủ tục Visa đúng href/slug, phân trang Tin
+  tức 3/trang đúng + wrap-around đúng, section tự ẩn khi 0 bài, menu đúng 8 mục cố định (không còn
+  chèn động).
+- 4 trang tĩnh: `node --check` + cân bằng thẻ OK, nav đúng 2 mục mới, không còn JS dynamic-menu.
+
+**Việc CẦN PM làm để có hiệu lực thật:**
+1. Chạy `05_Database/15_supabase_setup_phase15.sql` trong Supabase SQL Editor (không bắt buộc
+   trước khi deploy, chỉ là dọn dữ liệu).
+2. Xác nhận cho phép deploy (`git push` lên `main`) — CHƯA push, đang chờ PM xác nhận vì đây là
+   thay đổi lớn (đổi toàn bộ URL bài viết, bỏ popup, đổi UI admin) dù đã test kỹ theo mọi lớp có
+   thể test được mà không cần đăng nhập admin thật/deploy thật.
+3. Sau khi deploy: tự đăng nhập admin thật, thử tạo 1 bài ở mỗi tab, xác nhận URL sinh ra đẹp
+   (`/tin-tuc/<slug-có-nghĩa>-<id>`, không còn `bai-viet-<id>`); `curl -I` xác nhận redirect
+   `/blog`→`/tin-tuc` thật trên production (đúng bài học "route mới phải tự curl -I sau deploy",
+   CLAUDE.md mục 54).
+
+**Còn tồn đọng (đã ghi trong Excel báo cáo, KHÔNG phải bị bỏ sót):** C-06 (menu "Đánh giá"→
+`/danh-gia`, B-5 chưa làm), fixed-height/line-clamp cho card Tin tức (T-01/T-04), khung giữ chỗ
+chống nhảy layout (T-07/T-08), L-03 (rating giả `★★★★★`), L-04 (cắt đoạn trích giữa từ), C-08
+(5 bài Thủ tục Visa đá từ khoá với T14 — vẫn hoãn được), C-09 (Markdown rút gọn).
