@@ -3137,3 +3137,14 @@ với 1 người thật, mà T20 yêu cầu rõ "**và họ đồng ý công kha
 **Nghiệm thu:** không grep chuỗi mà **parse thật** cả 2 khối JSON-LD bằng `json.loads` rồi in ra
 mảng `sameAs` — cả 2 đều đúng 3 link, cùng thứ tự. Cân bằng thẻ + `node --check` 5 trang tĩnh: OK.
 `openingHours`/`geo`/`priceRange` của T10 **vẫn chờ PM** cấp giờ + toạ độ từ Google Business Profile.
+
+**Cập nhật 2026-09-11 — PM chốt BỎ link Facebook tư vấn viên khỏi `sameAs`:** đã xoá
+`https://www.facebook.com/share/1ei5XS6zJE/` khỏi `sameAs` của CẢ `TravelAgency` (`index.html`) lẫn
+`LocalBusiness` (`lien-he.html`). Còn đúng 2 link, đều là trang doanh nghiệp thật: "Chuyên Visa
+Toàn Quốc" + "trụ sở Đà Nẵng". **Link thường trong nội dung trang GIỮ NGUYÊN** (mỗi file 1 chỗ) —
+chỉ bỏ khỏi schema, vì đó là 2 việc khác nhau: `<a href>` là "trang này có dẫn tới đó", còn
+`sameAs` là "URL này LÀ một danh tính khác của CHÍNH doanh nghiệp" — profile cá nhân nhân viên
+không thoả nghĩa thứ hai. Muốn ghi nhận chuyên viên thì đúng chỗ là `Article.author` = `Person`
+của **T20** (vẫn đang chờ PM cấp tên + xác nhận họ đồng ý công khai).
+**Nghiệm thu:** parse thật JSON-LD bằng `json.loads` (không grep chuỗi), khẳng định `sameAs` còn 2
+link và không còn `1ei5XS6zJE`; đồng thời đếm lại link thường trong body vẫn còn đúng 1 chỗ/file.
