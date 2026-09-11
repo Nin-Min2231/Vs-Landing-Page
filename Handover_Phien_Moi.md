@@ -1,26 +1,39 @@
-# Handover — Bàn giao sang phiên làm việc mới (2026-09-11, bản 22 — GHI ĐÈ toàn bộ bản cũ)
+# Handover — Bàn giao sang phiên làm việc mới (2026-09-11, bản 23 — GHI ĐÈ toàn bộ bản cũ)
 
-> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→21) — **không cần đọc lại bản cũ**, nội
+> File này **GHI ĐÈ HOÀN TOÀN** mọi bản handover cũ (bản 1→22) — **không cần đọc lại bản cũ**, nội
 > dung quan trọng còn giá trị đã gom hết vào đây. Đọc theo đúng thứ tự: `CLAUDE.md` (toàn bộ, đặc
-> biệt **mục 64 — MỚI NHẤT**) → file này → `11_Home_Kaizen/Bao_cao_Phan_tich_Home_Kaizen_20260911.xlsx`
-> (đã cập nhật theo đúng kiến trúc cuối, xem sheet 00/02/04/05/08) → `10_SEO/11_Ke_hoach_sau_xac_nhan.md`
-> mục 0 (8 ràng buộc) → bắt tay vào việc tiếp theo ở **mục 2** dưới đây.
+> biệt **mục 64 — MỚI NHẤT, đã cập nhật thêm phần "ĐÃ DEPLOY"**) → file này →
+> `11_Home_Kaizen/Bao_cao_Phan_tich_Home_Kaizen_20260911.xlsx` (đã cập nhật theo đúng kiến trúc
+> cuối, xem sheet 00/02/04/05/08) → `10_SEO/11_Ke_hoach_sau_xac_nhan.md` mục 0 (8 ràng buộc) → bắt
+> tay vào việc tiếp theo ở **mục 2** dưới đây.
 
 ## 0. Trạng thái ngay lúc viết file này
 
-**⭐ MỚI (cùng ngày 11/09, phiên sau bản 21) — Kaizen trang chủ: ĐÃ CODE + TỰ TEST XONG, CHƯA
-DEPLOY, đang chờ PM xác nhận.** PM trả lời 6 điểm còn chờ (C-06→C-11) bằng 1 kiến trúc MỚI đơn
-giản hơn hẳn đề xuất gốc: khóa cứng "Bài viết" thành đúng 2 danh mục cố định "Thủ tục Visa"/"Tin
-tức" (bỏ tab "Danh mục bài viết"), đổi `/blog`→`/tin-tuc` (301 vĩnh viễn), trang `/tin-tuc` mới
-chia theo "vùng hiển thị" (Phân loại) + trang chủ đề riêng `/tin-tuc/chu-de/<slug>` có phân trang.
-Đã sửa `admin.html`/`index.html`/`worker.js` + đồng bộ 4 trang tĩnh + viết migration 15 (dọn danh
-mục thừa) + cập nhật đầy đủ Excel báo cáo + CLAUDE.md mục 64. **CHƯA `git push`** — theo Git Safety
-Protocol, thay đổi lớn cỡ này (đổi URL toàn bộ bài viết, bỏ popup, đổi UI admin) cần PM xác nhận rõ
-ràng trước khi lên production, dù project có tiền lệ code-xong-tự-deploy. **Đọc kỹ CLAUDE.md mục 64
-trước khi làm bất kỳ việc gì tiếp theo** — có đầy đủ danh sách đã test + việc PM cần làm (chạy
-migration 15, xác nhận deploy, tự kiểm sau khi deploy). C-06 (`/danh-gia`) **vẫn CÒN CHỜ**, chưa
-động tới trong lượt này. Chi tiết đầy đủ ở **mục 2.A** bên dưới — đã cập nhật lại theo đúng trạng
-thái mới, KHÔNG còn đúng như mô tả gốc của bản 21 (đã lỗi thời, xem CLAUDE.md mục 64 mới nhất).
+**✅ Kaizen trang chủ (đợt 1) — ĐÃ DEPLOY LÊN PRODUCTION VÀ ĐÃ XÁC NHẬN HOẠT ĐỘNG ĐÚNG (11/09, cùng
+ngày, phiên sau bản 21/22).** PM trả lời 6 điểm còn chờ (C-06→C-11) bằng 1 kiến trúc MỚI đơn giản
+hơn hẳn đề xuất gốc trong báo cáo phân tích: khóa cứng "Bài viết" thành đúng 2 danh mục cố định
+"Thủ tục Visa"/"Tin tức" (bỏ tab "Danh mục bài viết"), đổi `/blog`→`/tin-tuc` (301 vĩnh viễn), trang
+`/tin-tuc` mới chia theo "vùng hiển thị" (Phân loại) + trang chủ đề riêng `/tin-tuc/chu-de/<slug>`
+có phân trang. Đã sửa `admin.html`/`index.html`/`worker.js` + đồng bộ 4 trang tĩnh + viết migration
+15 (dọn danh mục thừa) + cập nhật đầy đủ Excel báo cáo + CLAUDE.md mục 64.
+
+PM xác nhận đồng ý deploy ngay trong phiên → đã `git commit` + `git push` (commit `fde3715`) →
+Cloudflare tự deploy → đã tự kiểm **TRỰC TIẾP TRÊN PRODUCTION THẬT** (không chỉ code): redirect
+`/blog`→`/tin-tuc` sống đúng (cả trang danh sách lẫn 1 bài cụ thể), trang chủ đề `/tin-tuc/chu-de/
+tin-tuc-kham-pha-the-gioi` ra đúng 7 bài, `admin` đã có đúng 2 tab mới "🛂 Thủ tục Visa"/"📰 Tin
+tức", sitemap có đủ 19 URL không còn URL `/blog` nào, trang chủ hiện đúng 2 section mới với dữ liệu
+THẬT (5 bài Thủ tục Visa lưới đầy đủ, 7 bài Tin tức 3/trang — bấm nút "Sau" thật chuyển đúng trang
+2/3), an ninh (`/worker.js`/`/wrangler.toml`/`/package.json` vẫn 404), console sạch. **Chi tiết đầy
+đủ + toàn bộ lệnh `curl` đã chạy ở CLAUDE.md mục 64** (đọc trước khi đụng vào bất kỳ phần nào của
+`/tin-tuc`/`admin.html` Bài viết).
+
+**Việc CÒN LẠI cho Kaizen (ưu tiên tiếp theo, xem mục 2.A):**
+1. **C-06 — trang `/danh-gia`** vẫn CÒN CHỜ, chưa làm gì (không nằm trong đợt deploy này).
+2. **PM cần tự chạy `05_Database/15_supabase_setup_phase15.sql`** (xoá danh mục thừa "Kinh nghiệm
+   xin visa") — KHÔNG bắt buộc gấp, không ảnh hưởng gì tới site đang chạy đúng, chỉ là dọn dữ liệu.
+3. Vài việc nhỏ ghi trong Excel báo cáo (sheet 04/07): chiều cao thẻ cố định + `line-clamp` cho
+   card "Tin tức", khung giữ chỗ chống nhảy layout, L-03 (rating giả), L-04 (cắt đoạn trích giữa
+   từ), C-08/C-09 (vẫn hoãn được).
 
 Song song: toàn bộ việc PM có thể tự làm cho SEO đã xong; các task SEO còn lại vẫn chờ thông tin PM
 cấp hoặc nội dung chuyên viên soạn (mục 2.B).
@@ -38,28 +51,36 @@ cấp hoặc nội dung chuyên viên soạn (mục 2.B).
 | Cloudflare Web Analytics | ✅ đang chạy |
 | Sitemap đã gửi + Request Indexing | ✅ PM làm 2026-09-10 |
 
-### Dữ liệu production đã đối chiếu 2026-09-11 (đọc qua anon key, dùng cho phân tích Kaizen)
+### Dữ liệu production đã đối chiếu 2026-09-11 (đọc qua anon key, TRƯỚC khi deploy Kaizen — xem lại
+    nếu cần số hiện tại, danh mục "Kinh nghiệm xin visa" có thể đã bị xoá nếu PM đã chạy migration 15)
 
 - **12 bài viết** đã publish · danh mục **"Tin tức" 7 bài** · **"Thủ tục Visa" 5 bài** ·
-  **"Kinh nghiệm xin visa" 0 bài** (nên không hiện section/menu nào).
-- **12 đánh giá khách hàng** — độ dài nội dung **52 → 1.001 ký tự** (chênh gần 20 lần).
-- `posts.phan_loai` chỉ có 2 giá trị, **trùng 1:1 với tên danh mục**.
-- **12/12 bài đều có `slug`** — nhưng chỉ vì migration 13 backfill 1 lần ngày 02/09; bài tạo MỚI
-  từ nay sẽ có `slug = NULL` (xem lỗi L-01, mục 2.A).
+  **"Kinh nghiệm xin visa" 0 bài** (danh mục thừa, migration 15 xoá — xem mục 0 ở trên).
+- **12 đánh giá khách hàng** — độ dài nội dung **52 → 1.001 ký tự** (chênh gần 20 lần, vẫn CHƯA sửa
+  — chiều cao cố định cho section "Đánh giá" KHÔNG nằm trong đợt Kaizen đã deploy).
+- `posts.phan_loai` chỉ có 2 giá trị lúc đo — SAU deploy, giá trị này đổi ý nghĩa: giờ là khoá nhóm
+  "vùng hiển thị" trên `/tin-tuc` (chỉ áp dụng cho danh mục "Tin tức"), xem CLAUDE.md mục 64.
+- **12/12 bài cũ đều có `slug`** (migration 13 backfill). **⭐ L-01 ĐÃ SỬA** trong đợt Kaizen này —
+  `savePost()` giờ tự sinh `slug` cho bài MỚI, không còn rơi vào `slug=NULL` nữa.
 
-### Số đo giao diện trang chủ (đo thật bằng trình duyệt, 2026-09-11)
+### Số đo giao diện trang chủ (đo thật bằng trình duyệt, 2026-09-11 — TRƯỚC khi deploy Kaizen, khối
+    `#categorySections` ĐÃ BỊ THAY bằng 2 section tĩnh `#thu-tuc-visa`/`#tin-tuc-trangchu` — số dưới
+    đây chỉ còn giá trị lịch sử, CẦN ĐO LẠI nếu muốn biết độ nhảy layout hiện tại)
 
 | Hạng mục | Desktop 1280px | Điện thoại 375px |
 |---|---|---|
 | Chiều cao 1 slide đánh giá | **618px** (mọi slide) | **936px** (mọi slide) |
 | Chiều cao card đánh giá THẬT cần (bài ngắn) | 292px | 312px |
 | Khoảng trắng thừa | **326px** | **624px** |
-| Khối `#categorySections` | 2.555px | 5.314px |
+| Khối `#categorySections` (ĐÃ BỊ THAY, xem trên) | 2.555px | 5.314px |
 | Chiều cao trang TRƯỚC khi JS nạp xong | 5.755px | — |
 | Chiều cao trang SAU khi JS nạp xong | 8.609px | 15.984px |
 | **Độ nhảy** | **+2.854px (+49,6%)** | lớn hơn |
 
-### 6 đợt việc gần đây — chi tiết ở CLAUDE.md
+Section "Đánh giá" (618px/slide, dư 326-624px trắng) **VẪN CHƯA SỬA** — không nằm trong phạm vi đợt
+Kaizen đã deploy (đợt này chỉ đụng "Bài viết"/"Thủ tục Visa"/"Tin tức"), vẫn là việc tồn đọng thật.
+
+### 7 đợt việc gần đây — chi tiết ở CLAUDE.md
 
 1. **Mục 61** — Admin: số lượng HS ở màn Tài chính · Thành viên nhóm chọn từ "Thông tin khách
    hàng" · thêm trạng thái hồ sơ **"Xong"**; màn Tài chính thêm cột "Trạng thái".
@@ -67,8 +88,10 @@ cấp hoặc nội dung chuyên viên soạn (mục 2.B).
 3. **Mục 62** — **T8 (GA4) + T22b (banner cookie)** + chốt chặn sitemap không khai URL `/visa-*`.
 4. **Mục 63** — **T18** (thời gian xử lý 2026) + **T20** (byline, `Article.author` = `Person`).
 5. **Bản 20** — handover gộp bản 1→19.
-6. **11_Home_Kaizen (MỚI, phiên này)** — phân tích yêu cầu thêm trang `/danh-gia` + `/tin-tuc`,
-   xuất báo cáo Excel 10 sheet. **Chỉ phân tích, chưa code.**
+6. **11_Home_Kaizen (phiên trước)** — phân tích yêu cầu thêm trang `/danh-gia` + `/tin-tuc`, xuất
+   báo cáo Excel 10 sheet. Chỉ phân tích, chưa code.
+7. **Mục 64 (MỚI, phiên này) — ĐÃ DEPLOY** — khóa cứng "Bài viết" thành 2 danh mục cố định, đổi
+   `/blog`→`/tin-tuc` + trang chủ đề theo Phân loại, bỏ popup xem nhanh. Xem mục 0 ở trên.
 
 ## 1. Cấu trúc file
 
@@ -87,62 +110,42 @@ giống `10_SEO/`, `05_Branding_5S/`… — commit khi PM muốn.
 
 ## 2. Việc tiếp theo
 
-### 2.A ⭐ ƯU TIÊN 1 — Kaizen trang chủ (`11_Home_Kaizen/`)
+### 2.A ⭐ ƯU TIÊN 1 — Kaizen trang chủ, đợt 2: trang `/danh-gia` (`11_Home_Kaizen/`)
 
-**Yêu cầu tóm tắt:** thêm trang `/danh-gia` (đánh giá khách hàng) và `/tin-tuc` (bài viết); sửa 2
-section tương ứng trên trang chủ theo hướng **chiều cao cố định + phân trang next/back**.
+**Đợt 1 (khóa cứng 2 danh mục + `/tin-tuc`) ĐÃ DEPLOY XONG, xem mục 0 + CLAUDE.md mục 64 — KHÔNG
+làm lại.** Việc tiếp theo cho Kaizen là **C-06 — chỉ còn đúng 1 điểm chờ PM xác nhận**: menu
+"💬 Đánh giá" đổi từ `#danh-gia` (anchor trong trang) sang `/danh-gia` (trang riêng) — hệ quả là mất
+scrollspy cho section đó trên trang chủ (vô hại, chỉ mất hiệu ứng tô sáng menu lúc cuộn qua).
 
-#### ⭐ MỚI (11/09, phiên sau) — PM trả lời hết 6 điểm còn chờ bằng 1 kiến trúc thay thế
+**Yêu cầu tóm tắt** (từ `request_0911.md` mục 1): trang `/danh-gia` hiện TẤT CẢ đánh giá khách hàng
+(phân trang nếu nhiều), section "Khách hàng nói gì về chúng tôi" trên trang chủ đổi sang **2
+record/trang, chiều cao cố định, cắt nội dung + nút "Xem thêm"**, next/back giữ như hiện tại. Đây
+là phần **CHƯA làm** — section "Đánh giá" trên trang chủ hiện vẫn đúng như trước Kaizen (1 slide/
+lần, chiều cao tự co theo nội dung dài nhất — vẫn còn vấn đề dư 326-624px trắng đã đo ở trên).
 
-**Không dùng các đề xuất cũ ở dưới (`kieu_hien_thi_home`, gộp `categories`, chip chủ đề...)** — PM
-chọn kiến trúc ĐƠN GIẢN HƠN: khóa cứng "Bài viết" thành đúng 2 danh mục cố định "Thủ tục Visa"/
-"Tin tức" (2 tab riêng trong admin, bỏ hẳn tab "Danh mục bài viết"). Quyết định này tự giải quyết
-C-05/C-07/C-10/C-11 cùng lúc. **Đã CODE + TỰ TEST XONG, CHƯA DEPLOY** — đọc đầy đủ **CLAUDE.md mục
-64** (không lặp lại ở đây để tránh 2 nơi lệch nhau) trước khi làm bất kỳ việc gì tiếp theo cho
-Kaizen. Tóm tắt cực ngắn:
+**Trước khi làm, đọc kỹ 2 nơi:**
+1. Sheet `03_TK_Danh_gia` trong `11_Home_Kaizen/Bao_cao_Phan_tich_Home_Kaizen_20260911.xlsx` —
+   thiết kế chi tiết cho phần này (CHƯA bị Kaizen đợt 1 đụng tới, vẫn còn nguyên giá trị).
+2. CLAUDE.md mục 64 — để hiểu ĐÚNG các hàm/section mới trong `worker.js`/`index.html` sau đợt 1
+   (`getSiteChrome()`, `blogHeadCommon()`, `postCardHtml()`, `renderPostCardHtml()`...), tránh làm
+   trùng/lệch với cơ chế đã có.
 
-| Mã | Kết quả cuối (khác đề xuất gốc trong ngoặc) |
-|---|---|
-| **C-01** | Giữ nguyên như đã chốt: `/blog`→`/tin-tuc` (+ chi tiết), 301 vĩnh viễn. **ĐÃ CODE.** |
-| **C-02/C-03** | Giữ nguyên: bỏ popup, card rời trang thẳng tới chi tiết. **ĐÃ CODE.** |
-| **C-04** | Giữ nguyên: chỉ "Tin tức" đổi cách hiển thị, "Thủ tục Visa" giữ lưới đầy đủ — nhưng giờ 2 section này TĨNH hardcode, không còn sinh động theo Danh mục. **ĐÃ CODE.** |
-| **C-05** | ⚠️ **ĐẢO NGƯỢC** — KHÔNG còn menu động, khóa cứng 2 mục menu cố định. **ĐÃ CODE.** |
-| **C-06** | **VẪN CÒN CHỜ** — `/danh-gia` chưa làm trong lượt này. |
-| **C-07** | KHÔNG gộp `categories` (khác đề xuất "thêm slug/tieu_de_hien_thi/mo_ta/thu_tu"). **ĐÃ CODE (không cần làm gì).** |
-| **C-08/C-09** | Vẫn hoãn được, chưa động tới. |
-| **C-10/C-11** | Tự giải quyết bằng kiến trúc mới (section tĩnh, menu tĩnh) — không cần cột `kieu_hien_thi_home`. **ĐÃ CODE.** |
+**Phân trang: dùng ĐƯỜNG DẪN, không dùng query** — `/danh-gia/trang-2` (đúng mẫu `/tin-tuc/chu-de/
+<slug>/trang-2` đã code ở đợt 1, copy được luôn cấu trúc). Lý do: ràng buộc **T1** bắt canonical =
+`origin + pathname` **bỏ hẳn query** (chống `?utm_source=` sinh trùng lặp). Nếu phân trang dùng
+query thì canonical trang 2 tự trỏ về trang 1 → nội dung trang 2 trở đi không bao giờ được lập chỉ
+mục. Dùng đường dẫn thật là tránh hẳn mâu thuẫn, không phải mở ngoại lệ.
 
-**Ngoài ra tiện sửa luôn 2 lỗi** (vì đang viết lại đúng những hàm liên quan): L-01 (`savePost()`
-giờ tự sinh `slug` khi tạo mới) và L-02 (`og:type` đúng theo loại trang). **L-04 CHƯA sửa**, để
-dành. Migration thật đã viết: `05_Database/15_supabase_setup_phase15.sql` — CHỈ xoá danh mục thừa
-"Kinh nghiệm xin visa" (không phải bộ cột lớn như B-2 cũ đề xuất).
-
-**Việc PM cần làm:** (1) đọc CLAUDE.md mục 64 mục "Đã test"/"Việc CẦN PM làm" — xác nhận đồng ý
-deploy; (2) chạy migration 15; (3) sau khi Claude Code deploy, tự đăng nhập admin thật thử tạo bài
-ở 2 tab mới + `curl -I` xác nhận redirect `/blog`→`/tin-tuc` sống trên production.
-
-#### Phần dưới đây là bản ghi GỐC lúc PM mới chốt 5 điểm đầu (11/09, phiên trước) — GIỮ LẠI để biết
-    bối cảnh lịch sử, KHÔNG còn là kế hoạch thực thi (đã thay bằng bảng ở trên + CLAUDE.md mục 64)
-
-| Mã | Quyết định GỐC (lúc đó) |
-|---|---|
-| **C-01** | **ĐỔI `/blog` → `/tin-tuc`** và `/blog/<slug>-<id>` → `/tin-tuc/<slug>-<id>`, **301 vĩnh viễn** từ URL cũ. Giữ 301 mãi mãi (Facebook/Zalo còn link cũ). |
-| **C-02** | Click card bài viết ở trang chủ → đi thẳng **trang CHI TIẾT** `/tin-tuc/<slug>-<id>`. |
-| **C-03** | **BỎ popup** `#postOverlay` — xoá `openPostDetail()`, `closePostDetail()`, `initScrollLock()` và CSS `.post-overlay`/`.post-modal-*`. ⚠️ Popup là cơ chế DÙNG CHUNG → card ở **cả 2** section đều rời trang. |
-| **C-04** | **CHỈ sửa section "Tin tức & Khám phá thế giới"**. Section "Hồ sơ xin Visa các nước" **giữ nguyên** lưới đầy đủ 5 bài. |
-| **C-05** | ~~KHÔNG gộp menu — giữ cơ chế chèn menu động theo danh mục~~ **ĐÃ ĐẢO NGƯỢC, xem bảng trên.** |
-
-**Phân trang: dùng ĐƯỜNG DẪN, không dùng query** — `/tin-tuc/chu-de/<slug>/trang-2` (đã code),
-`/danh-gia/trang-2` (khi làm C-06). Lý do: ràng buộc **T1** bắt canonical = `origin + pathname`
-**bỏ hẳn query** (chống `?utm_source=` sinh trùng lặp). Nếu phân trang dùng query thì canonical
-trang 2 tự trỏ về trang 1 → nội dung trang 2 trở đi không bao giờ được lập chỉ mục. Dùng đường dẫn
-thật là tránh hẳn mâu thuẫn, không phải mở ngoại lệ.
-
-**⚠️ Cảnh báo còn giá trị cho việc C-06 (`/danh-gia`) sau này:** Route mới PHẢI nhận cả `GET` lẫn
-`HEAD` (bài học T4). KHÔNG thêm `/danh-gia` vào `EXTRA_STATIC_PAGES` — mảng đó dò file TĨNH có
-thật, route SSR sẽ bị loại; thêm dòng riêng trong `renderSitemap()` (đã có sẵn mẫu `/tin-tuc/
-chu-de/<slug>` để copy). KHÔNG gắn `Review`/`AggregateRating` cho `/danh-gia` (Google không cấp kết
-quả đa dạng cho đánh giá tự khai; CSDL không có cột số sao thật) — chỉ gắn `BreadcrumbList`.
+**⚠️ Cảnh báo phải nhớ khi làm `/danh-gia`:**
+- Route mới PHẢI nhận cả `GET` lẫn `HEAD` (bài học T4, đã áp dụng đúng cho `/tin-tuc*` ở đợt 1).
+- KHÔNG thêm `/danh-gia` vào `EXTRA_STATIC_PAGES` trong `worker.js` — mảng đó dò file TĨNH có
+  thật, route SSR sẽ bị loại; thêm dòng riêng trong `renderSitemap()` (đã có sẵn mẫu `/tin-tuc/
+  chu-de/<slug>` để copy y hệt cấu trúc).
+- KHÔNG gắn `Review`/`AggregateRating` cho `/danh-gia` (Google không cấp kết quả đa dạng cho đánh
+  giá **tự khai** về chính doanh nghiệp trên site của mình; CSDL không có cột số sao thật — `★★★★★`
+  là chuỗi dựng sẵn trong `index.html`) — chỉ gắn `BreadcrumbList`.
+- Dùng `getSiteChrome()` có sẵn (đã trả thêm `consent` cho banner cookie từ đợt 1) để trang
+  `/danh-gia` tự khớp navbar/footer trang chủ, không copy tay như 4 trang tĩnh T11/T16.
 
 ### 2.B Việc SEO còn lại — chờ người khác cấp
 
@@ -166,9 +169,10 @@ thành câu hỏi cụ thể và PM trả lời cuốn chiếu — **cách này 
 
 **T18 đã XONG** (chuyên viên cấp số 2026-09-11). **T20 đã XONG** (PM cấp tên Thu Hiền).
 
-⚠️ **Lưu ý số migration:** handover bản 20 đặt trước số **15** cho `checklist_items` (T15/T17).
-Kaizen lần này cũng cần migration — **file nào viết trước lấy số 15**, file sau lấy 16. Kiểm
-`05_Database/` trước khi đặt tên.
+⚠️ **Lưu ý số migration:** số **15** đã bị Kaizen (mục 0/2.A) lấy mất
+(`05_Database/15_supabase_setup_phase15.sql`, xoá danh mục thừa) — `checklist_items` (T15/T17) giờ
+lấy số **16**. Luôn kiểm `05_Database/` trước khi đặt tên file migration mới, đừng tin số ghi sẵn
+trong handover bản cũ.
 
 ### 2.C ⚠️ Việc CẦN NHỚ khi T14 xong
 
@@ -184,9 +188,11 @@ Mốc gốc **2026-09-10: 1 URL được lập chỉ mục / 18 URL trong sitema
 "Đã lập chỉ mục".
 - Nhích lên 5–10+ sau 3–7 ngày → đang chạy đúng, để yên.
 - **Vẫn đứng ở 1 sau 2 tuần → có gì đó đang chặn, phải rà lại.**
-- **Sau khi đổi `/blog` → `/tin-tuc` (C-01):** PM dùng "Kiểm tra URL" trong GSC cho `/tin-tuc` và
-  `/danh-gia` rồi bấm "Yêu cầu lập chỉ mục". **Không cần gửi lại sitemap.** Sau 1–2 tuần kiểm lại
-  xem URL `/blog` cũ đã chuyển sang `/tin-tuc` chưa.
+- **⭐ MỚI — `/blog` → `/tin-tuc` (C-01) ĐÃ DEPLOY (11/09):** PM cần vào GSC dùng "Kiểm tra URL"
+  cho `/tin-tuc` rồi bấm "Yêu cầu lập chỉ mục" (việc CHƯA làm, khác các mục khác trong bảng này đã
+  ghi "đã làm" trước đó — đây là việc MỚI phát sinh từ đợt deploy). **Không cần gửi lại sitemap**
+  (đã tự động có đủ 19 URL mới). Sau 1–2 tuần kiểm lại xem URL `/blog` cũ đã chuyển hẳn sang
+  `/tin-tuc` trong kết quả tìm kiếm chưa. Khi làm xong C-06, lặp lại đúng bước này cho `/danh-gia`.
 
 ## 3. ⚠️ Bài học kỹ thuật — áp dụng cho MỌI việc sau này
 
@@ -251,6 +257,20 @@ Mốc gốc **2026-09-10: 1 URL được lập chỉ mục / 18 URL trong sitema
   Tình huống C-10: cần biết danh mục nào hiển thị kiểu slider. Ghi cứng tên `"Tin tức"` thì PM đổi
   tên danh mục là tính năng **âm thầm** quay về kiểu cũ, không báo lỗi gì. Thêm 1 cột cấu hình rẻ
   hơn nhiều so với 1 lỗi im lặng. Cùng họ với bài học Q.
+- **AN. ⭐ MỚI (Kaizen 11/09) — Khi PM chủ động chọn "khóa cứng, bớt linh hoạt" thay vì "PM tự cấu
+  hình", ĐỪNG tự ý thêm lại linh hoạt.** Bài học AI ở trên đúng khi PM MUỐN linh hoạt (tự chọn
+  trong admin); nhưng lần này PM lại chọn NGƯỢC LẠI — khóa cứng "Bài viết" thành đúng 2 danh mục cố
+  định thay vì để tự tạo thêm. Kết quả: cả cột `kieu_hien_thi_home` (đề xuất cho C-10) LẪN việc mở
+  rộng `categories` (đề xuất cho C-07) đều trở nên KHÔNG CẦN THIẾT — không phải vì sai, mà vì PM
+  không còn nhu cầu "PM tự chọn" nữa. **Bài học chung: đề xuất kỹ thuật hay nhất vẫn phải nhường
+  cho quyết định nghiệp vụ của PM** — nếu PM chọn đơn giản hoá thay vì linh hoạt hoá, đừng cố "sửa
+  giúp" bằng cách thêm lại linh hoạt.
+- **AO. ⭐ MỚI (Kaizen 11/09) — Giá trị KHÔNG PHẢI 1 thực thể quản lý riêng thì tính slug/khoá nhóm
+  ĐỘNG lúc dựng trang, đừng lưu thêm cột.** `posts.phan_loai` là text tự do (không phải FK tới 1
+  bảng danh mục), nên trang chủ đề `/tin-tuc/chu-de/<slug>` tính `slug = slugifyText(phan_loai)`
+  NGAY lúc render, không cần cột `slug` riêng cho "Phân loại" (khác `posts.slug`/`categories` là
+  thực thể thật, có bảng/id riêng, mới cần lưu). Tránh phình schema cho dữ liệu vốn chỉ là 1 nhãn
+  gộp nhóm tạm thời.
 
 ### 3.3 Landing page / route
 
@@ -260,8 +280,8 @@ Mốc gốc **2026-09-10: 1 URL được lập chỉ mục / 18 URL trong sitema
   cần chạy cho MỌI request phải có `run_worker_first = true`.
 - **T.** Route SSR không có file tĩnh dự phòng PHẢI nhận cả `GET` lẫn `HEAD`.
 - **U. ⭐ 4 trang TĨNH không tự đồng bộ với `index.html`:** `chinh-sach-bao-mat.html`/
-  `dieu-khoan-dich-vu.html`/`lien-he.html`/`cong-cu/uoc-tinh-chi-phi-visa.html`. Khác `/blog`,
-  `/blog/<slug>`, 404 (SSR, dùng `getSiteChrome()` nên LUÔN khớp). **Mỗi khi sửa navbar/footer/
+  `dieu-khoan-dich-vu.html`/`lien-he.html`/`cong-cu/uoc-tinh-chi-phi-visa.html`. Khác `/tin-tuc`,
+  `/tin-tuc/<slug>`, 404 (SSR, dùng `getSiteChrome()` nên LUÔN khớp). **Mỗi khi sửa navbar/footer/
   widget nổi/banner cookie ở `index.html`, PHẢI đồng bộ tay 4 file này** — viết script **trích
   thẳng từ `index.html`** rồi chèn, KHÔNG gõ lại tay. `getSiteChrome()` trả 4 trường: `css`,
   `navbar`, `footer`, `consent`.
@@ -325,9 +345,10 @@ Mốc gốc **2026-09-10: 1 URL được lập chỉ mục / 18 URL trong sitema
 4. `git push` thẳng `main` → Cloudflare tự deploy (~8–40 giây).
 5. Poll `curl` bằng chuỗi CHỈ CÓ ở bản mới (bài học B).
 6. **Hồi quy đầy đủ:** `/worker.js` + `/wrangler.toml` + `/package.json` phải **404**; `/`,
-   `/admin`, `/blog` (hoặc `/tin-tuc` sau C-01), `/sitemap.xml`, `/robots.txt`, 3 trang pháp lý,
-   `/cong-cu/uoc-tinh-chi-phi-visa`, 1 bài blog phải **200**; `/khong-ton-tai` phải **404**;
-   redirect `workers.dev` phải **301**; console sạch.
+   `/admin`, `/tin-tuc`, `/sitemap.xml`, `/robots.txt`, 3 trang pháp lý,
+   `/cong-cu/uoc-tinh-chi-phi-visa`, 1 bài `/tin-tuc/<slug>-<id>` phải **200**; `/blog` VÀ
+   `/blog/<bất kỳ>` phải **301** sang `/tin-tuc` tương ứng (giữ vĩnh viễn, xem C-01/mục 64);
+   `/khong-ton-tai` phải **404**; redirect `workers.dev` phải **301**; console sạch.
 7. Nếu đụng sitemap: kiểm **từng URL** trong sitemap đều trả 200.
 8. Xác minh bằng cách **parse dữ liệu thật**, không grep chuỗi rồi kết luận.
 9. **Sau khi deploy `admin.html` kèm cột mới:** mở F12 → Network, kiểm **mọi request Supabase trả
@@ -355,8 +376,10 @@ dung marketing thật, **PM hoặc chuyên viên viết**, Claude Code không t�
 `CLAUDE.md` mục 49→59 (kế hoạch SEO, chi tiết từng task) → **mục 60** (trước khi sửa navbar/footer/
 widget nổi hoặc trang có cuộn-tới-anchor) → **mục 61** (trước khi sửa màn Hồ sơ/Tài chính/Dashboard
 hoặc thêm trạng thái mới) → **mục 62** (trước khi đụng GA4/banner cookie/sitemap) → **mục 63**
-(trước khi sửa FAQ hoặc byline tác giả) → **`11_Home_Kaizen/Bao_cao_Phan_tich_Home_Kaizen_20260911.xlsx`
-(MỚI — đọc TRƯỚC khi đụng section đánh giá/tin tức trên trang chủ, hoặc route `/blog`)** →
+(trước khi sửa FAQ hoặc byline tác giả) → **mục 64 (MỚI, ĐÃ DEPLOY — đọc BẮT BUỘC trước khi đụng
+"Bài viết"/`admin.html` 2 tab mới, section "Thủ tục Visa"/"Tin tức" trên trang chủ, hoặc route
+`/tin-tuc*`)** → `11_Home_Kaizen/Bao_cao_Phan_tich_Home_Kaizen_20260911.xlsx` (đọc TRƯỚC khi làm
+tiếp C-06/`/danh-gia`, sheet `03_TK_Danh_gia`) →
 `10_SEO/11_Ke_hoach_sau_xac_nhan.md` (spec đầy đủ các task còn lại, đọc mục 0 trước mỗi task, nhớ
 cộng `public/` vào đường dẫn cũ — CLAUDE.md mục 1/52) → `10_SEO/12_Thu_tu_thuc_hien.xlsx` →
 `10_SEO/13_Prompt_Claude_Code.md` → `01_Docs/10_Chuan_Dialog_Chung.md` (chuẩn dialog `dlg-*`, **đã
@@ -377,15 +400,15 @@ bối cảnh (chủ trương mục 52), khác với file skill là **chỉ dẫn
 
 ## 7. Câu mở đầu gợi ý cho phiên mới
 
-> Đã đọc `CLAUDE.md` (đặc biệt mục 64), `Handover_Phien_Moi.md` (bản 22) và báo cáo
+> Đã đọc `CLAUDE.md` (đặc biệt mục 64), `Handover_Phien_Moi.md` (bản 23) và báo cáo
 > `11_Home_Kaizen/Bao_cao_Phan_tich_Home_Kaizen_20260911.xlsx` (đã cập nhật theo kiến trúc cuối).
 >
-> Việc đang dở: **Kaizen trang chủ**. PM đã trả lời hết 6 điểm còn chờ bằng kiến trúc "khóa cứng 2
-> danh mục cố định" — Claude Code **đã code + tự test xong** (admin.html 2 tab mới, worker.js đổi
-> `/blog`→`/tin-tuc` + trang chủ đề theo Phân loại, index.html bỏ popup + 2 section tĩnh, đồng bộ 4
-> trang tĩnh, migration 15, Excel báo cáo) nhưng **CHƯA `git push`** — đang chờ PM xác nhận trước
-> khi deploy vì đây là thay đổi lớn (đổi toàn bộ URL bài viết, bỏ popup, đổi UI admin).
+> Kaizen trang chủ đợt 1 **ĐÃ DEPLOY VÀ ĐÃ XÁC NHẬN HOẠT ĐỘNG ĐÚNG trên production** (khóa cứng
+> "Bài viết" thành 2 danh mục cố định "Thủ tục Visa"/"Tin tức", đổi `/blog`→`/tin-tuc` + trang chủ
+> đề theo Phân loại, bỏ popup xem nhanh). Việc còn lại cho Kaizen: **C-06 — trang `/danh-gia`**
+> (xem mục 2.A), chưa làm gì. Nhắc PM nếu chưa chạy `05_Database/15_supabase_setup_phase15.sql`
+> (không gấp, chỉ dọn dữ liệu thừa).
 >
-> Việc đầu tiên: hỏi PM đã xem qua tóm tắt chưa và có đồng ý deploy không; nhắc PM chạy
-> `05_Database/15_supabase_setup_phase15.sql`. C-06 (`/danh-gia`) vẫn còn chờ, làm sau khi deploy
-> xong đợt này.
+> Việc đầu tiên: hỏi PM có muốn làm tiếp `/danh-gia` (C-06) ngay không, hay ưu tiên việc khác (SEO
+> mục 2.B, hoặc vài việc nhỏ còn tồn đọng trong Excel báo cáo — chiều cao thẻ Tin tức, section
+> Đánh giá vẫn chưa sửa).
