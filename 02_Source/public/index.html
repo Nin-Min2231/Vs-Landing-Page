@@ -89,7 +89,7 @@ if(location.hash) history.replaceState(null, '', location.pathname + location.se
     {
       "@type": "Question",
       "name": "Thời gian xin visa mất bao lâu?",
-      "acceptedAnswer": {"@type": "Answer", "text": "Tùy quốc gia: Đài Loan 3–5 ngày, Nhật/Hàn/Trung Quốc 7–10 ngày, Schengen 15–20 ngày, Úc 30 ngày, Mỹ tùy lịch phỏng vấn. Ngoài ra sẽ cần thêm thời gian để xử lý hoàn thiện hồ sơ và đặt lịch hẹn. Chúng tôi sẽ báo thời gian cụ thể khi tư vấn. Khách hàng nên nộp hồ sơ sớm để chủ động lịch trình."}
+      "acceptedAnswer": {"@type": "Answer", "text": "Tùy quốc gia, tính theo ngày làm việc: Đài Loan 3–5 ngày, Nhật/Hàn/Trung Quốc 7–10 ngày, Schengen 15–20 ngày, Úc 30 ngày, Mỹ tùy lịch phỏng vấn. Ngoài ra sẽ cần thêm thời gian để xử lý hoàn thiện hồ sơ và đặt lịch hẹn. Chúng tôi sẽ báo thời gian cụ thể khi tư vấn. Khách hàng nên nộp hồ sơ sớm để chủ động lịch trình."}
     },
     {
       "@type": "Question",
@@ -812,7 +812,7 @@ footer a:hover{color:#fff}
     <h2 class="section-title">Câu hỏi thường gặp</h2>
     <p class="section-sub">Giải đáp nhanh những thắc mắc phổ biến nhất</p>
     <div class="faq-list">
-      <div class="faq-item"><button class="faq-q">Thời gian xin visa mất bao lâu?<span class="arrow">▼</span></button><div class="faq-a">Tùy quốc gia: Đài Loan 3–5 ngày, Nhật/Hàn/Trung Quốc 7–10 ngày, Schengen 15–20 ngày, Úc 30 ngày, Mỹ tùy lịch phỏng vấn. Ngoài ra sẽ cần thêm thời gian để xử lý hoàn thiện hồ sơ và đặt lịch hẹn. Chúng tôi sẽ báo thời gian cụ thể khi tư vấn. Khách hàng nên nộp hồ sơ sớm để chủ động lịch trình.</div></div>
+      <div class="faq-item"><button class="faq-q">Thời gian xin visa mất bao lâu?<span class="arrow">▼</span></button><div class="faq-a">Tùy quốc gia, tính theo ngày làm việc: Đài Loan 3–5 ngày, Nhật/Hàn/Trung Quốc 7–10 ngày, Schengen 15–20 ngày, Úc 30 ngày, Mỹ tùy lịch phỏng vấn. Ngoài ra sẽ cần thêm thời gian để xử lý hoàn thiện hồ sơ và đặt lịch hẹn. Chúng tôi sẽ báo thời gian cụ thể khi tư vấn. Khách hàng nên nộp hồ sơ sớm để chủ động lịch trình.</div></div>
       <div class="faq-item"><button class="faq-q">Trượt visa có mất phí dịch vụ không?<span class="arrow">▼</span></button><div class="faq-a">Với hồ sơ được chuyên viên đánh giá đủ điều kiện trước khi nộp, nếu trượt visa bạn KHÔNG phải trả phí dịch vụ. Một số hồ sơ có yếu tố rủi ro cao (tài chính/hồ sơ chưa đủ mạnh) có thể phát sinh thêm phí xử lý — chuyên viên sẽ tư vấn và báo phí cụ thể bằng văn bản trước khi bạn quyết định làm hồ sơ, không phát sinh bất ngờ. Riêng phí lãnh sự (nộp trực tiếp cho Đại sứ quán/Trung tâm tiếp nhận hồ sơ) theo quy định chung của từng nước và không hoàn lại dù đậu hay trượt.</div></div>
       <div class="faq-item"><button class="faq-q">Tôi cần chuẩn bị những giấy tờ gì?<span class="arrow">▼</span></button><div class="faq-a">Cơ bản gồm: hộ chiếu còn hạn 6 tháng, ảnh thẻ, giấy tờ chứng minh công việc và tài chính. Danh sách chi tiết khác nhau theo từng nước — chuyên viên sẽ gửi checklist đầy đủ khi tư vấn.</div></div>
       <div class="faq-item"><button class="faq-q">Hồ sơ tài chính yếu có xin được visa không?<span class="arrow">▼</span></button><div class="faq-a">Vẫn có phương án. Chuyên viên sẽ đánh giá hồ sơ thực tế và tư vấn cách bổ sung, chọn loại visa và quốc gia phù hợp để tăng khả năng đậu, không khai gian thông tin.</div></div>
@@ -1498,9 +1498,9 @@ let chatboxLang = 'vi', chatboxInited = false, chatboxLeadNotified = false, chat
    sửa lại đồng bộ ở đây (bản vi) — giống nguyên tắc đã áp dụng cho JSON-LD FAQPage (CLAUDE.md mục 12). */
 const CHATBOX_QUICK = [
   { type:'faq', vi:{ q:'Thời gian xin visa mất bao lâu?',
-      a:'Tùy quốc gia: Đài Loan 3–5 ngày, Nhật/Hàn/Trung Quốc 7–10 ngày, Schengen 15–20 ngày, Úc 30 ngày, Mỹ tùy lịch phỏng vấn. Ngoài ra sẽ cần thêm thời gian để xử lý hoàn thiện hồ sơ và đặt lịch hẹn. Chúng tôi sẽ báo thời gian cụ thể khi tư vấn. Khách hàng nên nộp hồ sơ sớm để chủ động lịch trình.' },
+      a:'Tùy quốc gia, tính theo ngày làm việc: Đài Loan 3–5 ngày, Nhật/Hàn/Trung Quốc 7–10 ngày, Schengen 15–20 ngày, Úc 30 ngày, Mỹ tùy lịch phỏng vấn. Ngoài ra sẽ cần thêm thời gian để xử lý hoàn thiện hồ sơ và đặt lịch hẹn. Chúng tôi sẽ báo thời gian cụ thể khi tư vấn. Khách hàng nên nộp hồ sơ sớm để chủ động lịch trình.' },
     en:{ q:'How long does visa processing take?',
-      a:'It depends on the country: Taiwan 3–5 days, Japan/Korea/China 7–10 days, Schengen 15–20 days, Australia 30 days, and the US depends on the interview schedule. Additional time is needed to complete your application and book appointments. We will confirm the exact timeline during consultation. We recommend applying early so you can plan your trip with confidence.' } },
+      a:'It depends on the country, counted in working days: Taiwan 3–5 days, Japan/Korea/China 7–10 days, Schengen 15–20 days, Australia 30 days, and the US depends on the interview schedule. Additional time is needed to complete your application and book appointments. We will confirm the exact timeline during consultation. We recommend applying early so you can plan your trip with confidence.' } },
   { type:'faq', vi:{ q:'Trượt visa có mất phí dịch vụ không?',
       a:'Với hồ sơ được chuyên viên đánh giá đủ điều kiện trước khi nộp, nếu trượt visa bạn KHÔNG phải trả phí dịch vụ. Một số hồ sơ có yếu tố rủi ro cao (tài chính/hồ sơ chưa đủ mạnh) có thể phát sinh thêm phí xử lý — chuyên viên sẽ tư vấn và báo phí cụ thể bằng văn bản trước khi bạn quyết định, không phát sinh bất ngờ. Riêng phí lãnh sự theo quy định từng nước, không hoàn lại dù đậu hay trượt.' },
     en:{ q:'If my visa is rejected, do I still pay the service fee?',

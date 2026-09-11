@@ -3155,10 +3155,12 @@ link và không còn `1ei5XS6zJE`; đồng thời đếm lại link thường tr
 Trung Quốc 4–7 → **7–10** ngày (chậm hơn, gộp chung nhóm với Nhật/Hàn) · **Úc 30 ngày (MỚI —
 trước đây thiếu hẳn dù vẫn niêm yết giá 6.800.000 đ)** · Nhật/Hàn/Schengen/Mỹ giữ nguyên. Thêm 2 ý
 mới: cần thêm thời gian hoàn thiện hồ sơ + đặt lịch hẹn, và khuyên khách nộp sớm.
-- **⚠️ Bản cũ ghi "7–10 ngày LÀM VIỆC" cho Nhật/Hàn, bản mới chỉ ghi "7–10 ngày"** — khác nhau
-  thật (7–10 ngày làm việc ≈ 9–14 ngày lịch). Đã giữ đúng chữ chuyên viên đưa và **đã hỏi lại PM**,
-  chưa có xác nhận lúc viết dòng này. Nếu thực tế là ngày làm việc thì phải thêm lại 2 chữ đó —
-  ghi thiếu là hứa nhanh hơn thực tế, dễ sinh khiếu nại.
+- **⚠️ Đã hỏi lại và PM XÁC NHẬN (cùng ngày): toàn bộ con số là NGÀY LÀM VIỆC, không phải ngày
+  lịch.** Bản chuyên viên gửi ban đầu bỏ mất 2 chữ đó — khác nhau thật (7–10 ngày làm việc ≈ 9–14
+  ngày lịch), ghi thiếu là hứa nhanh hơn thực tế, dễ sinh khiếu nại. Đã thêm lại dưới dạng
+  **"Tùy quốc gia, tính theo ngày làm việc: ..."** — đặt cụm đó MỘT LẦN ở đầu câu thay vì lặp
+  "ngày làm việc" sau từng nước (4 lần, rất rối); áp dụng cho cả 5 nước có số, riêng Mỹ vốn là
+  "tùy lịch phỏng vấn" nên không ảnh hưởng. Bản EN dùng "counted in working days".
 - **Chuỗi này nằm ở 4 CHỖ, không phải 1** (rất dễ sót): JSON-LD `FAQPage` · FAQ hiển thị ·
   `CHATBOX_QUICK` bản `vi` · `CHATBOX_QUICK` bản `en`. Comment sẵn ở `CHATBOX_QUICK` đã cảnh báo
   điều này. Sửa 3 chuỗi VI giống hệt nhau bằng 1 lệnh replace count=3, EN dịch lại tương ứng.
