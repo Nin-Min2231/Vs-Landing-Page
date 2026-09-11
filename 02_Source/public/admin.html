@@ -987,6 +987,10 @@ input[readonly]{background:var(--pl);font-weight:700;color:var(--pd)}
         <div class="dlg-row">
           <div class="dlg-field"><label>Tiêu đề <span class="req-badge">Bắt buộc</span></label><input type="text" id="postTitle"></div>
           <div class="dlg-field"><label>Danh mục <span class="req-badge">Bắt buộc</span></label><select id="postCat"></select></div>
+          <!-- T20 (2026-09-11): byline hiện dưới H1 trang /blog/<slug>-<id> và vào Article.author
+               dạng Person. Để TRỐNG thì worker.js tự dùng chuyên viên mặc định (xem AUTHOR_DEFAULT
+               trong worker.js) — chỉ điền ở đây khi bài do người KHÁC viết. -->
+          <div class="dlg-field dlg-field-wide"><label>Người viết (để trống = dùng chuyên viên mặc định)</label><input type="text" id="postTacGia" placeholder="vd: Thu Hiền · Chuyên viên, 14 năm kinh nghiệm hồ sơ visa"></div>
           <div class="dlg-field"><label>Phân loại <span class="req-badge">Bắt buộc</span></label>
             <input type="text" id="postPhanLoai" list="postPhanLoaiList" placeholder="VD: Tin tức &amp; Kinh nghiệm xin Visa">
             <datalist id="postPhanLoaiList"></datalist>
@@ -2547,6 +2551,7 @@ function openPostModal(id){
   $('postPhanLoai').value = p?.phan_loai||'';
   $('postImage').value = p?.image_url||'';
   $('postContent').value = p?.content||'';
+  $('postTacGia').value = p?.tac_gia||'';
   $('postPublished').checked = p ? p.published : true;
   $('postOverlay').classList.remove('hidden');
   snapshotDialog('postOverlay');
@@ -2565,6 +2570,7 @@ async function savePost(){
     phan_loai,
     image_url: $('postImage').value.trim()||null,
     content: $('postContent').value,
+    tac_gia: $('postTacGia').value.trim()||null,   // T20 — để trống thì worker.js dùng AUTHOR_DEFAULT
     published: $('postPublished').checked
   };
   const id=$('postId').value;

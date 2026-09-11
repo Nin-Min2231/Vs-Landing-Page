@@ -164,6 +164,40 @@ async function renderHomepageWithLivePrices(request, env) {
    đối ("/assets/logo.svg") vì /blog* không đứng ở "/" nên đường dẫn tương đối sẽ trỏ sai chỗ; anchor
    "#dich-vu" đổi thành "/#dich-vu" để bấm vào luôn quay lại đúng section ở trang chủ (các section đó
    không tồn tại trên chính trang /blog*). */
+/* ==== T20 — Byline chuyên viên (2026-09-11, PM cấp tên + xác nhận) ====================
+   Ngành visa là YMYL: Google muốn thấy NGƯỜI THẬT chịu trách nhiệm cho nội dung, không phải tên
+   công ty chung chung. Trước đây `Article.author` ghi cứng Organization "Top Visa 5S" — tức không
+   có ai chịu trách nhiệm thật.
+
+   1 NGUỒN SỰ THẬT cho byline. Thứ tự ưu tiên khi dựng trang:
+     1. Cột `tac_gia` của chính bài viết / trang quốc gia (nhập qua admin) — dùng khi bài do người
+        KHÁC viết.
+     2. Để trống -> dùng AUTHOR_DEFAULT dưới đây.
+   Nhờ vậy PM không phải mở 12 bài cũ điền tay từng cái, mà vẫn ghi đè được từng bài khi cần.
+
+   ĐỔI TÊN/THÊM CHUYÊN VIÊN: sửa đúng khối này. `name` là thứ vào schema `Person.name` nên PHẢI là
+   tên người, KHÔNG nhét chức danh vào; chức danh/kinh nghiệm để riêng ở `jobTitle`/`yearsText` vì
+   chúng chỉ dùng cho dòng chữ hiển thị. */
+const AUTHOR_DEFAULT = {
+  name: 'Thu Hiền',
+  jobTitle: 'Chuyên viên',
+  yearsText: '14 năm kinh nghiệm hồ sơ visa'
+};
+/* Dòng byline hiển thị dưới H1. `tac_gia` nhập tay là chuỗi tự do -> in nguyên văn; không có thì
+   ghép từ AUTHOR_DEFAULT. Luôn kèm ngày cập nhật (tín hiệu nội dung còn mới). */
+function bylineText(tacGia) {
+  const who = (tacGia || '').trim();
+  return who || (AUTHOR_DEFAULT.name + ' · ' + AUTHOR_DEFAULT.jobTitle + ', ' + AUTHOR_DEFAULT.yearsText);
+}
+/* schema.org: author PHẢI là Person (không phải Organization) theo đúng yêu cầu T20. Khi bài có
+   `tac_gia` nhập tay thì lấy phần trước dấu "·" làm tên người — phần sau là chức danh, không thuộc
+   Person.name. */
+function authorPerson(tacGia) {
+  const who = (tacGia || '').trim();
+  const name = who ? who.split('·')[0].trim() : AUTHOR_DEFAULT.name;
+  return { '@type': 'Person', name: name || AUTHOR_DEFAULT.name };
+}
+
 function escHtml(s) {
   return (s ?? '').toString().replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -295,7 +329,7 @@ async function renderBlogPost(request, env) {
   else return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
 
   const rows = await supa(env,
-    'posts?select=id,title,slug,image_url,content,created_at,updated_at,categories(name)' +
+    'posts?select=id,title,slug,image_url,content,created_at,updated_at,tac_gia,categories(name)' +
     '&id=eq.' + encodeURIComponent(id) + '&published=eq.true');
   const p = rows && rows[0];
   if (!p) return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); // không tồn tại/chưa publish -> 404 thật, KHÔNG redirect về trang chủ (tránh soft-404)
@@ -320,7 +354,7 @@ async function renderBlogPost(request, env) {
     headline: p.title,
     datePublished: isoPublished,
     dateModified: isoModified,
-    author: { '@type': 'Organization', name: 'Top Visa 5S' },
+    author: authorPerson(p.tac_gia),
     image: ogImage
   };
 
@@ -346,7 +380,7 @@ ${chrome.navbar}
     ${cover}
     <div class="cat">${escHtml(p.categories?.name || 'Tin tức')}</div>
     <h1 class="article-title">${escHtml(p.title)}</h1>
-    <div class="article-meta">${dateStr}</div>
+    <div class="article-meta">Người viết: ${escHtml(bylineText(p.tac_gia))} · Cập nhật ${dateStr}</div>
     <div class="article-body">${escHtml(p.content || '')}</div>
   </div>
 </section>

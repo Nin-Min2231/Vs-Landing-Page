@@ -3148,3 +3148,42 @@ không thoả nghĩa thứ hai. Muốn ghi nhận chuyên viên thì đúng ch�
 của **T20** (vẫn đang chờ PM cấp tên + xác nhận họ đồng ý công khai).
 **Nghiệm thu:** parse thật JSON-LD bằng `json.loads` (không grep chuỗi), khẳng định `sameAs` còn 2
 link và không còn `1ei5XS6zJE`; đồng thời đếm lại link thường trong body vẫn còn đúng 1 chỗ/file.
+
+## 63. T18 (thời gian xử lý 2026) + T20 (byline chuyên viên) — 2026-09-11
+
+**T18 — chuyên viên cấp số 2026, đã cập nhật.** So với bản cũ: Đài Loan 5–7 → **3–5** ngày ·
+Trung Quốc 4–7 → **7–10** ngày (chậm hơn, gộp chung nhóm với Nhật/Hàn) · **Úc 30 ngày (MỚI —
+trước đây thiếu hẳn dù vẫn niêm yết giá 6.800.000 đ)** · Nhật/Hàn/Schengen/Mỹ giữ nguyên. Thêm 2 ý
+mới: cần thêm thời gian hoàn thiện hồ sơ + đặt lịch hẹn, và khuyên khách nộp sớm.
+- **⚠️ Bản cũ ghi "7–10 ngày LÀM VIỆC" cho Nhật/Hàn, bản mới chỉ ghi "7–10 ngày"** — khác nhau
+  thật (7–10 ngày làm việc ≈ 9–14 ngày lịch). Đã giữ đúng chữ chuyên viên đưa và **đã hỏi lại PM**,
+  chưa có xác nhận lúc viết dòng này. Nếu thực tế là ngày làm việc thì phải thêm lại 2 chữ đó —
+  ghi thiếu là hứa nhanh hơn thực tế, dễ sinh khiếu nại.
+- **Chuỗi này nằm ở 4 CHỖ, không phải 1** (rất dễ sót): JSON-LD `FAQPage` · FAQ hiển thị ·
+  `CHATBOX_QUICK` bản `vi` · `CHATBOX_QUICK` bản `en`. Comment sẵn ở `CHATBOX_QUICK` đã cảnh báo
+  điều này. Sửa 3 chuỗi VI giống hệt nhau bằng 1 lệnh replace count=3, EN dịch lại tương ứng.
+- **Nghiệm thu bằng script so khớp TỪNG CHỮ** giữa JSON-LD và text hiển thị (ràng buộc số 5 kế
+  hoạch SEO) — parse JSON-LD thật + regex lấy `.faq-a`, `html.unescape` cả 2 rồi so bằng `==`:
+  **6/6 câu khớp**, chatbox cũng khớp. Đây là cách nên dùng lại mỗi lần sửa FAQ, đừng so bằng mắt.
+
+**T20 — byline chuyên viên: PM cấp "Thu Hiền · Chuyên viên · 14 năm kinh nghiệm".**
+- **Thứ tự ưu tiên 2 tầng, tránh bắt PM sửa tay 12 bài cũ:** (1) cột `tac_gia` của chính bài viết
+  (nhập qua admin) → dùng khi bài do người KHÁC viết; (2) để trống → hằng số `AUTHOR_DEFAULT` trong
+  `worker.js`. Cả 12 bài hiện có `tac_gia=null` nên tự hưởng byline mặc định ngay, không cần thao
+  tác gì.
+- **`Article.author` đổi từ `Organization` sang `Person`** đúng yêu cầu T20 (ngành visa là YMYL,
+  Google muốn thấy người thật chịu trách nhiệm). Hàm `authorPerson()` lấy **phần trước dấu "·"**
+  làm `Person.name` — vì `tac_gia` nhập tay là chuỗi tự do dạng "Tên · Chức danh, N năm", mà
+  `Person.name` chỉ được chứa TÊN NGƯỜI, không nhét chức danh vào.
+- Dialog "Nội dung quốc gia" (`#nqgOverlay`) **đã có sẵn** ô `tac_gia` từ T13; dialog "Bài viết"
+  (`#postOverlay`) thì CHƯA → đã thêm ô "Người viết" + nạp/lưu trong `openPostModal()`/`savePost()`.
+- **Đổi tên/thêm chuyên viên sau này: sửa đúng khối `AUTHOR_DEFAULT`**, không rải tên người ra
+  nhiều chỗ.
+- **Nghiệm thu:** import thẳng `worker.js` vào Node, 2 kịch bản — `tac_gia=null` ra byline
+  "Thu Hiền · Chuyên viên, 14 năm kinh nghiệm hồ sơ visa · Cập nhật <ngày>" với
+  `author={"@type":"Person","name":"Thu Hiền"}`; `tac_gia="Trần Văn B · Chuyên viên cấp cao, 8 năm"`
+  ra đúng chuỗi đó và `Person.name="Trần Văn B"` (chức danh bị loại đúng ý).
+- **Giả định đã nêu rõ với PM:** T20 yêu cầu "**và họ đồng ý công khai**". PM cấp tên sau khi đọc
+  đúng yêu cầu đó nên hiểu là đã đồng ý. Nếu chưa, gỡ chỉ là sửa 1 khối `AUTHOR_DEFAULT`.
+- **Trang quốc gia (T14) chưa có route** nên byline ở đó chưa hiển thị được — `authorPerson()`/
+  `bylineText()` đã viết dùng chung, khi làm T14 gọi lại là xong.
