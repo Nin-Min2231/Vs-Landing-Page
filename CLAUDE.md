@@ -104,7 +104,7 @@ const ZALO_PHONE        = "0935887922";
 const FACEBOOK_URL      = "https://www.facebook.com/share/1EVr8W3p2E/";
 const COMPANY_NAME      = "Top Visa";
 const COMPANY_EMAIL     = "hien.gotravel@gmail.com";
-const COMPANY_ADDRESS   = "303 Âu Cơ, Liên Chiểu, Đà Nẵng";
+const COMPANY_ADDRESS   = "104 Lê Doãn Nhạ, Hòa Khánh, Đà Nẵng"; // đổi địa chỉ 2026-09-13, xem mục 67
 ```
 
 `admin.html` có khối tương tự nhưng chỉ cần `SUPABASE_URL` và `SUPABASE_ANON_KEY` (đầu file, dòng ~13–14) — phải giống hệt giá trị trong `index.html`.
@@ -3645,3 +3645,109 @@ event, nhưng chưa có bàn phím thật để đo), và cử chỉ back thật
 iOS/nút back trình duyệt) có đúng hành vi "đóng chat trước, rời trang sau" hay không — đã test
 bằng gọi thẳng `history.back()` (tương đương làm cùng việc trình duyệt làm khi bấm back), logic
 xác nhận đúng, nhưng nên PM tự bấm nút back THẬT trên điện thoại trước khi coi là xong hẳn.
+
+## 67. DIALOG CHUNG cho trang public (`.pub-dialog-*`) + đổi địa chỉ công ty + mobile 1 thẻ/trang
+    cho "Đánh giá"/"Tin tức" (2026-09-13)
+
+**A. Gộp 2 dialog "Đánh giá"/"Thủ tục Visa" (mục 60) thành 1 KHUÔN DÙNG CHUNG — PM yêu cầu rõ: viết
+thành common để dialog MỚI sau này dùng lại luôn, không viết riêng từng cái.** CSS mới
+`.pub-dialog-overlay`/`.pub-dialog`(+ modifier `.pub-dialog-lg` cho dialog cần rộng hơn 480px mặc
+định, đang dùng cho "Thủ tục Visa")/`.pub-dialog-head`/`.pub-dialog-title`/`.pub-dialog-close`/
+`.pub-dialog-body`/`.pub-dialog-foot`/`.pub-dialog-foot-phone` — khác hẳn `dlg-*` (chỉ dùng trong
+`admin.html`, đã có skill `dialog-chuan` riêng cho khuôn đó).
+- **Header + footer ĐỨNG YÊN, chỉ `.pub-dialog-body` cuộn riêng:** `.pub-dialog` là
+  `display:flex;flex-direction:column;overflow:hidden;max-height:85vh`; head/foot `flex-shrink:0`;
+  body `flex:1;overflow-y:auto`. Đã tự đo `getBoundingClientRect()` của head/foot TRƯỚC/SAU khi gán
+  `body.scrollTop=300` — toạ độ head/foot không đổi 1px, xác nhận đúng cơ chế (không phải chỉ tin
+  CSS lý thuyết).
+- **Tiêu đề header CỐ ĐỊNH theo LOẠI dialog, không đổi theo nội dung cụ thể bên trong** (PM yêu cầu
+  rõ: "Đánh giá của khách hàng" cho mọi review, "Thủ tục visa" cho mọi bài — tên bài/tên khách cụ
+  thể vẫn hiển thị trong `.pub-dialog-body` như cũ, chỉ riêng "khung" header là hằng số).
+- **Footer thêm hotline + nút "Tư vấn miễn phí"** — dùng lại đúng class `.js-tel-link`/`.js-hotline`
+  đã có (mục "ÁP DỤNG CẤU HÌNH LIÊN HỆ" đầu script tự điền số thật, không hardcode số ở 2 nơi).
+  `pubDialogGoRegister()`: đóng dialog rồi `document.getElementById('dang-ky').scrollIntoView(...)`
+  — đã test bằng cách tạm ghi đè `Element.prototype.scrollIntoView` để bắt đúng lệnh gọi (id đích +
+  tham số), KHÔNG dùng `scrollY` sau đó để kết luận (bài học H/lesson cũ: đo `scrollY`/
+  `scrollIntoView` qua `javascript_tool` trong môi trường agent RẤT THẤT THƯỜNG, kể cả 1 lệnh
+  `window.scrollTo()` đơn giản không có gì liên quan tới dialog cũng trả về `scrollY=0` — không phải
+  lỗi code, đừng debug nhầm hướng nếu gặp lại).
+- **Padding trái/phải nhất quán 32px (`var(--sp-4)`) trên `.pub-dialog-body`** ở mọi dialog — đã đo
+  xác nhận `bodyLeft === dialogLeft` (khoảng cách bằng đúng padding, không lệch).
+- **Nút back điện thoại đóng dialog thay vì rời trang** — TÁI DÙNG đúng kỹ thuật "mốc lịch sử ảo"
+  đã viết cho Chat Box (mục 66.D.2): `pubDialogOpen(overlayId)` = show + `history.pushState(...)`;
+  `pubDialogClose()` = ẩn + `history.back()` nếu mình là người đã push; `popstate` listener đóng UI
+  khi back thật sự xảy ra (không gọi lại `history.back()` trong đó, tránh back thêm 1 bước thừa).
+  **CHỈ 1 cờ CHUNG `pubDialogOpenId`/`pubDialogHistoryPushed`** (không phải ngăn xếp) — vì trong
+  thực tế Đánh giá/Thủ tục Visa không bao giờ mở cùng lúc; nếu vô tình chồng với Chat Box (2 cờ độc
+  lập nhau, `chatboxHistoryPushed` riêng) vẫn an toàn vì mỗi lần mở chỉ tự push đúng 1 state của
+  chính nó, back nhiều lần đóng lần lượt cái mở SAU CÙNG trước — đúng trực giác người dùng.
+- **`openReviewModal()`/`openPostModal()` giờ chỉ lo dựng NỘI DUNG rồi gọi `pubDialogOpen(id)`** —
+  đã xoá hẳn `closeReviewModal()`/`closePostModal()` (2 hàm gần giống hệt nhau, nguồn trùng lặp cũ),
+  thay bằng đúng 1 `pubDialogClose()` dùng chung. Bất kỳ dialog MỚI nào sau này (vd nếu làm `/danh-gia`
+  dạng popup, hay dialog xem ảnh...) chỉ cần dựng HTML đúng khuôn `.pub-dialog-*` + gọi
+  `pubDialogOpen('<id>')` lúc mở xong nội dung — không cần viết lại logic đóng/back/Esc/click-ra-ngoài.
+
+**B. Đổi địa chỉ công ty:** `303 Âu Cơ, Liên Chiểu, Đà Nẵng` → **`104 Lê Doãn Nhạ, Hòa Khánh, Đà
+Nẵng`** — PM cung cấp trực tiếp, không tự suy diễn quận/phường tương ứng. Đã dùng agent riêng
+**grep TOÀN BỘ dự án** trước khi sửa (đúng yêu cầu "kiểm tra tất cả vị trí") thay vì chỉ đoán vài
+file quen thuộc — tìm ra đúng **7 vị trí trong 5 file HTML sản phẩm**:
+- `index.html`: JSON-LD `TravelAgency.address` (`streetAddress`/`addressLocality`, `addressRegion`
+  "Đà Nẵng" giữ nguyên), `COMPANY_ADDRESS` (hằng số JS), footer `<li>📍...</li>`.
+- `lien-he.html`: `<meta name="description">`, `<meta property="og:description">`, JSON-LD
+  `LocalBusiness.address`, `<li>` nội dung chính, **Google Maps iframe** (CẢ `src` đã URL-encode
+  LẪN `title` — 2 chỗ riêng biệt dễ sót 1, đã tự tính lại encode mới bằng `urllib.parse.quote()`
+  rồi đối chiếu decode ngược để chắc khớp đúng địa chỉ mới, không gõ tay chuỗi encode), footer `<li>`.
+- `chinh-sach-bao-mat.html` (2 chỗ), `dieu-khoan-dich-vu.html` (1 chỗ),
+  `cong-cu/uoc-tinh-chi-phi-visa.html` (1 chỗ): đều là `<li>📍...</li>` ở footer/nội dung.
+- **`03_Information/Information.md`** (nguồn dữ liệu thật DUY NHẤT, mục 4/5 CLAUDE.md) — đã cập
+  nhật, đây là nơi PM/Claude Code tương lai phải tra cứu địa chỉ, KHÔNG được lệch với code.
+- **`CLAUDE.md` mục 5** (đoạn code mẫu "current state") — đã cập nhật đồng bộ.
+
+**⚠️ CỐ Ý KHÔNG sửa (bài học đã áp dụng nhiều lần, xem mục 52 — không viết đè lịch sử):**
+`CLAUDE.md` dòng ~2566 (mục 57, tường thuật T11 ĐÃ làm gì tại thời điểm đó — sửa lại sẽ làm sai lệch
+lịch sử, y hệt lý do "Đường dẫn kiểu cũ CÒN LẠI, cố ý không sửa" ở mục 6), `README.md` dòng 46
+(changelog đã ghi ngày 2026-07-18 — sự kiện lịch sử, không phải trạng thái hiện tại), và 2 dòng nhắc
+địa chỉ trong `10_SEO/11_Ke_hoach_sau_xac_nhan.md`/`10_SEO/13_Prompt_Claude_Code.md` (đặc tả kế
+hoạch T11 — đã hoàn tất từ mục 57, giữ nguyên bối cảnh lúc lập kế hoạch). Nếu PM muốn dọn luôn các
+chỗ lịch sử này, cần yêu cầu rõ (mặc định Claude Code không tự ý viết đè tường thuật quá khứ).
+
+**C. "Đánh giá" + "Tin tức" trên điện thoại — CHỈ hiện đúng 1 thẻ/trang (trước đây 2 xếp dọc/3 dồn
+cột):**
+- **Reviews:** `initReviewsSlider()` giờ tự GOM LẠI toàn bộ `.card-review` đang có trong track (bất
+  kể đang nằm trong `.review-slide` nào) rồi CHIA LẠI theo `perSlide = innerWidth<=768 ? 1 : 2` —
+  làm NGAY TRONG HÀM này (mỗi lần gọi) nên tự đúng cho CẢ 2 nguồn: 2 review tĩnh fallback (vốn gộp
+  cứng 2 thẻ/1 slide trong HTML gốc) LẪN dữ liệu thật do "FEEDBACK KHÁCH HÀNG ĐỘNG" nạp — script đó
+  giờ ĐƠN GIẢN HOÁ, chỉ đẩy thẳng từng `.card-review` rời (bỏ hẳn vòng lặp tự gộp 2/trang cũ), để
+  đúng 1 nơi (`initReviewsSlider()`) quyết định "bao nhiêu thẻ/trang", không lặp lại logic ở 2 chỗ.
+  Dùng `outerHTML` (chuỗi) để gom+chia lại thay vì di chuyển thẳng DOM node — an toàn vì
+  `track.innerHTML=''` sẽ xoá mất node cũ nếu di chuyển thẳng.
+  Đã **xoá rule CSS chết** `@media(max-width:768px){.review-slide{flex-direction:column}}` (mục
+  đích cũ: xếp DỌC 2 thẻ trên mobile — nay mobile chỉ có 1 thẻ/slide nên rule này vô nghĩa, giữ lại
+  sẽ gây hiểu lầm cho người đọc sau).
+- **Tin tức:** `TIN_TUC_HOME_PAGE_SIZE` (hằng số cố định `3`) đổi thành hàm
+  `tinTucPageSize(){ return innerWidth<=767 ? 1 : 3; }`, gọi lại MỖI LẦN `renderTinTucPreview()`
+  chạy (không cache) — khớp đúng ngưỡng `767px` đã dùng sẵn cho `.grid-posts` chuyển 1 cột (mục
+  "TIN TỨC" CSS), tránh bịa thêm 1 breakpoint số khác.
+- **CỐ Ý không nghe sự kiện `resize`** cho cả 2 — đổi khổ màn hình SAU khi trang đã tải xong (vd
+  xoay ngang điện thoại) chỉ áp dụng đúng số thẻ/trang ở lần render TIẾP THEO (bấm mũi tên/chấm
+  tròn, hoặc tải lại trang) — chấp nhận đánh đổi này để đơn giản, giống mức xử lý dự án đã áp dụng
+  cho các trường hợp tương tự trước đây (không có tiền lệ nghe resize cho logic phân trang).
+
+**Đã test (Claude Browser dựng server tĩnh cục bộ, dữ liệu Supabase THẬT qua `http://localhost`):**
+- Dialog: mở/đóng đúng cả 2 loại, tiêu đề header đúng theo loại ("Đánh giá của khách hàng"/"Thủ tục
+  visa"), số hotline tự điền đúng, bấm "Tư vấn miễn phí" gọi đúng `scrollIntoView('dang-ky',
+  {behavior:'smooth',block:'start'})` (xác nhận bằng cách chặn bắt lệnh gọi, không dùng `scrollY`),
+  đóng dialog trước khi cuộn; back-điện-thoại (giả lập `history.back()`) đóng đúng dialog đang mở,
+  `location.href` không đổi (không rời trang) — test cho cả dialog Đánh giá lẫn Thủ tục Visa.
+- Mobile 375px: 12 review → đúng 12 slide, MỖI slide đúng 1 thẻ; Tin tức → đúng 1 thẻ/trang,
+  `tinTucPageSize()===1`. Desktop 1280px (hồi quy): 12 review → đúng 6 slide/2 thẻ mỗi slide; Tin
+  tức → đúng 3 thẻ/trang — không đổi hành vi cũ.
+- Địa chỉ: `json.loads()` cả 2 khối JSON-LD (`index.html`+`lien-he.html`) ra đúng địa chỉ mới; iframe
+  Google Maps `src`+`title` đúng cả 2; `grep` toàn bộ `02_Source/public/` xác nhận **0 chỗ còn sót**
+  "303 Âu Cơ".
+- `node --check` mọi `<script>` inline + cân bằng thẻ HTML (`html.parser`) cho cả 5 file: OK.
+
+**⚠️ Chưa kiểm chứng được (cần deploy thật mới xác nhận):** hiệu ứng cuộn mượt "Tư vấn miễn phí" +
+back-điện-thoại đóng dialog trên thiết bị thật (logic đã xác nhận đúng qua mô phỏng, nhưng công cụ
+test trong môi trường agent không đo được `scrollY`/cử chỉ back thật đáng tin cậy — cùng giới hạn đã
+ghi ở mục 66).

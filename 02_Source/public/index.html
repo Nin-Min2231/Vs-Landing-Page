@@ -63,8 +63,8 @@ if(location.hash) history.replaceState(null, '', location.pathname + location.se
   "email": "hien.gotravel@gmail.com",
   "address": {
     "@type": "PostalAddress",
-    "streetAddress": "303 Âu Cơ",
-    "addressLocality": "Liên Chiểu",
+    "streetAddress": "104 Lê Doãn Nhạ",
+    "addressLocality": "Hòa Khánh",
     "addressRegion": "Đà Nẵng",
     "addressCountry": "VN"
   },
@@ -144,7 +144,7 @@ const ZALO_PHONE        = "0935887922";          // Số Zalo
 const FACEBOOK_URL      = "https://www.facebook.com/share/1EVr8W3p2E/"; // Facebook công ty
 const COMPANY_NAME      = "Top Visa 5S";
 const COMPANY_EMAIL     = "hien.gotravel@gmail.com";
-const COMPANY_ADDRESS   = "303 Âu Cơ, Liên Chiểu, Đà Nẵng";
+const COMPANY_ADDRESS   = "104 Lê Doãn Nhạ, Hòa Khánh, Đà Nẵng";
 </script>
 <style>
 /* ==================== DESIGN SYSTEM (04_Design_System.md) ==================== */
@@ -362,42 +362,64 @@ a.avatar{text-decoration:none;cursor:pointer}
 .slider-dots button.active{background:var(--color-primary);width:22px;border-radius:999px}
 /* Điện thoại không đủ ngang cho 2 cột — xếp DỌC 2 thẻ trong cùng 1 trang thay vì thu hẹp cột tới
    mức khó đọc (giữ nguyên chiều cao 300px/thẻ, chỉ đổi hướng xếp). */
-@media(max-width:768px){ .review-slide{flex-direction:column} }
+/* Trước 2026-09-13: @media(max-width:768px){.review-slide{flex-direction:column}} xếp DỌC 2 thẻ
+   trong 1 trang trên điện thoại — PM đổi ý, giờ điện thoại chỉ hiện ĐÚNG 1 thẻ/trang (xem
+   initReviewsSlider() tự tính lại số thẻ/trang theo bề ngang màn hình), nên rule xếp dọc này không
+   còn cần nữa (mỗi trang di động chỉ có 1 thẻ, không có gì để xếp dọc) — đã xoá, không phải bỏ sót. */
 
-/* Dialog "Xem thêm" đánh giá — xem trọn nội dung bị .card-review p.quote cắt bằng line-clamp ở
-   trên. Modal RIÊNG cho trang công khai (khác dlg-* chỉ dùng trong admin.html); nội dung được clone
-   thẳng từ .card-review đang bấm (giữ nguyên avatar/tên/link Facebook nếu có) — xem JS
-   openReviewModal(). */
-.review-modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;
+/* ==================== DIALOG CHUNG (public site) ====================
+   Dùng cho MỌI dialog xem nhanh trên trang public (Đánh giá, Thủ tục Visa, và dialog MỚI thêm sau
+   này) — KHÁC hẳn dlg-* (chỉ dùng trong admin.html). Header (tiêu đề CỐ ĐỊNH theo LOẠI dialog, vd
+   "Đánh giá của khách hàng"/"Thủ tục visa" — không đổi theo nội dung cụ thể bên trong) + nút đóng
+   ĐỨNG YÊN không cuộn theo; footer (hotline + nút "Tư vấn miễn phí") cũng đứng yên; CHỈ phần nội
+   dung ở giữa (.pub-dialog-body) cuộn riêng (2026-09-13, PM yêu cầu).
+   ⚠️ Thêm dialog MỚI sau này: copy đúng cấu trúc HTML bên dưới (mục "Dialog Đánh giá"/"Dialog Thủ
+   tục Visa" làm mẫu) — overlay>.pub-dialog(+.pub-dialog-lg nếu cần rộng hơn 480px)>.pub-dialog-head
+   (tiêu đề+nút X)+.pub-dialog-body(nội dung riêng)+.pub-dialog-foot(hotline+CTA) — rồi gọi
+   `pubDialogOpen('<id-overlay>')` lúc mở (xem JS mục "DIALOG CHUNG" cạnh Chat Box). KHÔNG cần viết
+   riêng hàm đóng/nút back-điện-thoại/Esc — dùng chung `pubDialogClose()` đã có. */
+.pub-dialog-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;
   align-items:center;justify-content:center;padding:var(--sp-3)}
-.review-modal-overlay.show{display:flex}
-.review-modal{background:#fff;border-radius:var(--radius-lg);padding:var(--sp-5) var(--sp-4);
-  max-width:480px;width:100%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-md)}
-.review-modal-close{position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;
-  cursor:pointer;color:var(--color-text-muted);line-height:1;padding:6px}
-.review-modal-close:hover{color:var(--color-primary)}
+.pub-dialog-overlay.show{display:flex}
+.pub-dialog{background:#fff;border-radius:var(--radius-lg);max-width:480px;width:100%;
+  max-height:85vh;box-shadow:var(--shadow-md);display:flex;flex-direction:column;overflow:hidden}
+.pub-dialog-lg{max-width:720px}
+.pub-dialog-head{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  gap:var(--sp-2);padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--color-border)}
+.pub-dialog-title{font-size:18px;font-weight:700;color:var(--color-text)}
+.pub-dialog-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--color-text-muted);
+  line-height:1;padding:4px;flex-shrink:0}
+.pub-dialog-close:hover{color:var(--color-primary)}
+.pub-dialog-body{flex:1;overflow-y:auto;padding:var(--sp-4)}
+.pub-dialog-foot{flex-shrink:0;border-top:1px solid var(--color-border);background:var(--color-bg-alt);
+  padding:var(--sp-3) var(--sp-4);display:flex;align-items:center;justify-content:space-between;
+  gap:var(--sp-3);flex-wrap:wrap}
+.pub-dialog-foot-phone{display:inline-flex;align-items:center;gap:6px;font-weight:700;
+  color:var(--color-primary);text-decoration:none;font-size:15px}
+.pub-dialog-foot-phone:hover{text-decoration:underline}
+@media(max-width:600px){
+  .pub-dialog-head,.pub-dialog-foot{padding:var(--sp-2) var(--sp-3)}
+  .pub-dialog-body{padding:var(--sp-3)}
+  .pub-dialog-title{font-size:16px}
+  .pub-dialog-foot{flex-direction:column;align-items:stretch}
+  .pub-dialog-foot .btn{width:100%;text-align:center}
+}
+
+/* Nội dung riêng dialog "Đánh giá" — bên trong .pub-dialog-body, GIỮ class "card-review" trên
+   #reviewModalBody để tái dùng nguyên CSS ".quote"/".reviewer"/... đã định nghĩa ở mục "REVIEWS
+   SLIDER" (nội dung được clone thẳng từ .card-review đang bấm, xem JS openReviewModal()). */
 #reviewModalBody.card-review{height:auto;box-shadow:none;border:none;padding:0}
 #reviewModalBody .quote-wrap{flex:none;overflow:visible}
 #reviewModalBody .quote{-webkit-line-clamp:unset;overflow:visible}
 
-/* Dialog "Đọc tiếp" cho section "Hồ sơ xin Visa các nước" (2026-09-12, PM yêu cầu quay lại xem
-   nhanh bằng popup thay vì rời trang — CHỈ áp dụng cho section này, xem renderPostCardHtml() dùng
-   tham số dialogMode). Cấu trúc/CSS mô phỏng lại đúng ".review-modal-overlay" (khác dlg-* chỉ dùng
-   trong admin.html) nhưng rộng hơn vì nội dung bài viết dài hơn hẳn 1 đoạn trích đánh giá. */
-.post-modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;
-  align-items:center;justify-content:center;padding:var(--sp-3)}
-.post-modal-overlay.show{display:flex}
-.post-modal{background:#fff;border-radius:var(--radius-lg);padding:var(--sp-5) var(--sp-4);
-  max-width:720px;width:100%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-md)}
-.post-modal-close{position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;
-  cursor:pointer;color:var(--color-text-muted);line-height:1;padding:6px}
-.post-modal-close:hover{color:var(--color-primary)}
+/* Nội dung riêng dialog "Thủ tục Visa" — bên trong .pub-dialog-body (id="postModalBody"), xem JS
+   openPostModal(). */
 .post-modal-cat{color:var(--color-primary);font-weight:700;font-size:12px;text-transform:uppercase;margin-bottom:6px}
 .post-modal-title{font-size:22px;font-weight:700;line-height:1.3;margin-bottom:6px}
 .post-modal-meta{font-size:13px;color:var(--color-text-muted);margin-bottom:var(--sp-3)}
 .post-modal-cover{width:100%;max-height:320px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:var(--sp-3)}
 .post-modal-content{font-size:15px;line-height:1.8;color:var(--color-text);white-space:pre-wrap}
-@media(max-width:600px){ .post-modal{padding:var(--sp-4) var(--sp-3)} .post-modal-title{font-size:19px} }
+@media(max-width:600px){ .post-modal-title{font-size:19px} }
 
 /* ==================== TIN TỨC ==================== */
 .grid-posts{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
@@ -900,11 +922,21 @@ footer a:hover{color:#fff}
 
 <!-- Dialog "Xem thêm" đánh giá — 1 dialog DÙNG CHUNG cho MỌI thẻ đánh giá (tĩnh lẫn động), nội dung
      bên trong (#reviewModalBody) được JS clone thẳng từ .card-review đang bấm lúc mở, xem hàm
-     openReviewModal() cạnh initReviewsSlider(). -->
-<div class="review-modal-overlay" id="reviewModalOverlay">
-  <div class="review-modal">
-    <button type="button" class="review-modal-close" id="reviewModalClose" aria-label="Đóng">✕</button>
-    <div class="card-review" id="reviewModalBody"></div>
+     openReviewModal() cạnh initReviewsSlider(). Cấu trúc theo đúng DIALOG CHUNG (mục CSS "DIALOG
+     CHUNG") — tiêu đề header CỐ ĐỊNH "Đánh giá của khách hàng" (không đổi theo nội dung). -->
+<div class="pub-dialog-overlay" id="reviewModalOverlay">
+  <div class="pub-dialog">
+    <div class="pub-dialog-head">
+      <div class="pub-dialog-title">Đánh giá của khách hàng</div>
+      <button type="button" class="pub-dialog-close" id="reviewModalClose" aria-label="Đóng">✕</button>
+    </div>
+    <div class="pub-dialog-body">
+      <div class="card-review" id="reviewModalBody"></div>
+    </div>
+    <div class="pub-dialog-foot">
+      <a href="tel:0935887922" class="pub-dialog-foot-phone js-tel-link">📞 <span class="js-hotline">0935 887 922</span></a>
+      <button type="button" class="btn btn-primary" onclick="pubDialogGoRegister()">Tư vấn miễn phí</button>
+    </div>
   </div>
 </div>
 
@@ -922,11 +954,21 @@ footer a:hover{color:#fff}
 
 <!-- Dialog "Đọc tiếp" — CHỈ dùng cho card trong #thuTucVisaGrid ở trên (2026-09-12, PM yêu cầu xem
      nhanh bằng popup thay vì rời trang cho riêng section này) — nội dung do JS dựng từ đúng dữ liệu
-     bài viết đã tải (window.POSTS_BY_ID), xem hàm openPostModal() cạnh renderPostCardHtml(). -->
-<div class="post-modal-overlay" id="postModalOverlay">
-  <div class="post-modal">
-    <button type="button" class="post-modal-close" id="postModalClose" aria-label="Đóng">✕</button>
-    <div id="postModalBody"></div>
+     bài viết đã tải (window.POSTS_BY_ID), xem hàm openPostModal() cạnh renderPostCardHtml(). Cấu
+     trúc theo đúng DIALOG CHUNG (mục CSS "DIALOG CHUNG") — tiêu đề header CỐ ĐỊNH "Thủ tục visa"
+     (không đổi theo bài viết cụ thể, tên bài thật nằm trong nội dung .pub-dialog-body). ".pub-dialog-lg"
+     để dialog RỘNG HƠN mặc định (nội dung bài viết dài hơn hẳn 1 đoạn trích đánh giá). -->
+<div class="pub-dialog-overlay" id="postModalOverlay">
+  <div class="pub-dialog pub-dialog-lg">
+    <div class="pub-dialog-head">
+      <div class="pub-dialog-title">Thủ tục visa</div>
+      <button type="button" class="pub-dialog-close" id="postModalClose" aria-label="Đóng">✕</button>
+    </div>
+    <div class="pub-dialog-body" id="postModalBody"></div>
+    <div class="pub-dialog-foot">
+      <a href="tel:0935887922" class="pub-dialog-foot-phone js-tel-link">📞 <span class="js-hotline">0935 887 922</span></a>
+      <button type="button" class="btn btn-primary" onclick="pubDialogGoRegister()">Tư vấn miễn phí</button>
+    </div>
   </div>
 </div>
 
@@ -1051,7 +1093,7 @@ footer a:hover{color:#fff}
       <div>
         <h4><a href="/lien-he">Liên hệ</a></h4>
         <ul>
-          <li>📍 303 Âu Cơ, Liên Chiểu, Đà Nẵng</li>
+          <li>📍 104 Lê Doãn Nhạ, Hòa Khánh, Đà Nẵng</li>
           <li>📞 <a class="js-tel-link" href="tel:0935887922"><span class="js-hotline">0935 887 922</span></a></li>
           <li>✉️ <a href="mailto:hien.gotravel@gmail.com">hien.gotravel@gmail.com</a></li>
         </ul>
@@ -1195,6 +1237,25 @@ function reviewsRestartAutoplay(){
 function initReviewsSlider(){
   const track = document.getElementById('reviewsTrack');
   if(!track) return;
+  // Gom lại TOÀN BỘ ".card-review" đang có (bất kể đang nằm trong ".review-slide" nào) rồi chia lại
+  // thành từng trang theo ĐÚNG số thẻ/trang hiện tại — 2 thẻ/trang ở desktop, CHỈ 1 thẻ/trang trên
+  // điện thoại (2026-09-13, PM yêu cầu — trước đây mobile vẫn xếp DỌC 2 thẻ trong 1 trang, giờ chỉ
+  // hiện đúng 1). Làm NGAY TẠI ĐÂY (mỗi lần initReviewsSlider() được gọi) để tự đúng cho CẢ 2 nguồn:
+  // 2 review tĩnh fallback có sẵn trong HTML gốc (vốn gộp cứng 2 thẻ/1 slide) LẪN dữ liệu thật do
+  // "FEEDBACK KHÁCH HÀNG ĐỘNG" nạp (chỉ đẩy thẳng từng thẻ rời, không tự gộp trang nữa — xem script
+  // đó). Dùng lại chuỗi outerHTML (không move DOM node) để không mất nội dung khi ghi đè
+  // track.innerHTML. Không nghe sự kiện resize — đổi khổ màn hình SAU khi trang đã tải xong (vd xoay
+  // ngang điện thoại) chỉ áp dụng lại đúng số thẻ/trang ở lần initReviewsSlider() được gọi TIẾP THEO,
+  // khớp mức độ xử lý đã áp dụng cho "Tin tức" (xem tinTucPageSize()).
+  const perSlide = window.innerWidth <= 768 ? 1 : 2;
+  const cardsHtml = Array.from(track.querySelectorAll('.card-review')).map(c => c.outerHTML);
+  if(cardsHtml.length){
+    let slidesHtml = '';
+    for(let i = 0; i < cardsHtml.length; i += perSlide){
+      slidesHtml += '<div class="review-slide">' + cardsHtml.slice(i, i + perSlide).join('') + '</div>';
+    }
+    track.innerHTML = slidesHtml;
+  }
   const slides = reviewsSlides();
   if(!slides.length) return;
   const dotsWrap = document.getElementById('reviewDots');
@@ -1250,8 +1311,56 @@ function initReviewsSlider(){
 }
 initReviewsSlider();
 
-/* Dialog "Xem thêm" đánh giá — CSS ".review-modal-overlay"/"#reviewModalBody" (mục "REVIEWS SLIDER").
-   Event delegation trên document (giống mẫu #floatContact/menu mobile có sẵn trong file) vì nút
+/* ==================== DIALOG CHUNG (public site) ====================
+   Dùng CHUNG cho MỌI dialog xem nhanh trên trang public (Đánh giá, Thủ tục Visa, và dialog MỚI
+   thêm sau này — xem CSS mục "DIALOG CHUNG" để biết cấu trúc HTML cần copy). Header (tiêu đề+nút
+   đóng) và footer (hotline+CTA) ĐỨNG YÊN, chỉ ".pub-dialog-body" cuộn riêng (đã tự đúng nhờ CSS,
+   không cần JS gì thêm cho phần này).
+   Nút back trên điện thoại đóng dialog thay vì rời trang — kỹ thuật "mốc lịch sử ảo" giống hệt Chat
+   Box (xem mục "CHAT BOX" cuối trang): `pubDialogOpen()` đẩy thêm 1 state lúc mở, bấm back tiêu thụ
+   đúng state đó (nổ "popstate", đóng dialog, CHƯA rời trang); đóng bằng cách khác (X/backdrop/Esc)
+   thì tự `history.back()` dọn state đó luôn. CHỈ 1 dialog public mở tại 1 thời điểm trong thực tế
+   (Đánh giá/Thủ tục Visa không bao giờ mở cùng lúc) nên dùng 1 cờ CHUNG, không cần ngăn xếp phức
+   tạp — dialog MỚI sau này chỉ cần gọi `pubDialogOpen('<id-overlay>')` lúc mở xong nội dung, KHÔNG
+   viết lại logic đóng/back/Esc riêng. */
+let pubDialogOpenId = null, pubDialogHistoryPushed = false;
+function pubDialogOpen(overlayId){
+  document.getElementById(overlayId).classList.add('show');
+  document.documentElement.style.overflow = 'hidden';
+  pubDialogOpenId = overlayId;
+  history.pushState({pubDialog:true}, '', location.href);
+  pubDialogHistoryPushed = true;
+}
+function pubDialogClose(){
+  if(!pubDialogOpenId) return;
+  document.getElementById(pubDialogOpenId).classList.remove('show');
+  document.documentElement.style.overflow = '';
+  pubDialogOpenId = null;
+  if(pubDialogHistoryPushed){
+    pubDialogHistoryPushed = false;
+    history.back();
+  }
+}
+window.addEventListener('popstate', function(){
+  if(pubDialogOpenId){
+    document.getElementById(pubDialogOpenId).classList.remove('show');
+    document.documentElement.style.overflow = '';
+    pubDialogOpenId = null;
+    pubDialogHistoryPushed = false;
+  }
+});
+// Nút "Tư vấn miễn phí" ở footer — đóng dialog đang mở rồi cuộn tới đúng form đăng ký trang chủ.
+function pubDialogGoRegister(){
+  pubDialogClose();
+  document.getElementById('dang-ky')?.scrollIntoView({behavior:'smooth', block:'start'});
+}
+document.addEventListener('click', e => {
+  if(e.target.classList.contains('pub-dialog-close') || e.target.classList.contains('pub-dialog-overlay')) pubDialogClose();
+});
+document.addEventListener('keydown', e => { if(e.key === 'Escape') pubDialogClose(); });
+
+/* Dialog "Xem thêm" đánh giá — nội dung riêng, dùng chung "khung" DIALOG CHUNG ở trên. Event
+   delegation trên document (giống mẫu #floatContact/menu mobile có sẵn trong file) vì nút
    ".review-more" có thể được tạo LẠI bất kỳ lúc nào (feedback khách hàng động thay nội dung
    #reviewsTrack bằng innerHTML — gắn listener trực tiếp vào từng nút sẽ mất khi bị thay). */
 function openReviewModal(cardEl){
@@ -1260,19 +1369,12 @@ function openReviewModal(cardEl){
   body.innerHTML = cardEl.innerHTML;
   const moreBtn = body.querySelector('.review-more');
   if(moreBtn) moreBtn.remove(); // đã xem trọn nội dung trong dialog rồi, không cần nút này nữa
-  document.getElementById('reviewModalOverlay').classList.add('show');
-  document.documentElement.style.overflow = 'hidden';
-}
-function closeReviewModal(){
-  document.getElementById('reviewModalOverlay').classList.remove('show');
-  document.documentElement.style.overflow = '';
+  pubDialogOpen('reviewModalOverlay');
 }
 document.addEventListener('click', e => {
   const moreBtn = e.target.closest('.review-more');
-  if(moreBtn){ openReviewModal(moreBtn.closest('.card-review')); return; }
-  if(e.target.id === 'reviewModalClose' || e.target.id === 'reviewModalOverlay') closeReviewModal();
+  if(moreBtn) openReviewModal(moreBtn.closest('.card-review'));
 });
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeReviewModal(); });
 
 /* ==================== GIÁ DỊCH VỤ (từ admin.html — Cài đặt chung, Phase 7) ====================
    Giá "Tổng từ x đ" trong HTML chỉ là fallback tĩnh — cập nhật lại đúng giá thật đang cấu hình ở
@@ -1368,13 +1470,10 @@ function fixInitialHashScroll(){
         '<div class="review-source">📘 Đánh giá thật trên Facebook'+(monthYear?' · '+monthYear:'')+'</div>'+
       '</div>';
     };
-    // Gộp 2 đánh giá/trang (PM yêu cầu 2026-09-11, xem CSS ".review-slide" mục "REVIEWS SLIDER") —
-    // lẻ thì trang cuối chỉ còn 1 thẻ, CSS flex tự co giãn đúng, không cần xử lý riêng.
-    let slidesHtml = '';
-    for(let i = 0; i < rows.length; i += 2){
-      slidesHtml += '<div class="review-slide">' + rows.slice(i, i + 2).map(cardHtml).join('') + '</div>';
-    }
-    track.innerHTML = slidesHtml;
+    // Chỉ đẩy thẳng từng thẻ ".card-review" rời — KHÔNG tự gộp trang ở đây nữa (2026-09-13):
+    // initReviewsSlider() giờ tự lo việc chia trang theo đúng số thẻ/trang hiện tại (2 desktop/1
+    // mobile, xem hàm đó), gọi lại y hệt sau khi thay nội dung là đủ.
+    track.innerHTML = rows.map(cardHtml).join('');
     initReviewsSlider();
   }catch(e){ /* im lặng bỏ qua nếu không tải được, giữ 2 review tĩnh cũ trong HTML */ }
   finally{ fixInitialHashScroll(); }
@@ -1430,34 +1529,30 @@ function openPostModal(id){
     <div class="post-modal-meta">${new Date(p.created_at).toLocaleDateString('vi-VN')}</div>
     ${p.image_url ? `<img class="post-modal-cover" src="${esc(p.image_url)}" alt="${esc(p.title)}" onerror="this.remove()">` : ''}
     <div class="post-modal-content">${esc(p.content||'')}</div>`;
-  document.getElementById('postModalOverlay').classList.add('show');
-  document.documentElement.style.overflow = 'hidden';
+  pubDialogOpen('postModalOverlay');
 }
-function closePostModal(){
-  document.getElementById('postModalOverlay').classList.remove('show');
-  document.documentElement.style.overflow = '';
-}
-document.addEventListener('click', e => {
-  if(e.target.id === 'postModalClose' || e.target.id === 'postModalOverlay') closePostModal();
-});
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closePostModal(); });
 
-/* "Tin tức" trên trang chủ — 3 bài/trang, mũi tên tròn + chấm tròn giống hệt "Khách hàng nói gì về
-   chúng tôi" (2026-09-12, PM yêu cầu đồng bộ giao diện — KHÔNG dùng lại initReviewsSlider(): đây là
-   lưới thẻ đổi hẳn nội dung mỗi trang, không phải slider trượt ngang 1-slide-mỗi-lần, nhưng tái
-   dùng đúng class ".slider-arrow"/".slider-dots" nên trông giống hệt). */
+/* "Tin tức" trên trang chủ — mũi tên tròn + chấm tròn giống hệt "Khách hàng nói gì về chúng tôi"
+   (2026-09-12, PM yêu cầu đồng bộ giao diện — KHÔNG dùng lại initReviewsSlider(): đây là lưới thẻ
+   đổi hẳn nội dung mỗi trang, không phải slider trượt ngang 1-slide-mỗi-lần, nhưng tái dùng đúng
+   class ".slider-arrow"/".slider-dots" nên trông giống hệt).
+   Số bài/trang giờ tuỳ khổ màn hình (2026-09-13, PM yêu cầu): 3 ở desktop, CHỈ 1 ở điện thoại (trước
+   đây luôn 3, trên mobile bị dồn 3 thẻ xếp dọc do lưới ".grid-posts" tự chuyển 1 cột) — tính lại
+   MỖI LẦN renderTinTucPreview() chạy (không nghe sự kiện resize, cùng mức xử lý đã áp dụng cho
+   Reviews — xem comment trong initReviewsSlider()). */
 let tinTucHomePosts = [], tinTucHomePage = 0;
-const TIN_TUC_HOME_PAGE_SIZE = 3;
+function tinTucPageSize(){ return window.innerWidth <= 767 ? 1 : 3; }
 function renderTinTucPreview(){
   const grid = document.getElementById('tinTucPreviewGrid');
   if(!grid) return;
-  const totalPages = Math.max(1, Math.ceil(tinTucHomePosts.length / TIN_TUC_HOME_PAGE_SIZE));
+  const pageSize = tinTucPageSize();
+  const totalPages = Math.max(1, Math.ceil(tinTucHomePosts.length / pageSize));
   tinTucHomePage = ((tinTucHomePage % totalPages) + totalPages) % totalPages;
-  const from = tinTucHomePage * TIN_TUC_HOME_PAGE_SIZE;
-  grid.innerHTML = tinTucHomePosts.slice(from, from + TIN_TUC_HOME_PAGE_SIZE)
+  const from = tinTucHomePage * pageSize;
+  grid.innerHTML = tinTucHomePosts.slice(from, from + pageSize)
     .map(p=>renderPostCardHtml(p, p.phan_loai || 'Tin tức')).join('');
   const nav = document.getElementById('tinTucPreviewNav');
-  if(nav) nav.hidden = tinTucHomePosts.length <= TIN_TUC_HOME_PAGE_SIZE;
+  if(nav) nav.hidden = tinTucHomePosts.length <= pageSize;
   const dotsWrap = document.getElementById('tinTucDots');
   if(dotsWrap){
     dotsWrap.innerHTML = '';
