@@ -293,14 +293,32 @@ section[id],header[id],main[id]{scroll-margin-top:84px}
 .step:not(:last-child)::after{content:"→";position:absolute;top:14px;right:-18px;color:var(--color-primary);font-size:22px}
 
 /* ==================== REVIEWS SLIDER ==================== */
-.reviews-slider{position:relative;max-width:700px;margin:0 auto}
+/* PM yêu cầu 2026-09-11: hiện 2 thẻ/lần (trước đây 1), chiều cao thẻ CỐ ĐỊNH 300px (trước đây co
+   giãn theo nội dung — 1 review dài 1001 ký tự làm cả dãy cao 618px trong khi review ngắn chỉ cần
+   ~292px, dư nhiều khoảng trắng, xem CLAUDE.md mục "Home Kaizen" bài học AJ). Mỗi ".review-slide"
+   giờ là 1 TRANG chứa tối đa 2 ".card-review" xếp ngang (lẻ thì trang cuối chỉ có 1 thẻ) — index
+   slider vẫn hoạt động y hệt cũ (1 bước = 1 trang), chỉ đổi cấu trúc bên trong 1 trang. */
+.reviews-slider{position:relative;max-width:900px;margin:0 auto}
 .reviews-viewport{overflow:hidden}
 .reviews-track{display:flex;transition:transform .45s cubic-bezier(.4,0,.2,1)}
-.review-slide{flex:0 0 100%;box-sizing:border-box;padding:0 4px}
+.review-slide{flex:0 0 100%;box-sizing:border-box;padding:0 4px;display:flex;gap:var(--sp-3)}
 .card-review{background:#fff;border-radius:var(--radius-lg);padding:var(--sp-4);box-shadow:var(--shadow-sm);
-  border:1px solid var(--color-border);text-align:center}
+  border:1px solid var(--color-border);text-align:center;flex:1 1 0;min-width:0;
+  height:300px;display:flex;flex-direction:column}
 .stars{color:#F5A623;letter-spacing:3px;font-size:20px;margin-bottom:var(--sp-2)}
-.card-review p.quote{font-size:17px;line-height:1.6;margin-bottom:var(--sp-3);color:var(--color-text)}
+/* ⚠️ .quote-wrap (không phải .quote) mới là item flex nhận flex:1 — item này luôn nở hết phần
+   còn lại của thẻ, đẩy phần người đánh giá/nguồn xuống ĐÁY thẻ thẳng hàng dù review ngắn/dài khác
+   nhau. .quote (bên trong .quote-wrap) mới là chỗ áp line-clamp cắt nội dung dài + nút "Xem thêm"
+   (ẩn/hiện bằng JS tuỳ nội dung có thật sự bị cắt hay không, xem initReviewsSlider()) mở dialog xem
+   trọn. KHÔNG áp line-clamp trực tiếp lên chính item flex — đã tự bắt được lỗi thật lúc test qua
+   Claude Browser: Chromium "blockify" display:-webkit-box khi nó là item flex TRỰC TIẾP, làm mất
+   hẳn hiệu ứng line-clamp (clientHeight sụp xuống còn ~32px bất kể nội dung dài ngắn thế nào). */
+.quote-wrap{flex:1;min-height:0;overflow:hidden}
+.card-review p.quote{font-size:17px;line-height:1.6;color:var(--color-text);
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.review-more{background:none;border:none;color:var(--color-primary);font-weight:700;
+  font-size:13px;cursor:pointer;padding:4px 0;margin:6px 0 var(--sp-2)}
+.review-more:hover{text-decoration:underline}
 .reviewer{display:flex;align-items:center;justify-content:center;gap:12px}
 .avatar{width:46px;height:46px;border-radius:50%;background:var(--color-primary);color:#fff;
   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
@@ -327,6 +345,25 @@ a.avatar{text-decoration:none;cursor:pointer}
 .slider-dots button{width:9px;height:9px;border-radius:50%;border:none;background:var(--color-border);
   cursor:pointer;padding:0;transition:.2s}
 .slider-dots button.active{background:var(--color-primary);width:22px;border-radius:999px}
+/* Điện thoại không đủ ngang cho 2 cột — xếp DỌC 2 thẻ trong cùng 1 trang thay vì thu hẹp cột tới
+   mức khó đọc (giữ nguyên chiều cao 300px/thẻ, chỉ đổi hướng xếp). */
+@media(max-width:768px){ .review-slide{flex-direction:column} }
+
+/* Dialog "Xem thêm" đánh giá — xem trọn nội dung bị .card-review p.quote cắt bằng line-clamp ở
+   trên. Modal RIÊNG cho trang công khai (khác dlg-* chỉ dùng trong admin.html); nội dung được clone
+   thẳng từ .card-review đang bấm (giữ nguyên avatar/tên/link Facebook nếu có) — xem JS
+   openReviewModal(). */
+.review-modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;
+  align-items:center;justify-content:center;padding:var(--sp-3)}
+.review-modal-overlay.show{display:flex}
+.review-modal{background:#fff;border-radius:var(--radius-lg);padding:var(--sp-5) var(--sp-4);
+  max-width:480px;width:100%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-md)}
+.review-modal-close{position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;
+  cursor:pointer;color:var(--color-text-muted);line-height:1;padding:6px}
+.review-modal-close:hover{color:var(--color-primary)}
+#reviewModalBody.card-review{height:auto;box-shadow:none;border:none;padding:0}
+#reviewModalBody .quote-wrap{flex:none;overflow:visible}
+#reviewModalBody .quote{-webkit-line-clamp:unset;overflow:visible}
 
 /* ==================== TIN TỨC ==================== */
 .grid-posts{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
@@ -761,10 +798,17 @@ footer a:hover{color:#fff}
       <div class="reviews-viewport">
         <div class="reviews-track" id="reviewsTrack">
 
+          <!-- 1 ".review-slide" = 1 TRANG, chứa TỐI ĐA 2 ".card-review" xếp ngang (PM yêu cầu
+               2026-09-11: hiện 2 thẻ/lần thay vì 1) — thêm review mới thì đếm số thẻ đang có trong
+               trang CUỐI: còn 1 thẻ thì thêm vào ngay trang đó cho đủ 2, đã đủ 2 thì mở trang mới
+               (copy nguyên khối <div class="review-slide">...</div>). Mỗi thẻ PHẢI có đúng nút
+               <button class="review-more" hidden>Xem thêm</button> ngay sau ".quote" — JS tự ẩn/
+               hiện nút này tuỳ nội dung có bị cắt hay không, không cần tự tay xoá nếu review ngắn. -->
           <div class="review-slide">
             <div class="card-review">
               <div class="stars">★★★★★</div>
-              <p class="quote">"Làm visa thủ tục nhanh gọn, dịch vụ nói chung rất tốt."</p>
+              <div class="quote-wrap"><p class="quote">"Làm visa thủ tục nhanh gọn, dịch vụ nói chung rất tốt."</p></div>
+              <button type="button" class="review-more" hidden>Xem thêm</button>
               <div class="reviewer">
                 <div class="avatar">K</div>
                 <div class="reviewer-info">
@@ -774,12 +818,10 @@ footer a:hover{color:#fff}
               </div>
               <div class="review-source">📘 Đánh giá thật trên Facebook · 08/2025</div>
             </div>
-          </div>
-
-          <div class="review-slide">
             <div class="card-review">
               <div class="stars">★★★★★</div>
-              <p class="quote">"Nhân viên hướng dẫn nhiệt tình, lịch sự, giải đáp mọi thắc mắc dù nhiều việc không thuộc chuyên môn. Visa ra nhanh như tia chớp — chắc chắn sẽ giới thiệu cho bạn bè!"</p>
+              <div class="quote-wrap"><p class="quote">"Nhân viên hướng dẫn nhiệt tình, lịch sự, giải đáp mọi thắc mắc dù nhiều việc không thuộc chuyên môn. Visa ra nhanh như tia chớp — chắc chắn sẽ giới thiệu cho bạn bè!"</p></div>
+              <button type="button" class="review-more" hidden>Xem thêm</button>
               <div class="reviewer">
                 <div class="avatar">P</div>
                 <div class="reviewer-info">
@@ -791,10 +833,6 @@ footer a:hover{color:#fff}
             </div>
           </div>
 
-          <!-- Thêm đánh giá mới: copy nguyên khối <div class="review-slide">...</div> ở trên,
-               sửa nội dung (sao, câu nói, tên, loại khách, nguồn), dán thêm vào đây.
-               Không cần sửa JS — slider tự nhận thêm slide mới. -->
-
         </div>
       </div>
       <button class="slider-arrow slider-next" id="reviewNext" aria-label="Xem đánh giá tiếp theo">›</button>
@@ -802,6 +840,16 @@ footer a:hover{color:#fff}
     <div class="slider-dots" id="reviewDots"></div>
   </div>
 </section>
+
+<!-- Dialog "Xem thêm" đánh giá — 1 dialog DÙNG CHUNG cho MỌI thẻ đánh giá (tĩnh lẫn động), nội dung
+     bên trong (#reviewModalBody) được JS clone thẳng từ .card-review đang bấm lúc mở, xem hàm
+     openReviewModal() cạnh initReviewsSlider(). -->
+<div class="review-modal-overlay" id="reviewModalOverlay">
+  <div class="review-modal">
+    <button type="button" class="review-modal-close" id="reviewModalClose" aria-label="Đóng">✕</button>
+    <div class="card-review" id="reviewModalBody"></div>
+  </div>
+</div>
 
 <!-- ==================== THỦ TỤC VISA — lưới đầy đủ (Kaizen 2026-09-11) ====================
      Lưới rỗng lúc tải trang — script cuối trang tự nạp bài viết đúng danh mục cố định "Thủ tục
@@ -1124,8 +1172,40 @@ function initReviewsSlider(){
 
   reviewsUpdate();
   reviewsRestartAutoplay();
+
+  // "Xem thêm": chỉ hiện nút nếu nội dung THẬT SỰ bị line-clamp cắt (scrollHeight > clientHeight) —
+  // review ngắn không có gì để "xem thêm" thì tự ẩn nút, không cần đếm ký tự tay.
+  track.querySelectorAll('.card-review').forEach(card => {
+    const q = card.querySelector('.quote');
+    const btn = card.querySelector('.review-more');
+    if(q && btn) btn.hidden = q.scrollHeight <= q.clientHeight + 1; // +1 chống lệch làm tròn subpixel
+  });
 }
 initReviewsSlider();
+
+/* Dialog "Xem thêm" đánh giá — CSS ".review-modal-overlay"/"#reviewModalBody" (mục "REVIEWS SLIDER").
+   Event delegation trên document (giống mẫu #floatContact/menu mobile có sẵn trong file) vì nút
+   ".review-more" có thể được tạo LẠI bất kỳ lúc nào (feedback khách hàng động thay nội dung
+   #reviewsTrack bằng innerHTML — gắn listener trực tiếp vào từng nút sẽ mất khi bị thay). */
+function openReviewModal(cardEl){
+  const body = document.getElementById('reviewModalBody');
+  if(!body || !cardEl) return;
+  body.innerHTML = cardEl.innerHTML;
+  const moreBtn = body.querySelector('.review-more');
+  if(moreBtn) moreBtn.remove(); // đã xem trọn nội dung trong dialog rồi, không cần nút này nữa
+  document.getElementById('reviewModalOverlay').classList.add('show');
+  document.documentElement.style.overflow = 'hidden';
+}
+function closeReviewModal(){
+  document.getElementById('reviewModalOverlay').classList.remove('show');
+  document.documentElement.style.overflow = '';
+}
+document.addEventListener('click', e => {
+  const moreBtn = e.target.closest('.review-more');
+  if(moreBtn){ openReviewModal(moreBtn.closest('.card-review')); return; }
+  if(e.target.id === 'reviewModalClose' || e.target.id === 'reviewModalOverlay') closeReviewModal();
+});
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeReviewModal(); });
 
 /* ==================== GIÁ DỊCH VỤ (từ admin.html — Cài đặt chung, Phase 7) ====================
    Giá "Tổng từ x đ" trong HTML chỉ là fallback tĩnh — cập nhật lại đúng giá thật đang cấu hình ở
@@ -1200,7 +1280,7 @@ function fixInitialHashScroll(){
 
     const track = document.getElementById('reviewsTrack');
     if(!track) return;
-    track.innerHTML = rows.map(r=>{
+    const cardHtml = r => {
       const initial = escFb((r.ten_facebook||'?').trim().charAt(0).toUpperCase() || '?');
       // Ưu tiên tháng/năm THẬT do admin tự chọn (PM có thể nhập bù đánh giá cũ từ lâu, không phải
       // lúc nào cũng khớp ngày tạo dòng) — chỉ khi thiếu (dữ liệu cũ trước khi có 2 cột này) mới
@@ -1208,16 +1288,24 @@ function fixInitialHashScroll(){
       let monthYear = '';
       if(r.thang && r.nam) monthYear = String(r.thang).padStart(2,'0')+' - '+r.nam;
       else if(r.created_at){ const d = new Date(r.created_at); monthYear = String(d.getMonth()+1).padStart(2,'0')+' - '+d.getFullYear(); }
-      return '<div class="review-slide"><div class="card-review">'+
+      return '<div class="card-review">'+
         '<div class="stars">★★★★★</div>'+
-        '<p class="quote">"'+escFb(r.noi_dung)+'"</p>'+
+        '<div class="quote-wrap"><p class="quote">"'+escFb(r.noi_dung)+'"</p></div>'+
+        '<button type="button" class="review-more" hidden>Xem thêm</button>'+
         '<div class="reviewer">'+
           '<a class="avatar" href="'+escFb(r.url)+'" target="_blank" rel="noopener" aria-label="Xem đánh giá trên Facebook">'+initial+'</a>'+
           '<div class="reviewer-info"><div class="name"><a href="'+escFb(r.url)+'" target="_blank" rel="noopener">'+escFb(r.ten_facebook)+' <span class="ext-ic">↗</span></a></div></div>'+
         '</div>'+
         '<div class="review-source">📘 Đánh giá thật trên Facebook'+(monthYear?' · '+monthYear:'')+'</div>'+
-      '</div></div>';
-    }).join('');
+      '</div>';
+    };
+    // Gộp 2 đánh giá/trang (PM yêu cầu 2026-09-11, xem CSS ".review-slide" mục "REVIEWS SLIDER") —
+    // lẻ thì trang cuối chỉ còn 1 thẻ, CSS flex tự co giãn đúng, không cần xử lý riêng.
+    let slidesHtml = '';
+    for(let i = 0; i < rows.length; i += 2){
+      slidesHtml += '<div class="review-slide">' + rows.slice(i, i + 2).map(cardHtml).join('') + '</div>';
+    }
+    track.innerHTML = slidesHtml;
     initReviewsSlider();
   }catch(e){ /* im lặng bỏ qua nếu không tải được, giữ 2 review tĩnh cũ trong HTML */ }
   finally{ fixInitialHashScroll(); }

@@ -277,6 +277,17 @@ h1.section-title{font-size:32px;font-weight:700;text-align:center;margin-bottom:
 .article-meta{font-size:13px;color:var(--color-text-muted);margin-bottom:var(--sp-3)}
 .article-body{font-size:16px;line-height:1.8;color:var(--color-text);white-space:pre-wrap}
 .article-cover{width:100%;max-height:420px;object-fit:cover;border-radius:var(--radius-lg);margin-bottom:var(--sp-3)}
+/* Ẩn nhưng vẫn đọc được bởi trình đọc màn hình/Google — dùng cho H1 "/tin-tuc" (bỏ tiêu đề to hiển
+   thị trùng lặp với subtitle theo yêu cầu PM, vẫn giữ đúng 1 H1 ngữ nghĩa/trang cho SEO, mục T2). */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* Nút "← Tất cả tin tức" — đổi từ link chữ thường sang dạng pill bo tròn cho sinh động hơn +
+   margin-bottom để tách hẳn khỏi ảnh bìa/nội dung ngay bên dưới (trước đây sát vào ảnh, khó bấm
+   vì "*{margin:0}" reset chung của site xoá hết margin mặc định của thẻ <p>). */
+.back-to-list{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;
+  color:var(--color-primary);text-decoration:none;background:var(--color-primary-light);
+  padding:8px 16px;border-radius:var(--radius-full);transition:.2s;margin-bottom:var(--sp-4)}
+.back-to-list:hover{background:var(--color-primary);color:#fff;transform:translateX(-3px)}
 `;
 
 const DEFAULT_OG_IMAGE = 'https://topvisa5s.com/assets/og-image.png';
@@ -363,8 +374,10 @@ ${chrome.navbar}
 <main id="noi-dung">
 <section id="tin-tuc-home">
   <div class="container">
-    <h1 class="section-title">Tin tức &amp; Khám phá thế giới</h1>
-    <p class="section-sub">Kinh nghiệm du lịch, văn hoá và tin tức mới nhất từ Top Visa 5S</p>
+    <!-- PM phản hồi 2026-09-11: bỏ tiêu đề to "Tin tức & Khám phá thế giới" hiển thị TRÙNG với tiêu
+         đề vùng đầu tiên bên dưới ("Xử lý hồ sơ khách hàng"...) — giữ lại đúng 1 H1 ngữ nghĩa cho
+         SEO (mục T2) nhưng ẩn khỏi mắt bằng .sr-only, không xoá hẳn khỏi HTML. -->
+    <h1 class="sr-only">Tin tức – Top Visa 5S</h1>
     ${!orderedGroups.length ? '<p style="text-align:center;color:var(--color-text-muted)">Chưa có bài viết nào.</p>' : ''}
   </div>
 </section>
@@ -444,7 +457,7 @@ ${chrome.navbar}
 <main id="noi-dung">
 <section id="tin-tuc-topic">
   <div class="container">
-    <p><a href="/tin-tuc">← Tất cả tin tức</a></p>
+    <a href="/tin-tuc" class="back-to-list">← Tất cả tin tức</a>
     <h1 class="section-title">${escHtml(label)}</h1>
     <p class="section-sub">${topicPosts.length} bài viết</p>
     <div class="grid-posts">${gridHtml}</div>
@@ -534,7 +547,7 @@ ${chrome.navbar}
 <main id="noi-dung">
 <section id="tin-tuc-post">
   <div class="container" style="max-width:760px">
-    <p><a href="/tin-tuc">← Tất cả tin tức</a></p>
+    <a href="/tin-tuc" class="back-to-list">← Tất cả tin tức</a>
     ${cover}
     <div class="cat">${escHtml(p.categories?.name || 'Tin tức')}</div>
     <h1 class="article-title">${escHtml(p.title)}</h1>
