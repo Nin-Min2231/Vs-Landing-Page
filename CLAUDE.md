@@ -3751,3 +3751,92 @@ cột):**
 back-điện-thoại đóng dialog trên thiết bị thật (logic đã xác nhận đúng qua mô phỏng, nhưng công cụ
 test trong môi trường agent không đo được `scrollY`/cử chỉ back thật đáng tin cậy — cùng giới hạn đã
 ghi ở mục 66).
+
+## 68. Dialog "Đăng ký tư vấn" — 4 nút CTA mở dialog tại chỗ thay vì cuộn xuống #dang-ky (2026-09-13)
+
+**Bối cảnh:** 4 nút "Đăng ký tư vấn" (menu)/"Đăng ký tư vấn miễn phí" (hero)/"Tư vấn ngay" (từng
+card dịch vụ)/"Tư vấn miễn phí" (footer dialog Đánh giá/Thủ tục Visa, mục 67) đều CUỘN xuống section
+`#dang-ky` — PM phản hồi bất tiện (mất vị trí đang xem), yêu cầu hiện dialog tại chỗ, dùng đúng
+khuôn `.pub-dialog-*` (mục 67).
+
+**Quyết định kiến trúc quan trọng nhất — KHÔNG tạo form thứ 2:** thay vì nhân bản `#leadForm` với ID
+khác cho riêng dialog (sẽ cần viết lại/song song hoá validate + gửi lead — đúng kiểu "2 bản sao dễ
+lệch nhau" đã cảnh báo lặp đi lặp lại trong dự án, mục 45/46/52/56/60/67), giải pháp là **DI CHUYỂN
+THẲNG node `.form-card`** (chứa `#leadForm`/`#formSuccess` THẬT, nguyên vẹn ID + submit handler đang
+chạy ổn định) từ `#dang-ky` vào `#registerDialogBody` lúc mở, rồi trả về ĐÚNG vị trí cũ (dùng 1
+`<!--form-card-placeholder-->` comment node đánh dấu chỗ chèn lại) lúc đóng — không đụng gì tới
+logic gửi lead đang chạy, không nhân bản field/validate.
+- `moveRegisterFormIntoDialog()`/`restoreRegisterForm()` (biến module-level `dangKyFormCard`/
+  `dangKyPlaceholder`) — idempotent, gọi lại khi form đã ở đúng nơi thì không làm gì (so sánh
+  `parentNode`).
+- **Mở rộng "DIALOG CHUNG" (mục 67) thêm registry `pubDialogOnClose[overlayId]`** — mỗi dialog có
+  thể đăng ký 1 hàm dọn dẹp riêng chạy SAU khi đóng (ở đây: `pubDialogOnClose['registerDialogOverlay']
+  = restoreRegisterForm`), cả `pubDialogClose()` LẪN `popstate` listener đều gọi đúng hàm này —
+  dialog MỚI sau này KHÔNG cần cơ chế này nếu không có gì phải dọn (bỏ qua an toàn, `if(...)` có
+  check tồn tại).
+- **`openRegisterDialog()` là điểm vào DUY NHẤT cho cả 4 nút, xử lý đúng 2 tình huống:**
+  1. Không có dialog nào đang mở → gọi `pubDialogOpen()` bình thường (push 1 mốc lịch sử).
+  2. **ĐANG có dialog khác mở** (bấm "Tư vấn miễn phí" từ ngay trong dialog Đánh giá/Thủ tục Visa)
+     → chỉ ẩn overlay cũ + hiện overlay Đăng ký, **KHÔNG gọi thêm `pubDialogOpen()`/`pubDialogClose()`**
+     (tức không push/pop thêm lịch sử) — lý do: gọi `history.back()` rồi `history.pushState()` ngay
+     trong CÙNG 1 tick có thứ tự xử lý không chắc chắn giữa các trình duyệt (traverse history vốn
+     là tác vụ hàng đợi, không đồng bộ tức thời) — tránh hẳn rủi ro này bằng cách chỉ đổi NỘI DUNG
+     hiển thị, giữ nguyên đúng 1 mốc lịch sử ảo đã có từ trước. Hệ quả: dù người dùng "chuyển" qua
+     bao nhiêu dialog trong 1 phiên, bấm back 1 lần vẫn đóng gọn tất cả — đã tự test xác nhận (mở
+     Đánh giá → bấm "Tư vấn miễn phí" bên trong → back 1 lần → cả 2 overlay đóng, form-card về đúng
+     chỗ, KHÔNG cần bấm back 2 lần).
+- `pickCountry(name)` (nút "Tư vấn ngay" từng card dịch vụ) đổi dòng cuối từ
+  `scrollIntoView(...)` → `openRegisterDialog()` — chọn quốc gia trong `<select id="country">` vẫn
+  giữ nguyên logic cũ (set `.value`), tự động "đi theo" vì đang thao tác trên ĐÚNG node thật, không
+  phải bản sao.
+- 2 nút `<a href="#dang-ky">` (menu, hero) thêm `onclick="return openRegisterDialogClick(event)"` —
+  bấm thường mở dialog (`preventDefault`), Ctrl/Cmd/Shift+click/click giữa vẫn để trình duyệt tự
+  điều hướng theo `href` thật (dự phòng khi JS lỗi/tắt, cùng kỹ thuật `openPostDialogClick()` mục
+  "T4"/64).
+- 2 nút `.pub-dialog-foot button` (footer dialog Đánh giá/Thủ tục Visa) đổi `onclick` từ
+  `pubDialogGoRegister()` (hàm cũ chỉ đóng dialog+cuộn, đã XOÁ hẳn) sang `openRegisterDialog()`
+  thẳng.
+
+**Màu sắc/layout (PM yêu cầu "tương thích hệ thống và ấn tượng"):** header dialog dùng modifier MỚI
+`.pub-dialog-head-accent` — tô gradient `--color-primary`→`--color-primary-dark` (ĐÚNG màu section
+`#dang-ky` ngoài trang, không bịa màu mới), tiêu đề/nút đóng đổi sang trắng — tạo cảm giác "hành động
+chuyển đổi quan trọng", khác hẳn header trắng trung tính của 2 dialog thông tin thuần (Đánh giá/Thủ
+tục Visa, mục 67) vẫn giữ nguyên không đổi. `.pub-dialog-body .form-card{background:none;box-shadow:
+none;padding:0;border-radius:0}` — bỏ khung card trắng/đổ bóng/padding riêng của `.form-card` (dư
+thừa khi đã nằm trong `.pub-dialog-body` cũng nền trắng + padding 32px sẵn có) để tránh 2 lớp khung
+lồng nhau nhìn rối; `.pub-dialog-lg` (720px, đã có từ mục 67) đủ rộng cho 5 field xếp 1 cột, khớp
+gần đúng bề ngang form-card cũ khi còn là cột thứ 2 của `.register-grid` (~630px ở container 1200px),
+không cần chỉnh CSS field/input gì thêm.
+
+**KHÔNG đụng `<section id="dang-ky">` — vẫn nguyên vẹn trên trang** (chỉ tạm "mượn" `.form-card` con
+của nó lúc dialog mở): link `/#dang-ky` từ trang khác (`lien-he.html`) vẫn hoạt động y hệt cũ, cuộn
+tới đúng chỗ với form-card còn nguyên tại vị trí gốc (TRƯỚC khi có tương tác dialog nào trong phiên
+đó). Khi dialog đang mở, nền trang bị `overflow:hidden` + backdrop che kín nên khoảng trống tạm thời
+ở `#dang-ky` (thiếu form-card) không bao giờ lọt vào mắt người dùng.
+
+**Đã test (Claude Browser, server tĩnh cục bộ):**
+- Cả 4 đường vào (`click menu`, `click hero`, `pickCountry('Nhật Bản')`, bấm "Tư vấn miễn phí" từ
+  trong dialog Đánh giá) đều mở đúng dialog, `location.href`/`pathname`/`hash` KHÔNG đổi (không rời
+  vị trí đang xem) — đúng trọng tâm yêu cầu "bất tiện vì phải cuộn".
+- `.form-card`/`#leadForm` xác nhận DI CHUYỂN đúng (biến mất khỏi `#dang-ky`, xuất hiện trong
+  `#registerDialogBody`, `#leadForm` vẫn cùng 1 id — không phải bản sao) lúc mở; đóng lại xác nhận
+  `.form-card` trở về ĐÚNG vị trí cũ (`container.lastElementChild` khớp, `gridChildCount` vẫn đúng
+  2 như ban đầu — không tạo dư/thiếu phần tử).
+- Chuyển từ dialog Đánh giá sang dialog Đăng ký (bấm "Tư vấn miễn phí" bên trong): `pubDialogOpenId`
+  đổi đúng, `pubDialogHistoryPushed` VẪN `true` (không push thêm lần 2) — bấm back 1 lần đóng sạch
+  cả 2, `href` không đổi.
+- Đo `getBoundingClientRect()` của `.pub-dialog-head` TRƯỚC/SAU khi cuộn `.pub-dialog-body` (cả
+  desktop 1280px lẫn mobile 375px) — toạ độ header không đổi, xác nhận đúng "header đứng yên, chỉ
+  nội dung cuộn" kế thừa từ khuôn chung (mục 67).
+- Ảnh chụp thật (desktop + mobile 375×812) xác nhận trực quan: header gradient xanh dương/chữ
+  trắng, form trắng sạch không còn khung card thừa, nút CTA cam nổi bật, đúng 5 field, chữ rõ ràng —
+  khớp đúng ngôn ngữ thiết kế hiện có của trang (không có yếu tố lạ/lệch tông).
+- `node --check` toàn bộ `<script>` inline + cân bằng thẻ HTML: OK.
+
+**⚠️ Chưa kiểm chứng được (cần deploy thật + PM tự thử):** gửi lead THẬT qua dialog mới (đã xác
+nhận cấu trúc form/id nguyên vẹn nên VỀ MẶT LOGIC submit handler cũ vẫn chạy y hệt, nhưng chưa POST
+thử lên Supabase thật từ ngữ cảnh dialog để chắc chắn 100%); trải nghiệm thật trên điện thoại (cuộn
+trong dialog bằng ngón tay, bàn phím ảo che ô nhập cuối `#note`/`#submitBtn` hay không — .pub-
+dialog-body chỉ có `overflow-y:auto` thường, KHÔNG dùng cơ chế `visualViewport` như Chat Box mục 66
+vì dialog form ngắn hơn nhiều, thường không bị bàn phím che hết, nhưng nên PM tự xác nhận trên máy
+thật, đặc biệt khi gõ dài ở "Ghi chú").

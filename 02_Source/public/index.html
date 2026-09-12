@@ -404,6 +404,20 @@ a.avatar{text-decoration:none;cursor:pointer}
   .pub-dialog-foot{flex-direction:column;align-items:stretch}
   .pub-dialog-foot .btn{width:100%;text-align:center}
 }
+/* Modifier tô màu header theo đúng gradient của section #dang-ky ngoài trang (dùng lại NGUYÊN biến
+   màu --color-primary/--color-primary-dark/--color-accent, không bịa màu mới) — dành cho dialog là
+   1 HÀNH ĐỘNG chuyển đổi quan trọng (đăng ký tư vấn), nổi bật hơn hẳn 2 dialog thông tin thuần
+   (Đánh giá/Thủ tục Visa) vẫn dùng header trắng mặc định. */
+.pub-dialog-head-accent{background:linear-gradient(135deg,var(--color-primary) 0%,var(--color-primary-dark) 100%);
+  border-bottom:none}
+.pub-dialog-head-accent .pub-dialog-title{color:#fff}
+.pub-dialog-head-accent .pub-dialog-close{color:rgba(255,255,255,.85)}
+.pub-dialog-head-accent .pub-dialog-close:hover{color:#fff}
+
+/* Dialog "Đăng ký tư vấn" — bên trong .pub-dialog-body là ĐÚNG ".form-card" thật (di chuyển từ
+   #dang-ky vào, xem JS moveRegisterFormIntoDialog()) — bỏ khung card thừa (nền trắng/bo góc/đổ bóng
+   riêng) vì .pub-dialog-body đã là khung trắng + padding riêng rồi, giữ lại thẳng luôn field/nút. */
+.pub-dialog-body .form-card{background:none;box-shadow:none;padding:0;border-radius:0}
 
 /* Nội dung riêng dialog "Đánh giá" — bên trong .pub-dialog-body, GIỮ class "card-review" trên
    #reviewModalBody để tái dùng nguyên CSS ".quote"/".reviewer"/... đã định nghĩa ở mục "REVIEWS
@@ -725,7 +739,7 @@ footer a:hover{color:#fff}
       <li><a href="/tin-tuc">📰 Tin tức</a></li>
       <li><a href="#faq">❓ FAQ</a></li>
       <li><a href="/lien-he">📍 Liên hệ</a></li>
-      <li><a href="#dang-ky" class="btn btn-cta" style="padding:10px 20px">📝 Đăng ký tư vấn</a></li>
+      <li><a href="#dang-ky" class="btn btn-cta" style="padding:10px 20px" onclick="return openRegisterDialogClick(event)">📝 Đăng ký tư vấn</a></li>
     </ul>
     <button class="hamburger" id="hamburger" aria-label="Mở menu">☰</button>
     <!-- 2 script dưới đây CỐ Ý đặt bên trong thẻ nav (không đặt phía sau) để getSiteChrome()
@@ -770,7 +784,7 @@ footer a:hover{color:#fff}
     <div>
       <h1>Dịch vụ Visa trọn gói —<br><em>Đậu cao, xử lý nhanh</em>, hỗ trợ tận tâm</h1>
       <p class="lead">Chuyên visa Nhật Bản, Hàn Quốc, Đài Loan, Trung Quốc, Schengen, Mỹ, Úc. Tư vấn miễn phí, làm hồ sơ từ A đến Z, cam kết minh bạch chi phí — <b>đậu visa mới thu phí dịch vụ</b>.</p>
-      <a href="#dang-ky" class="btn btn-cta">✈ Đăng ký tư vấn miễn phí</a>
+      <a href="#dang-ky" class="btn btn-cta" onclick="return openRegisterDialogClick(event)">✈ Đăng ký tư vấn miễn phí</a>
       <div class="usp-highlight">
         <span class="usp-icon">🛡️</span>
         <div>
@@ -935,7 +949,7 @@ footer a:hover{color:#fff}
     </div>
     <div class="pub-dialog-foot">
       <a href="tel:0935887922" class="pub-dialog-foot-phone js-tel-link">📞 <span class="js-hotline">0935 887 922</span></a>
-      <button type="button" class="btn btn-primary" onclick="pubDialogGoRegister()">Tư vấn miễn phí</button>
+      <button type="button" class="btn btn-primary" onclick="openRegisterDialog()">Tư vấn miễn phí</button>
     </div>
   </div>
 </div>
@@ -967,7 +981,7 @@ footer a:hover{color:#fff}
     <div class="pub-dialog-body" id="postModalBody"></div>
     <div class="pub-dialog-foot">
       <a href="tel:0935887922" class="pub-dialog-foot-phone js-tel-link">📞 <span class="js-hotline">0935 887 922</span></a>
-      <button type="button" class="btn btn-primary" onclick="pubDialogGoRegister()">Tư vấn miễn phí</button>
+      <button type="button" class="btn btn-primary" onclick="openRegisterDialog()">Tư vấn miễn phí</button>
     </div>
   </div>
 </div>
@@ -1070,6 +1084,21 @@ footer a:hover{color:#fff}
     </div>
   </div>
 </section>
+
+<!-- Dialog "Đăng ký tư vấn" — RỖNG sẵn, ".form-card" (#leadForm/#formSuccess THẬT) được JS di
+     chuyển vào #registerDialogBody lúc mở 1 trong 4 nút gọi tới (menu/hero/card dịch vụ/footer
+     dialog khác) — xem hàm openRegisterDialog() cạnh #dang-ky. Header tô màu chủ đạo
+     (".pub-dialog-head-accent") để nổi bật hơn 2 dialog thông tin (Đánh giá/Thủ tục Visa), khớp
+     đúng màu section #dang-ky ngoài trang. -->
+<div class="pub-dialog-overlay" id="registerDialogOverlay">
+  <div class="pub-dialog pub-dialog-lg">
+    <div class="pub-dialog-head pub-dialog-head-accent">
+      <div class="pub-dialog-title">Đăng ký tư vấn miễn phí</div>
+      <button type="button" class="pub-dialog-close" id="registerDialogClose" aria-label="Đóng">✕</button>
+    </div>
+    <div class="pub-dialog-body" id="registerDialogBody"></div>
+  </div>
+</div>
 
 </main>
 
@@ -1324,6 +1353,10 @@ initReviewsSlider();
    tạp — dialog MỚI sau này chỉ cần gọi `pubDialogOpen('<id-overlay>')` lúc mở xong nội dung, KHÔNG
    viết lại logic đóng/back/Esc riêng. */
 let pubDialogOpenId = null, pubDialogHistoryPushed = false;
+// overlayId -> hàm dọn dẹp riêng chạy SAU KHI dialog đó đóng (vd trả .form-card của "Đăng ký tư
+// vấn" về đúng chỗ cũ trên trang, xem hàm openRegisterDialog() cạnh #dang-ky) — dialog nào không
+// cần dọn gì thì khỏi đăng ký, bỏ qua an toàn.
+const pubDialogOnClose = {};
 function pubDialogOpen(overlayId){
   document.getElementById(overlayId).classList.add('show');
   document.documentElement.style.overflow = 'hidden';
@@ -1333,27 +1366,26 @@ function pubDialogOpen(overlayId){
 }
 function pubDialogClose(){
   if(!pubDialogOpenId) return;
-  document.getElementById(pubDialogOpenId).classList.remove('show');
+  const closingId = pubDialogOpenId;
+  document.getElementById(closingId).classList.remove('show');
   document.documentElement.style.overflow = '';
   pubDialogOpenId = null;
   if(pubDialogHistoryPushed){
     pubDialogHistoryPushed = false;
     history.back();
   }
+  if(pubDialogOnClose[closingId]) pubDialogOnClose[closingId]();
 }
 window.addEventListener('popstate', function(){
   if(pubDialogOpenId){
-    document.getElementById(pubDialogOpenId).classList.remove('show');
+    const closingId = pubDialogOpenId;
+    document.getElementById(closingId).classList.remove('show');
     document.documentElement.style.overflow = '';
     pubDialogOpenId = null;
     pubDialogHistoryPushed = false;
+    if(pubDialogOnClose[closingId]) pubDialogOnClose[closingId]();
   }
 });
-// Nút "Tư vấn miễn phí" ở footer — đóng dialog đang mở rồi cuộn tới đúng form đăng ký trang chủ.
-function pubDialogGoRegister(){
-  pubDialogClose();
-  document.getElementById('dang-ky')?.scrollIntoView({behavior:'smooth', block:'start'});
-}
 document.addEventListener('click', e => {
   if(e.target.classList.contains('pub-dialog-close') || e.target.classList.contains('pub-dialog-overlay')) pubDialogClose();
 });
@@ -1634,11 +1666,63 @@ window.addEventListener('scroll', ()=>{
   scrollTopBtn.classList.toggle('show', window.scrollY > 600);
 });
 
+/* ==================== DIALOG "ĐĂNG KÝ TƯ VẤN" (2026-09-13, PM yêu cầu) ====================
+   Trước đây 4 nút ("Đăng ký tư vấn" ở menu, "Đăng ký tư vấn miễn phí" ở hero, "Tư vấn ngay" ở từng
+   card dịch vụ, "Tư vấn miễn phí" ở footer dialog Đánh giá/Thủ tục Visa) đều CUỘN xuống section
+   #dang-ky — PM phản hồi bất tiện, giờ mở DIALOG tại chỗ thay vì rời khỏi vị trí đang xem.
+   ⚠️ KHÔNG tạo form thứ 2: dùng đúng khuôn DIALOG CHUNG (.pub-dialog-*) rồi DI CHUYỂN THẲNG
+   ".form-card" (chứa #leadForm/#formSuccess THẬT, nguyên vẹn ID + submit handler đã có) từ #dang-ky
+   vào trong dialog lúc mở, trả về ĐÚNG vị trí cũ trên trang lúc đóng — tránh nguy cơ "2 form/2 nơi
+   validate dễ lệch nhau" (bài học đã lặp lại nhiều lần trong dự án, xem CLAUDE.md mục 45/46/52/56/60)
+   và không phải sửa gì tới luồng gửi lead đang chạy ổn định. Section #dang-ky vẫn nguyên vẹn trên
+   trang (cuộn tới bình thường nếu vào thẳng bằng link `/#dang-ky` từ trang khác — TRƯỚC khi có
+   tương tác dialog nào, form-card vẫn ở đúng chỗ cũ). */
+let dangKyFormCard = null, dangKyPlaceholder = null;
+function moveRegisterFormIntoDialog(){
+  const body = document.getElementById('registerDialogBody');
+  if(!dangKyFormCard) dangKyFormCard = document.querySelector('#dang-ky .form-card');
+  if(!dangKyFormCard || dangKyFormCard.parentNode === body) return; // đã ở trong dialog rồi
+  dangKyPlaceholder = document.createComment('form-card-placeholder');
+  dangKyFormCard.parentNode.insertBefore(dangKyPlaceholder, dangKyFormCard);
+  body.appendChild(dangKyFormCard);
+}
+function restoreRegisterForm(){
+  if(!dangKyPlaceholder || !dangKyFormCard) return;
+  dangKyPlaceholder.parentNode.insertBefore(dangKyFormCard, dangKyPlaceholder);
+  dangKyPlaceholder.remove();
+  dangKyPlaceholder = null;
+}
+pubDialogOnClose['registerDialogOverlay'] = restoreRegisterForm;
+// Điểm vào DUY NHẤT cho cả 4 nút — nếu ĐANG có dialog khác mở (bấm "Tư vấn miễn phí" từ trong dialog
+// Đánh giá/Thủ tục Visa) chỉ ĐỔI nội dung hiển thị, KHÔNG push/pop thêm lịch sử (tránh
+// history.back()+pushState() chồng chéo thứ tự trong cùng 1 tick) — 1 lần bấm back vẫn đóng gọn cả.
+function openRegisterDialog(){
+  moveRegisterFormIntoDialog();
+  const overlayId = 'registerDialogOverlay';
+  if(pubDialogOpenId === overlayId) return; // đã đang mở sẵn
+  if(pubDialogOpenId){
+    document.getElementById(pubDialogOpenId).classList.remove('show');
+    document.getElementById(overlayId).classList.add('show');
+    pubDialogOpenId = overlayId;
+  } else {
+    pubDialogOpen(overlayId);
+  }
+}
+// Bấm THƯỜNG mở dialog (giữ khách ở lại vị trí đang xem); Ctrl/Cmd/Shift+click hay click giữa (mở
+// tab mới) vẫn để trình duyệt tự điều hướng theo href "#dang-ky" thật — cùng kỹ thuật đã dùng cho
+// card bài viết (xem openPostDialogClick()), phòng hờ khi JS lỗi/tắt vẫn cuộn-tới-anchor bình thường.
+function openRegisterDialogClick(e){
+  if(e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return true;
+  e.preventDefault();
+  openRegisterDialog();
+  return false;
+}
+
 /* ==================== CHỌN QUỐC GIA TỪ CARD ==================== */
 function pickCountry(name){
   const sel = document.getElementById('country');
   [...sel.options].forEach(o=>{ if(o.text===name) sel.value=o.value||o.text; });
-  document.getElementById('dang-ky').scrollIntoView({behavior:'smooth'});
+  openRegisterDialog();
 }
 
 /* ==================== TOAST ==================== */
