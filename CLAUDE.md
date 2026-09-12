@@ -3331,3 +3331,185 @@ xong tự deploy"):**
 `/danh-gia`, B-5 chưa làm), fixed-height/line-clamp cho card Tin tức (T-01/T-04), khung giữ chỗ
 chống nhảy layout (T-07/T-08), L-03 (rating giả `★★★★★`), L-04 (cắt đoạn trích giữa từ), C-08
 (5 bài Thủ tục Visa đá từ khoá với T14 — vẫn hoãn được), C-09 (Markdown rút gọn).
+
+**⚠️ Cập nhật 2026-09-11 (cùng ngày) — sửa lại đoạn "CHƯA push" ở trên cho khớp thực tế, tránh
+tài liệu tự mâu thuẫn:** PM xác nhận đồng ý deploy ngay trong phiên → đã `git commit` + `git push`
+(commit `fde3715`) → Cloudflare tự deploy → đã tự kiểm TRỰC TIẾP TRÊN PRODUCTION THẬT (không chỉ
+code): redirect `/blog`→`/tin-tuc` sống đúng, trang chủ đề `/tin-tuc/chu-de/tin-tuc-kham-pha-the-gioi`
+ra đúng 7 bài, `admin` có đúng 2 tab mới, sitemap đủ 19 URL không còn `/blog`, trang chủ hiện đúng
+2 section mới với dữ liệu THẬT, an ninh (`/worker.js`/`/wrangler.toml`/`/package.json` vẫn 404)
+không đổi, console sạch. Chi tiết đầy đủ + toàn bộ lệnh `curl` đã chạy nằm ở
+`Handover_Phien_Moi.md` bản 23 mục 0 (đã lưu lại thay vì lặp lại ở đây).
+
+## 65. Tô sáng menu trang hiện tại + ảnh dự phòng khi lỗi (đợt A) và làm lại section "Đánh giá" +
+    dọn `/tin-tuc` (đợt B) — 2026-09-12, PM báo/yêu cầu trực tiếp trên production, KHÔNG qua kế
+    hoạch SEO/Kaizen
+
+**Bối cảnh:** PM gửi 2 ảnh chụp production kèm 2 câu hỏi, rồi ngay sau đó đưa tiếp 1 đợt yêu cầu UI
+riêng cho section "Đánh giá" + trang "Tin tức". Cả 2 đợt đã code/test/deploy/xác nhận ngay trong
+phiên, không gộp chờ.
+
+### A. Tô sáng mục menu trang hiện tại + placeholder khi ảnh bài viết tải lỗi (commit `5d7c530`)
+
+**Câu hỏi 1 — "Vì sao hình ảnh trên trang bị lỗi hiển thị":** đã kiểm tra trực tiếp (tải từng ảnh
+qua `fetch()`, giải mã bằng `createImageBitmap()` xác nhận đúng kích thước thật, ví dụ 1280×557) —
+**cả 12 ảnh đại diện bài viết đang publish đều sống, KHÔNG ảnh nào chết/404**. Kết luận: khoảng
+trắng trong ảnh PM chụp không phải "ảnh vỡ" mà do `loading="lazy"` (trình duyệt chỉ tải ảnh khi
+cuộn gần tới) cộng với thời điểm PM chụp đúng lúc ảnh chưa kịp tải xong. **Rủi ro THẬT (kiến trúc,
+không phải bug code):** ảnh bài viết lưu trên **i.postimg.cc** — dịch vụ lưu ảnh miễn phí/ẩn danh
+(chính ô nhập ảnh trong `admin.html` ghi rõ "tải ảnh lên postimages.org để lấy link miễn phí") —
+không có SLA, có thể chặn hotlink/xoá ảnh bất chợt khi tải nhiều. **Không đổi hạ tầng lưu ảnh** (cần
+quyết định lớn hơn, ngoài phạm vi câu hỏi) — chỉ thêm 1 lớp phòng hờ:
+`onerror="tvThumbFallback(this)"` trên `<img class="thumb">` (cả `index.html` `renderPostCardHtml()`
+lẫn `worker.js` `postCardHtml()`) tự thay bằng khối `.thumb-placeholder` "📰" giống bài không có ảnh,
+thay vì icon "ảnh vỡ" xấu của trình duyệt; ảnh bìa bài viết (`.article-cover`, trang chi tiết) dùng
+`onerror="this.remove()"` (đơn giản hơn, không có placeholder tương ứng cho ảnh bìa).
+
+**Câu hỏi 2 — "Tin tức & Khám phá thế giới" là gì / menu "Tin tức" không sáng khi đang ở trang đó:**
+xác nhận dòng chữ đó là tiêu đề trang `/tin-tuc` CỐ Ý thiết kế vậy từ Kaizen (mục 64, giống "Hồ sơ
+xin Visa các nước" của section "Thủ tục Visa") — không phải lỗi lúc trả lời câu hỏi này (⚠️ PM sau
+đó lại yêu cầu bỏ, xem mục B.2 dưới). Lỗi THẬT nằm ở phần 2: menu KHÔNG sáng lên khi đang ở
+`/tin-tuc`/`/lien-he` — vì `initScrollSpy()` (cơ chế tô sáng cũ) chỉ xử lý mục neo `#hash` TRONG
+TRANG CHỦ, không áp dụng cho các trang riêng biệt. Đã thêm 1 script nhỏ tự tô class `.active` (CSS
+`.nav-links a.active` đã có sẵn từ trước, chỉ cần gắn đúng class) dựa theo `location.pathname` khớp
+`href` của từng mục menu — bỏ qua mọi `href` chứa `#` (nhường hẳn cho scrollspy, tránh 2 cơ chế
+giẫm chân nhau).
+
+**⚠️ Đặt script này Ở ĐÂU quyết định có tự động lan toả hay không, và đã tự vướng + tự sửa 1 lỗi
+thật ngay lúc làm:** đặt script NGAY BÊN TRONG `<nav class="navbar">...</nav>` của `index.html`
+(không phải sau thẻ đóng navbar) để `getSiteChrome()` (`worker.js`) trích navbar tự mang theo — có
+mặt tự động trên `/tin-tuc`, `/tin-tuc/<slug>`, trang 404 mà không cần sửa `worker.js`. Lỗi tự
+vướng: viết comment giải thích quy tắc này lại lỡ gõ nguyên văn chuỗi đóng thẻ nav — regex KHÔNG
+THAM LAM của `getSiteChrome()` (`<nav class="navbar">[\s\S]*?<\/nav>`) dừng lại ngay tại LẦN KHỚP
+ĐẦU TIÊN của chuỗi đó, tức dừng NGAY TRONG COMMENT, cắt cụt mất toàn bộ script phía sau — navbar
+trích ra thiếu hẳn tính năng mới, KHÔNG có lỗi cú pháp gì để lộ ra ngoài. Tự phát hiện bằng cách
+import thẳng `worker.js` vào Node rồi kiểm `chrome.navbar.includes('function tvThumbFallback')` →
+ra `false` dù `index.html` gốc đã có đủ → sửa lại cách diễn đạt trong comment (không gõ nguyên
+chuỗi đóng thẻ nav trong khu vực nằm giữa cặp thẻ đó) → kiểm lại ra `true`. **Bài học chung (xem
+thêm mục 3 bài học AQ ở `Handover_Phien_Moi.md`): bất kỳ vùng text nào bị 1 regex "không tham lam"
+(`[\s\S]*?`) quét ngang qua, phải tránh gõ nguyên văn chính cái token nó đang tìm — dù chỉ nằm
+trong comment/chú thích, không phải mã thực thi.**
+
+4 trang tĩnh (`chinh-sach-bao-mat`/`dieu-khoan-dich-vu`/`lien-he`/`cong-cu/uoc-tinh-chi-phi-visa`)
+không đi qua `getSiteChrome()` nên phải copy tay đúng script này vào navbar của TỪNG file (đúng bài
+học CLAUDE.md mục 60.E — không có cơ chế tự đồng bộ).
+
+**Đã test:** logic JS (so khớp `path`/`href`) test riêng bằng `javascript_exec` với nhiều path giả
+lập trước khi deploy (`/`, `/tin-tuc`, `/tin-tuc/chu-de/...`, `/tin-tuc/<slug>-<id>`, `/lien-he`,
+`/chinh-sach-bao-mat` — xác nhận không mục nào bị sáng nhầm ở trang không liên quan); `node --check`
++ cân bằng thẻ HTML cho cả 6 file sửa. Sau deploy: xác nhận `.active` thật sự áp dụng + đổi đúng màu
+xanh chủ đạo trên `/tin-tuc` (đo bằng `getComputedStyle` trên production thật), hồi quy đủ 7 route
+(`/`, `/tin-tuc`, `/lien-he`, 3 trang tĩnh, `/khong-ton-tai`) + an ninh (`/worker.js` v.v. vẫn 404)
++ `/blog` vẫn 301.
+
+### B. Section "Đánh giá" — 2 thẻ/lần, cao cố định, cắt nội dung + "Xem thêm"; `/tin-tuc` bỏ tiêu đề
+    trùng; nút "← Tất cả tin tức" sinh động hơn (commit `fa9df76`)
+
+**3 yêu cầu PM, cả 3 nằm trong `02_Source/public/index.html` + `02_Source/worker.js`:**
+
+**B.1 Reviews slider** (`#reviewsTrack`) — trước đây MỖI trang chỉ 1 thẻ đánh giá, cao co giãn theo
+nội dung (1 review dài 1001 ký tự từng làm cả dãy cao 618px trong khi review ngắn chỉ cần ~292px,
+dư nhiều khoảng trắng — bài học AJ ở `Handover_Phien_Moi.md` bản 23, lúc đó vẫn còn tồn đọng). Đổi
+cấu trúc: **mỗi `.review-slide` giờ là 1 TRANG chứa TỐI ĐA 2 `.card-review`** xếp ngang
+(`.review-slide{display:flex;gap:var(--sp-3)}`), mỗi thẻ **cao cố định 300px**
+(`.card-review{height:300px}`, `flex:1 1 0` để 2 thẻ chia đều bề ngang trang). Nội dung dài cắt còn
+4 dòng bằng `-webkit-line-clamp:4` + nút "Xem thêm" — JS (`initReviewsSlider()`) tự đo
+`scrollHeight` so với `clientHeight` của `.quote` sau MỖI lần render (cả lúc tải trang lẫn sau khi
+feedback động thay nội dung) để ẨN nút này khi review đủ ngắn không cần "xem thêm" (không đếm ký tự
+tay, tự khớp đúng bất kể font/khổ màn hình đổi sau này).
+
+Bấm "Xem thêm" mở 1 dialog MỚI (`#reviewModalOverlay`, chỉ có ở `index.html` — public site không có
+sẵn hệ `dlg-*` như `admin.html`) — nội dung dialog (`#reviewModalBody`) **clone thẳng
+`cardEl.innerHTML`** của `.card-review` đang bấm (giữ nguyên avatar/tên/link Facebook nếu là
+feedback thật từ `danh_gia_khach_hang`, không cần biết trước cấu trúc chính xác của từng loại
+card — tĩnh hay động), gỡ nút "Xem thêm" khỏi bản clone bằng `.remove()`, CSS
+`#reviewModalBody .quote{-webkit-line-clamp:unset}` bỏ giới hạn dòng. Đóng bằng nút X / phím Esc /
+bấm ra ngoài overlay — dùng **event delegation trên `document`** (không gắn listener riêng từng
+nút `.review-more`, vì các nút này bị TẠO LẠI mỗi khi feedback động thay `innerHTML` của
+`#reviewsTrack` — gắn trực tiếp sẽ mất listener y hệt bài học đã ghi cho `initReviewsSlider()` ở
+mục 48).
+
+**Điện thoại** (`@media max-width:768px`): đổi `.review-slide` sang `flex-direction:column` — xếp
+DỌC 2 thẻ trong cùng 1 trang (không đủ ngang cho 2 cột, và thu hẹp cột tới mức khó đọc thì tệ hơn),
+giữ nguyên cao 300px/thẻ như desktop.
+
+**⚠️ Lỗi CSS thật tự bắt được lúc test bằng Claude Browser (không phải đoán, đo được con số cụ
+thể):** đặt `display:-webkit-box;-webkit-line-clamp:4` TRỰC TIẾP lên phần tử đang LÀ ITEM FLEX
+(`.quote` là con trực tiếp của `.card-review{display:flex;flex-direction:column}`) làm Chromium
+**"blockify"** giá trị `-webkit-box` thành `flow-root` khi tính `getComputedStyle().display` — MẤT
+HẲN hiệu ứng line-clamp, `clientHeight` sụp xuống còn ~32px CỐ ĐỊNH bất kể nội dung dài ngắn (đo
+được y hệt vậy: review 54 ký tự lẫn review 1001 ký tự đều ra `clientHeight:32`, còn `scrollHeight`
+vẫn đúng theo độ dài thật — nghĩa là bản thân nội dung/text đo đúng, chỉ riêng khung chứa bị sập).
+**Cách sửa:** tách thêm 1 lớp bọc `.quote-wrap` LÀM ITEM FLEX thay cho `.quote` (nhận
+`flex:1;min-height:0;overflow:hidden` — bản thân `.quote-wrap` là `display:block` bình thường nên
+KHÔNG bị blockify) — `.quote` (giờ nằm BÊN TRONG `.quote-wrap`, không còn là item flex trực tiếp
+nữa) mới nhận `display:-webkit-box;-webkit-line-clamp:4`. Đã đo lại xác nhận đúng: `clientHeight`
+ra ~96px (khớp khoảng 4 dòng thật ở font-size 17px/line-height 1.6), và nút "Xem thêm" ẩn/hiện đúng
+theo TỪNG review — kiểm trên 12 review THẬT trên production: đúng 11/12 hiện nút, đúng 1 review
+ngắn nhất (54 ký tự, `scrollHeight===clientHeight`) tự ẩn nút, khớp chính xác dữ liệu thật không
+phải trùng hợp. **Bài học chung (mục 3 bài học AP ở `Handover_Phien_Moi.md`): `-webkit-line-clamp`
+không đáng tin cậy khi đặt trực tiếp trên 1 flex item — luôn bọc thêm 1 lớp `display:block` thuần
+làm item flex, tách riêng phần tử THẬT SỰ nhận line-clamp ra một tầng lồng bên trong.**
+
+Markup tĩnh (2 review fallback có sẵn trong HTML) lẫn markup động (script "FEEDBACK KHÁCH HÀNG
+ĐỘNG", cuối trang) đều cập nhật theo cấu trúc mới (`.quote-wrap` bọc `.quote`, thêm nút
+`.review-more`, gộp 2 review/trang bằng vòng lặp `for(i=0;i<rows.length;i+=2)` — lẻ thì trang cuối
+chỉ còn 1 thẻ, CSS flex tự co giãn đúng, không cần xử lý riêng).
+
+**B.2 `/tin-tuc` bỏ tiêu đề to trùng lặp** ("Tin tức & Khám phá thế giới" + subtitle "Kinh nghiệm du
+lịch, văn hoá và tin tức mới nhất từ Top Visa 5S") — `renderTinTucHome()` (`worker.js`). PM cho là
+trùng với tiêu đề vùng hiển thị đầu tiên bên dưới (khối "Xử lý hồ sơ khách hàng"...). **Quyết định
+tự đưa ra, đã báo PM:** không xoá hẳn `<h1>` mà đổi thành **`<h1 class="sr-only">`** (ẩn khỏi mắt
+bằng kỹ thuật chuẩn `position:absolute;width:1px;height:1px;clip:rect(0,0,0,0)` — vẫn đọc được bởi
+trình đọc màn hình/Google, khác hẳn `.skip-link` đang dùng cho nút "Bỏ qua tới nội dung" vì
+skip-link CẦN hiện lại khi focus còn cái này thì KHÔNG BAO GIỜ hiện) — giữ đúng quy tắc "1 H1 ngữ
+nghĩa/trang" đã lập ở kế hoạch SEO T2, không ảnh hưởng gì tới giao diện PM thấy. CSS `.sr-only` mới
+thêm vào `BLOG_EXTRA_CSS` (dùng chung cho MỌI trang SSR `/tin-tuc*`/404 qua `getSiteChrome()`,
+không phải riêng route này — có thể tái dùng cho các trường hợp "cần H1 nhưng không muốn hiện to"
+khác sau này, vd `/danh-gia` nếu gặp tình huống tương tự).
+
+⚠️ **Lưu ý cho phiên sau — 1 chuỗi TRÙNG NGẪU NHIÊN, KHÔNG phải bug còn sót:** hiện có 1 nhóm bài
+"Tin tức" mà PM tự đặt "Phân loại" (ở tab riêng trong `admin.html`) đúng bằng chữ **"Tin tức & Khám
+phá thế giới"** (nhóm gom 6 bài trong dữ liệu thật, sinh ra 1 H2 + 6 nhãn `.cat` trên card + 1 nút
+"Xem tất cả" đều lặp lại đúng cụm chữ này, slug `tin-tuc-kham-pha-the-gioi`) — đây là DỮ LIỆU THẬT
+PM tự đặt tên nhóm, hoàn toàn ĐỘC LẬP với tiêu đề tĩnh đã bỏ ở trên (thuần trùng hợp về câu chữ).
+Nếu sau này `grep` lại thấy chuỗi "Tin tức & Khám phá thế giới" còn xuất hiện nhiều lần trong HTML
+`/tin-tuc`, ĐỪNG vội kết luận "chưa xoá hết" — kiểm bằng cách tìm đúng thẻ `<h1 class="sr-only">`
+(chỉ xuất hiện đúng 1 lần, đó mới là phần đã sửa) trước khi báo lỗi.
+
+**B.3 Nút "← Tất cả tin tức"** (`renderTinTucPost()` + `renderTinTucTopic()`, `worker.js`) — đổi từ
+`<p><a href="/tin-tuc">← Tất cả tin tức</a></p>` (link chữ trơn, dính sát ảnh bìa bên dưới vì
+`*{margin:0}` reset chung của site xoá hết margin mặc định của thẻ `<p>`) sang
+`<a href="/tin-tuc" class="back-to-list">← Tất cả tin tức</a>` dạng pill bo tròn có nền
+(`--color-primary-light`, đổi màu đặc + chữ trắng khi hover), `margin-bottom:var(--sp-4)` tách hẳn
+khỏi nội dung/ảnh bên dưới. Áp dụng ĐỒNG THỜI cho cả trang chi tiết bài viết (PM chỉ nêu đúng trang
+này trong ảnh chụp) LẪN trang chủ đề `/tin-tuc/chu-de/<slug>` (cùng 1 đoạn markup y hệt bị lỗi
+giống nhau, không có lý do để 2 trang lệch nhau) — quyết định mở rộng phạm vi nhẹ, đã báo trong tóm
+tắt gửi PM.
+
+**Đã test trước khi deploy (cả đợt A+B):** `node --check worker.js` OK; cân bằng thẻ HTML
+(`python3 html.parser`) + parse mọi `<script>` inline bằng `node --check` (tách riêng JSON-LD, bài
+học I) cho `index.html`; import thẳng `worker.js` vào Node mock `env.ASSETS.fetch`/Supabase xác
+nhận H1 count=1 đúng ở mọi route (`/tin-tuc`, `/tin-tuc/chu-de/<slug>`, `/tin-tuc/<slug>-<id>`),
+`.back-to-list` xuất hiện đúng nơi, `.sr-only` không hiện text trùng. Test giao diện qua Claude
+Browser mở FILE CỤC BỘ (`file://.../index.html`, hiển thị dưới dạng `data:` URL trong pane nhưng
+`fetch()` tới Supabase THẬT vẫn thành công trong môi trường này — khác `file://` mở bằng trình
+duyệt thường sẽ bị CORS chặn, đã ghi nhận tương tự ở các mục trước như T16/mục 59) — lấy đúng 12
+feedback thật từ production để test cơ chế mới. **PHẢI `resize_window` (đặt kích thước cụ thể)
+TRƯỚC KHI đo rồi `navigate` LẠI** — lần đo đầu tiên (chưa resize) ra `innerWidth:0` và mọi
+`clientHeight`/`scrollHeight` sai lệch hoàn toàn (y hệt bài học AF ở `Handover_Phien_Moi.md` bản
+23), đo lại sau khi resize+reload mới ra số đúng và ổn định.
+
+**Đã deploy cả 2 đợt + xác nhận trên production (commit `5d7c530` rồi `fa9df76`, cùng ngày
+2026-09-12):** poll bằng chuỗi CHỈ CÓ ở bản mới (`tvThumbFallback` rồi `quote-wrap`, đúng bài học B
+`Handover_Phien_Moi.md` — tránh chuỗi cũng có sẵn ở bản cũ làm poll dừng sớm nhầm); 12 card đánh giá
+THẬT trên production đo đúng cao 300px/thẻ, 2 thẻ/trang, đúng 11/12 hiện nút "Xem thêm" (khớp dữ
+liệu thật, không phải giả lập); hồi quy đầy đủ `/`, `/admin`, `/tin-tuc`, `/lien-he`,
+`/sitemap.xml`, an ninh (`/worker.js`/`/wrangler.toml`/`/package.json` vẫn 404), `/blog` vẫn 301 —
+không có gì hỏng.
+
+**⚠️ Nếu sau này làm T-01/T-04 (fixed-height + `line-clamp` cho card "Tin tức" ở 2 section
+`.grid-posts` trên trang chủ/`/tin-tuc` — khác hẳn section "Đánh giá" vừa sửa ở đây, 2 khối card
+riêng biệt, T-01/T-04 vẫn TỒN ĐỌNG chưa làm) — áp dụng đúng mẫu `.quote-wrap`/`.quote` (lớp bọc
+plain block làm item flex, `-webkit-line-clamp` đặt trên phần tử KHÔNG PHẢI item flex trực tiếp)
+để tránh lặp lại đúng bug "blockify" vừa gặp ở mục B.1.**
