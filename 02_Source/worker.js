@@ -299,7 +299,7 @@ function postCardHtml(p, catLabel) {
   const href = '/tin-tuc/' + (p.slug || 'bai-viet') + '-' + p.id;
   const dateStr = new Date(p.created_at).toLocaleDateString('vi-VN');
   const thumb = p.image_url
-    ? `<img class="thumb" src="${escHtml(p.image_url)}" alt="${escHtml(p.title)}" loading="lazy" width="400" height="174">`
+    ? `<img class="thumb" src="${escHtml(p.image_url)}" alt="${escHtml(p.title)}" loading="lazy" width="400" height="174" onerror="tvThumbFallback(this)">`
     : `<div class="thumb-placeholder">📰</div>`;
   return `<a class="card-post" href="${href}">
       ${thumb}
@@ -518,7 +518,7 @@ async function renderTinTucPost(request, env) {
 
   const chrome = await getSiteChrome(env, request);
   const cover = p.image_url
-    ? `<img class="article-cover" src="${escHtml(p.image_url)}" alt="${escHtml(p.title)}" width="800" height="420">`
+    ? `<img class="article-cover" src="${escHtml(p.image_url)}" alt="${escHtml(p.title)}" width="800" height="420" onerror="this.remove()">`
     : '';
 
   const html = `<!DOCTYPE html>

@@ -617,6 +617,37 @@ footer a:hover{color:#fff}
       <li><a href="#dang-ky" class="btn btn-cta" style="padding:10px 20px">📝 Đăng ký tư vấn</a></li>
     </ul>
     <button class="hamburger" id="hamburger" aria-label="Mở menu">☰</button>
+    <!-- 2 script dưới đây CỐ Ý đặt bên trong thẻ nav (không đặt phía sau) để getSiteChrome()
+         (worker.js) trích navbar tự mang theo luôn — có mặt tự động trên /tin-tuc, /tin-tuc/<slug>,
+         trang 404, không cần sửa gì thêm ở worker.js. ⚠️ Không được gõ chuỗi đóng thẻ nav dạng chữ
+         thường trong bất kỳ comment/text nào ở khu vực này — getSiteChrome() dò bằng regex không
+         tham lam, dừng lại ngay tại lần khớp ĐẦU TIÊN của chuỗi đó nên sẽ cắt cụt mất phần script
+         này (lỗi thật đã tự bắt được lúc viết, xem lại bằng cách grep "contains tvThumbFallback"
+         trong navbar đã trích ra). 4 trang tĩnh (chinh-sach-bao-mat/dieu-khoan-dich-vu/lien-he/
+         cong-cu) phải copy tay khối này (không đi qua getSiteChrome(), xem CLAUDE.md mục 60 bài
+         học E). -->
+    <script>
+    /* Tô sáng mục menu của TRANG hiện tại (khác scrollspy — chỉ lo mục neo #hash trong cùng trang
+       chủ, xem initScrollSpy() cuối file). */
+    (function(){
+      try{
+        var path=(location.pathname||'/').replace(/\/+$/,'')||'/';
+        document.querySelectorAll('#navLinks > li > a[href]').forEach(function(a){
+          var href=a.getAttribute('href')||'';
+          if(href.indexOf('#')!==-1) return; // link neo cùng trang -> để scrollspy lo, không đụng ở đây
+          var hrefPath=href.replace(/\/+$/,'')||'/';
+          if(hrefPath!=='/' && (path===hrefPath || path.indexOf(hrefPath+'/')===0)) a.classList.add('active');
+        });
+      }catch(e){}
+    })();
+    /* Ảnh đại diện bài viết (postimg.cc, ngoài tầm kiểm soát của site) lỡ tải lỗi -> thay bằng
+       khối placeholder giống hệt bài không có ảnh, thay vì icon "ảnh vỡ" xấu của trình duyệt.
+       Dùng chung cho cả .card-post .thumb (index.html + /tin-tuc) lẫn .article-cover (trang chi
+       tiết bài viết, gọi this.remove() riêng vì không có placeholder tương ứng). */
+    function tvThumbFallback(imgEl){
+      try{ imgEl.outerHTML='<div class="thumb-placeholder">📰</div>'; }catch(e){}
+    }
+    </script>
   </div>
 </nav>
 
@@ -1205,7 +1236,7 @@ function renderPostCardHtml(p, catLabel){
   const excerpt = (p.content||'').slice(0,110);
   return `
     <a class="card-post" href="${tinTucBlogHref(p)}">
-      ${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy" width="400" height="174">`
+      ${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy" width="400" height="174" onerror="tvThumbFallback(this)">`
                      : `<div class="thumb-placeholder">📰</div>`}
       <div class="body">
         <div class="cat">${esc(catLabel)}</div>

@@ -505,6 +505,21 @@ footer a:hover{color:#fff}
       <li><a href="/#dang-ky" class="btn btn-cta" style="padding:10px 20px">📝 Đăng ký tư vấn</a></li>
     </ul>
     <button class="hamburger" id="hamburger" aria-label="Mở menu">☰</button>
+    <!-- Tô sáng mục menu của trang hiện tại — copy tay từ index.html (không đi qua getSiteChrome(),
+         xem CLAUDE.md mục 60 bài học E). Sửa lại thì sửa index.html rồi copy lại y hệt sang đây. -->
+    <script>
+    (function(){
+      try{
+        var path=(location.pathname||'/').replace(/\/+$/,'')||'/';
+        document.querySelectorAll('#navLinks > li > a[href]').forEach(function(a){
+          var href=a.getAttribute('href')||'';
+          if(href.indexOf('#')!==-1) return;
+          var hrefPath=href.replace(/\/+$/,'')||'/';
+          if(hrefPath!=='/' && (path===hrefPath || path.indexOf(hrefPath+'/')===0)) a.classList.add('active');
+        });
+      }catch(e){}
+    })();
+    </script>
   </div>
 </nav>
 <main id="noi-dung">
