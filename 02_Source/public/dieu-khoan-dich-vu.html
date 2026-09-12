@@ -2,7 +2,8 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- interactive-widget=resizes-content (2026-09-12): xem CLAUDE.md/index.html mục "CHAT BOX" -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <meta name="theme-color" content="#1B6EF3">
 <title>Điều khoản dịch vụ – Top Visa 5S</title>
 <meta name="description" content="Điều khoản dịch vụ visa của Top Visa 5S: phạm vi dịch vụ, chi phí, chính sách đậu visa mới thu phí, trách nhiệm hai bên.">
@@ -419,7 +420,7 @@ footer a:hover{color:#fff}
 
 @media (max-width:767px){
   .chatbox-toggle{bottom:84px;right:14px;width:54px;height:54px;font-size:22px}
-  .chatbox-panel{right:0;bottom:0;left:0;top:0;width:100%;max-width:100%;height:100%;border-radius:0}
+  .chatbox-panel{right:0;bottom:0;left:0;top:0;width:100%;max-width:100%;height:100%;height:100dvh;border-radius:0}
 }
 
 /* ==================== TABLET (768–1023px) ==================== */
@@ -867,27 +868,57 @@ function chatboxSetLang(lang){
 function chatboxInit(){
   chatboxInited = true;
   chatboxAddMsg('bot', chatboxLang==='en'
-    ? 'Hi! I’m the Top Visa 5S virtual assistant 🤖 Tap a quick question below or type your own — I can help with visa types, requirements, process, fees and processing time.'
-    : 'Xin chào! Mình là trợ lý ảo của Top Visa 5S 🤖 Bạn có thể bấm 1 câu hỏi nhanh bên dưới hoặc gõ câu hỏi tự do — mình có thể hỗ trợ về loại visa, điều kiện, quy trình, chi phí và thời gian xử lý.');
+    ? 'Hi! I’m the Top Visa 5S virtual assistant 🤖 Tap a quick question above or type your own — I can help with visa types, requirements, process, fees and processing time.'
+    : 'Xin chào! Mình là trợ lý ảo của Top Visa 5S 🤖 Bạn có thể bấm 1 câu hỏi nhanh phía trên hoặc gõ câu hỏi tự do — mình có thể hỗ trợ về loại visa, điều kiện, quy trình, chi phí và thời gian xử lý.');
   chatboxRenderQuick();
 }
+/* Bàn phím ảo che khung chat + nút back rời trang thay vì đóng dialog — xem cùng bài học ở
+   index.html (khu vực "CHAT BOX", 2026-09-12). Đồng bộ tay sang trang này theo CLAUDE.md mục
+   60 bài học E (chatbox không có cơ chế tự đồng bộ như /tin-tuc). */
+function chatboxSyncViewport(){
+  const panel = document.getElementById('chatboxPanel');
+  if(!panel || !panel.classList.contains('open') || !window.visualViewport || window.innerWidth > 767) return;
+  const vv = window.visualViewport;
+  panel.style.height = vv.height + 'px';
+  panel.style.top = vv.offsetTop + 'px';
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', chatboxSyncViewport);
+  window.visualViewport.addEventListener('scroll', chatboxSyncViewport);
+}
+let chatboxHistoryPushed = false;
 function chatboxToggleOpen(){
   const panel = document.getElementById('chatboxPanel');
-  const opening = !panel.classList.contains('open');
-  if(opening){
-    panel.classList.add('open');
-    const fc = document.getElementById('floatContact');
-    if(fc && fc.classList.contains('open')){
-      fc.classList.remove('open');
-      pushChatboxAboveFloat(false);
-    }
-    if(!chatboxInited) chatboxInit();
-    setTimeout(()=>{ const inp=document.getElementById('chatboxInput'); if(inp) inp.focus(); }, 200);
-  } else {
-    panel.classList.remove('open');
+  if(panel.classList.contains('open')){ chatboxClose(); return; }
+  panel.classList.add('open');
+  const fc = document.getElementById('floatContact');
+  if(fc && fc.classList.contains('open')){
+    fc.classList.remove('open');
+    pushChatboxAboveFloat(false);
+  }
+  if(!chatboxInited) chatboxInit();
+  history.pushState({chatboxOpen:true}, '', location.href);
+  chatboxHistoryPushed = true;
+  chatboxSyncViewport();
+  setTimeout(()=>{ const inp=document.getElementById('chatboxInput'); if(inp) inp.focus(); }, 200);
+}
+function chatboxClose(){
+  const panel = document.getElementById('chatboxPanel');
+  panel.classList.remove('open');
+  panel.style.height = ''; panel.style.top = '';
+  if(chatboxHistoryPushed){
+    chatboxHistoryPushed = false;
+    history.back();
   }
 }
-function chatboxClose(){ document.getElementById('chatboxPanel').classList.remove('open'); }
+window.addEventListener('popstate', function(){
+  const panel = document.getElementById('chatboxPanel');
+  if(panel && panel.classList.contains('open')){
+    chatboxHistoryPushed = false;
+    panel.classList.remove('open');
+    panel.style.height = ''; panel.style.top = '';
+  }
+});
 document.addEventListener('click', function(e){
   const panel = document.getElementById('chatboxPanel');
   const toggle = document.getElementById('chatboxToggle');

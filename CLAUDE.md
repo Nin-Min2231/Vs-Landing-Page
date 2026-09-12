@@ -3513,3 +3513,135 @@ không có gì hỏng.
 riêng biệt, T-01/T-04 vẫn TỒN ĐỌNG chưa làm) — áp dụng đúng mẫu `.quote-wrap`/`.quote` (lớp bọc
 plain block làm item flex, `-webkit-line-clamp` đặt trên phần tử KHÔNG PHẢI item flex trực tiếp)
 để tránh lặp lại đúng bug "blockify" vừa gặp ở mục B.1.**
+
+## 66. 4 nhóm phản hồi PM sau khi tự bấm thử trên production + điện thoại (2026-09-12, cùng ngày
+    mục 65) — layout "Đánh giá", quay lại dialog cho "Thủ tục Visa", đồng bộ mũi tên/chấm tròn
+    "Tin tức", 3 lỗi thật ở Chat Box trên điện thoại
+
+**A. Section "Đánh giá" — nút "Xem thêm" đè lên chữ + gộp chung hàng với tên Facebook + mở rộng
+bề ngang thẻ:**
+- **Cấu trúc card đổi hẳn** (`index.html`, cả 2 review tĩnh fallback lẫn template JS động ở mục
+  "FEEDBACK KHÁCH HÀNG ĐỘNG"): `.reviewer` (avatar+tên) và `<button class="review-more">` giờ nằm
+  CHUNG 1 hàng `.reviewer-row` mới (`display:flex;justify-content:space-between`) — tên canh trái,
+  nút canh phải, thay vì nút đứng riêng 1 dòng NGAY SAU đoạn trích bị cắt (PM phản hồi trông như đè
+  lên chữ). Bỏ `justify-content:center` khỏi `.reviewer` (không còn cần center hoá khi đứng trong
+  hàng flex mới, mặc định flex-start là đúng ý "canh trái").
+- **`.reviews-slider` bỏ hẳn `max-width:900px`** — để chiếm trọn bề ngang `.container` (1200px)
+  giống mọi section khác (PM đưa ảnh so sánh với "Hồ sơ xin Visa các nước" bên dưới, muốn khớp).
+- Dialog "Xem thêm" (`#reviewModalOverlay`, đã có từ mục 65.B.1) **không đổi gì** — vẫn hoạt động
+  đúng với cấu trúc card mới vì JS chỉ `cardEl.innerHTML` nguyên khối, không phụ thuộc thứ tự phần
+  tử con cụ thể.
+
+**B. Section "Hồ sơ xin Visa các nước" — quay lại bấm mở POPUP xem nhanh, không rời trang nữa:**
+Đảo ngược 1 phần quyết định Kaizen ở mục 64 ("bỏ hẳn popup xem nhanh, mọi card đều `<a href>` rời
+trang") — PM yêu cầu CHỈ riêng section này quay lại dùng dialog, "Tin tức" ở trang chủ vẫn giữ hành
+vi rời trang như cũ (đúng giá trị SEO cho bài Tin tức, còn "Thủ tục Visa" ưu tiên giữ khách ở lại
+trang chủ).
+- `renderPostCardHtml(p, catLabel, dialogMode)` thêm tham số thứ 3 (mặc định `false`/không truyền):
+  `true` → gắn thêm `onclick="return openPostDialogClick(event, <id>)"` lên đúng thẻ `<a href="/tin-tuc/...">`
+  đã có sẵn (**giữ nguyên href thật** — không xoá, để Google vẫn crawl được/Ctrl+click hay click
+  giữa vẫn mở tab mới đúng trang chi tiết SSR, cùng kỹ thuật `openPostDetail(i,event)` đã dùng
+  TRƯỚC Kaizen, xem lịch sử mục "T4"). Click thường → `preventDefault()` + mở
+  `#postModalOverlay` (dialog MỚI, không phải dựng lại `#postOverlay` cũ đã xoá hẳn ở mục 64).
+- **`POSTS_BY_ID`** (object toàn cục, gán trong `renderPostCardHtml()` mỗi lần render 1 card) giữ
+  nguyên dữ liệu bài viết ĐẦY ĐỦ (`title`/`content`/`image_url`/`categories`/`created_at`) đã fetch
+  1 lần — `openPostModal(id)` dựng nội dung dialog trực tiếp từ đây, KHÔNG gọi lại Supabase.
+- Chỉ gọi `renderPostCardHtml(p,'Thủ tục Visa', true)` cho lưới `#thuTucVisaGrid`; lời gọi cho
+  `#tinTucPreviewGrid` (trong `renderTinTucPreview()`) giữ nguyên KHÔNG truyền tham số 3 — vẫn rời
+  trang như cũ.
+- CSS `.post-modal-overlay`/`.post-modal`/`.post-modal-title`/`.post-modal-content`... viết MỚI
+  (không dùng lại `.article-*` của `worker.js` `BLOG_EXTRA_CSS` — 2 nơi khác context, `index.html`
+  không trích được CSS từ `worker.js` như `worker.js` trích từ `index.html`), mô phỏng theo đúng
+  khuôn `.review-modal-overlay` đã có (cùng z-index 200, cùng cơ chế `document.documentElement.style.overflow`
+  khoá cuộn nền — ĐỦ đơn giản, không cần kỹ thuật "position:fixed + bù scrollbar" phức tạp đã áp
+  dụng cho popup bài viết CŨ ở mục 46.B, vì review-modal đã dùng đúng cách đơn giản này và chạy ổn
+  định trên production từ 2026-09-12 sáng, không có phản hồi lỗi).
+
+**C. "Tin tức & Khám phá thế giới" (trang chủ) — nút Trước/Sau + số trang đổi thành mũi tên tròn +
+chấm tròn, đồng bộ với "Đánh giá":**
+- HTML nav đổi từ 2 `<button class="btn btn-outline">‹ Trước</button>`/`<span id="tinTucPreviewPageInfo">`
+  sang `<button class="slider-arrow">‹</button>` + `<div class="slider-dots" id="tinTucDots">` +
+  `<button class="slider-arrow">›</button>` bọc trong `<div class="tin-tuc-nav">` — TÁI DÙNG NGUYÊN
+  2 class `.slider-arrow`/`.slider-dots` đã có ở mục "REVIEWS SLIDER", không viết CSS icon mới.
+- **2 lỗi CSS thật tự bắt được lúc đo bằng `getBoundingClientRect()` (không phải đoán bằng mắt) khi
+  ghép `.slider-arrow`/`.slider-dots` vào ngữ cảnh MỚI (hàng ngang tĩnh, không phải slider tuyệt đối
+  định vị) — cả 2 đều là kiểu lỗi "tái dùng class nhưng quên huỷ thuộc tính chỉ đúng ở NGỮ CẢNH GỐC":**
+  1. `.slider-arrow` gốc có `position:absolute;top:50%;transform:translateY(-50%)` để tự canh giữa
+     dọc khi làm mũi tên đè lên 2 mép slider. Ghi đè `position:static` ở `.tin-tuc-nav .slider-arrow`
+     KHÔNG đủ — `transform` không bị giới hạn bởi `position`, vẫn dịch chuyển nút lên trên ~20px dù
+     đã tĩnh hoá. Phải ghi đè thêm `top:auto;transform:none`.
+  2. `.slider-dots` gốc có `margin-top:var(--sp-3)` (24px, để tách khỏi slider đứng ngay phía trên
+     nó). Đặt trong `.tin-tuc-nav` (1 hàng flex ngang, dots là ANH EM của 2 mũi tên chứ không đứng
+     dưới chúng) khiến margin đó đẩy dots lệch xuống so với tâm hàng. Phải thêm
+     `.tin-tuc-nav .slider-dots{margin-top:0}`.
+  Cả 2 lỗi CHỈ lộ ra khi đo `getBoundingClientRect()` của cả 3 nút rồi so sánh số — nhìn ảnh chụp ở
+  độ phân giải thường không đủ tinh để thấy lệch ~11-32px. **Bài học: khi tái dùng 1 class ở NGỮ
+  CẢNH bố cục khác hẳn ngữ cảnh gốc (absolute→static, slider độc lập→hàng ngang chung), phải tự hỏi
+  "class gốc còn thuộc tính nào chỉ có ý nghĩa ĐÚNG trong ngữ cảnh CŨ" (vị trí tuyệt đối, margin tách
+  khối...) và huỷ tường minh, không chỉ đổi mỗi thuộc tính đang định đổi.**
+- JS: `renderTinTucPreview()` bỏ hẳn `#tinTucPreviewPageInfo`, thay bằng vòng lặp dựng `<button>`
+  chấm tròn vào `#tinTucDots` (copy đúng mẫu dots của `initReviewsSlider()`, không gọi lại hàm đó
+  vì đây là lưới thẻ đổi hẳn nội dung mỗi trang, không phải slider trượt ngang).
+
+**D. Chat Box trên điện thoại — 3 vấn đề PM chụp màn hình, cả 3 sửa trong `index.html` VÀ đồng bộ
+tay sang 3 trang tĩnh dùng chung chatbox (`chinh-sach-bao-mat.html`/`dieu-khoan-dich-vu.html`/
+`lien-he.html` — đúng bài học mục 60.E, chatbox không có cơ chế tự đồng bộ như `/tin-tuc`/404):**
+1. **Bàn phím ảo che kín header + hàng câu hỏi nhanh, chỉ còn ô nhập hiện đúng chỗ** — nguyên nhân:
+   `.chatbox-panel` toàn màn hình trên mobile (`top:0;bottom:0;height:100%`) tính theo LAYOUT
+   viewport, trong khi bàn phím ảo mặc định (Android Chrome không có cờ đặc biệt, và luôn vậy trên
+   iOS Safari) chỉ thu hẹp VISUAL viewport, không thu hẹp layout viewport — phần tử `position:fixed`
+   neo theo layout viewport bị cuộn khuất sau bàn phím theo góc nhìn thật của người dùng. Sửa 2 lớp:
+   - Thêm `interactive-widget=resizes-content` vào `<meta name="viewport">` — ép Android Chrome tự
+     co layout viewport thật khi bàn phím mở (để `top:0/bottom:0` tự tính lại đúng), không có tác
+     dụng phụ gì trên trình duyệt không hỗ trợ (chỉ Chromium mới hiểu cờ này).
+   - `.chatbox-panel` đổi `height:100%` → thêm `height:100dvh` (dynamic viewport height, trình
+     duyệt hiểu được sẽ ưu tiên dùng, ghi đè cascade) — tự co theo thanh địa chỉ ẩn/hiện.
+   - **Lớp phòng hờ JS (bắt buộc cho iOS Safari, không hỗ trợ `interactive-widget`):** hàm mới
+     `chatboxSyncViewport()` lắng nghe `window.visualViewport` sự kiện `resize`/`scroll`, mỗi lần
+     bàn phím mở/đóng/cuộn sẽ tự ghi `panel.style.height = visualViewport.height` +
+     `panel.style.top = visualViewport.offsetTop` bằng inline style (chỉ chạy khi panel đang mở VÀ
+     ở mobile ≤767px, tránh làm việc thừa mỗi lần cuộn trang bình thường không liên quan chatbox).
+     Gọi thêm 1 lần ngay lúc `chatboxToggleOpen()` mở panel. `chatboxClose()` xoá 2 inline style này
+     (`panel.style.height='';panel.style.top=''`) để panel về đúng CSS mặc định khi đóng.
+2. **Nút back (vật lý/gesture) trên điện thoại rời hẳn trang thay vì đóng khung chat** — khung chat
+   chỉ là 1 khối `display`/`class` toggle, không phải trang riêng nên trình duyệt không biết "có
+   dialog đang mở" để chặn back. Sửa bằng kỹ thuật "mốc lịch sử ảo" chuẩn cho modal/dialog trên web
+   di động: `chatboxToggleOpen()` lúc MỞ gọi thêm `history.pushState({chatboxOpen:true}, '', location.href)`
+   (URL giữ nguyên, chỉ thêm 1 state) — bấm back lần đầu tiêu thụ đúng mốc này (nổ sự kiện
+   `popstate`, listener mới đóng khung chat ở đó, KHÔNG rời trang thật), bấm back lần 2 mới đi tiếp
+   bình thường. Đóng bằng cách khác (nút ✕/bấm ra ngoài, đều đi qua `chatboxClose()`) thì tự gọi
+   `history.back()` để dọn sạch mốc ảo đó ngay, tránh việc lần bấm back thật SAU ĐÓ (khi chat đã
+   đóng từ trước) bị "nuốt" 1 lần vô ích vào đúng mốc ảo còn sót lại. `chatboxToggleOpen()` viết lại
+   gọn hơn: nhánh "đang mở → đóng" giờ gọi thẳng `chatboxClose()` (dùng CHUNG đúng 1 đường đóng có
+   dọn lịch sử, thay vì trước đây có 2 cách đóng khác nhau — bấm lại nút toggle so với bấm nút ✕/ra
+   ngoài — chỉ 1 trong 2 dọn lịch sử, dễ để sót mốc ảo nếu không hợp nhất).
+3. **Câu chào mở đầu vẫn ghi "bấm 1 câu hỏi nhanh BÊN DƯỚI"** dù hàng câu hỏi nhanh đã dời lên ĐẦU
+   khung chat từ đợt sửa UI 2026-08-29 (mục 47.G, "Vòng 1") — chữ chưa từng cập nhật theo, PM chỉ ra
+   qua ảnh chụp khoanh đỏ đúng chữ "bên dưới". Sửa cả 2 ngôn ngữ: `'bên dưới'`→`'phía trên'` (vi),
+   `'below'`→`'above'` (en), trong `chatboxInit()`.
+
+**Đã test (Claude Browser dựng server tĩnh cục bộ `python -m http.server` phục vụ đúng
+`02_Source/public/`, fetch Supabase THẬT thành công qua `http://localhost` — khác giới hạn CORS của
+`file://` đã ghi ở nhiều mục trước):**
+- Card đánh giá THẬT (dữ liệu production qua anon key) hiện đúng layout mới, "Xem thêm" canh phải
+  cùng hàng tên, bấm mở đúng dialog, đóng đúng; bề ngang thẻ mở rộng khớp section "Thủ tục Visa".
+- Bấm 1 card "Thủ tục Visa" thật → dialog mở đúng nội dung, `location.href` KHÔNG đổi (xác nhận
+  không rời trang) — đã kiểm bằng `location.href` ngay sau click, không chỉ nhìn ảnh chụp.
+- `renderTinTucPreview()`/`tinTucPreviewGo()`: bấm dot/mũi tên đổi đúng trang + nội dung; đo
+  `getBoundingClientRect()` xác nhận 3 nút (mũi tên trái/dots/mũi tên phải) thẳng hàng dọc sau khi
+  sửa 2 lỗi CSS ở mục C (trước khi sửa: lệch ~32px do `transform` sót lại; sau khi sửa: lệch <1px).
+- Chat Box: gọi trực tiếp `chatboxToggleOpen()`/`history.back()`/`chatboxClose()` xác nhận đúng cả 2
+  luồng đóng (bấm back thật vs bấm nút ✕) đều dọn sạch lịch sử, `location.href` không đổi qua mọi
+  bước; `chatboxSyncViewport()` không lỗi ở cả desktop (tự thoát sớm) lẫn mobile giả lập 375px (ghi
+  đúng `panel.style.height`/`top` theo `window.visualViewport`). **Đã đồng bộ + test lại y hệt trên
+  cả 3 trang tĩnh** (`lien-he.html` xác nhận qua test độc lập, 2 trang còn lại đối chiếu bằng script
+  Python so khớp chuỗi thay thế, không thực hiện tay từng chỗ để tránh gõ lệch giữa 4 file).
+- `node --check` toàn bộ `<script>` inline + cân bằng thẻ HTML (`html.parser`) cho cả 4 file: OK.
+
+**⚠️ Giới hạn CHƯA kiểm chứng được (cần PM tự test trên điện thoại thật, không thể mô phỏng bàn
+phím ảo thật hay cử chỉ back thật trong môi trường agent):** bàn phím ảo Android/iOS thật có che
+đúng đủ hay không (`chatboxSyncViewport()` đã xác nhận ĐÚNG LOGIC qua giả lập `visualViewport`
+event, nhưng chưa có bàn phím thật để đo), và cử chỉ back thật (nút cứng Android/vuốt cạnh
+iOS/nút back trình duyệt) có đúng hành vi "đóng chat trước, rời trang sau" hay không — đã test
+bằng gọi thẳng `history.back()` (tương đương làm cùng việc trình duyệt làm khi bấm back), logic
+xác nhận đúng, nhưng nên PM tự bấm nút back THẬT trên điện thoại trước khi coi là xong hẳn.

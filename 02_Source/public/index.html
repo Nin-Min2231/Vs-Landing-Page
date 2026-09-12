@@ -15,7 +15,14 @@
 window.__initialHash__ = location.hash;
 if(location.hash) history.replaceState(null, '', location.pathname + location.search);
 </script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- interactive-widget=resizes-content (2026-09-12): trên Android Chrome, bàn phím ảo mặc định CHỈ
+     đè lên nội dung (viewport không co lại) — khung Chat Box toàn màn hình trên điện thoại
+     (.chatbox-panel{top:0;bottom:0}) vì vậy bị bàn phím che mất phần đầu (header/câu hỏi nhanh),
+     chỉ còn ô nhập hiện đúng chỗ. Thuộc tính này ép trình duyệt co lại viewport thật khi bàn phím
+     mở, để phần tử fixed top:0/bottom:0 tự tính lại đúng chỗ. iOS Safari không hỗ trợ thuộc tính
+     này (không có tác dụng phụ gì) — bàn phím trên iOS được xử lý riêng bằng visualViewport ở JS
+     (xem chatboxSyncViewport() cuối trang, khu vực "CHAT BOX"). -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <meta name="theme-color" content="#1B6EF3">
 <title>Top Visa 5S – Dịch vụ Visa trọn gói, tỷ lệ đậu cao</title>
 <meta name="description" content="Top Visa 5S – dịch vụ làm visa Nhật Bản, Hàn Quốc, Đài Loan, Trung Quốc, Schengen, Mỹ, Úc trọn gói. Cam kết đậu visa mới thu phí dịch vụ, tư vấn miễn phí, xử lý nhanh, hỗ trợ 24/7.">
@@ -298,7 +305,10 @@ section[id],header[id],main[id]{scroll-margin-top:84px}
    ~292px, dư nhiều khoảng trắng, xem CLAUDE.md mục "Home Kaizen" bài học AJ). Mỗi ".review-slide"
    giờ là 1 TRANG chứa tối đa 2 ".card-review" xếp ngang (lẻ thì trang cuối chỉ có 1 thẻ) — index
    slider vẫn hoạt động y hệt cũ (1 bước = 1 trang), chỉ đổi cấu trúc bên trong 1 trang. */
-.reviews-slider{position:relative;max-width:900px;margin:0 auto}
+/* max-width:900px cũ (2026-09-12, PM yêu cầu mở rộng khớp bề ngang các section khác như "Hồ sơ
+   xin Visa các nước" bên dưới) -- bỏ hẳn giới hạn riêng, để .reviews-slider tự chiếm trọn bề ngang
+   .container (1200px) giống mọi section khác trong trang, không tự thu hẹp lại nữa. */
+.reviews-slider{position:relative;margin:0 auto}
 .reviews-viewport{overflow:hidden}
 .reviews-track{display:flex;transition:transform .45s cubic-bezier(.4,0,.2,1)}
 .review-slide{flex:0 0 100%;box-sizing:border-box;padding:0 4px;display:flex;gap:var(--sp-3)}
@@ -316,10 +326,15 @@ section[id],header[id],main[id]{scroll-margin-top:84px}
 .quote-wrap{flex:1;min-height:0;overflow:hidden}
 .card-review p.quote{font-size:17px;line-height:1.6;color:var(--color-text);
   display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+/* Hàng "người đánh giá + Xem thêm" (2026-09-12, PM yêu cầu): trước đây nút "Xem thêm" đứng riêng 1
+   dòng NGAY SAU ".quote" — quá sát phần chữ bị cắt, PM phản hồi trông như đè lên nội dung. Giờ gộp
+   chung 1 hàng với ".reviewer" (tên Facebook canh trái, nút canh phải) bằng "justify-content:
+   space-between" — vừa tách hẳn nút ra khỏi khối chữ phía trên, vừa đúng yêu cầu vị trí layout. */
+.reviewer-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
 .review-more{background:none;border:none;color:var(--color-primary);font-weight:700;
-  font-size:13px;cursor:pointer;padding:4px 0;margin:6px 0 var(--sp-2)}
+  font-size:13px;cursor:pointer;padding:4px 0;flex-shrink:0;white-space:nowrap}
 .review-more:hover{text-decoration:underline}
-.reviewer{display:flex;align-items:center;justify-content:center;gap:12px}
+.reviewer{display:flex;align-items:center;gap:12px;min-width:0}
 .avatar{width:46px;height:46px;border-radius:50%;background:var(--color-primary);color:#fff;
   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
 .reviewer-info{text-align:left}
@@ -365,6 +380,25 @@ a.avatar{text-decoration:none;cursor:pointer}
 #reviewModalBody .quote-wrap{flex:none;overflow:visible}
 #reviewModalBody .quote{-webkit-line-clamp:unset;overflow:visible}
 
+/* Dialog "Đọc tiếp" cho section "Hồ sơ xin Visa các nước" (2026-09-12, PM yêu cầu quay lại xem
+   nhanh bằng popup thay vì rời trang — CHỈ áp dụng cho section này, xem renderPostCardHtml() dùng
+   tham số dialogMode). Cấu trúc/CSS mô phỏng lại đúng ".review-modal-overlay" (khác dlg-* chỉ dùng
+   trong admin.html) nhưng rộng hơn vì nội dung bài viết dài hơn hẳn 1 đoạn trích đánh giá. */
+.post-modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;
+  align-items:center;justify-content:center;padding:var(--sp-3)}
+.post-modal-overlay.show{display:flex}
+.post-modal{background:#fff;border-radius:var(--radius-lg);padding:var(--sp-5) var(--sp-4);
+  max-width:720px;width:100%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-md)}
+.post-modal-close{position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;
+  cursor:pointer;color:var(--color-text-muted);line-height:1;padding:6px}
+.post-modal-close:hover{color:var(--color-primary)}
+.post-modal-cat{color:var(--color-primary);font-weight:700;font-size:12px;text-transform:uppercase;margin-bottom:6px}
+.post-modal-title{font-size:22px;font-weight:700;line-height:1.3;margin-bottom:6px}
+.post-modal-meta{font-size:13px;color:var(--color-text-muted);margin-bottom:var(--sp-3)}
+.post-modal-cover{width:100%;max-height:320px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:var(--sp-3)}
+.post-modal-content{font-size:15px;line-height:1.8;color:var(--color-text);white-space:pre-wrap}
+@media(max-width:600px){ .post-modal{padding:var(--sp-4) var(--sp-3)} .post-modal-title{font-size:19px} }
+
 /* ==================== TIN TỨC ==================== */
 .grid-posts{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
 .card-post{background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;
@@ -390,6 +424,20 @@ a.avatar{text-decoration:none;cursor:pointer}
 .card-post:hover .post-readmore{color:var(--color-primary-dark)}
 @media (max-width:1023px){.grid-posts{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:767px){.grid-posts{grid-template-columns:1fr}}
+
+/* Nút Trước/Sau + số trang "1/3" cũ đổi thành mũi tên tròn + chấm tròn (2026-09-12, PM yêu cầu
+   đồng bộ giao diện với section "Khách hàng nói gì về chúng tôi") — dùng lại NGUYÊN class
+   ".slider-arrow"/".slider-dots" đã có (mục "REVIEWS SLIDER"), chỉ ghi đè "position:absolute" gốc
+   (dành cho slider có khung .reviews-viewport riêng) thành "static" vì đây là 1 hàng nút nằm ngay
+   dưới lưới thẻ, không phải mũi tên đè lên 2 mép 1 khung trượt. */
+.tin-tuc-nav{display:flex;align-items:center;justify-content:center;gap:var(--sp-3);margin-top:var(--sp-4)}
+/* ".slider-arrow" gốc còn "top:50%;transform:translateY(-50%)" để tự canh giữa khi
+   position:absolute (mục "REVIEWS SLIDER") — "transform" KHÔNG bị giới hạn bởi position:static nên
+   vẫn áp dụng dù đã ghi đè position, làm nút lệch lên trên so với hàng chấm tròn nếu không huỷ lại.
+   ".slider-dots" gốc cũng có "margin-top" (để tự tách khỏi slider đứng phía trên nó) — ở đây dots
+   nằm CÙNG 1 hàng ngang với 2 mũi tên nên phải bỏ margin đó, không thì dots bị đẩy lệch xuống. */
+.tin-tuc-nav .slider-arrow{position:static;top:auto;transform:none}
+.tin-tuc-nav .slider-dots{margin-top:0}
 
 /* ==================== FAQ ==================== */
 .faq-list{max-width:760px;margin:0 auto}
@@ -566,7 +614,11 @@ footer a:hover{color:#fff}
 
 @media (max-width:767px){
   .chatbox-toggle{bottom:84px;right:14px;width:54px;height:54px;font-size:22px}
-  .chatbox-panel{right:0;bottom:0;left:0;top:0;width:100%;max-width:100%;height:100%;border-radius:0}
+  /* height:100dvh (Dynamic Viewport Height) thay 100% cố định — tự co theo thanh địa chỉ ẩn/hiện
+     của trình duyệt di động; height:100% giữ trước làm fallback cho trình duyệt cũ không hiểu
+     "dvh". Bàn phím ảo che nội dung (JS chatboxSyncViewport() ghi đè height/top bằng inline style
+     khi cần) — xem CLAUDE.md/comment cạnh hàm đó. */
+  .chatbox-panel{right:0;bottom:0;left:0;top:0;width:100%;max-width:100%;height:100%;height:100dvh;border-radius:0}
 }
 
 /* ==================== TABLET (768–1023px) ==================== */
@@ -801,33 +853,38 @@ footer a:hover{color:#fff}
           <!-- 1 ".review-slide" = 1 TRANG, chứa TỐI ĐA 2 ".card-review" xếp ngang (PM yêu cầu
                2026-09-11: hiện 2 thẻ/lần thay vì 1) — thêm review mới thì đếm số thẻ đang có trong
                trang CUỐI: còn 1 thẻ thì thêm vào ngay trang đó cho đủ 2, đã đủ 2 thì mở trang mới
-               (copy nguyên khối <div class="review-slide">...</div>). Mỗi thẻ PHẢI có đúng nút
-               <button class="review-more" hidden>Xem thêm</button> ngay sau ".quote" — JS tự ẩn/
+               (copy nguyên khối <div class="review-slide">...</div>). Mỗi thẻ PHẢI có đúng cấu trúc
+               ".reviewer-row" bọc ".reviewer" + <button class="review-more" hidden>Xem thêm</button>
+               (2026-09-12: gộp chung 1 hàng, tên trái/nút phải, xem CSS ".reviewer-row") — JS tự ẩn/
                hiện nút này tuỳ nội dung có bị cắt hay không, không cần tự tay xoá nếu review ngắn. -->
           <div class="review-slide">
             <div class="card-review">
               <div class="stars">★★★★★</div>
               <div class="quote-wrap"><p class="quote">"Làm visa thủ tục nhanh gọn, dịch vụ nói chung rất tốt."</p></div>
-              <button type="button" class="review-more" hidden>Xem thêm</button>
-              <div class="reviewer">
-                <div class="avatar">K</div>
-                <div class="reviewer-info">
-                  <div class="name">Anh Võ Kiên</div>
-                  <div class="type">Khách hàng dịch vụ visa Nhật Bản</div>
+              <div class="reviewer-row">
+                <div class="reviewer">
+                  <div class="avatar">K</div>
+                  <div class="reviewer-info">
+                    <div class="name">Anh Võ Kiên</div>
+                    <div class="type">Khách hàng dịch vụ visa Nhật Bản</div>
+                  </div>
                 </div>
+                <button type="button" class="review-more" hidden>Xem thêm</button>
               </div>
               <div class="review-source">📘 Đánh giá thật trên Facebook · 08/2025</div>
             </div>
             <div class="card-review">
               <div class="stars">★★★★★</div>
               <div class="quote-wrap"><p class="quote">"Nhân viên hướng dẫn nhiệt tình, lịch sự, giải đáp mọi thắc mắc dù nhiều việc không thuộc chuyên môn. Visa ra nhanh như tia chớp — chắc chắn sẽ giới thiệu cho bạn bè!"</p></div>
-              <button type="button" class="review-more" hidden>Xem thêm</button>
-              <div class="reviewer">
-                <div class="avatar">P</div>
-                <div class="reviewer-info">
-                  <div class="name">Pon Tí Tởn</div>
-                  <div class="type">Khách hàng dịch vụ visa Nhật Bản</div>
+              <div class="reviewer-row">
+                <div class="reviewer">
+                  <div class="avatar">P</div>
+                  <div class="reviewer-info">
+                    <div class="name">Pon Tí Tởn</div>
+                    <div class="type">Khách hàng dịch vụ visa Nhật Bản</div>
+                  </div>
                 </div>
+                <button type="button" class="review-more" hidden>Xem thêm</button>
               </div>
               <div class="review-source">📘 Đánh giá thật trên Facebook · 06/2022</div>
             </div>
@@ -863,6 +920,16 @@ footer a:hover{color:#fff}
   </div>
 </section>
 
+<!-- Dialog "Đọc tiếp" — CHỈ dùng cho card trong #thuTucVisaGrid ở trên (2026-09-12, PM yêu cầu xem
+     nhanh bằng popup thay vì rời trang cho riêng section này) — nội dung do JS dựng từ đúng dữ liệu
+     bài viết đã tải (window.POSTS_BY_ID), xem hàm openPostModal() cạnh renderPostCardHtml(). -->
+<div class="post-modal-overlay" id="postModalOverlay">
+  <div class="post-modal">
+    <button type="button" class="post-modal-close" id="postModalClose" aria-label="Đóng">✕</button>
+    <div id="postModalBody"></div>
+  </div>
+</div>
+
 <!-- ==================== TIN TỨC — xem trước trên trang chủ (Kaizen 2026-09-11) ====================
      Lưới rỗng lúc tải trang — script cuối trang tự nạp bài viết đúng danh mục cố định "Tin tức"
      (tab riêng trong admin.html), hiện 3 bài mới nhất/trang kèm nút Trước/Sau (giống cơ chế
@@ -874,10 +941,10 @@ footer a:hover{color:#fff}
     <h2 class="section-title">Tin tức &amp; Khám phá thế giới</h2>
     <p class="section-sub">Kinh nghiệm du lịch, văn hoá và tin tức mới nhất từ Top Visa 5S</p>
     <div class="grid-posts" id="tinTucPreviewGrid"></div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:var(--sp-3);margin-top:var(--sp-4)" id="tinTucPreviewNav" hidden>
-      <button type="button" class="btn btn-outline" onclick="tinTucPreviewGo(-1)" aria-label="Xem tin trước">‹ Trước</button>
-      <span id="tinTucPreviewPageInfo" style="color:var(--color-text-muted);font-size:14px"></span>
-      <button type="button" class="btn btn-outline" onclick="tinTucPreviewGo(1)" aria-label="Xem tin sau">Sau ›</button>
+    <div class="tin-tuc-nav" id="tinTucPreviewNav" hidden>
+      <button type="button" class="slider-arrow" onclick="tinTucPreviewGo(-1)" aria-label="Xem tin trước">‹</button>
+      <div class="slider-dots" id="tinTucDots"></div>
+      <button type="button" class="slider-arrow" onclick="tinTucPreviewGo(1)" aria-label="Xem tin sau">›</button>
     </div>
     <div style="text-align:center;margin-top:var(--sp-4)">
       <a href="/tin-tuc" class="btn btn-outline">Xem tất cả tin tức →</a>
@@ -1291,10 +1358,12 @@ function fixInitialHashScroll(){
       return '<div class="card-review">'+
         '<div class="stars">★★★★★</div>'+
         '<div class="quote-wrap"><p class="quote">"'+escFb(r.noi_dung)+'"</p></div>'+
-        '<button type="button" class="review-more" hidden>Xem thêm</button>'+
-        '<div class="reviewer">'+
-          '<a class="avatar" href="'+escFb(r.url)+'" target="_blank" rel="noopener" aria-label="Xem đánh giá trên Facebook">'+initial+'</a>'+
-          '<div class="reviewer-info"><div class="name"><a href="'+escFb(r.url)+'" target="_blank" rel="noopener">'+escFb(r.ten_facebook)+' <span class="ext-ic">↗</span></a></div></div>'+
+        '<div class="reviewer-row">'+
+          '<div class="reviewer">'+
+            '<a class="avatar" href="'+escFb(r.url)+'" target="_blank" rel="noopener" aria-label="Xem đánh giá trên Facebook">'+initial+'</a>'+
+            '<div class="reviewer-info"><div class="name"><a href="'+escFb(r.url)+'" target="_blank" rel="noopener">'+escFb(r.ten_facebook)+' <span class="ext-ic">↗</span></a></div></div>'+
+          '</div>'+
+          '<button type="button" class="review-more" hidden>Xem thêm</button>'+
         '</div>'+
         '<div class="review-source">📘 Đánh giá thật trên Facebook'+(monthYear?' · '+monthYear:'')+'</div>'+
       '</div>';
@@ -1315,15 +1384,20 @@ function fixInitialHashScroll(){
    nút Trước/Sau) ====================
    Kaizen 2026-09-11: "Bài viết" giờ khóa cứng đúng 2 danh mục cố định (2 tab riêng trong
    admin.html, không còn PM tự tạo thêm danh mục tùy ý như trước) nên bỏ hẳn cơ chế "1 section/menu
-   ĐỘNG cho mỗi Danh mục". Card bài viết LUÔN là <a href="/tin-tuc/..."> thật, bấm vào RỜI TRANG —
-   đã bỏ hẳn popup xem nhanh (PM quyết định: popup vốn là cơ chế DÙNG CHUNG cho card ở CẢ 2 section,
-   giữ 1 luồng click "rời trang" duy nhất cho mọi bài viết đơn giản hơn hẳn phải duy trì 2 luồng). */
+   ĐỘNG cho mỗi Danh mục". Card bài viết LUÔN là <a href="/tin-tuc/..."> thật (giữ crawlable cho
+   Google + mở được tab mới) — href vẫn dẫn đúng trang chi tiết SSR.
+   2026-09-12 (PM yêu cầu): riêng section "Hồ sơ xin Visa các nước" quay lại bấm mở POPUP xem nhanh
+   thay vì rời trang (dialogMode=true) — "Tin tức" ở trang chủ VẪN rời trang như cũ (dialogMode
+   không truyền/false). Dùng chung 1 hàm renderPostCardHtml(), chỉ khác tham số thứ 3. */
 function tinTucBlogHref(p){ return '/tin-tuc/'+encodeURIComponent(p.slug||'bai-viet')+'-'+p.id; }
-function renderPostCardHtml(p, catLabel){
+const POSTS_BY_ID = {}; // id -> post đầy đủ (title/content/image_url/categories...) để dựng dialog "Đọc tiếp" không cần gọi API lần 2
+function renderPostCardHtml(p, catLabel, dialogMode){
   const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const excerpt = (p.content||'').slice(0,110);
+  POSTS_BY_ID[p.id] = p;
+  const clickAttr = dialogMode ? ` onclick="return openPostDialogClick(event, ${p.id})"` : '';
   return `
-    <a class="card-post" href="${tinTucBlogHref(p)}">
+    <a class="card-post" href="${tinTucBlogHref(p)}"${clickAttr}>
       ${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy" width="400" height="174" onerror="tvThumbFallback(this)">`
                      : `<div class="thumb-placeholder">📰</div>`}
       <div class="body">
@@ -1335,8 +1409,43 @@ function renderPostCardHtml(p, catLabel){
     </a>`;
 }
 
-/* "Tin tức" trên trang chủ — 3 bài/trang, nút Trước/Sau (KHÔNG dùng lại initReviewsSlider(): đây
-   là lưới thẻ đổi hẳn nội dung mỗi trang, không phải slider trượt ngang 1-slide-mỗi-lần). */
+/* Dialog "Đọc tiếp" cho section "Hồ sơ xin Visa các nước" — click THƯỜNG mở popup xem nhanh (giữ
+   khách ở lại trang chủ, đúng yêu cầu "không chuyển qua màn hình detail"); Ctrl/Cmd/Shift+click hay
+   click giữa (mở tab mới) vẫn để trình duyệt tự điều hướng theo href thật — cùng kỹ thuật đã dùng
+   cho card bài viết trước Kaizen (xem lịch sử CLAUDE.md mục "T4"). */
+function openPostDialogClick(e, id){
+  if(e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return true;
+  e.preventDefault();
+  openPostModal(id);
+  return false;
+}
+function openPostModal(id){
+  const p = POSTS_BY_ID[id];
+  const body = document.getElementById('postModalBody');
+  if(!p || !body) return;
+  const esc = s => (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  body.innerHTML = `
+    <div class="post-modal-cat">${esc(p.categories?.name || 'Thủ tục Visa')}</div>
+    <h2 class="post-modal-title">${esc(p.title)}</h2>
+    <div class="post-modal-meta">${new Date(p.created_at).toLocaleDateString('vi-VN')}</div>
+    ${p.image_url ? `<img class="post-modal-cover" src="${esc(p.image_url)}" alt="${esc(p.title)}" onerror="this.remove()">` : ''}
+    <div class="post-modal-content">${esc(p.content||'')}</div>`;
+  document.getElementById('postModalOverlay').classList.add('show');
+  document.documentElement.style.overflow = 'hidden';
+}
+function closePostModal(){
+  document.getElementById('postModalOverlay').classList.remove('show');
+  document.documentElement.style.overflow = '';
+}
+document.addEventListener('click', e => {
+  if(e.target.id === 'postModalClose' || e.target.id === 'postModalOverlay') closePostModal();
+});
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closePostModal(); });
+
+/* "Tin tức" trên trang chủ — 3 bài/trang, mũi tên tròn + chấm tròn giống hệt "Khách hàng nói gì về
+   chúng tôi" (2026-09-12, PM yêu cầu đồng bộ giao diện — KHÔNG dùng lại initReviewsSlider(): đây là
+   lưới thẻ đổi hẳn nội dung mỗi trang, không phải slider trượt ngang 1-slide-mỗi-lần, nhưng tái
+   dùng đúng class ".slider-arrow"/".slider-dots" nên trông giống hệt). */
 let tinTucHomePosts = [], tinTucHomePage = 0;
 const TIN_TUC_HOME_PAGE_SIZE = 3;
 function renderTinTucPreview(){
@@ -1349,8 +1458,18 @@ function renderTinTucPreview(){
     .map(p=>renderPostCardHtml(p, p.phan_loai || 'Tin tức')).join('');
   const nav = document.getElementById('tinTucPreviewNav');
   if(nav) nav.hidden = tinTucHomePosts.length <= TIN_TUC_HOME_PAGE_SIZE;
-  const pageInfo = document.getElementById('tinTucPreviewPageInfo');
-  if(pageInfo) pageInfo.textContent = (tinTucHomePage+1)+'/'+totalPages;
+  const dotsWrap = document.getElementById('tinTucDots');
+  if(dotsWrap){
+    dotsWrap.innerHTML = '';
+    for(let i = 0; i < totalPages; i++){
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.setAttribute('aria-label', 'Xem trang tin tức số ' + (i + 1));
+      if(i === tinTucHomePage) dot.classList.add('active');
+      dot.addEventListener('click', () => { tinTucHomePage = i; renderTinTucPreview(); });
+      dotsWrap.appendChild(dot);
+    }
+  }
 }
 function tinTucPreviewGo(delta){ tinTucHomePage += delta; renderTinTucPreview(); }
 
@@ -1368,7 +1487,7 @@ function tinTucPreviewGo(delta){ tinTucHomePage += delta; renderTinTucPreview();
     const visaPosts = posts.filter(p=>p.categories?.name==='Thủ tục Visa');
     if(visaSection){
       if(visaPosts.length) visaSection.querySelector('#thuTucVisaGrid').innerHTML =
-        visaPosts.map(p=>renderPostCardHtml(p,'Thủ tục Visa')).join('');
+        visaPosts.map(p=>renderPostCardHtml(p,'Thủ tục Visa', true)).join('');
       else visaSection.hidden = true; // chưa có bài Thủ tục Visa nào -> không hiện section rỗng
     }
 
@@ -1696,27 +1815,70 @@ function chatboxSetLang(lang){
 function chatboxInit(){
   chatboxInited = true;
   chatboxAddMsg('bot', chatboxLang==='en'
-    ? 'Hi! I’m the Top Visa 5S virtual assistant 🤖 Tap a quick question below or type your own — I can help with visa types, requirements, process, fees and processing time.'
-    : 'Xin chào! Mình là trợ lý ảo của Top Visa 5S 🤖 Bạn có thể bấm 1 câu hỏi nhanh bên dưới hoặc gõ câu hỏi tự do — mình có thể hỗ trợ về loại visa, điều kiện, quy trình, chi phí và thời gian xử lý.');
+    ? 'Hi! I’m the Top Visa 5S virtual assistant 🤖 Tap a quick question above or type your own — I can help with visa types, requirements, process, fees and processing time.'
+    : 'Xin chào! Mình là trợ lý ảo của Top Visa 5S 🤖 Bạn có thể bấm 1 câu hỏi nhanh phía trên hoặc gõ câu hỏi tự do — mình có thể hỗ trợ về loại visa, điều kiện, quy trình, chi phí và thời gian xử lý.');
   chatboxRenderQuick();
 }
+/* Bàn phím ảo trên điện thoại thu hẹp visualViewport nhưng KHÔNG tự đổi layout viewport ở mọi
+   trình duyệt (iOS Safari luôn vậy; Android Chrome tuỳ interactive-widget, đã thêm
+   resizes-content ở <meta viewport> nhưng vẫn giữ JS này làm lớp phòng hờ) — khung chat toàn màn
+   hình (.chatbox-panel{top:0;bottom:0}) vì thế có thể bị bàn phím che mất phần đầu (header/câu hỏi
+   nhanh), chỉ còn ô nhập hiện đúng chỗ (PM chụp màn hình 2026-09-12). Đồng bộ lại height/top của
+   panel theo visualViewport THẬT mỗi khi nó đổi (bàn phím mở/đóng, cuộn) — chỉ áp dụng lúc panel
+   đang mở ở chế độ toàn màn hình (≤767px), tránh làm việc thừa mỗi lần cuộn trang bình thường. */
+function chatboxSyncViewport(){
+  const panel = document.getElementById('chatboxPanel');
+  if(!panel || !panel.classList.contains('open') || !window.visualViewport || window.innerWidth > 767) return;
+  const vv = window.visualViewport;
+  panel.style.height = vv.height + 'px';
+  panel.style.top = vv.offsetTop + 'px';
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', chatboxSyncViewport);
+  window.visualViewport.addEventListener('scroll', chatboxSyncViewport);
+}
+
+/* Nút back trên điện thoại (2026-09-12, PM yêu cầu): mặc định back sẽ rời hẳn trang vì đây chỉ là
+   1 khối hiện/ẩn bằng class, không phải trang riêng. Đẩy thêm 1 mốc lịch sử "ảo" NGAY LÚC MỞ (URL
+   giữ nguyên, chỉ thêm 1 state) — bấm back sẽ tiêu thụ đúng mốc này trước (trình duyệt tự nổ sự
+   kiện "popstate", đóng khung chat ở đó), CHƯA rời trang thật; phải bấm back thêm 1 lần nữa mới đi
+   tiếp như bình thường. Đóng bằng cách khác (nút ✕/bấm ra ngoài) thì tự lùi lại đúng 1 bước qua
+   history.back() để dọn sạch mốc ảo đó, tránh phải bấm back 2 lần mới rời trang thật ở lần sau. */
+let chatboxHistoryPushed = false;
 function chatboxToggleOpen(){
   const panel = document.getElementById('chatboxPanel');
-  const opening = !panel.classList.contains('open');
-  if(opening){
-    panel.classList.add('open');
-    const fc = document.getElementById('floatContact');
-    if(fc && fc.classList.contains('open')){
-      fc.classList.remove('open'); // tránh 2 cụm nút nổi chồng nhau
-      pushChatboxAboveFloat(false); // fc đang mở lúc bấm (icon đang bị đẩy lên) -> trả lại vị trí gốc
-    }
-    if(!chatboxInited) chatboxInit();
-    setTimeout(()=>{ const inp=document.getElementById('chatboxInput'); if(inp) inp.focus(); }, 200);
-  } else {
-    panel.classList.remove('open');
+  if(panel.classList.contains('open')){ chatboxClose(); return; }
+  panel.classList.add('open');
+  const fc = document.getElementById('floatContact');
+  if(fc && fc.classList.contains('open')){
+    fc.classList.remove('open'); // tránh 2 cụm nút nổi chồng nhau
+    pushChatboxAboveFloat(false); // fc đang mở lúc bấm (icon đang bị đẩy lên) -> trả lại vị trí gốc
+  }
+  if(!chatboxInited) chatboxInit();
+  history.pushState({chatboxOpen:true}, '', location.href);
+  chatboxHistoryPushed = true;
+  chatboxSyncViewport();
+  setTimeout(()=>{ const inp=document.getElementById('chatboxInput'); if(inp) inp.focus(); }, 200);
+}
+function chatboxClose(){
+  const panel = document.getElementById('chatboxPanel');
+  panel.classList.remove('open');
+  panel.style.height = ''; panel.style.top = ''; // trả lại đúng kích thước mặc định trong CSS
+  if(chatboxHistoryPushed){
+    chatboxHistoryPushed = false;
+    history.back();
   }
 }
-function chatboxClose(){ document.getElementById('chatboxPanel').classList.remove('open'); }
+// Nút back thật sự bấm tới mốc lịch sử "ảo" ở trên -> chỉ cần đóng UI, KHÔNG gọi lại history.back()
+// (mốc đó vừa bị back tiêu thụ rồi, gọi thêm sẽ back tiếp 1 bước ngoài ý muốn).
+window.addEventListener('popstate', function(){
+  const panel = document.getElementById('chatboxPanel');
+  if(panel && panel.classList.contains('open')){
+    chatboxHistoryPushed = false;
+    panel.classList.remove('open');
+    panel.style.height = ''; panel.style.top = '';
+  }
+});
 // Đóng khung chat khi bấm ra ngoài (PM yêu cầu 2026-08-29) — cùng mẫu đã dùng cho #floatContact
 // (mục "NÚT LIÊN HỆ NỔI" phía trên): loại trừ chính panel + nút toggle để không tự đóng ngay lúc
 // vừa bấm mở, hoặc đóng nhầm khi đang thao tác bên trong khung chat (gõ input, bấm nút...).
